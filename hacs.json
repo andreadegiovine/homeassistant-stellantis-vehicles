@@ -1,0 +1,6 @@
+{
+    "name": "Stellantis Vehicles",
+    "content_in_root": false,
+    "render_readme": false,
+    "homeassistant": "2022.6.0"
+}

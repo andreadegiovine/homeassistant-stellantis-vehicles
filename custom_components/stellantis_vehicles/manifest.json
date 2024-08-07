@@ -1,0 +1,14 @@
+{
+  "domain": "stellantis_vehicles",
+  "name": "Stellantis Vehicles",
+  "codeowners": ["@andreadegiovine"],
+  "config_flow": true,
+  "documentation": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues",
+  "requirements": [
+    "Pillow==10.*"
+  ],
+  "dependencies": ["webhook"],
+  "version": "0.0.1"
+}

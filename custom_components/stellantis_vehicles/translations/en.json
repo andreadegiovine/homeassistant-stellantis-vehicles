@@ -1,0 +1,85 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configure and connect your Stellantis vehicle",
+        "data": {
+          "mobile_app": "Vehicle mobile app"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Service battery voltage"
+      },
+      "type": {
+        "name": "Type",
+        "state": {
+          "Electric": "Electric"
+        }
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "mileage": {
+        "name": "Mileage"
+      },
+      "autonomy": {
+        "name": "Autonomy"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "battery_soh": {
+        "name": "Battery SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Battery charging rate"
+      },
+      "battery_charging_time": {
+        "name": "Battery charging time"
+      },
+      "command_status": {
+        "name": "Command status"
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Moving"
+      },
+      "doors": {
+        "name": "Doors"
+      },
+      "battery_plugged": {
+        "name": "Battery plugged"
+      },
+      "battery_charging": {
+        "name": "Battery charging"
+      },
+      "engine": {
+        "name": "Engine"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "WakeUp"
+      },
+      "doors": {
+        "name": "Doors"
+      },
+      "horn": {
+        "name": "Horn"
+      },
+      "lights": {
+        "name": "Lights"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Vehicle"
+      }
+    }
+  }
+}

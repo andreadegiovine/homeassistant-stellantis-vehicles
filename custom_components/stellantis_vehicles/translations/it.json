@@ -1,0 +1,85 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configura e connetti il tuo veicolo Stellantis",
+        "data": {
+          "mobile_app": "App mobile del veicolo"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Voltaggio batteria di servizio"
+      },
+      "type": {
+        "name": "Tipo",
+        "state": {
+          "Electric": "Elettrico"
+        }
+      },
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "mileage": {
+        "name": "Kilometraggio"
+      },
+      "autonomy": {
+        "name": "Autonomia"
+      },
+      "battery": {
+        "name": "Batteria"
+      },
+      "battery_soh": {
+        "name": "Batteria SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Velocità ricarica batteria"
+      },
+      "battery_charging_time": {
+        "name": "Orario ricarica batteria"
+      },
+      "command_status": {
+        "name": "Stato comandi"
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Movimento"
+      },
+      "doors": {
+        "name": "Portiere"
+      },
+      "battery_plugged": {
+        "name": "Batteria collegata"
+      },
+      "battery_charging": {
+        "name": "Batteria in ricarica"
+      },
+      "engine": {
+        "name": "Motore"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Svegliati"
+      },
+      "doors": {
+        "name": "Portiere"
+      },
+      "horn": {
+        "name": "Clacson"
+      },
+      "lights": {
+        "name": "Luci"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Veicolo"
+      }
+    }
+  }
+}
