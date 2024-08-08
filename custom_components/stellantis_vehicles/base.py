@@ -37,6 +37,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         await self._stellantis.get_callback_id()
         _LOGGER.debug(self._config)
         _LOGGER.debug(self._data)
+        _LOGGER.debug("---------- _async_update_data")
 
     async def set_action_status(self, name, action_id, status, detail = None):
         if not self._pending_action_id:
@@ -124,15 +125,21 @@ class StellantisBaseEntity(CoordinatorEntity):
         value = None
         updated_at = None
         for key in data_map:
+            # Get last available node date
             if value and "createdAt" in value:
                 updated_at = value["createdAt"]
 
-            if not value:
+            if not value and key in vehicle_data:
                 value = vehicle_data[key]
-            else:
+            elif value and isinstance(key, int):
+                value = value[key]
+            elif value and key in value:
                 value = value[key]
 
-        if updated_at:
+        if value and not isinstance(value, (float, int, str, bool)):
+            value = None
+
+        if value and updated_at:
             self._attr_extra_state_attributes["updated_at"] = updated_at
 
         return value

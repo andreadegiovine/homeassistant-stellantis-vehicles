@@ -88,6 +88,7 @@ class StellantisBase:
         async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
             result = await resp.json()
             if not str(resp.status).startswith("20"):
+                _LOGGER.debug("make_http_request")
                 _LOGGER.error(f"{method} request error " + str(resp.status))
                 _LOGGER.debug(resp.url)
                 _LOGGER.debug(headers)
@@ -95,6 +96,7 @@ class StellantisBase:
                 _LOGGER.debug(json)
                 _LOGGER.debug(data)
                 _LOGGER.debug(result)
+                _LOGGER.debug("---------- make_http_request")
                 error = ''
                 if "httpMessage" in result and "moreInformation" in result:
                     error = result["httpMessage"] + " - " + result["moreInformation"]
@@ -161,6 +163,7 @@ class StellantisVehicles(StellantisBase):
             detail = event["eventStatus"]["failureCause"]
         if coordinator:
             await coordinator.set_action_status(name, action_id, status.lower(), detail)
+        _LOGGER.debug("---------- _handle_webhook")
 
     def register_webhook(self):
         if not WEBHOOK_ID in self._hass.data.setdefault(WEBHOOK_DOMAIN, {}):
@@ -211,6 +214,7 @@ class StellantisVehicles(StellantisBase):
             self.save_config(new_config)
             new_config["mobile_app"] = self.get_config("mobile_app")
             self._hass.config_entries.async_update_entry(self._entry, data=new_config)
+        _LOGGER.debug("---------- refresh_token")
 
 
     async def get_user_vehicles(self):
@@ -230,6 +234,7 @@ class StellantisVehicles(StellantisBase):
                     "type": vehicle["motorization"],
                     "picture": await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
                 })
+        _LOGGER.debug("---------- get_user_vehicles")
         return self._vehicles
 
     async def get_vehicle_status(self):
@@ -241,6 +246,7 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(vehicle_status_request)
+        _LOGGER.debug("---------- get_vehicle_status")
         return vehicle_status_request
 
     async def get_callback_id(self):
@@ -300,6 +306,7 @@ class StellantisVehicles(StellantisBase):
             self.save_config(new_config)
             self._hass.config_entries.async_update_entry(self._entry, data=new_config)
 
+        _LOGGER.debug("---------- get_callback_id")
         return self.get_config("callback_id")
 
     async def delete_user_callback(self):
@@ -312,6 +319,7 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(delete_request)
+        _LOGGER.debug("---------- delete_user_callback")
         return True
 
     async def get_action_status(self, action_id):
@@ -325,6 +333,7 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(action_status_request)
+        _LOGGER.debug("---------- get_action_status")
         return action_status_request
 
     async def send_command(self, json):
@@ -337,4 +346,5 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug(headers)
         _LOGGER.debug(json)
         _LOGGER.debug(command_request)
+        _LOGGER.debug("---------- send_command")
         return command_request
