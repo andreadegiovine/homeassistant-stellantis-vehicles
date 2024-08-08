@@ -28,6 +28,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._data = {}
         self._pending_action_id = None
         self._actions_status = []
+        self._actions_status_retry = 0
 
     async def _async_update_data(self):
         _LOGGER.debug("_async_update_data")
@@ -47,13 +48,27 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             new_status = new_status + f" ({detail})"
         self._actions_status = [new_status] + self._actions_status
         self._pending_action_id = None
+        self._actions_status_retry = 0
         self.async_update_listeners()
 #         async self.async_request_refresh()
 
     async def get_action_status(self, now = None):
         if not self._pending_action_id:
             return
-        action_status_request = await self._stellantis.get_action_status(self._pending_action_id)
+
+        try:
+            action_status_request = await self._stellantis.get_action_status(self._pending_action_id)
+        except Exception as e:
+            if self._actions_status_retry > 3:
+                _LOGGER.debug("Max retry")
+                await self.set_action_status("Unknown", self._pending_action_id, "max fetch retry")
+                return
+            else:
+                self._actions_status_retry = self._actions_status_retry + 1
+                _LOGGER.debug(f"Current retry {self._actions_status_retry}")
+                async_track_point_in_time(self._hass, self.get_action_status, (datetime.now() + timedelta(seconds=20)))
+                return
+
         name = action_status_request["type"]
         status = action_status_request["status"]
         detail = None
@@ -229,9 +244,11 @@ class StellantisBaseSensor(StellantisRestoreSensor):
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
         if value == None:
+            if self._attr_native_value == "unknown":
+                self._attr_native_value = None
             return
 
-        if self._key == 'battery_charging_time':
+        if self._key in ["battery_charging_time", "battery_charging_end"]:
             value = self.timestring_to_datetime(value)
 
         self._attr_native_value = value

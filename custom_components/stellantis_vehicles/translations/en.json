@@ -41,6 +41,9 @@
       "battery_charging_time": {
         "name": "Battery charging time"
       },
+      "battery_charging_end": {
+        "name": "Battery charging end"
+      },
       "command_status": {
         "name": "Command status"
       }

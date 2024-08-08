@@ -144,7 +144,12 @@ SENSORS_DEFAULT = {
         "icon" : "mdi:clock-time-eight-outline",
         "data_map" : ["energy", 0, "charging", "nextDelayedTime"],
         "device_class" : SensorDeviceClass.TIMESTAMP
-    }
+    },
+     "battery_charging_end" : {
+         "icon" : "mdi:battery-charging-high",
+         "data_map" : ["energy", 0, "charging", "remaining_time"],
+         "device_class" : SensorDeviceClass.TIMESTAMP
+     }
 }
 
 BINARY_SENSORS_DEFAULT = {
@@ -170,7 +175,7 @@ BINARY_SENSORS_DEFAULT = {
         "icon" : "mdi:battery-charging-medium",
         "data_map" : ["energy", 0, "charging", "status"],
         "device_class" : BinarySensorDeviceClass.BATTERY_CHARGING,
-        "on_value": "Connected"
+        "on_value": "InProgress"
     },
     "engine" : {
         "icon" : "mdi:power",

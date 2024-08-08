@@ -41,6 +41,9 @@
       "battery_charging_time": {
         "name": "Orario ricarica batteria"
       },
+      "battery_charging_end": {
+        "name": "Fine ricarica batteria"
+      },
       "command_status": {
         "name": "Stato comandi"
       }
