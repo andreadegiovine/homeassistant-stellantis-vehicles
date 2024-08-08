@@ -60,6 +60,9 @@
       },
       "engine": {
         "name": "Engine"
+      },
+      "air_conditioning": {
+        "name": "Air conditioning"
       }
     },
     "button": {

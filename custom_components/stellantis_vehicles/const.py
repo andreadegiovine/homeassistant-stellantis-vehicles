@@ -126,7 +126,7 @@ SENSORS_DEFAULT = {
         "data_map" : ["energy", 0, "autonomy"]
     },
     "battery" : {
-        "icon" : "mdi:battery",
+#         "icon" : "mdi:battery",
         "unit_of_measurement" : PERCENTAGE,
         "device_class": SensorDeviceClass.BATTERY,
         "data_map" : ["energy", 0, "level"]
@@ -152,7 +152,7 @@ BINARY_SENSORS_DEFAULT = {
         "icon" : "mdi:car-traction-control",
         "data_map" : ["kinetic", "moving"],
         "device_class" : BinarySensorDeviceClass.MOTION,
-        "on_value": "True"
+        "on_value": True
     },
     "doors" : {
         "icon" : "mdi:car-door-lock",
@@ -164,7 +164,7 @@ BINARY_SENSORS_DEFAULT = {
         "icon" : "mdi:power-plug-battery",
         "data_map" : ["energy", 0, "charging", "plugged"],
         "device_class" : BinarySensorDeviceClass.PLUG,
-        "on_value": "True"
+        "on_value": True
     },
     "battery_charging" : {
         "icon" : "mdi:battery-charging-medium",
@@ -177,5 +177,11 @@ BINARY_SENSORS_DEFAULT = {
         "data_map" : ["ignition", "type"],
         "device_class" : BinarySensorDeviceClass.POWER,
         "on_value": "Start"
+    },
+    "air_conditioning" : {
+        "icon" : "mdi:air-conditioner",
+        "data_map" : ["preconditioning", "airConditioning", "status"],
+        "device_class" : BinarySensorDeviceClass.POWER,
+        "on_value": "Active"
     }
 }
