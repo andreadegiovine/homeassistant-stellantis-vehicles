@@ -54,8 +54,8 @@ class StellantisCommandStatusSensor(StellantisRestoreSensor):
         attributes = {}
         for index, status in enumerate(actions_status):
             if index == 0:
-                self._attr_native_value = status
+                self._attr_native_value = actions_status[status]
             else:
-                attributes[f"previus_{index}"] = status
+                attributes[status.strftime("%d/%m/%y %H:%M:%S")] = actions_status[status]
 
         self._attr_extra_state_attributes = attributes

@@ -88,7 +88,7 @@ class StellantisBase:
         async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
             result = await resp.json()
             if not str(resp.status).startswith("20"):
-                _LOGGER.debug("make_http_request")
+                _LOGGER.debug("---------- START make_http_request")
                 _LOGGER.error(f"{method} request error " + str(resp.status))
                 _LOGGER.debug(resp.url)
                 _LOGGER.debug(headers)
@@ -96,11 +96,11 @@ class StellantisBase:
                 _LOGGER.debug(json)
                 _LOGGER.debug(data)
                 _LOGGER.debug(result)
-                _LOGGER.debug("---------- make_http_request")
+                _LOGGER.debug("---------- END make_http_request")
                 error = ''
                 if "httpMessage" in result and "moreInformation" in result:
                     error = result["httpMessage"] + " - " + result["moreInformation"]
-                elif "error" in result and "moreInformation" in result:
+                elif "error" in result and "error_description" in result:
                     error = result["error"] + " - " + result["error_description"]
                 raise Exception(error)
             return result
@@ -149,7 +149,7 @@ class StellantisVehicles(StellantisBase):
         return coordinator
 
     async def _handle_webhook(self, hass, webhook_id, request):
-        _LOGGER.debug("_handle_webhook")
+        _LOGGER.debug("---------- START _handle_webhook")
         body = await request.json()
         _LOGGER.debug(body)
         event = body["remoteEvent"]
@@ -163,7 +163,7 @@ class StellantisVehicles(StellantisBase):
             detail = event["eventStatus"]["failureCause"]
         if coordinator:
             await coordinator.set_action_status(name, action_id, status.lower(), detail)
-        _LOGGER.debug("---------- _handle_webhook")
+        _LOGGER.debug("---------- END _handle_webhook")
 
     def register_webhook(self):
         if not WEBHOOK_ID in self._hass.data.setdefault(WEBHOOK_DOMAIN, {}):
@@ -196,7 +196,7 @@ class StellantisVehicles(StellantisBase):
         return new_image_url
 
     async def refresh_token(self):
-        _LOGGER.debug("refresh_token")
+        _LOGGER.debug("---------- START refresh_token")
         # Aggiungere notifica frontend di rinconfigurazione oauth token in caso di errore
         token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
         if token_expiry < (datetime.now() - timedelta(0, 10)):
@@ -214,11 +214,11 @@ class StellantisVehicles(StellantisBase):
             self.save_config(new_config)
             new_config["mobile_app"] = self.get_config("mobile_app")
             self._hass.config_entries.async_update_entry(self._entry, data=new_config)
-        _LOGGER.debug("---------- refresh_token")
+        _LOGGER.debug("---------- END refresh_token")
 
 
     async def get_user_vehicles(self):
-        _LOGGER.debug("get_user_vehicles")
+        _LOGGER.debug("---------- START get_user_vehicles")
         await self.refresh_token()
         if not self._vehicles:
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAM)
@@ -234,11 +234,11 @@ class StellantisVehicles(StellantisBase):
                     "type": vehicle["motorization"],
                     "picture": await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
                 })
-        _LOGGER.debug("---------- get_user_vehicles")
+        _LOGGER.debug("---------- END get_user_vehicles")
         return self._vehicles
 
     async def get_vehicle_status(self):
-        _LOGGER.debug("get_vehicle_status")
+        _LOGGER.debug("---------- START get_vehicle_status")
         await self.refresh_token()
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAM)
         headers = self.apply_headers_params(CAR_API_HEADERS)
@@ -246,11 +246,11 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(vehicle_status_request)
-        _LOGGER.debug("---------- get_vehicle_status")
+        _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
     async def get_callback_id(self):
-        _LOGGER.debug("get_callback_id")
+        _LOGGER.debug("---------- START get_callback_id")
         await self.refresh_token()
         callback_target = get_url(self._hass, prefer_external=True, prefer_cloud=True) + "/api/webhook/" + WEBHOOK_ID
         callback_id = None
@@ -306,11 +306,11 @@ class StellantisVehicles(StellantisBase):
             self.save_config(new_config)
             self._hass.config_entries.async_update_entry(self._entry, data=new_config)
 
-        _LOGGER.debug("---------- get_callback_id")
+        _LOGGER.debug("---------- END get_callback_id")
         return self.get_config("callback_id")
 
     async def delete_user_callback(self):
-        _LOGGER.debug("delete_user_callback")
+        _LOGGER.debug("---------- START delete_user_callback")
         await self.refresh_token()
         if self.get_config("callback_id"):
             url = self.apply_query_params(CAR_API_DELETE_CALLBACK_URL, CLIENT_ID_QUERY_PARAM)
@@ -319,11 +319,11 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(delete_request)
-        _LOGGER.debug("---------- delete_user_callback")
+        _LOGGER.debug("---------- END delete_user_callback")
         return True
 
     async def get_action_status(self, action_id):
-        _LOGGER.debug("get_action_status")
+        _LOGGER.debug("---------- START get_action_status")
         await self.refresh_token()
         self._config["remote_action_id"] = action_id
         url = self.apply_query_params(CAR_API_CHECK_COMMAND_URL, CLIENT_ID_QUERY_PARAM)
@@ -333,11 +333,11 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(action_status_request)
-        _LOGGER.debug("---------- get_action_status")
+        _LOGGER.debug("---------- END get_action_status")
         return action_status_request
 
     async def send_command(self, json):
-        _LOGGER.debug("send_command")
+        _LOGGER.debug("---------- START send_command")
         await self.refresh_token()
         url = self.apply_query_params(CAR_API_SEND_COMMAND_URL, CLIENT_ID_QUERY_PARAM)
         headers = self.apply_headers_params(CAR_API_HEADERS)
@@ -346,5 +346,5 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug(headers)
         _LOGGER.debug(json)
         _LOGGER.debug(command_request)
-        _LOGGER.debug("---------- send_command")
+        _LOGGER.debug("---------- END send_command")
         return command_request

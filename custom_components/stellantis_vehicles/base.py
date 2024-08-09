@@ -27,18 +27,21 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._stellantis = stellantis
         self._data = {}
         self._pending_action_id = None
-        self._actions_status = []
+        self._actions_status = {}
         self._actions_status_retry = 0
 
     async def _async_update_data(self):
-        _LOGGER.debug("_async_update_data")
-        # Vehicle status
-        self._data = await self._stellantis.get_vehicle_status()
-        # Vehicle callback
-        await self._stellantis.get_callback_id()
+        _LOGGER.debug("---------- START _async_update_data")
+        try:
+            # Vehicle status
+            self._data = await self._stellantis.get_vehicle_status()
+            # Vehicle callback
+            await self._stellantis.get_callback_id()
+        except Exception as e:
+            _LOGGER.error(str(e))
         _LOGGER.debug(self._config)
         _LOGGER.debug(self._data)
-        _LOGGER.debug("---------- _async_update_data")
+        _LOGGER.debug("---------- END _async_update_data")
 
     async def set_action_status(self, name, action_id, status, detail = None):
         if not self._pending_action_id:
@@ -46,7 +49,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         new_status = f"{name} {status}"
         if detail:
             new_status = new_status + f" ({detail})"
-        self._actions_status = [new_status] + self._actions_status
+        old_actions = self._actions_status
+        self._actions_status = {datetime.now(): new_status}
+        self._actions_status.update(old_actions)
         self._pending_action_id = None
         self._actions_status_retry = 0
         self.async_update_listeners()
@@ -59,6 +64,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             action_status_request = await self._stellantis.get_action_status(self._pending_action_id)
         except Exception as e:
+            _LOGGER.error(str(e))
             if self._actions_status_retry > 3:
                 _LOGGER.debug("Max retry")
                 await self.set_action_status("Unknown", self._pending_action_id, "max fetch retry")
@@ -81,7 +87,12 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             json = {
                 name: data
             }
-            command_request = await self._stellantis.send_command(json)
+            try:
+                command_request = await self._stellantis.send_command(json)
+            except Exception as e:
+                _LOGGER.error(str(e))
+                return
+
             self._pending_action_id = command_request["remoteActionId"]
             async_track_point_in_time(self._hass, self.get_action_status, (datetime.now() + timedelta(seconds=10)))
         self.async_update_listeners()
