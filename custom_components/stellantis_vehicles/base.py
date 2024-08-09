@@ -226,8 +226,11 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
         restored_data = await self.async_get_last_state()
-        if restored_data:
-            self._attr_native_value = restored_data.state
+        if restored_data and restored_data.state not in ["unavailable", "unknown"]:
+            value = restored_data.state
+            if self._key in ["battery_charging_time", "battery_charging_end"]:
+                value = datetime.fromisoformat(value)
+            self._attr_native_value = value
             for key in restored_data.attributes:
                 if isinstance(restored_data.attributes[key], (int, float)):
                     self._attr_extra_state_attributes[key] = restored_data.attributes[key]
