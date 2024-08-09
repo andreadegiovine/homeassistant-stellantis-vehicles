@@ -38,11 +38,20 @@
       "battery_charging_rate": {
         "name": "Battery charging rate"
       },
+      "battery_charging_type": {
+        "name": "Battery charging type"
+      },
       "battery_charging_time": {
         "name": "Battery charging time"
       },
       "battery_charging_end": {
         "name": "Battery charging end"
+      },
+      "battery_capacity": {
+        "name": "Battery capacity"
+      },
+      "battery_residual": {
+        "name": "Battery residual"
       },
       "command_status": {
         "name": "Command status"

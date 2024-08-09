@@ -1,4 +1,4 @@
-from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfElectricPotential )
+from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfElectricPotential, UnitOfEnergy, UnitOfSpeed )
 from homeassistant.components.sensor.const import SensorDeviceClass
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
@@ -123,32 +123,49 @@ SENSORS_DEFAULT = {
         "icon" : "mdi:map-marker-distance",
         "unit_of_measurement" : UnitOfLength.KILOMETERS,
         "device_class": SensorDeviceClass.DISTANCE,
-        "data_map" : ["energy", 0, "autonomy"]
+        "data_map" : ["energies", 0, "autonomy"]
     },
     "battery" : {
-#         "icon" : "mdi:battery",
         "unit_of_measurement" : PERCENTAGE,
         "device_class": SensorDeviceClass.BATTERY,
-        "data_map" : ["energy", 0, "level"]
+        "data_map" : ["energies", 0, "level"]
     },
     "battery_soh" : {
         "icon" : "mdi:battery-heart-variant",
         "unit_of_measurement" : PERCENTAGE,
-        "data_map" : ["energy", 0, "battery", "health", "resistance"]
+        "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"]
     },
     "battery_charging_rate" : {
         "icon" : "mdi:ev-station",
-        "data_map" : ["energy", 0, "charging", "chargingRate"]
+        "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
+        "device_class": SensorDeviceClass.SPEED,
+        "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingRate"]
+    },
+    "battery_charging_type" : {
+        "icon" : "mdi:lightning-bolt",
+        "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"]
     },
     "battery_charging_time" : {
-        "icon" : "mdi:clock-time-eight-outline",
-        "data_map" : ["energy", 0, "charging", "nextDelayedTime"],
-        "device_class" : SensorDeviceClass.TIMESTAMP
+        "icon" : "mdi:battery-clock",
+        "device_class" : SensorDeviceClass.TIMESTAMP,
+        "data_map" : ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"]
     },
      "battery_charging_end" : {
-         "icon" : "mdi:battery-charging-high",
-         "data_map" : ["energy", 0, "charging", "remaining_time"],
-         "device_class" : SensorDeviceClass.TIMESTAMP
+         "icon" : "mdi:battery-check",
+         "device_class" : SensorDeviceClass.TIMESTAMP,
+         "data_map" : ["energies", 0, "extension", "electric", "charging", "remainingTime"]
+     },
+     "battery_capacity" : {
+         "icon" : "mdi:battery-arrow-up-outline",
+         "unit_of_measurement" : UnitOfEnergy.WATT_HOUR,
+         "device_class" : SensorDeviceClass.ENERGY_STORAGE,
+         "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"]
+     },
+     "battery_residual" : {
+         "icon" : "mdi:battery-arrow-up",
+         "unit_of_measurement" : UnitOfEnergy.WATT_HOUR,
+         "device_class" : SensorDeviceClass.ENERGY_STORAGE,
+         "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"]
      }
 }
 
@@ -167,13 +184,13 @@ BINARY_SENSORS_DEFAULT = {
     },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",
-        "data_map" : ["energy", 0, "charging", "plugged"],
+        "data_map" : ["energies", 0, "extension", "electric", "charging", "plugged"],
         "device_class" : BinarySensorDeviceClass.PLUG,
         "on_value": True
     },
     "battery_charging" : {
         "icon" : "mdi:battery-charging-medium",
-        "data_map" : ["energy", 0, "charging", "status"],
+        "data_map" : ["energies", 0, "extension", "electric", "charging", "status"],
         "device_class" : BinarySensorDeviceClass.BATTERY_CHARGING,
         "on_value": "InProgress"
     },

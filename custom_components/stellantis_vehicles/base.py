@@ -232,14 +232,17 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
         self._data_map = data_map
 
-    def timestring_to_datetime(self, timestring):
+    def timestring_to_datetime(self, timestring, sum_to_now = False):
         date = datetime.strptime(timestring,"PT%HH%MM")
-        today = datetime.now().astimezone(pytz.timezone('Europe/Rome')).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
-        tomorrow = (today + timedelta(days=1)).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
-        if today < datetime.now().astimezone(pytz.timezone('Europe/Rome')):
-            return tomorrow
+        if sum_to_now:
+            return datetime.now().astimezone(pytz.timezone('Europe/Rome')) + timedelta(hours=date.hour, minutes=date.minute)
         else:
-            return today
+            today = datetime.now().astimezone(pytz.timezone('Europe/Rome')).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
+            tomorrow = (today + timedelta(days=1)).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
+            if today < datetime.now().astimezone(pytz.timezone('Europe/Rome')):
+                return tomorrow
+            else:
+                return today
 
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
@@ -249,7 +252,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
             return
 
         if self._key in ["battery_charging_time", "battery_charging_end"]:
-            value = self.timestring_to_datetime(value)
+            value = self.timestring_to_datetime(value, self._key == "battery_charging_end")
 
         self._attr_native_value = value
 

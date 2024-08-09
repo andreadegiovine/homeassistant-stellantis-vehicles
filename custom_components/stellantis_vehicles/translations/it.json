@@ -38,11 +38,20 @@
       "battery_charging_rate": {
         "name": "Velocità ricarica batteria"
       },
+      "battery_charging_type": {
+        "name": "Tipo ricarica batteria"
+      },
       "battery_charging_time": {
         "name": "Orario ricarica batteria"
       },
       "battery_charging_end": {
         "name": "Fine ricarica batteria"
+      },
+      "battery_capacity": {
+        "name": "Capacità batteria"
+      },
+      "battery_residual": {
+        "name": "Batteria residua"
       },
       "command_status": {
         "name": "Stato comandi"
