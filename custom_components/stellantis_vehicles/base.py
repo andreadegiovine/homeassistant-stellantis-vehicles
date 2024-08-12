@@ -247,16 +247,26 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         self._data_map = data_map
 
     def timestring_to_datetime(self, timestring, sum_to_now = False):
-        date = datetime.strptime(timestring,"PT%HH%MM")
-        if sum_to_now:
-            return datetime.now().astimezone(pytz.timezone('Europe/Rome')) + timedelta(hours=date.hour, minutes=date.minute)
-        else:
-            today = datetime.now().astimezone(pytz.timezone('Europe/Rome')).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
-            tomorrow = (today + timedelta(days=1)).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
-            if today < datetime.now().astimezone(pytz.timezone('Europe/Rome')):
-                return tomorrow
+        regex = 'PT'
+        if timestring.find("H"):
+            regex = regex + "%HH"
+        if timestring.find("M"):
+            regex = regex + "%MM"
+        if timestring.find("S"):
+            regex = regex + "%SS"
+        try:
+            date = datetime.strptime(timestring,regex)
+            if sum_to_now:
+                return datetime.now().astimezone(pytz.timezone('Europe/Rome')) + timedelta(hours=date.hour, minutes=date.minute)
             else:
-                return today
+                today = datetime.now().astimezone(pytz.timezone('Europe/Rome')).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
+                tomorrow = (today + timedelta(days=1)).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
+                if today < datetime.now().astimezone(pytz.timezone('Europe/Rome')):
+                    return tomorrow
+                else:
+                    return today
+        except Exception as e:
+            return None
 
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
