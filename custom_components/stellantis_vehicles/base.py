@@ -248,11 +248,11 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
     def timestring_to_datetime(self, timestring, sum_to_now = False):
         regex = 'PT'
-        if timestring.find("H"):
+        if timestring.find("H") != -1:
             regex = regex + "%HH"
-        if timestring.find("M"):
+        if timestring.find("M") != -1:
             regex = regex + "%MM"
-        if timestring.find("S"):
+        if timestring.find("S") != -1:
             regex = regex + "%SS"
         try:
             date = datetime.strptime(timestring,regex)
