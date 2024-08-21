@@ -86,7 +86,9 @@ class StellantisBase:
 
     async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
         async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
-            result = await resp.json()
+            result = {}
+            if method != "DELETE":
+                result = await resp.json()
             if not str(resp.status).startswith("20"):
                 _LOGGER.debug("---------- START make_http_request")
                 _LOGGER.error(f"{method} request error " + str(resp.status))
@@ -213,6 +215,7 @@ class StellantisVehicles(StellantisBase):
             }
             self.save_config(new_config)
             new_config["mobile_app"] = self.get_config("mobile_app")
+            new_config["callback_id"] = self.get_config("callback_id")
             self._hass.config_entries.async_update_entry(self._entry, data=new_config)
         _LOGGER.debug("---------- END refresh_token")
 
@@ -253,21 +256,25 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- START get_callback_id")
         await self.refresh_token()
         callback_target = get_url(self._hass, prefer_external=True, prefer_cloud=True) + "/api/webhook/" + WEBHOOK_ID
-        callback_id = None
+        callback_id = self.get_config("callback_id")
         # Check for existing callback
-        if not self.get_config("callback_id"):
+        if not callback_id:
+            _LOGGER.debug("check_callback")
             url = self.apply_query_params(CAR_API_CALLBACK_URL, CLIENT_ID_QUERY_PARAM)
             headers = self.apply_headers_params(CAR_API_HEADERS)
-            callbacks_request =  await self.make_http_request(url, 'GET', headers)
-            _LOGGER.debug("check_callback")
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
-            _LOGGER.debug(callbacks_request)
-            for callback in callbacks_request["_embedded"]["callbacks"]:
-                if callback["status"] == "Running" and callback["subscribe"]["callback"]["webhook"]["target"] == callback_target:
-                    callback_id = callback["id"]
+            try:
+                callbacks_request =  await self.make_http_request(url, 'GET', headers)
+                _LOGGER.debug(callbacks_request)
+                for callback in callbacks_request["_embedded"]["callbacks"]:
+                    if callback["status"] == "Running" and callback["subscribe"]["callback"]["webhook"]["target"] == callback_target:
+                        callback_id = callback["id"]
+            except Exception as e:
+                _LOGGER.debug(str(e))
         # Create callback
         if not callback_id:
+            _LOGGER.debug("create_callback")
             url = self.apply_query_params(CAR_API_CALLBACK_URL, CLIENT_ID_QUERY_PARAM)
             headers = self.apply_headers_params(CAR_API_HEADERS)
             json = {
@@ -287,11 +294,10 @@ class StellantisVehicles(StellantisBase):
                    }
                }
             }
-            callback_request =  await self.make_http_request(url, 'POST', headers, None, json)
-            _LOGGER.debug("create_callback")
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(json)
+            callback_request =  await self.make_http_request(url, 'POST', headers, None, json)
             _LOGGER.debug(callback_request)
             callback_id = callback_request["callbackId"]
         # Save callback id
@@ -315,7 +321,7 @@ class StellantisVehicles(StellantisBase):
         if self.get_config("callback_id"):
             url = self.apply_query_params(CAR_API_DELETE_CALLBACK_URL, CLIENT_ID_QUERY_PARAM)
             headers = self.apply_headers_params(CAR_API_HEADERS)
-            delete_request = self.make_http_request(url, 'DELETE', headers)
+            delete_request = await self.make_http_request(url, 'DELETE', headers)
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(delete_request)
