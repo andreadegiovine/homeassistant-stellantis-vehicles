@@ -44,16 +44,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("---------- END _async_update_data")
 
     async def set_action_status(self, name, action_id, status, detail = None):
-        if not self._pending_action_id:
-            return
         new_status = f"{name} {status}"
         if detail:
             new_status = new_status + f" ({detail})"
         old_actions = self._actions_status
         self._actions_status = {datetime.now(): new_status}
         self._actions_status.update(old_actions)
-        self._pending_action_id = None
         self._actions_status_retry = 0
+        if self._pending_action_id:
+            self._pending_action_id = None
         self.async_update_listeners()
 #         async self.async_request_refresh()
 

@@ -159,12 +159,13 @@ class StellantisVehicles(StellantisBase):
         coordinator = await self.async_get_coordinator_by_vin(vin)
         name = event["remoteType"]
         action_id = event["remoteActionId"]
+        type = event["eventStatus"]["type"]
         status = event["eventStatus"]["status"]
         detail = None
         if "failureCause" in event["eventStatus"]:
             detail = event["eventStatus"]["failureCause"]
         if coordinator:
-            await coordinator.set_action_status(name, action_id, status.lower(), detail)
+            await coordinator.set_action_status(name, action_id, status, detail)
         _LOGGER.debug("---------- END _handle_webhook")
 
     def register_webhook(self):
