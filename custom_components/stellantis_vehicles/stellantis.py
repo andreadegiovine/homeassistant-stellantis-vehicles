@@ -104,6 +104,8 @@ class StellantisBase:
                     error = result["httpMessage"] + " - " + result["moreInformation"]
                 elif "error" in result and "error_description" in result:
                     error = result["error"] + " - " + result["error_description"]
+                elif "message" in result and "code" in result:
+                    error = result["message"] + " - " + str(result["code"])
                 raise Exception(error)
             return result
 
