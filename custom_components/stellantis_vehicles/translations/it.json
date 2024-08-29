@@ -54,7 +54,18 @@
         "name": "Batteria residua"
       },
       "command_status": {
-        "name": "Stato comandi"
+        "name": "Stato comandi",
+        "state": {
+          "Success": "Confermato",
+          "AlreadyDone": "Già fatto",
+          "Failed": "Fallito",
+          "Accepted": "Accettato",
+          "WakingUpVehicle": "Sveglia veicolo",
+          "CheckingVehicle": "Controllo veicolo",
+          "SentToVehicle": "Inviato al veicolo",
+          "VehicleBatteryChargeTooLow": "Batteria veicolo troppo scarica",
+          "TooManyWakeUpsOverMonth": "Troppi risvegli questo mese"
+        }
       }
     },
     "binary_sensor": {

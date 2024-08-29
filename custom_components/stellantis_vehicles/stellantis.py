@@ -22,6 +22,7 @@ from homeassistant.components import (panel_custom, webhook)
 from homeassistant.components.webhook import DOMAIN as WEBHOOK_DOMAIN
 from homeassistant.components.frontend import async_remove_panel
 from homeassistant.helpers.network import get_url
+from homeassistant.helpers import translation
 
 from .base import StellantisVehicleCoordinator
 
@@ -148,7 +149,8 @@ class StellantisVehicles(StellantisBase):
         vin = vehicle.get("vin", "")
         if vin in self._coordinator_dict:
             return self._coordinator_dict[vin]
-        coordinator = StellantisVehicleCoordinator(self._hass, self._config, vehicle, self)
+        translations = await translation.async_get_translations(self._hass, self._hass.config.language, "entity")
+        coordinator = StellantisVehicleCoordinator(self._hass, self._config, vehicle, self, translations)
         self._coordinator_dict[vin] = coordinator
         return coordinator
 

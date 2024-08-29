@@ -54,7 +54,18 @@
         "name": "Battery residual"
       },
       "command_status": {
-        "name": "Command status"
+        "name": "Command status",
+        "state": {
+          "Success": "Success",
+          "AlreadyDone": "Already done",
+          "Failed": "Failed",
+          "Accepted": "Accepted",
+          "WakingUpVehicle": "Waking up vehicle",
+          "CheckingVehicle": "Checking vehicle",
+          "SentToVehicle": "Sent to vehicle",
+          "VehicleBatteryChargeTooLow": "Vehicle battery charge too low",
+          "TooManyWakeUpsOverMonth": "Too many WakeUp over month"
+        }
       }
     },
     "binary_sensor": {

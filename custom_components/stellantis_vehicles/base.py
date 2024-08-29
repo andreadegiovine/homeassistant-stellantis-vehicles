@@ -19,10 +19,11 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, config, vehicle, stellantis):
+    def __init__(self, hass, config, vehicle, stellantis, translations):
         super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=30))
 
         self._hass = hass
+        self._translations = translations
         self._config = config
         self._vehicle = vehicle
         self._stellantis = stellantis
@@ -54,10 +55,12 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             action_updates = self._commands_history[action_id]["updates"]
             action_updates.reverse()
             for update in action_updates:
-                status = str(action_name) + ": " + str(update["info"]["status"])
+                status = str(update["info"]["status"])
+                translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{status}"
+                status = self._translations.get(translation_path, status)
                 if "source" in update["info"]:
                     status = status + " (" + str(update["info"]["source"]) + ")"
-                history.update({update["date"].strftime("%d/%m/%y %H:%M:%S"): status})
+                history.update({update["date"].strftime("%d/%m/%y %H:%M:%S"): str(action_name) + ": " + status})
 
         return history
 
