@@ -167,7 +167,7 @@ class StellantisVehicles(StellantisBase):
         if "failureCause" in event["eventStatus"]:
             detail = event["eventStatus"]["failureCause"]
         if coordinator:
-            await coordinator.set_action_status(name, action_id, status, detail)
+            await coordinator.update_command_history(action_id, {"status": status, "source": "Callback"})
         _LOGGER.debug("---------- END _handle_webhook")
 
     def register_webhook(self):

@@ -2,6 +2,7 @@ import logging
 import re
 from datetime import datetime, timedelta
 import pytz
+from functools import partial
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -26,9 +27,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._vehicle = vehicle
         self._stellantis = stellantis
         self._data = {}
-        self._pending_action_id = None
-        self._actions_status = {}
-        self._actions_status_retry = 0
+        self._commands_history = {}
 
     async def _async_update_data(self):
         _LOGGER.debug("---------- START _async_update_data")
@@ -43,59 +42,96 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug(self._data)
         _LOGGER.debug("---------- END _async_update_data")
 
-    async def set_action_status(self, name, action_id, status, detail = None):
-        new_status = f"{name} {status}"
-        if detail:
-            new_status = new_status + f" ({detail})"
-        old_actions = self._actions_status
-        self._actions_status = {datetime.now(): new_status}
-        self._actions_status.update(old_actions)
-        self._actions_status_retry = 0
-        if self._pending_action_id:
-            self._pending_action_id = None
-        self.async_update_listeners()
-#         async self.async_request_refresh()
+    @property
+    def command_history(self):
+        history = {}
+        if not self._commands_history:
+            return history
 
-    async def get_action_status(self, now = None):
-        if not self._pending_action_id:
+        reorder_actions = list(reversed(self._commands_history.keys()))
+        for action_id in reorder_actions:
+            action_name = self._commands_history[action_id]["name"]
+            action_updates = self._commands_history[action_id]["updates"]
+            action_updates.reverse()
+            for update in action_updates:
+                status = str(action_name) + ": " + str(update["info"]["status"])
+                if "source" in update["info"]:
+                    status = status + " (" + str(update["info"]["source"]) + ")"
+                history.update({update["date"].strftime("%d/%m/%y %H:%M:%S"): status})
+
+        return history
+
+    @property
+    def pending_action(self):
+        if not self._commands_history:
+            return False
+        last_action_id = list(self._commands_history.keys())[-1]
+        return not self._commands_history[last_action_id]["updates"]
+
+    async def update_command_history(self, action_id, update = None, retry = None):
+        if not action_id in self._commands_history:
             return
+        if update:
+            self._commands_history[action_id]["updates"].append({"info": update, "date": datetime.now()})
 
-        try:
-            action_status_request = await self._stellantis.get_action_status(self._pending_action_id)
-        except Exception as e:
-            _LOGGER.error(str(e))
-            if self._actions_status_retry > 3:
-                _LOGGER.debug("Max retry")
-                await self.set_action_status("Unknown", self._pending_action_id, "max fetch retry")
-                return
-            else:
-                self._actions_status_retry = self._actions_status_retry + 1
-                _LOGGER.debug(f"Current retry {self._actions_status_retry}")
-                async_track_point_in_time(self._hass, self.get_action_status, (datetime.now() + timedelta(seconds=20)))
-                return
+        if retry:
+            self._commands_history[action_id]["retry"] = int(retry)
 
-        name = action_status_request["type"]
-        status = action_status_request["status"]
-        detail = None
-        if "failureCause" in action_status_request:
-            detail = action_status_request["failureCause"]
-        await self.set_action_status(name, self._pending_action_id, status, detail)
+        self.async_update_listeners()
+
+    async def get_action_status(self, description: str, now: datetime, *, action_id: str):
+        action_history = self._commands_history[action_id]
+        if not action_history["updates"]:
+            try:
+                action_status_request = await self._stellantis.get_action_status(action_id)
+            except Exception as e:
+                _LOGGER.error(str(e))
+                if action_history["retry"] > 3:
+                    _LOGGER.debug("Max retry")
+                    await self.update_command_history(action_id, {"status": "Unknown: max fetch retry", "source": "Request"})
+                    return
+                else:
+                    current_retry = action_history["retry"] + 1
+                    await self.update_command_history(action_id, None, current_retry)
+                    _LOGGER.debug("Current retry " + str(current_retry))
+                    async_track_point_in_time(
+                        self._hass,
+                        partial(
+                            self.get_action_status,
+                            f"check command status {action_id}",
+                            action_id=action_id,
+                        ),
+                        (datetime.now() + timedelta(seconds=20))
+                    )
+                    return
+
+            name = action_status_request["type"]
+            status = action_status_request["status"]
+            detail = None
+            if "failureCause" in action_status_request:
+                detail = action_status_request["failureCause"]
+            await self.update_command_history(action_id, {"status": status, "source": "Request"})
 
     async def send_command(self, name, data):
-        if not self._pending_action_id:
-            json = {
-                name: data
-            }
+        if not self.pending_action:
             try:
-                command_request = await self._stellantis.send_command(json)
+                command_request = await self._stellantis.send_command(data)
             except Exception as e:
                 _LOGGER.error(str(e))
                 return
 
-            self._pending_action_id = command_request["remoteActionId"]
-            async_track_point_in_time(self._hass, self.get_action_status, (datetime.now() + timedelta(seconds=10)))
+            action_id = command_request["remoteActionId"]
+            self._commands_history.update({action_id: {"name": name, "updates": [], "retry": 0}})
+            async_track_point_in_time(
+                self._hass,
+                partial(
+                    self.get_action_status,
+                    f"check command status {action_id}",
+                    action_id=action_id,
+                ),
+                (datetime.now() + timedelta(seconds=15))
+            )
         self.async_update_listeners()
-#         async self.async_request_refresh()
 
 
 
@@ -301,7 +337,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
-        return not self._coordinator._pending_action_id
+        return not self._coordinator.pending_action
 
     async def async_press(self):
         raise NotImplementedError

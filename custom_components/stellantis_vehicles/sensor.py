@@ -47,15 +47,14 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 class StellantisCommandStatusSensor(StellantisRestoreSensor):
     def coordinator_update(self):
-        actions_status = self._coordinator._actions_status
-        if not actions_status:
+        command_history = self._coordinator.command_history
+        if not command_history:
             return
-
         attributes = {}
-        for index, status in enumerate(actions_status):
+        for index, date in enumerate(command_history):
             if index == 0:
-                self._attr_native_value = actions_status[status]
+                self._attr_native_value = command_history[date]
             else:
-                attributes[status.strftime("%d/%m/%y %H:%M:%S")] = actions_status[status]
+                attributes[date] = command_history[date]
 
         self._attr_extra_state_attributes = attributes

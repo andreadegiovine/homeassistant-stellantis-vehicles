@@ -56,7 +56,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 class StellantisWakeUpButton(StellantisBaseButton):
     async def async_press(self):
-        await self._coordinator.send_command("wakeUp", {"action": "WakeUp"})
+        await self._coordinator.send_command(self.name, {"wakeUp": {"action": "WakeUp"}})
 
 class StellantisDoorButton(StellantisBaseButton):
     async def async_press(self):
@@ -64,7 +64,7 @@ class StellantisDoorButton(StellantisBaseButton):
         new_status = "Unlocked"
         if current_status == "Deactive":
             new_status = "Locked"
-        await self._coordinator.send_command("door", {"state": new_status})
+        await self._coordinator.send_command(self.name, {"door": {"state": new_status}})
 
 class StellantisHornButton(StellantisBaseButton):
     async def async_press(self):
@@ -72,7 +72,7 @@ class StellantisHornButton(StellantisBaseButton):
         if "horn_status" in self._data and self._data["horn_status"] == "Activated":
             new_status = "Unactivated"
         self._data["horn_status"] = new_status
-        await self._coordinator.send_command("horn", {"state": new_status})
+        await self._coordinator.send_command(self.name, {"horn": {"state": new_status}})
 
 class StellantisLightsButton(StellantisBaseButton):
     async def async_press(self):
@@ -80,4 +80,4 @@ class StellantisLightsButton(StellantisBaseButton):
         if "lights_status" in self._data and self._data["lights_status"] == True:
             new_status = False
         self._data["lights_status"] = new_status
-        await self._coordinator.send_command("lights", {"on": new_status})
+        await self._coordinator.send_command(self.name, {"lights": {"on": new_status}})
