@@ -55,11 +55,18 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             action_updates = self._commands_history[action_id]["updates"]
             action_updates.reverse()
             for update in action_updates:
-                status = str(update["info"]["status"])
+                status = update["info"]["status"]
                 translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{status}"
                 status = self._translations.get(translation_path, status)
+
+                details = update["info"]["details"]
+                if details:
+                    translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{details}"
+                    details = self._translations.get(translation_path, details)
+                    status = status + " (" + details + ")"
+
                 if "source" in update["info"]:
-                    status = status + " (" + str(update["info"]["source"]) + ")"
+                    status = status + " [" + str(update["info"]["source"]) + "]"
                 history.update({update["date"].strftime("%d/%m/%y %H:%M:%S"): str(action_name) + ": " + status})
 
         return history
@@ -113,7 +120,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             detail = None
             if "failureCause" in action_status_request:
                 detail = action_status_request["failureCause"]
-            await self.update_command_history(action_id, {"status": status, "source": "Request"})
+            await self.update_command_history(action_id, {"status": status, "details": detail,  "source": "Request"})
 
     async def send_command(self, name, data):
         if not self.pending_action:

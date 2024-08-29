@@ -64,7 +64,25 @@
           "CheckingVehicle": "Checking vehicle",
           "SentToVehicle": "Sent to vehicle",
           "VehicleBatteryChargeTooLow": "Vehicle battery charge too low",
-          "TooManyWakeUpsOverMonth": "Too many WakeUp over month"
+          "TooManyWakeUpsOverMonth": "Too many WakeUp over month",
+          "GeneralError": "General error",
+          "VehicleError": "Vehicle error",
+          "WrongCommand": "Wrong command",
+          "VehicleConnectionTimeout": "Vehicle connection timeout",
+          "MissingRights": "Missing rights",
+          "NotPossibleDueToVehicleBatteryLevel": "Not possible due to vehicle battery level",
+          "NotPossibleDueToVehiclePrivacyLevel": "Not possible due to vehicle privacy level",
+          "TooManyRequestInShortTime": "Too many request in short time",
+          "SameActionInProgress": "Same action in progress",
+          "NotPossibleDueToVehicleStolenState": "Not possible due to vehicle stolen state",
+          "VehicleInUse": "Vehicle in use",
+          "TooManyRequestSent": "Too many request sent",
+          "DoorsOpen": "Doors open",
+          "VehicleErrorOrCidInside": "Vehicle error or cid inside",
+          "CidInside": "Cid inside",
+          "ExternalChargingSystemError": "External charging system error",
+          "VehicleChargingSystemError": "Vehicle charging system error",
+          "VehicleIsNotLocked": "Vehicle is not locked"
         }
       }
     },

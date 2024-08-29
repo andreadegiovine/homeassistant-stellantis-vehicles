@@ -64,7 +64,25 @@
           "CheckingVehicle": "Controllo veicolo",
           "SentToVehicle": "Inviato al veicolo",
           "VehicleBatteryChargeTooLow": "Batteria veicolo troppo scarica",
-          "TooManyWakeUpsOverMonth": "Troppi risvegli questo mese"
+          "TooManyWakeUpsOverMonth": "Troppi risvegli questo mese",
+          "GeneralError": "Errore generico",
+          "VehicleError": "Errore veicolo",
+          "WrongCommand": "Comando errato",
+          "VehicleConnectionTimeout": "Timeout connessione veicolo",
+          "MissingRights": "Permessi non sufficienti",
+          "NotPossibleDueToVehicleBatteryLevel": "Non possibile a causa del livello batteria",
+          "NotPossibleDueToVehiclePrivacyLevel": "Non possibile a causa del livello privacy",
+          "TooManyRequestInShortTime": "Troppe richieste in breve tempo",
+          "SameActionInProgress": "Stessa azione in corso",
+          "NotPossibleDueToVehicleStolenState": "Non possibile a causa dello stato rubato",
+          "VehicleInUse": "Veicolo in uso",
+          "TooManyRequestSent": "Troppe richieste inviate",
+          "DoorsOpen": "Portiere aperte",
+          "VehicleErrorOrCidInside": "Errore del veicolo o problema interno",
+          "CidInside": "Problema interno",
+          "ExternalChargingSystemError": "Errore sistema di ricarica esterno",
+          "VehicleChargingSystemError": "Errore sistema di ricarica",
+          "VehicleIsNotLocked": "Veicolo non bloccato"
         }
       }
     },
