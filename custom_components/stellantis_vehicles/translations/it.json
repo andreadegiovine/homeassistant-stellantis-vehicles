@@ -118,6 +118,12 @@
       },
       "lights": {
         "name": "Luci"
+      },
+      "charge_full": {
+        "name": "Ricarica completa"
+      },
+      "charge_start_stop": {
+        "name": "Start/Stop ricarica"
       }
     },
     "device_tracker": {

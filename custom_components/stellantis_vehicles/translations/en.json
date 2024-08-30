@@ -118,6 +118,12 @@
       },
       "lights": {
         "name": "Lights"
+      },
+      "charge_full": {
+        "name": "Charge full"
+      },
+      "charge_start_stop": {
+        "name": "Charge Start/Stop"
       }
     },
     "device_tracker": {

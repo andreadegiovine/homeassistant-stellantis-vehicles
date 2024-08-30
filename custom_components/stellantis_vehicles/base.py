@@ -299,7 +299,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         if not self._available:
             return result
         for key in self._available:
-            if result:
+            if result and key in self._coordinator._sensors:
                 result = self._available[key] == self._coordinator._sensors[key]
         return result
 

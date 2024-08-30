@@ -52,17 +52,17 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         entities.extend([StellantisLightsButton(coordinator, description)])
 
         description = ButtonEntityDescription(
-            name = "start_stop",
-            key = "start_stop",
-            translation_key = "start_stop",
+            name = "charge_start_stop",
+            key = "charge_start_stop",
+            translation_key = "charge_start_stop",
             icon = "mdi:play-pause"
         )
         entities.extend([StellantisChargingStartStopButton(coordinator, description)])
 
         description = ButtonEntityDescription(
-            name = "charging_full",
-            key = "charging_full",
-            translation_key = "charging_full",
+            name = "charge_full",
+            key = "charge_full",
+            translation_key = "charge_full",
             icon = "mdi:battery-charging-100"
         )
         entities.extend([StellantisChargingLimitButton(coordinator, description)])
