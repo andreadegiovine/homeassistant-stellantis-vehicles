@@ -28,6 +28,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._vehicle = vehicle
         self._stellantis = stellantis
         self._data = {}
+        self._sensors = {}
         self._commands_history = {}
 
     async def _async_update_data(self):
@@ -286,10 +287,21 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
 
 
 class StellantisBaseSensor(StellantisRestoreSensor):
-    def __init__(self, coordinator, description, data_map = []):
+    def __init__(self, coordinator, description, data_map = [], available = None):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
+        self._available = available
+
+    @property
+    def available(self):
+        result = True
+        if not self._available:
+            return result
+        for key in self._available:
+            if result:
+                result = self._available[key] == self._coordinator._sensors[key]
+        return result
 
     def timestring_to_datetime(self, timestring, sum_to_now = False):
         regex = 'PT'
@@ -315,6 +327,8 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
+        self._coordinator._sensors[self._key] = value
+
         if value == None:
             if self._attr_native_value == "unknown":
                 self._attr_native_value = None
@@ -339,6 +353,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
+        self._coordinator._sensors[self._key] = value
         if value == None:
             return
         self._attr_is_on = value == self._on_value

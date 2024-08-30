@@ -51,6 +51,22 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         )
         entities.extend([StellantisLightsButton(coordinator, description)])
 
+        description = ButtonEntityDescription(
+            name = "start_stop",
+            key = "start_stop",
+            translation_key = "start_stop",
+            icon = "mdi:play-pause"
+        )
+        entities.extend([StellantisChargingStartStopButton(coordinator, description)])
+
+        description = ButtonEntityDescription(
+            name = "charging_full",
+            key = "charging_full",
+            translation_key = "charging_full",
+            icon = "mdi:battery-charging-100"
+        )
+        entities.extend([StellantisChargingLimitButton(coordinator, description)])
+
     async_add_entities(entities)
 
 
@@ -60,7 +76,7 @@ class StellantisWakeUpButton(StellantisBaseButton):
 
 class StellantisDoorButton(StellantisBaseButton):
     async def async_press(self):
-        current_status = self._coordinator._data["alarm"]["status"]["activation"]
+        current_status = self._coordinator._sensors["doors"]
         new_status = "Unlocked"
         if current_status == "Deactive":
             new_status = "Locked"
@@ -81,3 +97,23 @@ class StellantisLightsButton(StellantisBaseButton):
             new_status = False
         self._data["lights_status"] = new_status
         await self._coordinator.send_command(self.name, {"lights": {"on": new_status}})
+
+class StellantisChargingStartStopButton(StellantisBaseButton):
+    @property
+    def available(self):
+        return super().available and self._coordinator._sensors["battery_plugged"] and self._coordinator._sensors["battery_charging"] in ["InProgress", "Stopped"]
+
+    async def async_press(self):
+        current_status = self._coordinator._sensors["battery_charging"]
+        new_status = True
+        if current_status == "InProgress":
+            new_status = False
+        await self._coordinator.send_command(self.name, {"charging": {"immediate": new_status}})
+
+class StellantisChargingLimitButton(StellantisBaseButton):
+    async def async_press(self):
+#         current_status = self._coordinator._sensors["battery_charging"]
+#         new_status = True
+#         if current_status == "InProgress":
+#             new_status = False
+        await self._coordinator.send_command(self.name, {"charging": {"preferences": {"type": "Partial"}}})

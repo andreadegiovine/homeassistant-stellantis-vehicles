@@ -30,7 +30,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                     unit_of_measurement = default_value.get("unit_of_measurement", None),
                     device_class = default_value.get("device_class", None)
                 )
-                entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("data_map", None))])
+                entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("data_map", None), default_value.get("available", None))])
 
         description = SensorEntityDescription(
             name = "command_status",
