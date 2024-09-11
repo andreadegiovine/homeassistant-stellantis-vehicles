@@ -167,15 +167,17 @@ SENSORS_DEFAULT = {
      },
      "battery_capacity" : {
          "icon" : "mdi:battery-arrow-up-outline",
-         "unit_of_measurement" : UnitOfEnergy.WATT_HOUR,
+         "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
          "device_class" : SensorDeviceClass.ENERGY_STORAGE,
-         "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"]
+         "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"],
+         "suggested_display_precision": 2
      },
      "battery_residual" : {
          "icon" : "mdi:battery-arrow-up",
-         "unit_of_measurement" : UnitOfEnergy.WATT_HOUR,
+         "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
          "device_class" : SensorDeviceClass.ENERGY_STORAGE,
-         "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"]
+         "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"],
+         "suggested_display_precision": 2
      }
 }
 

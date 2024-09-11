@@ -337,6 +337,9 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         if self._key in ["battery_charging_time", "battery_charging_end"]:
             value = self.timestring_to_datetime(value, self._key == "battery_charging_end")
 
+        if self._key in ["battery_capacity", "battery_residual"]:
+            value = (float(value) / 1000) + 10
+
         self._attr_native_value = value
 
 
