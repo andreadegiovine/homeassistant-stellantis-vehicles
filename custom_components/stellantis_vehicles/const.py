@@ -107,8 +107,8 @@ SENSORS_DEFAULT = {
     },
     "service_battery_voltage" : {
         "icon" : "mdi:car-battery",
-        "unit_of_measurement" : UnitOfElectricPotential.VOLT,
-        "device_class": SensorDeviceClass.VOLTAGE,
+        "unit_of_measurement" : PERCENTAGE,
+        "device_class": SensorDeviceClass.BATTERY,
         "data_map" : ["battery", "voltage"]
     },
     "type" : {

@@ -12,7 +12,7 @@
   "entity": {
     "sensor": {
       "service_battery_voltage": {
-        "name": "Voltaggio batteria di servizio"
+        "name": "Batteria di servizio"
       },
       "type": {
         "name": "Tipo",
