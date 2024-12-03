@@ -39,16 +39,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.stellantis = None
         self.stellantis_oauth_panel_exist = False
         self.vehicles = {}
+        self.errors = {}
 
     async def async_step_user(self, user_input=None):
         if user_input is None:
-            return self.async_show_form(
-                step_id="user", data_schema=DATA_SCHEMA_1
-            )
+            errors = self.errors
+            self.errors = {}
+            return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA_1, errors=errors)
 
         self.data.update(user_input)
-        await self.async_set_unique_id(self.data["mobile_app"].lower())
-        self._abort_if_unique_id_configured()
         return await self.async_step_oauth(user_input)
 
     async def async_step_oauth(self, user_input=None):
@@ -65,6 +64,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             token_request = await self.stellantis.get_access_token()
         except Exception as e:
+            self.errors[FIELD_MOBILE_APP] = str(e)
             return self.async_external_step_done(next_step_id="user")
 
         self.data.update({
@@ -77,6 +77,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_final(self, user_input=None):
+        await self.async_set_unique_id(self.data["mobile_app"].lower()+str(self.data["access_token"][:5]))
+        self._abort_if_unique_id_configured()
         return self.async_create_entry(title=self.data["mobile_app"], data=self.data)
 
 
@@ -101,11 +103,11 @@ class StellantisOauthView(HomeAssistantView):
                                  <li>Complete the login procedure there too until you see "LOGIN SUCCESSFUL";</li>
                                  <li>Open your browser's DevTools (F12) and then the click on "Network" tab;</li>
                                  <li>Hit the final "OK" button, under "LOGIN SUCCESSFUL";</li>
-                                 <li>Find in the network tab: xxxx://oauth2redirect....?code=<copy this part>&scope=openid...;</li>
+                                 <li>Find in the network tab: ****://oauth2redirect....?code=<strong><u>COPY THIS PART</u></strong>&scope=openid...;</li>
                              </ul>
                              <form action="" method="get">
                                  <input type="hidden" name="flow_id" value="{flow_id}">
-                                 <input type="text" name="oauth_code" required>
+                                 <input type="text" name="oauth_code" placeholder="THE COPIED PART" required>
                                  <button type="submit">Confirm</button>
                              </form>"""
             if "oauth_code" in request.query:
