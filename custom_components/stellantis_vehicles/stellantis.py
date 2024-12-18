@@ -100,13 +100,15 @@ class StellantisBase:
                 _LOGGER.debug(data)
                 _LOGGER.debug(result)
                 _LOGGER.debug("---------- END make_http_request")
-                error = ''
+                error = None
                 if "httpMessage" in result and "moreInformation" in result:
                     error = result["httpMessage"] + " - " + result["moreInformation"]
                 elif "error" in result and "error_description" in result:
                     error = result["error"] + " - " + result["error_description"]
                 elif "message" in result and "code" in result:
                     error = result["message"] + " - " + str(result["code"])
+            await self._session.close()
+            if error:
                 raise Exception(error)
             return result
 

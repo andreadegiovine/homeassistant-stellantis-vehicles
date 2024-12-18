@@ -7,8 +7,8 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues",
   "requirements": [
-    "Pillow==10.*"
+    "Pillow==11.*"
   ],
   "dependencies": ["webhook"],
-  "version": "0.0.16"
+  "version": "0.0.17"
 }
