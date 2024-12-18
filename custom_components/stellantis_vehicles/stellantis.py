@@ -88,6 +88,7 @@ class StellantisBase:
     async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
         async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
             result = {}
+            error = None
             if method != "DELETE":
                 result = await resp.json()
             if not str(resp.status).startswith("20"):
@@ -100,7 +101,6 @@ class StellantisBase:
                 _LOGGER.debug(data)
                 _LOGGER.debug(result)
                 _LOGGER.debug("---------- END make_http_request")
-                error = None
                 if "httpMessage" in result and "moreInformation" in result:
                     error = result["httpMessage"] + " - " + result["moreInformation"]
                 elif "error" in result and "error_description" in result:
