@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, config, vehicle, stellantis, translations):
-        super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=30))
+        super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=90))
 
         self._hass = hass
         self._translations = translations

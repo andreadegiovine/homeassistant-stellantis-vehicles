@@ -107,7 +107,6 @@ class StellantisBase:
                     error = result["error"] + " - " + result["error_description"]
                 elif "message" in result and "code" in result:
                     error = result["message"] + " - " + str(result["code"])
-            await self._session.close()
             if error:
                 raise Exception(error)
             return result
