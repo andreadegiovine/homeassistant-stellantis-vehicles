@@ -101,8 +101,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_otp(self, user_input=None):
         if user_input is None:
             try:
-                #otp_request = await self.stellantis.get_otp_sms()
-                otp_request = "OK"
+                otp_request = await self.stellantis.get_otp_sms()
             except Exception as e:
                 self.errors[FIELD_MOBILE_APP] = str(e)
                 return self.async_step_user()
@@ -112,8 +111,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         #self.data.update(user_input)
 
         try:
-            #otp = await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])
-            otp = True
+            otp = await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])
         except Exception as e:
             self.errors[FIELD_MOBILE_APP] = str(e)
             return self.async_step_user()
@@ -123,8 +121,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_step_user()
 
         try:
-            otp_token_request = {'access_token': 'acb021b1-9857-4748-afbf-02ba4be29f1f', 'refresh_token': '61fde6a2-2898-4684-88ee-eb2de44c9bac', 'scope': 'psaCustomerId psaMqttService', 'token_type': 'Bearer', 'expires_in': 10}
-            #otp_token_request = await self.stellantis.get_mqtt_access_token()
+            otp_token_request = await self.stellantis.get_mqtt_access_token()
         except Exception as e:
             self.errors[FIELD_MOBILE_APP] = str(e)
             return self.async_step_user()
