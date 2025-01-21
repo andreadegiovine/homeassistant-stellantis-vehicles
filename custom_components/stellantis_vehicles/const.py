@@ -48,7 +48,11 @@ OAUTH_BASE_URL = "{#oauth_url#}/am/oauth2"
 OAUTH_AUTHORIZE_URL = OAUTH_BASE_URL + "/authorize"
 OAUTH_TOKEN_URL = OAUTH_BASE_URL + "/access_token"
 
-CAR_API_BASE_URL = "https://api.groupe-psa.com/connectedcar/v4/user"
+API_BASE_URL = "https://api.groupe-psa.com"
+GET_USER_INFO_URL = API_BASE_URL + "/applications/cvs/v4/mauv/car-associations"
+GET_OTP_URL = API_BASE_URL + "/applications/cvs/v4/mobile/smsCode"
+GET_MQTT_TOKEN_URL = API_BASE_URL + "/connectedcar/v4/virtualkey/remoteaccess/token"
+CAR_API_BASE_URL = API_BASE_URL + "/connectedcar/v4/user"
 CAR_API_CALLBACK_URL = CAR_API_BASE_URL + "/callbacks"
 CAR_API_DELETE_CALLBACK_URL = CAR_API_CALLBACK_URL + "/{#callback_id#}"
 CAR_API_VEHICLES_URL = CAR_API_BASE_URL + "/vehicles"
@@ -56,7 +60,12 @@ CAR_API_GET_VEHICLE_STATUS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/status"
 CAR_API_SEND_COMMAND_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/callbacks/{#callback_id#}/remotes"
 CAR_API_CHECK_COMMAND_URL = CAR_API_SEND_COMMAND_URL + "/{#remote_action_id#}"
 
-CLIENT_ID_QUERY_PARAM = {
+MQTT_SERVER = "mwa.mpsa.com"
+MQTT_RESP_TOPIC = "psa/RemoteServices/to/cid/"
+MQTT_EVENT_TOPIC = "psa/RemoteServices/events/MPHRTServices/"
+MQTT_REQ_TOPIC = "psa/RemoteServices/from/cid/"
+
+CLIENT_ID_QUERY_PARAMS = {
     "client_id": "{#client_id#}",
     "locale": "{#locale_2#}"
 }
@@ -65,13 +74,20 @@ OAUTH_AUTHORIZE_QUERY_PARAMS = {
     "client_id": "{#client_id#}",
     "response_type": "code",
     "redirect_uri": "{#scheme#}://oauth2redirect/{#locale#}",
-    "scope": "openid profile",
+    "scope": "openid profile email",
     "locale": "{#locale_2#}"
 }
 
 OAUTH_TOKEN_HEADERS = {
     "Content-Type": "application/x-www-form-urlencoded",
     "Authorization": "Basic {#basic_token#}",
+}
+
+GET_OTP_HEADERS = {
+    "Authorization": "Bearer {#access_token#}",
+    "User-Agent": "okhttp/4.8.0",
+    "Accept": "application/hal+json",
+    "x-introspect-realm": "{#realm#}"
 }
 
 OAUTH_GET_TOKEN_QUERY_PARAMS = {
@@ -91,6 +107,8 @@ CAR_API_HEADERS = {
 }
 
 FIELD_MOBILE_APP = "mobile_app"
+FIELD_SMS_CODE = "sms_code"
+FIELD_PIN_CODE = "pin_code"
 
 WEBHOOK_ID = "stellantis-vehicles"
 

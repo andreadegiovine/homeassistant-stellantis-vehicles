@@ -63,12 +63,38 @@
       "command_status": {
         "name": "Command status",
         "state": {
-          "99": "Not compatible",
           "900": "Accepted",
           "901": "Vehicle as sleep",
           "903": "Forwarded to vehicle",
-          "0": "Complete",
-          "300": "Canceled"
+          "0": "Complete"
+// ------ WEB API COMMAND VERSION
+//          "Success": "Success",
+//          "AlreadyDone": "Already done",
+//          "Failed": "Failed",
+//          "Accepted": "Accepted",
+//          "WakingUpVehicle": "Waking up vehicle",
+//          "CheckingVehicle": "Checking vehicle",
+//          "SentToVehicle": "Sent to vehicle",
+//          "VehicleBatteryChargeTooLow": "Vehicle battery charge too low",
+//          "TooManyWakeUpsOverMonth": "Too many WakeUp over month",
+//          "GeneralError": "General error",
+//          "VehicleError": "Vehicle error",
+//          "WrongCommand": "Wrong command",
+//          "VehicleConnectionTimeout": "Vehicle connection timeout",
+//          "MissingRights": "Missing rights",
+//          "NotPossibleDueToVehicleBatteryLevel": "Not possible due to vehicle battery level",
+//          "NotPossibleDueToVehiclePrivacyLevel": "Not possible due to vehicle privacy level",
+//          "TooManyRequestInShortTime": "Too many request in short time",
+//          "SameActionInProgress": "Same action in progress",
+//          "NotPossibleDueToVehicleStolenState": "Not possible due to vehicle stolen state",
+//          "VehicleInUse": "Vehicle in use",
+//          "TooManyRequestSent": "Too many request sent",
+//          "DoorsOpen": "Doors open",
+//          "VehicleErrorOrCidInside": "Vehicle error or cid inside",
+//          "CidInside": "Cid inside",
+//          "ExternalChargingSystemError": "External charging system error",
+//          "VehicleChargingSystemError": "Vehicle charging system error",
+//          "VehicleIsNotLocked": "Vehicle is not locked"
         }
       }
     },

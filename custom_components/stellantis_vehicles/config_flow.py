@@ -11,7 +11,9 @@ from homeassistant.helpers.selector import selector
 from .const import (
     DOMAIN,
     FIELD_MOBILE_APP,
-    MOBILE_APPS
+    MOBILE_APPS,
+    FIELD_SMS_CODE,
+    FIELD_PIN_CODE
 )
 
 from .stellantis import StellantisOauth
@@ -24,7 +26,12 @@ from pathlib import Path
 _LOGGER = logging.getLogger(__name__)
 
 DATA_SCHEMA_1 = vol.Schema({
-    vol.Required(FIELD_MOBILE_APP): selector({ "select": { "options": list(MOBILE_APPS), "mode": "dropdown", "translation_key": FIELD_MOBILE_APP } }),
+    vol.Required(FIELD_MOBILE_APP): selector({ "select": { "options": list(MOBILE_APPS), "mode": "dropdown", "translation_key": FIELD_MOBILE_APP } })
+})
+
+DATA_SCHEMA_2 = vol.Schema({
+    vol.Required(FIELD_SMS_CODE): str,
+    vol.Required(FIELD_PIN_CODE): str
 })
 
 OAUTH_URL = '/stellantis-vehicles/oauth'
@@ -48,6 +55,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA_1, errors=errors)
 
         self.data.update(user_input)
+
         return await self.async_step_oauth(user_input)
 
     async def async_step_oauth(self, user_input=None):
@@ -73,7 +81,61 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "expires_in": (datetime.now() + timedelta(0, int(token_request["expires_in"]))).isoformat()
         })
 
-        return self.async_external_step_done(next_step_id="final")
+        self.stellantis.save_config({"access_token": self.data["access_token"]})
+
+        try:
+            user_info_request = await self.stellantis.get_user_info()
+        except Exception as e:
+            self.errors[FIELD_MOBILE_APP] = str(e)
+            return self.async_external_step_done(next_step_id="user")
+
+        if not user_info_request or not "customer" in user_info_request[0]:
+            self.errors[FIELD_MOBILE_APP] = "Customer info error"
+            return self.async_external_step_done(next_step_id="user")
+
+        self.data.update({"customer_id": user_info_request[0]["customer"]})
+
+        return self.async_external_step_done(next_step_id="otp")
+
+
+    async def async_step_otp(self, user_input=None):
+        if user_input is None:
+            try:
+                #otp_request = await self.stellantis.get_otp_sms()
+                otp_request = "OK"
+            except Exception as e:
+                self.errors[FIELD_MOBILE_APP] = str(e)
+                return self.async_step_user()
+
+            return self.async_show_form(step_id="otp", data_schema=DATA_SCHEMA_2)
+
+        #self.data.update(user_input)
+
+        try:
+            #otp = await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])
+            otp = True
+        except Exception as e:
+            self.errors[FIELD_MOBILE_APP] = str(e)
+            return self.async_step_user()
+
+        if not otp:
+            self.errors[FIELD_MOBILE_APP] = str("OTP error")
+            return self.async_step_user()
+
+        try:
+            otp_token_request = {'access_token': 'acb021b1-9857-4748-afbf-02ba4be29f1f', 'refresh_token': '61fde6a2-2898-4684-88ee-eb2de44c9bac', 'scope': 'psaCustomerId psaMqttService', 'token_type': 'Bearer', 'expires_in': 10}
+            #otp_token_request = await self.stellantis.get_mqtt_access_token()
+        except Exception as e:
+            self.errors[FIELD_MOBILE_APP] = str(e)
+            return self.async_step_user()
+
+        self.data.update({"mqtt": {
+            "access_token": otp_token_request["access_token"],
+            "refresh_token": otp_token_request["refresh_token"],
+            "expires_in": (datetime.now() + timedelta(0, int(otp_token_request["expires_in"]))).isoformat()
+        }})
+
+        return await self.async_step_final(user_input)
 
 
     async def async_step_final(self, user_input=None):
