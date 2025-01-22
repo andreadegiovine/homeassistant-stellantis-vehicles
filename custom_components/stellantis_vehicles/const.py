@@ -4,8 +4,6 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
 DOMAIN = "stellantis_vehicles"
 
-PLATFORMS = ["sensor"]
-
 MOBILE_APPS = {
     "MyPeugeot": {
         "oauth_url": "https://idpcvs.peugeot.com",
@@ -53,12 +51,8 @@ GET_USER_INFO_URL = API_BASE_URL + "/applications/cvs/v4/mauv/car-associations"
 GET_OTP_URL = API_BASE_URL + "/applications/cvs/v4/mobile/smsCode"
 GET_MQTT_TOKEN_URL = API_BASE_URL + "/connectedcar/v4/virtualkey/remoteaccess/token"
 CAR_API_BASE_URL = API_BASE_URL + "/connectedcar/v4/user"
-CAR_API_CALLBACK_URL = CAR_API_BASE_URL + "/callbacks"
-CAR_API_DELETE_CALLBACK_URL = CAR_API_CALLBACK_URL + "/{#callback_id#}"
 CAR_API_VEHICLES_URL = CAR_API_BASE_URL + "/vehicles"
 CAR_API_GET_VEHICLE_STATUS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/status"
-CAR_API_SEND_COMMAND_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/callbacks/{#callback_id#}/remotes"
-CAR_API_CHECK_COMMAND_URL = CAR_API_SEND_COMMAND_URL + "/{#remote_action_id#}"
 
 MQTT_SERVER = "mwa.mpsa.com"
 MQTT_RESP_TOPIC = "psa/RemoteServices/to/cid/"
@@ -110,13 +104,13 @@ FIELD_MOBILE_APP = "mobile_app"
 FIELD_SMS_CODE = "sms_code"
 FIELD_PIN_CODE = "pin_code"
 
-WEBHOOK_ID = "stellantis-vehicles"
-
 PLATFORMS = [
     "device_tracker",
     "sensor",
     "binary_sensor",
-    "button"
+    "button",
+    "number",
+    "switch"
 ]
 
 SENSORS_DEFAULT = {

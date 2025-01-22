@@ -1,7 +1,6 @@
 import logging
 
 from homeassistant.helpers.entity import EntityDescription
-from homeassistant.const import EntityCategory
 from .base import StellantisBaseDevice
 
 from .const import (

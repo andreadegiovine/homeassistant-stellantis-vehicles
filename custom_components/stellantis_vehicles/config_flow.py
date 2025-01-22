@@ -7,7 +7,9 @@ import urllib.parse
 from homeassistant.components.http import KEY_HASS, HomeAssistantView
 from homeassistant import config_entries
 from homeassistant.helpers.selector import selector
+from homeassistant.helpers.network import get_url
 
+from .stellantis import StellantisOauth
 from .const import (
     DOMAIN,
     FIELD_MOBILE_APP,
@@ -15,13 +17,6 @@ from .const import (
     FIELD_SMS_CODE,
     FIELD_PIN_CODE
 )
-
-from .stellantis import StellantisOauth
-from homeassistant.helpers.network import get_url
-from homeassistant.components import panel_custom
-from homeassistant.components.frontend import async_remove_panel
-
-from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,8 +102,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_step_user()
 
             return self.async_show_form(step_id="otp", data_schema=DATA_SCHEMA_2)
-
-        #self.data.update(user_input)
 
         try:
             otp = await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])

@@ -1,42 +1,3 @@
-from .const import (
-    DOMAIN,
-    MOBILE_APPS,
-    WEBHOOK_ID,
-    OAUTH_AUTHORIZE_URL,
-    OAUTH_TOKEN_URL,
-    OAUTH_AUTHORIZE_QUERY_PARAMS,
-    OAUTH_GET_TOKEN_QUERY_PARAMS,
-    OAUTH_REFRESH_TOKEN_QUERY_PARAMS,
-    OAUTH_TOKEN_HEADERS,
-    CAR_API_VEHICLES_URL,
-    CLIENT_ID_QUERY_PARAMS,
-    CAR_API_HEADERS,
-    CAR_API_GET_VEHICLE_STATUS_URL,
-    CAR_API_CALLBACK_URL,
-    CAR_API_DELETE_CALLBACK_URL,
-    CAR_API_SEND_COMMAND_URL,
-    CAR_API_CHECK_COMMAND_URL,
-    GET_OTP_URL,
-    GET_OTP_HEADERS,
-    GET_MQTT_TOKEN_URL,
-    MQTT_SERVER,
-    MQTT_RESP_TOPIC,
-    MQTT_EVENT_TOPIC,
-    MQTT_REQ_TOPIC,
-    GET_USER_INFO_URL
-)
-
-from .otp.otp import Otp
-
-from homeassistant.components import (panel_custom, webhook)
-from homeassistant.components.webhook import DOMAIN as WEBHOOK_DOMAIN
-from homeassistant.components.frontend import async_remove_panel
-from homeassistant.helpers.network import get_url
-from homeassistant.helpers import translation
-
-from .base import StellantisVehicleCoordinator
-
-from pathlib import Path
 import logging
 import aiohttp
 import base64
@@ -48,8 +9,34 @@ import paho.mqtt.client as mqtt
 import json
 from uuid import uuid4
 import asyncio
-
 from datetime import ( datetime, timedelta )
+
+from homeassistant.helpers import translation
+from .base import StellantisVehicleCoordinator
+from .otp.otp import Otp
+
+from .const import (
+    DOMAIN,
+    MOBILE_APPS,
+    OAUTH_AUTHORIZE_URL,
+    OAUTH_TOKEN_URL,
+    OAUTH_AUTHORIZE_QUERY_PARAMS,
+    OAUTH_GET_TOKEN_QUERY_PARAMS,
+    OAUTH_REFRESH_TOKEN_QUERY_PARAMS,
+    OAUTH_TOKEN_HEADERS,
+    CAR_API_VEHICLES_URL,
+    CLIENT_ID_QUERY_PARAMS,
+    CAR_API_HEADERS,
+    CAR_API_GET_VEHICLE_STATUS_URL,
+    GET_OTP_URL,
+    GET_OTP_HEADERS,
+    GET_MQTT_TOKEN_URL,
+    MQTT_SERVER,
+    MQTT_RESP_TOPIC,
+    MQTT_EVENT_TOPIC,
+    MQTT_REQ_TOPIC,
+    GET_USER_INFO_URL
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -287,8 +274,6 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
-# ------ MQTT COMMAND VERSION
-
     async def refresh_mqtt_token(self, force=False):
         _LOGGER.debug("---------- START refresh_mqtt_token")
         await self.refresh_token()
@@ -329,7 +314,6 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- START _on_mqtt_connect")
         _LOGGER.debug("Code %s", result_code)
         topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
-        #topics = []
         for vehicle in self._vehicles:
             topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
         for topic in topics:
@@ -410,130 +394,3 @@ class StellantisVehicles(StellantisBase):
             self._mqtt_last_request = [service, message]
         _LOGGER.debug("---------- END send_mqtt_message")
         return action_id
-
-# ------ WEB API COMMAND VERSION
-#
-#     async def _handle_webhook(self, hass, webhook_id, request):
-#         _LOGGER.debug("---------- START _handle_webhook")
-#         body = await request.json()
-#         _LOGGER.debug(body)
-#         event = body["remoteEvent"]
-#         vin = event["vin"]
-#         coordinator = await self.async_get_coordinator_by_vin(vin)
-#         name = event["remoteType"]
-#         action_id = event["remoteActionId"]
-#         type = event["eventStatus"]["type"]
-#         status = event["eventStatus"]["status"]
-#         detail = None
-#         if "failureCause" in event["eventStatus"]:
-#             detail = event["eventStatus"]["failureCause"]
-#         if coordinator:
-#             await coordinator.update_command_history(action_id, {"status": status, "details": detail, "source": "Callback"})
-#         _LOGGER.debug("---------- END _handle_webhook")
-#
-#     def register_webhook(self):
-#         if not WEBHOOK_ID in self._hass.data.setdefault(WEBHOOK_DOMAIN, {}):
-#             webhook.async_register(self._hass, DOMAIN, "Stellantis Vehicles", WEBHOOK_ID, self._handle_webhook)
-#
-#     async def remove_webhooks(self):
-#         if WEBHOOK_ID in self._hass.data.setdefault(WEBHOOK_DOMAIN, {}):
-#             webhook.async_unregister(self._hass, WEBHOOK_ID)
-#
-#     async def get_callback_id(self):
-#         _LOGGER.debug("---------- START get_callback_id")
-#         await self.refresh_token()
-#         callback_target = get_url(self._hass, prefer_external=True, prefer_cloud=True) + "/api/webhook/" + WEBHOOK_ID
-#         callback_id = self.get_config("callback_id")
-#         # Check for existing callback
-#         if not callback_id:
-#             _LOGGER.debug("check_callback")
-#             url = self.apply_query_params(CAR_API_CALLBACK_URL, CLIENT_ID_QUERY_PARAMS)
-#             headers = self.apply_headers_params(CAR_API_HEADERS)
-#             _LOGGER.debug(url)
-#             _LOGGER.debug(headers)
-#             try:
-#                 callbacks_request =  await self.make_http_request(url, 'GET', headers)
-#                 _LOGGER.debug(callbacks_request)
-#                 for callback in callbacks_request["_embedded"]["callbacks"]:
-#                     if callback["status"] == "Running" and callback["subscribe"]["callback"]["webhook"]["target"] == callback_target:
-#                         callback_id = callback["id"]
-#             except Exception as e:
-#                 _LOGGER.debug(str(e))
-#         # Create callback
-#         if not callback_id:
-#             _LOGGER.debug("create_callback")
-#             url = self.apply_query_params(CAR_API_CALLBACK_URL, CLIENT_ID_QUERY_PARAMS)
-#             headers = self.apply_headers_params(CAR_API_HEADERS)
-#             json = {
-#                "label": "HomeAssistant - Stellantis Vehicles",
-#                "type": ["Remote"],
-#                "callback": {
-#                    "webhook": {
-#                        "name": "HomeAssistant - Stellantis Vehicles",
-#                        "target": callback_target,
-#                        "attributes": [
-#                            {
-#                                "type": "Query",
-#                                "key": "vin",
-#                                "value": "$Vin"
-#                            }
-#                        ]
-#                    }
-#                }
-#             }
-#             _LOGGER.debug(url)
-#             _LOGGER.debug(headers)
-#             _LOGGER.debug(json)
-#             callback_request =  await self.make_http_request(url, 'POST', headers, None, json)
-#             _LOGGER.debug(callback_request)
-#             callback_id = callback_request["callbackId"]
-#         # Save callback id
-#         if callback_id:
-#             new_config = {
-#                 "callback_id": callback_id
-#             }
-#             self.save_config(new_config)
-#             self.update_stored_config("callback_id", new_config["callback_id"])
-#
-#         _LOGGER.debug("---------- END get_callback_id")
-#         return self.get_config("callback_id")
-#
-#     async def delete_user_callback(self):
-#         _LOGGER.debug("---------- START delete_user_callback")
-#         await self.refresh_token()
-#         if self.get_config("callback_id"):
-#             url = self.apply_query_params(CAR_API_DELETE_CALLBACK_URL, CLIENT_ID_QUERY_PARAMS)
-#             headers = self.apply_headers_params(CAR_API_HEADERS)
-#             delete_request = await self.make_http_request(url, 'DELETE', headers)
-#             _LOGGER.debug(url)
-#             _LOGGER.debug(headers)
-#             _LOGGER.debug(delete_request)
-#         _LOGGER.debug("---------- END delete_user_callback")
-#         return True
-#
-#     async def get_action_status(self, action_id):
-#         _LOGGER.debug("---------- START get_action_status")
-#         await self.refresh_token()
-#         self._config["remote_action_id"] = action_id
-#         url = self.apply_query_params(CAR_API_CHECK_COMMAND_URL, CLIENT_ID_QUERY_PARAMS)
-#         del self._config["remote_action_id"]
-#         headers = self.apply_headers_params(CAR_API_HEADERS)
-#         action_status_request = await self.make_http_request(url, 'GET', headers)
-#         _LOGGER.debug(url)
-#         _LOGGER.debug(headers)
-#         _LOGGER.debug(action_status_request)
-#         _LOGGER.debug("---------- END get_action_status")
-#         return action_status_request
-#
-#     async def send_command(self, json):
-#         _LOGGER.debug("---------- START send_command")
-#         await self.refresh_token()
-#         url = self.apply_query_params(CAR_API_SEND_COMMAND_URL, CLIENT_ID_QUERY_PARAMS)
-#         headers = self.apply_headers_params(CAR_API_HEADERS)
-#         command_request = await self.make_http_request(url, 'POST', headers, None, json)
-#         _LOGGER.debug(url)
-#         _LOGGER.debug(headers)
-#         _LOGGER.debug(json)
-#         _LOGGER.debug(command_request)
-#         _LOGGER.debug("---------- END send_command")
-#         return command_request

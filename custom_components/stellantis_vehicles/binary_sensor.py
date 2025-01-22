@@ -31,6 +31,4 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                 )
                 entities.extend([StellantisBaseBinarySensor(coordinator, description, default_value.get("data_map", None), default_value.get("on_value", None))])
 
-#         await coordinator.async_request_refresh()
-
     async_add_entities(entities)

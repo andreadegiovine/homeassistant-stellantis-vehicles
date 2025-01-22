@@ -1,16 +1,17 @@
 import logging
 import re
 from datetime import datetime, timedelta
-import pytz
-from functools import partial
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
-from homeassistant.components.sensor import ( RestoreSensor, SensorStateClass, SensorDeviceClass )
+from homeassistant.components.sensor import RestoreSensor
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.button import ButtonEntity
+from homeassistant.components.number import NumberEntity
+from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import callback
-from homeassistant.helpers.event import async_track_point_in_time
+
+from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
 
 from .const import (
     DOMAIN
@@ -37,9 +38,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             # Vehicle status
             self._data = await self._stellantis.get_vehicle_status()
-# ------ WEB API COMMAND VERSION
-#             # Vehicle callback
-#             await self._stellantis.get_callback_id()
         except Exception as e:
             _LOGGER.error(str(e))
         _LOGGER.debug(self._config)
@@ -56,7 +54,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             action_name = self._commands_history[action_id]["name"]
             action_updates = self._commands_history[action_id]["updates"]
             reorder_updates = reversed(action_updates)
-#             action_updates.reverse()
             for update in reorder_updates:
                 status = update["info"]["status"]
                 translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{status}"
@@ -85,77 +82,75 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if not action_id in self._commands_history:
             return
         if update:
-            self._commands_history[action_id]["updates"].append({"info": update, "date": datetime.now()})
+            self._commands_history[action_id]["updates"].append({"info": update, "date": get_datetime()})
             if update["status"] == "99":
                 self._disabled_commands.append(self._commands_history[action_id]["name"])
-
-# ------ WEB API COMMAND VERSION
-#         if retry:
-#             self._commands_history[action_id]["retry"] = int(retry)
-#
         self.async_update_listeners()
-
-# ------ WEB API COMMAND VERSION
-#
-#     async def get_action_status(self, description: str, now: datetime, *, action_id: str):
-#         action_history = self._commands_history[action_id]
-#         if not action_history["updates"]:
-#             try:
-#                 action_status_request = await self._stellantis.get_action_status(action_id)
-#             except Exception as e:
-#                 _LOGGER.error(str(e))
-#                 if action_history["retry"] > 3:
-#                     _LOGGER.debug("Max retry")
-#                     await self.update_command_history(action_id, {"status": "Unknown: max fetch retry", "source": "Request"})
-#                     return
-#                 else:
-#                     current_retry = action_history["retry"] + 1
-#                     await self.update_command_history(action_id, None, current_retry)
-#                     _LOGGER.debug("Current retry " + str(current_retry))
-#                     async_track_point_in_time(
-#                         self._hass,
-#                         partial(
-#                             self.get_action_status,
-#                             f"check command status {action_id}",
-#                             action_id=action_id,
-#                         ),
-#                         (datetime.now() + timedelta(seconds=20))
-#                     )
-#                     return
-#
-#             name = action_status_request["type"]
-#             status = action_status_request["status"]
-#             detail = None
-#             if "failureCause" in action_status_request:
-#                 detail = action_status_request["failureCause"]
-#             await self.update_command_history(action_id, {"status": status, "details": detail,  "source": "Request"})
 
     async def send_command(self, name, service, message):
         action_id = await self._stellantis.send_mqtt_message(service, message)
         self._commands_history.update({action_id: {"name": name, "updates": [], "retry": 0}})
 
-# ------ WEB API COMMAND VERSION
-#
-#         if not self.pending_action:
-#             try:
-#                 command_request = await self._stellantis.send_command(data)
-#             except Exception as e:
-#                 _LOGGER.error(str(e))
-#                 return
-#
-#             action_id = command_request["remoteActionId"]
-#             self._commands_history.update({action_id: {"name": name, "updates": [], "retry": 0}})
-#             async_track_point_in_time(
-#                 self._hass,
-#                 partial(
-#                     self.get_action_status,
-#                     f"check command status {action_id}",
-#                     action_id=action_id,
-#                 ),
-#                 (datetime.now() + timedelta(seconds=15))
-#             )
-#         self.async_update_listeners()
+    async def send_wakeup_command(self, button_name):
+        await self.send_command(button_name, "/VehCharge/state", {"action": "state"})
 
+    async def send_doors_command(self, button_name):
+        current_status = self._sensors["doors"]
+        new_status = "unlock"
+        if current_status == "Deactive":
+            new_status = "lock"
+        await self.send_command(button_name, "/Doors", {"action": new_status})
+
+    async def send_horn_command(self, button_name):
+        await self.send_command(button_name, "/Horn", {"nb_horn": "2", "action": "activate"})
+
+    async def send_lights_command(self, button_name):
+        await self.send_command(button_name, "/Lights", {"duration": "10", "action": "activate"})
+
+    async def send_charge_command(self, button_name):
+        current_hour = self._data["energies"][0]["extension"]["electric"]["charging"]["nextDelayedTime"]
+        date = date_from_pt_string(current_hour)
+        current_status = self._sensors["battery_charging"]
+        charge_type = "immediate"
+        if current_status == "InProgress":
+            charge_type = "delayed"
+        await self.send_command(button_name, "/VehCharge", {"program": {"hour": date.hour, "minute": date.minute}, "type": charge_type})
+
+    def get_programs(self):
+        default_programs = {
+           "program1": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
+           "program2": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
+           "program3": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
+           "program4": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0}
+        }
+        active_programs = None
+        if "programs" in self._data["preconditionning"]["airConditioning"]:
+            current_programs = self._data["preconditionning"]["airConditioning"]["programs"]
+            for program in current_programs:
+                date = date_from_pt_string(program["start"])
+                config = {
+                    "day": [
+                        int("Mon" in program["occurence"]["day"]),
+                        int("Tue" in program["occurence"]["day"]),
+                        int("Wed" in program["occurence"]["day"]),
+                        int("Thu" in program["occurence"]["day"]),
+                        int("Fri" in program["occurence"]["day"]),
+                        int("Sat" in program["occurence"]["day"]),
+                        int("Sun" in program["occurence"]["day"])
+                    ],
+                    "hour": date.hour,
+                    "minute": date.minute,
+                    "on": int(program["enabled"])
+                }
+                default_programs["program"+str(program["slot"])] = config
+        return default_programs
+
+    async def send_air_conditioning_command(self, button_name):
+        current_status = self._sensors["air_conditioning"]
+        new_status = "activate"
+        if current_status == "Active":
+            new_status = "deactivate"
+        await self.send_command(button_name, "/ThermalPrecond", {"asap": new_status, "programs": self.get_programs()})
 
 
 class StellantisBaseEntity(CoordinatorEntity):
@@ -315,28 +310,6 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                 result = self._available[key] == self._coordinator._sensors[key]
         return result
 
-    def timestring_to_datetime(self, timestring, sum_to_now = False):
-        regex = 'PT'
-        if timestring.find("H") != -1:
-            regex = regex + "%HH"
-        if timestring.find("M") != -1:
-            regex = regex + "%MM"
-        if timestring.find("S") != -1:
-            regex = regex + "%SS"
-        try:
-            date = datetime.strptime(timestring,regex)
-            if sum_to_now:
-                return datetime.now().astimezone(pytz.timezone('Europe/Rome')) + timedelta(hours=date.hour, minutes=date.minute)
-            else:
-                today = datetime.now().astimezone(pytz.timezone('Europe/Rome')).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
-                tomorrow = (today + timedelta(days=1)).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
-                if today < datetime.now().astimezone(pytz.timezone('Europe/Rome')):
-                    return tomorrow
-                else:
-                    return today
-        except Exception as e:
-            return None
-
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
         self._coordinator._sensors[self._key] = value
@@ -347,7 +320,24 @@ class StellantisBaseSensor(StellantisRestoreSensor):
             return
 
         if self._key in ["battery_charging_time", "battery_charging_end"]:
-            value = self.timestring_to_datetime(value, self._key == "battery_charging_end")
+            value = timestring_to_datetime(value, self._key == "battery_charging_end")
+            if self._key == "battery_charging_end":
+                charge_limit_on = "switch_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["switch_battery_charging_limit"]
+                charge_limit = None
+                if "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]:
+                    charge_limit = self._coordinator._sensors["number_battery_charging_limit"]
+                if charge_limit_on and charge_limit:
+                    current_battery = self._coordinator._sensors["battery"]
+                    now_timestamp = datetime.timestamp(get_datetime())
+                    value_timestamp = datetime.timestamp(value)
+                    diff = value_timestamp - now_timestamp
+                    limit_diff = (diff / (100 - int(current_battery))) * (int(charge_limit) - int(current_battery))
+                    value = datetime.fromtimestamp((now_timestamp + limit_diff))
+
+                    if int(current_battery) >= int(charge_limit):
+                        button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop", "name")
+                        self._coordinator.send_charge_command(button_name)
+
 
         if self._key in ["battery_capacity", "battery_residual"]:
             value = (float(value) / 1000) + 10
@@ -377,12 +367,41 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
-# ------ WEB API COMMAND VERSION
-#         return not self._coordinator.pending_action
         return self.name not in self._coordinator._disabled_commands and not self._coordinator.pending_action
 
     async def async_press(self):
         raise NotImplementedError
+
+    def coordinator_update(self):
+        return True
+
+
+class StellantisBaseNumberSensor(StellantisBaseEntity, NumberEntity):
+    @property
+    def native_value(self) -> float:
+        if f"number_{self._key}" in self._coordinator._sensors:
+            return self._coordinator._sensors[f"number_{self._key}"]
+        return None
+
+    async def async_set_native_value(self, value: float) -> None:
+        self._coordinator._sensors[f"number_{self._key}"] = value
+        await self._coordinator.async_refresh()
+
+    def coordinator_update(self):
+        return True
+
+class StellantisBaseSwitch(StellantisBaseEntity, SwitchEntity):
+    @property
+    def is_on(self):
+        return f"switch_{self._key}" in self._coordinator._sensors and self._coordinator._sensors[f"switch_{self._key}"]
+
+    async def async_turn_on(self, **kwargs):
+        self._coordinator._sensors[f"switch_{self._key}"] = True
+        await self._coordinator.async_refresh()
+
+    async def async_turn_off(self, **kwargs):
+        self._coordinator._sensors[f"switch_{self._key}"] = False
+        await self._coordinator.async_refresh()
 
     def coordinator_update(self):
         return True

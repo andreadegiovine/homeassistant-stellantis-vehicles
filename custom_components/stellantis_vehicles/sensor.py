@@ -1,6 +1,6 @@
 import logging
 
-from homeassistant.components.sensor import ( SensorEntityDescription, RestoreSensor )
+from homeassistant.components.sensor import SensorEntityDescription
 from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 
 from .const import (

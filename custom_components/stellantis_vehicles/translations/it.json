@@ -110,11 +110,24 @@
       },
       "charge_start_stop": {
         "name": "Start/Stop ricarica"
+      },
+      "air_conditioning": {
+        "name": "Start/Stop aria condizionata"
       }
     },
     "device_tracker": {
       "vehicle": {
         "name": "Veicolo"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Limite ricarica batteria"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Limite ricarica batteria"
       }
     }
   }
