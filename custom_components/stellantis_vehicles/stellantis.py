@@ -98,12 +98,12 @@ class StellantisBase:
             if not str(resp.status).startswith("20"):
                 _LOGGER.debug("---------- START make_http_request")
                 _LOGGER.error(f"{method} request error " + str(resp.status))
-                _LOGGER.debug(resp.url)
-                _LOGGER.debug(headers)
-                _LOGGER.debug(params)
-                _LOGGER.debug(json)
-                _LOGGER.debug(data)
-                _LOGGER.debug(result)
+                _LOGGER.error(resp.url)
+                _LOGGER.error(headers)
+                _LOGGER.error(params)
+                _LOGGER.error(json)
+                _LOGGER.error(data)
+                _LOGGER.error(result)
                 _LOGGER.debug("---------- END make_http_request")
                 if "httpMessage" in result and "moreInformation" in result:
                     error = result["httpMessage"] + " - " + result["moreInformation"]
