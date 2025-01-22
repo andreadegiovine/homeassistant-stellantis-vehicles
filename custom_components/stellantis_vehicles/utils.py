@@ -1,5 +1,8 @@
-from datetime import UTC, datetime, timezone
+import logging
+from datetime import UTC, datetime, timezone, timedelta
 import pytz
+
+_LOGGER = logging.getLogger(__name__)
 
 def get_datetime(date=None):
     if date == None:
@@ -16,7 +19,7 @@ def date_from_pt_string(pt_string):
         regex = regex + "%MM"
     if pt_string.find("S") != -1:
         regex = regex + "%SS"
-    return datetime.strptime(pt_string,regex)
+    return datetime.strptime(pt_string, regex)
 
 def timestring_to_datetime(timestring, sum_to_now = False):
     try:
@@ -31,4 +34,5 @@ def timestring_to_datetime(timestring, sum_to_now = False):
             else:
                 return today
     except Exception as e:
+        _LOGGER.error(str(e))
         return None

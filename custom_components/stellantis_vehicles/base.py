@@ -332,7 +332,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                     value_timestamp = datetime.timestamp(value)
                     diff = value_timestamp - now_timestamp
                     limit_diff = (diff / (100 - int(current_battery))) * (int(charge_limit) - int(current_battery))
-                    value = datetime.fromtimestamp((now_timestamp + limit_diff))
+                    value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
 
                     if int(current_battery) >= int(charge_limit):
                         button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop", "name")
