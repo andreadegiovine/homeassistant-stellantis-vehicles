@@ -335,7 +335,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                     value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
 
                     if int(current_battery) >= int(charge_limit):
-                        button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop", "name")
+                        button_name = self._coordinator._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop", "name")
                         self._coordinator.send_charge_command(button_name)
 
 
