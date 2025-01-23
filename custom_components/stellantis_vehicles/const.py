@@ -85,7 +85,7 @@ GET_OTP_HEADERS = {
 }
 
 OAUTH_GET_TOKEN_QUERY_PARAMS = {
-    "redirect_uri": "{#scheme#}://oauth2redirect/{#locale#}",
+    "redirect_uri": "{#scheme#}://oauth2redirect/it",
     "grant_type": "authorization_code",
     "code": "{#oauth_code#}"
 }
