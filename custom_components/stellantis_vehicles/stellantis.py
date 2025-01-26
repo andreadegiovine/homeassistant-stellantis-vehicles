@@ -49,16 +49,23 @@ class StellantisBase:
         self._session = aiohttp.ClientSession()
         self.otp = None
 
-    def set_mobile_app(self, mobile_app):
+    def set_mobile_app(self, mobile_app, country_code):
         if mobile_app in MOBILE_APPS:
-            self.save_config(MOBILE_APPS[mobile_app])
-            self.save_config({"basic_token": base64.b64encode(bytes(self._config["client_id"] + ":" + self._config["secret"], 'utf-8')).decode('utf-8')})
+            app_data = deepcopy(MOBILE_APPS[mobile_app])
+            del app_data["configs"]
+            app_data.update(MOBILE_APPS[mobile_app]["configs"][country_code])
+            self.save_config(app_data)
+            self.save_config({
+                "basic_token": base64.b64encode(bytes(self._config["client_id"] + ":" + self._config["client_secret"], 'utf-8')).decode('utf-8'),
+                "culture": country_code.lower()
+            })
+            _LOGGER.error(self._config)
 
     def save_config(self, data):
         for key in data:
             self._config[key] = data[key]
             if key == "mobile_app":
-                self.set_mobile_app(data[key])
+                self.set_mobile_app(data[key], self._config["country_code"])
 
     def get_config(self, key):
         if key in self._config:
@@ -66,11 +73,6 @@ class StellantisBase:
         return None
 
     def replace_placeholders(self, string):
-        params = self._config
-        lang = self._hass.config.language
-        params["locale"] = lang
-        params["locale_2"] = lang + "-" + lang.upper()
-        params["locale_3"] = lang.upper()
         for key in self._config:
             string = string.replace("{#"+key+"#}", str(self._config[key]))
         return string
@@ -132,13 +134,16 @@ class StellantisOauth(StellantisBase):
         return await self.make_http_request(url, 'GET', headers)
 
     def new_otp(self, sms_code, pin_code):
-        self.otp = Otp("bb8e981582b0f31353108fb020bead1c", device_id=str(self.get_config("access_token")[:16]))
-        self.otp.smsCode = sms_code
-        self.otp.codepin = pin_code
-        if self.otp.activation_start():
-            if self.otp.activation_finalyze() == 0:
-                return self.otp
-        return False
+        try:
+            self.otp = Otp("bb8e981582b0f31353108fb020bead1c", device_id=str(self.get_config("access_token")[:16]))
+            self.otp.smsCode = sms_code
+            self.otp.codepin = pin_code
+            if self.otp.activation_start():
+                if self.otp.activation_finalyze() != 0:
+                    raise Exception("OTP error")
+        except Exception as e:
+            _LOGGER.error(str(e))
+            raise Exception(str(e))
 
     async def get_otp_sms(self):
         url = self.apply_query_params(GET_OTP_URL, CLIENT_ID_QUERY_PARAMS)

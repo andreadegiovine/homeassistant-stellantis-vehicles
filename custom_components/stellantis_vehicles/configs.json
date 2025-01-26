@@ -1,0 +1,1057 @@
+{
+  "MyPeugeot": {
+    "oauth_url": "https://idpcvs.peugeot.com",
+    "realm": "clientsB2CPeugeot",
+    "scheme": "mymap",
+    "configs": {
+      "GB": {
+        "locale": "en-GB",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "AR": {
+        "locale": "es-AR",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "AT": {
+        "locale": "de-AT",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "AU": {
+        "locale": "en-AU",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "BE": {
+        "locale": "fr-BE",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "BG": {
+        "locale": "bg-BG",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "BR": {
+        "locale": "pt-BR",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "CH": {
+        "locale": "fr-CH",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "CL": {
+        "locale": "es-CL",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "CO": {
+        "locale": "es-CO",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "CY": {
+        "locale": "en-CY",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "CZ": {
+        "locale": "cs-CZ",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "DE": {
+        "locale": "de-DE",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "DK": {
+        "locale": "da-DK",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "DZ": {
+        "locale": "fr-DZ",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "EE": {
+        "locale": "et-EE",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "ES": {
+        "locale": "es-ES",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "FI": {
+        "locale": "fi-FI",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "FR": {
+        "locale": "fr-FR",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "GF": {
+        "locale": "fr-GF",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "GP": {
+        "locale": "fr-GP",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "GR": {
+        "locale": "el-GR",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "HR": {
+        "locale": "hr-HR",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "HU": {
+        "locale": "hu-HU",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "IE": {
+        "locale": "en-IE",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "IS": {
+        "locale": "en-IS",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "IT": {
+        "locale": "it-IT",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "JP": {
+        "locale": "ja-JP",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "KR": {
+        "locale": "ko-KR",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "LT": {
+        "locale": "lt-LT",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "LU": {
+        "locale": "fr-LU",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "LV": {
+        "locale": "lv-LV",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "MA": {
+        "locale": "fr-MA",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "MQ": {
+        "locale": "fr-MQ",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "MT": {
+        "locale": "en-MT",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "MX": {
+        "locale": "es-MX",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "MY": {
+        "locale": "en-MY",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "NL": {
+        "locale": "nl-NL",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "NO": {
+        "locale": "nb-NO",
+        "client_id": "1eebc2d5-5df3-459b-a624-20abfcf82530",
+        "client_secret": "T5tP7iS0cO8sC0lA2iE2aR7gK6uE5rF3lJ8pC3nO1pR7tL8vU1"
+      },
+      "NZ": {
+        "locale": "en-NZ",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "PE": {
+        "locale": "es-PE",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "PH": {
+        "locale": "en-PH",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "PL": {
+        "locale": "pl-PL",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "PT": {
+        "locale": "pt-PT",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "RE": {
+        "locale": "fr-RE",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "RO": {
+        "locale": "ro-RO",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "RU": {
+        "locale": "ru-RU",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "SE": {
+        "locale": "sv-SE",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "SG": {
+        "locale": "en-SG",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "SI": {
+        "locale": "sl-SI",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "SK": {
+        "locale": "sk-SK",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "TH": {
+        "locale": "en-TH",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "TN": {
+        "locale": "fr-TN",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "TR": {
+        "locale": "tr-TR",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "TW": {
+        "locale": "en-TW",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "UA": {
+        "locale": "uk-UA",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "UY": {
+        "locale": "es-UY",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      },
+      "ZA": {
+        "locale": "en-ZA",
+        "client_id": "4166e1cd-f2c1-4a8b-af4a-889a43ed06bd",
+        "client_secret": "bG5vK6vX5xK6gF2pF6mW0sY0xY5vF4kM6nL2eT4uI6bN0bF3tF"
+      }
+    }
+  },
+  "MyCitroen": {
+    "oauth_url": "https://idpcvs.citroen.com",
+    "realm": "clientsB2CCitroen",
+    "scheme": "mymacsdk",
+    "configs": {
+      "GB": {
+        "locale": "en-GB",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "AR": {
+        "locale": "es-AR",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "AT": {
+        "locale": "de-AT",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "AU": {
+        "locale": "en-AU",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "BE": {
+        "locale": "fr-BE",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "BG": {
+        "locale": "bg-BG",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "BN": {
+        "locale": "en-BN",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "BR": {
+        "locale": "pt-BR",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "CH": {
+        "locale": "de-CH",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "CL": {
+        "locale": "es-CL",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "CO": {
+        "locale": "es-CO",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "CR": {
+        "locale": "es-CR",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "CY": {
+        "locale": "en-CY",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "CZ": {
+        "locale": "cs-CZ",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "DE": {
+        "locale": "de-DE",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "DK": {
+        "locale": "da-DK",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "DZ": {
+        "locale": "fr-DZ",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "EC": {
+        "locale": "es-EC",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "EE": {
+        "locale": "et-EE",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "ES": {
+        "locale": "es-ES",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "FI": {
+        "locale": "fi-FI",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "FR": {
+        "locale": "fr-FR",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "GF": {
+        "locale": "fr-GF",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "GP": {
+        "locale": "fr-GP",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "GR": {
+        "locale": "el-GR",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "HR": {
+        "locale": "hr-HR",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "HU": {
+        "locale": "hu-HU",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "IE": {
+        "locale": "en-IE",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "IN": {
+        "locale": "en-IN",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "IR": {
+        "locale": "fa-IR",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "IS": {
+        "locale": "en-IS",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "IT": {
+        "locale": "it-IT",
+        "client_id": "5364defc-80e6-447b-bec6-4af8d1542cae",
+        "client_secret": "iE0cD8bB0yJ0dS6rO3nN1hI2wU7uA5xR4gP7lD6vM0oH0nS8dN"
+      },
+      "JP": {
+        "locale": "ja-JP",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "KR": {
+        "locale": "ko-KR",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "LB": {
+        "locale": "en-LB",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "LT": {
+        "locale": "lt-LT",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "LU": {
+        "locale": "fr-LU",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "LV": {
+        "locale": "lv-LV",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "MA": {
+        "locale": "fr-MA",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "MQ": {
+        "locale": "fr-MQ",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "MT": {
+        "locale": "en-MT",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "MY": {
+        "locale": "en-MY",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "NC": {
+        "locale": "fr-NC",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "NL": {
+        "locale": "nl-NL",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "NO": {
+        "locale": "nb-NO",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "NZ": {
+        "locale": "en-NZ",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "PE": {
+        "locale": "es-PE",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "PL": {
+        "locale": "pl-PL",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "PT": {
+        "locale": "pt-PT",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT62025-01-26T22:15:13.330548262Z aA3qJ5cM3dE"
+      },
+      "PY": {
+        "locale": "es-PY",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "RE": {
+        "locale": "fr-RE",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "RO": {
+        "locale": "ro-RO",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "RS": {
+        "locale": "sr-RS",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "RU": {
+        "locale": "ru-RU",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "SE": {
+        "locale": "sv-SE",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "SG": {
+        "locale": "en-SG",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "SI": {
+        "locale": "sl-SI",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "SK": {
+        "locale": "sk-SK",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "TN": {
+        "locale": "fr-TN",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "TR": {
+        "locale": "tr-TR",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "TW": {
+        "locale": "zh-TW",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "UA": {
+        "locale": "uk-UA",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "UY": {
+        "locale": "es-UY",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      },
+      "ZA": {
+        "locale": "en-ZA",
+        "client_id": "49799a4b-f335-4de2-bafb-e198a3f54ef9",
+        "client_secret": "bQ8lW3eC8eG7wG0lN7uR6dE2cY4kW1yD8jJ4tT6aA3qJ5cM3dE"
+      }
+    }
+  },
+  "MyDS": {
+    "oauth_url": "https://idpcvs.driveds.com",
+    "realm": "clientsB2CDS",
+    "scheme": "mymdssdk",
+    "configs": {
+      "GB": {
+        "locale": "en-GB",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "AR": {
+        "locale": "es-AR",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "AT": {
+        "locale": "de-AT",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "BE": {
+        "locale": "fr-BE",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "BG": {
+        "locale": "bg-BG",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "BN": {
+        "locale": "en-BN",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "CH": {
+        "locale": "de-CH",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "CL": {
+        "locale": "es-CL",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "CO": {
+        "locale": "es-CO",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "CZ": {
+        "locale": "cs-CZ",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "DE": {
+        "locale": "de-DE",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "DK": {
+        "locale": "da-DK",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "ES": {
+        "locale": "es-ES",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "FI": {
+        "locale": "fi-FI",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "FR": {
+        "locale": "fr-FR",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "GF": {
+        "locale": "fr-GF",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "GP": {
+        "locale": "fr-GP",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "GR": {
+        "locale": "el-GR",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "HR": {
+        "locale": "hr-HR",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "HU": {
+        "locale": "hu-HU",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "IE": {
+        "locale": "en-IE",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "IT": {
+        "locale": "it-IT",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "JP": {
+        "locale": "ja-JP",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "KR": {
+        "locale": "ko-KR",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "LU": {
+        "locale": "fr-LU",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "MA": {
+        "locale": "fr-MA",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "MQ": {
+        "locale": "fr-MQ",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "MY": {
+        "locale": "en-MY",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "NC": {
+        "locale": "fr-NC",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "NL": {
+        "locale": "nl-NL",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "NO": {
+        "locale": "nb-NO",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "PL": {
+        "locale": "pl-PL",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "PT": {
+        "locale": "pt-PT",
+        "client_id": "cbf74ee7-a303-4c3d-aba3-29f5994e2dfa",
+        "client_secret": "X6bE6yQ3tH1cG5oA6aW4fS6hK0cR0aK5yN2wE4hP8vL8oW5gU3"
+      },
+      "RE": {
+        "locale": "fr-RE",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      },
+      "RO": {
+        "locale": "ro-RO",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      },
+      "RU": {
+        "locale": "ru-RU",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      },
+      "SE": {
+        "locale": "sv-SE",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      },
+      "SG": {
+        "locale": "en-SG",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      },
+      "SI": {
+        "locale": "sl-SI",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      },
+      "SK": {
+        "locale": "sk-SK",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      },
+      "TN": {
+        "locale": "fr-TN",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      },
+      "TR": {
+        "locale": "tr-TR",
+        "client_id": "ce43f260-dea6-4471-a473-96950d1ccf67",
+        "client_secret": "wL5fV7sV5cP1lV2lJ2pR0qS7nL2uU8fI8wF3fE8dA7bX5fT3qU"
+      }
+    }
+  },
+  "MyOpel": {
+    "oauth_url": "https://idpcvs.opel.com",
+    "realm": "clientsB2COpel",
+    "scheme": "mymopsdk",
+    "configs": {
+      "AT": {
+        "locale": "de-AT",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "BE": {
+        "locale": "fr-BE",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "BG": {
+        "locale": "bg-BG",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "CH": {
+        "locale": "fr-CH",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "CZ": {
+        "locale": "cs-CZ",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "DE": {
+        "locale": "de-DE",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "DK": {
+        "locale": "da-DK",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "EE": {
+        "locale": "et-EE",
+        "client_id": "a009239a-ed2a-49f9-9e6f-3f59703d469d",
+        "client_secret": "M5yW4sE5qU6pO6jO4vH2qE0qS6gH6lR6cJ6kW1pE5cM6nM7sS0"
+      },
+      "ES": {
+        "locale": "es-ES",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "FI": {
+        "locale": "fi-FI",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "FR": {
+        "locale": "fr-FR",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "GF": {
+        "locale": "fr-GF",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "GP": {
+        "locale": "fr-GP",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "GR": {
+        "locale": "el-GR",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "HR": {
+        "locale": "hr-HR",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "HU": {
+        "locale": "hu-HU",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "IE": {
+        "locale": "en-IE",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "IS": {
+        "locale": "en-IS",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "IT": {
+        "locale": "it-IT",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "JP": {
+        "locale": "ja-JP",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "LT": {
+        "locale": "lt-LT",
+        "client_id": "a009239a-ed2a-49f9-9e6f-3f59703d469d",
+        "client_secret": "M5yW4sE5qU6pO6jO4vH2qE0qS6gH6lR6cJ6kW1pE5cM6nM7sS0"
+      },
+      "LU": {
+        "locale": "fr-LU",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "LV": {
+        "locale": "lv-LV",
+        "client_id": "a009239a-ed2a-49f9-9e6f-3f59703d469d",
+        "client_secret": "M5yW4sE5qU6pO6jO4vH2qE0qS6gH6lR6cJ6kW1pE5cM6nM7sS0"
+      },
+      "MQ": {
+        "locale": "fr-MQ",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "MT": {
+        "locale": "en-MT",
+        "client_id": "a009239a-ed2a-49f9-9e6f-3f59703d469d",
+        "client_secret": "M5yW4sE5qU6pO6jO4vH2qE0qS6gH6lR6cJ6kW1pE5cM6nM7sS0"
+      },
+      "NL": {
+        "locale": "nl-NL",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "NO": {
+        "locale": "nb-NO",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "NZ": {
+        "locale": "en-NZ",
+        "client_id": "a009239a-ed2a-49f9-9e6f-3f59703d469d",
+        "client_secret": "M5yW4sE5qU6pO6jO4vH2qE0qS6gH6lR6cJ6kW1pE5cM6nM7sS0"
+      },
+      "PL": {
+        "locale": "pl-PL",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "PT": {
+        "locale": "pt-PT",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "RE": {
+        "locale": "fr-RE",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "RO": {
+        "locale": "ro-RO",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "RU": {
+        "locale": "ru-RU",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "SE": {
+        "locale": "sv-SE",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "SG": {
+        "locale": "en-SG",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "SI": {
+        "locale": "sl-SI",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "SK": {
+        "locale": "sk-SK",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "TR": {
+        "locale": "tr-TR",
+        "client_id": "07364655-93cb-4194-8158-6b035ac2c24c",
+        "client_secret": "F2kK7lC5kF5qN7tM0wT8kE3cW1dP0wC5pI6vC0sQ5iP5cN8cJ8"
+      },
+      "TW": {
+        "locale": "zh-TW",
+        "client_id": "a009239a-ed2a-49f9-9e6f-3f59703d469d",
+        "client_secret": "M5yW4sE5qU6pO6jO4vH2qE0qS6gH6lR6cJ6kW1pE5cM6nM7sS0"
+      }
+    }
+  },
+  "MyVauxhall": {
+    "oauth_url": "https://idpcvs.vauxhall.co.uk",
+    "realm": "clientsB2CVauxhall",
+    "scheme": "mymvxsdk",
+    "configs": {
+      "GB": {
+        "locale": "en-GB",
+        "client_id": "122f3511-4f74-4a0c-bcda-af2f3b2e3a65",
+        "client_secret": "N1iY3jO4jI1sF2yS6yJ3rG7xQ4kL4kK1dO3xT5uX6dF3kW8gI6"
+      }
+    }
+  }
+}

@@ -14,6 +14,7 @@ from .const import (
     DOMAIN,
     FIELD_MOBILE_APP,
     MOBILE_APPS,
+    FIELD_COUNTRY_CODE,
     FIELD_SMS_CODE,
     FIELD_PIN_CODE
 )
@@ -51,13 +52,25 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         self.data.update(user_input)
 
-        return await self.async_step_oauth(user_input)
+        return await self.async_step_country()
+
+    async def async_step_country(self, user_input=None):
+        if user_input is None:
+            errors = self.errors
+            self.errors = {}
+            schema = vol.Schema({
+                vol.Required(FIELD_COUNTRY_CODE): selector({ "select": { "options": list(MOBILE_APPS[self.data[FIELD_MOBILE_APP]]["configs"]), "mode": "dropdown", "translation_key": FIELD_COUNTRY_CODE } })
+            })
+            return self.async_show_form(step_id="country", data_schema=schema, errors=errors)
+
+        self.data.update(user_input)
+
+        return await self.async_step_oauth()
 
     async def async_step_oauth(self, user_input=None):
-        self.data.update(user_input)
         self.hass.http.register_view(StellantisOauthView)
         self.stellantis = StellantisOauth(self.hass)
-        self.stellantis.set_mobile_app(self.data["mobile_app"])
+        self.stellantis.set_mobile_app(self.data[FIELD_MOBILE_APP], self.data[FIELD_COUNTRY_CODE])
         oauth_panel_url = get_url(self.hass, prefer_external=True, prefer_cloud=True) + OAUTH_URL + "?url=" + urllib.parse.quote(self.stellantis.get_oauth_url()) + "&flow_id=" + self.flow_id
         return self.async_external_step(step_id="get_token", url=oauth_panel_url)
 
@@ -96,28 +109,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_otp(self, user_input=None):
         if user_input is None:
             try:
-                otp_request = await self.stellantis.get_otp_sms()
+                await self.stellantis.get_otp_sms()
             except Exception as e:
                 self.errors[FIELD_MOBILE_APP] = str(e)
-                return self.async_step_user()
-
+                return await self.async_step_user()
             return self.async_show_form(step_id="otp", data_schema=DATA_SCHEMA_2)
 
         try:
-            otp = await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])
-        except Exception as e:
-            self.errors[FIELD_MOBILE_APP] = str(e)
-            return self.async_step_user()
-
-        if not otp:
-            self.errors[FIELD_MOBILE_APP] = str("OTP error")
-            return self.async_step_user()
-
-        try:
+            await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])
             otp_token_request = await self.stellantis.get_mqtt_access_token()
         except Exception as e:
             self.errors[FIELD_MOBILE_APP] = str(e)
-            return self.async_step_user()
+            return await self.async_step_user()
 
         self.data.update({"mqtt": {
             "access_token": otp_token_request["access_token"],

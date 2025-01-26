@@ -36,6 +36,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 - [x] Mokka-e (e-remote)
 - [ ] Others EV vehicles
 - [ ] Others thermal vehicles
+- [ ] Multi vehicles account
 
 Before any issue request please enable the debug log of this integration by your configuration.yaml:
 
@@ -52,3 +53,9 @@ and paste the log data on the issue request.
 
 ![Controls](./images/controls.png)
 ![Sensors](./images/sensors.png)
+
+## File "configs.json"
+
+This file contains all app api credentials by culture.
+
+To update this file run the Dockerfile under **configs_updater** directory and use the final output as file content.

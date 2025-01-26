@@ -7,6 +7,12 @@
           "mobile_app": "App mobile del veicolo"
         }
       },
+      "country": {
+        "description": "Configura e connetti il tuo veicolo Stellantis",
+        "data": {
+          "country_code": "Il codice del tuo paese"
+        }
+      },
       "otp": {
         "description": "Configura e verifica OTP",
         "data": {
