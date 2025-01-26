@@ -64,8 +64,10 @@ class StellantisBase:
     def save_config(self, data):
         for key in data:
             self._config[key] = data[key]
-            if key == "mobile_app":
+            if key == "mobile_app" and "country_code" in self._config:
                 self.set_mobile_app(data[key], self._config["country_code"])
+            elif key == "country_code" and "mobile_app" in self._config:
+                self.set_mobile_app(self._config["mobile_app"], data[key])
 
     def get_config(self, key):
         if key in self._config:
