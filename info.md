@@ -35,10 +35,11 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 ## Testing roadmap
 - [x] Mokka-e (e-remote)
 - [ ] Commands: Doors, Horn, Lights (Connect Plus)
+- [ ] "Battery capacity" and "Battery residual" sensors validity
+- [ ] "Doors" sensors accurance
 - [ ] Others EV vehicles
 - [ ] Others thermal vehicles
 - [ ] Multi vehicles account
-- [ ] "Battery capacity" and "Battery residual" sensors validity
 
 Before any issue request please enable the debug log of this integration by your configuration.yaml:
 
