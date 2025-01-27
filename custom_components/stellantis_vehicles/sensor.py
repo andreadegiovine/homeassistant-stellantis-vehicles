@@ -1,6 +1,7 @@
 import logging
 
 from homeassistant.components.sensor import SensorEntityDescription
+from homeassistant.const import UnitOfLength
 from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 
 from .const import (
@@ -22,12 +23,20 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         for key in SENSORS_DEFAULT:
             default_value = SENSORS_DEFAULT.get(key, {})
             if default_value.get("data_map", None):
+
+                unit_of_measurement = default_value.get("unit_of_measurement", None)
+                if stellantis.get_config("country_code") == "GB":
+                    if key in ["mileage","autonomy"]:
+                        unit_of_measurement = UnitOfLength.MILES
+                    if key == "battery_charging_rate":
+                        unit_of_measurement = UnitOfLength.MILES_PER_HOUR
+
                 description = SensorEntityDescription(
                     name = key,
                     key = key,
                     translation_key = key,
                     icon = default_value.get("icon", None),
-                    unit_of_measurement = default_value.get("unit_of_measurement", None),
+                    unit_of_measurement = unit_of_measurement,
                     device_class = default_value.get("device_class", None),
                     suggested_display_precision = default_value.get("suggested_display_precision", None)
                 )

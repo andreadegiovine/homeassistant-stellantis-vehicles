@@ -37,6 +37,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 - [ ] Others EV vehicles
 - [ ] Others thermal vehicles
 - [ ] Multi vehicles account
+- [ ] "Battery capacity" and "Battery residual" sensors validity
 
 Before any issue request please enable the debug log of this integration by your configuration.yaml:
 
