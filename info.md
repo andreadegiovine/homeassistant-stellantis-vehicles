@@ -34,6 +34,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 
 ## Testing roadmap
 - [x] Mokka-e (e-remote)
+- [ ] Commands: Doors, Horn, Lights (Connect Plus)
 - [ ] Others EV vehicles
 - [ ] Others thermal vehicles
 - [ ] Multi vehicles account
