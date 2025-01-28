@@ -1,6 +1,7 @@
 import logging
 import re
 from datetime import datetime, timedelta
+import asyncio
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -336,8 +337,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
                     if int(current_battery) >= int(charge_limit):
                         button_name = self._coordinator._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop", "name")
-                        self._coordinator.send_charge_command(button_name)
-
+                        asyncio.run_coroutine_threadsafe(self._coordinator.send_charge_command(button_name), self._hass.loop).result()
 
         if self._key in ["battery_capacity", "battery_residual"]:
             value = (float(value) / 1000) + 10

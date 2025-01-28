@@ -59,7 +59,7 @@ class StellantisBase:
                 "basic_token": base64.b64encode(bytes(self._config["client_id"] + ":" + self._config["client_secret"], 'utf-8')).decode('utf-8'),
                 "culture": country_code.lower()
             })
-            _LOGGER.error(self._config)
+            _LOGGER.debug(self._config)
 
     def save_config(self, data):
         for key in data:

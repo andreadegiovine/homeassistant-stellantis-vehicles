@@ -33,7 +33,8 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 4. Add this integration from the **Home Assistant** integrations.
 
 ## Testing roadmap
-- [x] Mokka-e (e-remote)
+- [x] Mokka-e 2022 (e-remote)
+- [x] e208 2021 (@bgoncal)
 - [ ] Commands: Doors, Horn, Lights (Connect Plus)
 - [ ] "Battery capacity" and "Battery residual" sensors validity
 - [ ] "Doors" sensors accurance

@@ -94,5 +94,9 @@ class StellantisChargingStartStopButton(StellantisBaseButton):
         await self._coordinator.send_charge_command(self.name)
 
 class StellantisAirConditioningButton(StellantisBaseButton):
+    @property
+    def available(self):
+        return super().available and self._coordinator._sensors["battery"] and int(self._coordinator._sensors["battery"]) >= 50
+
     async def async_press(self):
         await self._coordinator.send_air_conditioning_command(self.name)
