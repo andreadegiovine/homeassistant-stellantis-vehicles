@@ -1,7 +1,6 @@
 import logging
 import re
 from datetime import datetime, timedelta
-import asyncio
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -33,6 +32,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._sensors = {}
         self._commands_history = {}
         self._disabled_commands = []
+        self._manage_charge_limit_sent = False
 
     async def _async_update_data(self):
         _LOGGER.debug("---------- START _async_update_data")
@@ -44,6 +44,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug(self._config)
         _LOGGER.debug(self._data)
         _LOGGER.debug("---------- END _async_update_data")
+        await self.manage_charge_limit()
 
     @property
     def command_history(self):
@@ -149,10 +150,26 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def send_air_conditioning_command(self, button_name):
         current_status = self._sensors["air_conditioning"]
         new_status = "activate"
-        if current_status == "Active":
+        if current_status == "Enabled":
             new_status = "deactivate"
         await self.send_command(button_name, "/ThermalPrecond", {"asap": new_status, "programs": self.get_programs()})
 
+    async def manage_charge_limit(self):
+        if self._data["service"]["type"] == "Electric":
+            if "battery_charging" in self._sensors:
+                if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
+                    charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]
+                    charge_limit = None
+                    if "number_battery_charging_limit" in self._sensors and self._sensors["number_battery_charging_limit"]:
+                        charge_limit = self._sensors["number_battery_charging_limit"]
+                    if charge_limit_on and charge_limit and "battery" in self._sensors:
+                        current_battery = self._sensors["battery"]
+                        if int(current_battery) >= int(charge_limit):
+                            button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop.name")
+                            await self.send_charge_command(button_name)
+                            self._manage_charge_limit_sent = True
+                elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
+                    self._manage_charge_limit_sent = False
 
 class StellantisBaseEntity(CoordinatorEntity):
     def __init__(self, coordinator, description):
@@ -334,10 +351,6 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                     diff = value_timestamp - now_timestamp
                     limit_diff = (diff / (100 - int(current_battery))) * (int(charge_limit) - int(current_battery))
                     value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
-
-                    if int(current_battery) >= int(charge_limit):
-                        button_name = self._coordinator._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop", "name")
-                        asyncio.run_coroutine_threadsafe(self._coordinator.send_charge_command(button_name), self._hass.loop).result()
 
         if self._key in ["battery_capacity", "battery_residual"]:
             value = (float(value) / 1000) + 10

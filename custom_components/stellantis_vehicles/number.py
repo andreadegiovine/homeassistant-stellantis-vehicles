@@ -26,9 +26,9 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                 translation_key = "battery_charging_limit",
                 icon = "mdi:battery-charging-60",
                 unit_of_measurement = PERCENTAGE,
-                min_value = 20,
-                max_value = 90,
-                step = 1,
+                native_min_value = 20,
+                native_max_value = 90,
+                native_step = 1,
                 mode = NumberMode.SLIDER
             )
             entities.extend([StellantisBaseNumberSensor(coordinator, description)])

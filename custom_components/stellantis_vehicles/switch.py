@@ -24,6 +24,12 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                 translation_key = "battery_charging_limit",
                 icon = "mdi:battery-charging-60"
             )
-            entities.extend([StellantisBaseSwitch(coordinator, description)])
+            entities.extend([StellantisBatteryChargingLimitSwitch(coordinator, description)])
 
     async_add_entities(entities)
+
+
+class StellantisBatteryChargingLimitSwitch(StellantisBaseSwitch):
+    @property
+    def available(self):
+        return super().available and "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]
