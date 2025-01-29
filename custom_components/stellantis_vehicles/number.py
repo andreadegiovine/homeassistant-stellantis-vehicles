@@ -3,7 +3,7 @@ import logging
 from homeassistant.const import PERCENTAGE
 from homeassistant.components.number import NumberEntityDescription
 from homeassistant.components.number.const import NumberMode
-from .base import StellantisBaseNumberSensor
+from .base import StellantisBaseNumber
 
 from .const import (
     DOMAIN
@@ -31,6 +31,6 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                 native_step = 1,
                 mode = NumberMode.SLIDER
             )
-            entities.extend([StellantisBaseNumberSensor(coordinator, description)])
+            entities.extend([StellantisBaseNumber(coordinator, description)])
 
     async_add_entities(entities)

@@ -10,6 +10,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.components.number import NumberEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import callback
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
 
@@ -32,7 +33,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._sensors = {}
         self._commands_history = {}
         self._disabled_commands = []
-        self._manage_charge_limit_sent = False
 
     async def _async_update_data(self):
         _LOGGER.debug("---------- START _async_update_data")
@@ -44,7 +44,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug(self._config)
         _LOGGER.debug(self._data)
         _LOGGER.debug("---------- END _async_update_data")
-        await self.manage_charge_limit()
+
+        await self.after_async_update_data(self._data)
 
     @property
     def command_history(self):
@@ -154,8 +155,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             new_status = "deactivate"
         await self.send_command(button_name, "/ThermalPrecond", {"asap": new_status, "programs": self.get_programs()})
 
-    async def manage_charge_limit(self):
-        if self._data["service"]["type"] == "Electric":
+    async def after_async_update_data(self, data):
+        if not hasattr(self, "_manage_charge_limit_sent"):
+            self._manage_charge_limit_sent = False
+
+        if data["service"]["type"] == "Electric":
             if "battery_charging" in self._sensors:
                 if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
                     charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]
@@ -170,6 +174,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                             self._manage_charge_limit_sent = True
                 elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
                     self._manage_charge_limit_sent = False
+
 
 class StellantisBaseEntity(CoordinatorEntity):
     def __init__(self, coordinator, description):
@@ -389,31 +394,59 @@ class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
         return True
 
 
-class StellantisBaseNumberSensor(StellantisBaseEntity, NumberEntity):
+class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        restored_data = await self.async_get_last_state()
+        if restored_data and restored_data.state not in ["unavailable", "unknown"]:
+            value = restored_data.state
+            if restored_data.state == "on":
+                value = True
+            elif restored_data.state == "off":
+                value = False
+            self._coordinator._sensors[self._sensor_key] = value
+        self.coordinator_update()
+
+    def coordinator_update(self):
+        return True
+
+
+class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
+    def __init__(self, coordinator, description):
+        super().__init__(coordinator, description)
+        self._sensor_key = f"number_{self._key}"
+
     @property
-    def native_value(self) -> float:
-        if f"number_{self._key}" in self._coordinator._sensors:
-            return self._coordinator._sensors[f"number_{self._key}"]
+    def native_value(self):
+        if self._sensor_key in self._coordinator._sensors:
+            return self._coordinator._sensors[self._sensor_key]
         return None
 
     async def async_set_native_value(self, value: float) -> None:
-        self._coordinator._sensors[f"number_{self._key}"] = value
+        self._attr_native_value = value
+        self._coordinator._sensors[self._sensor_key] = value
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):
         return True
 
-class StellantisBaseSwitch(StellantisBaseEntity, SwitchEntity):
+class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
+    def __init__(self, coordinator, description):
+        super().__init__(coordinator, description)
+        self._sensor_key = f"switch_{self._key}"
+
     @property
     def is_on(self):
-        return f"switch_{self._key}" in self._coordinator._sensors and self._coordinator._sensors[f"switch_{self._key}"]
+        return self._sensor_key in self._coordinator._sensors and self._coordinator._sensors[self._sensor_key]
 
     async def async_turn_on(self, **kwargs):
-        self._coordinator._sensors[f"switch_{self._key}"] = True
+        self._attr_is_on = True
+        self._coordinator._sensors[self._sensor_key] = True
         await self._coordinator.async_refresh()
 
     async def async_turn_off(self, **kwargs):
-        self._coordinator._sensors[f"switch_{self._key}"] = False
+        self._attr_is_on = False
+        self._coordinator._sensors[self._sensor_key] = False
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):
