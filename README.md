@@ -33,15 +33,23 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 4. Add this integration from the **Home Assistant** integrations.
 
 ## Testing roadmap
+### Vehicles tested
 - [x] Opel Mokka-e 2022 [e-remote]
 - [x] Peugeot e208 2021 (@bgoncal)
 - [x] Vauxhall Mokka-e (@pantha007)
-- [ ] Commands: Doors, Horn, Lights (Connect Plus)
-- [ ] "Battery capacity" and "Battery residual" sensors validity
-- [ ] "Doors" sensors accurance
 - [ ] Others EV vehicles
 - [ ] Others thermal vehicles
 - [ ] Multi vehicles account
+### Features tested
+- [x] Command: **Charge Start/Stop** (E-remote & Connect Plus)
+- [x] Command: **Air conditioning Start/Stop** (E-remote & Connect Plus)
+- [ ] Command: **Doors** (Connect Plus)
+- [ ] Command: **Horn** (Connect Plus)
+- [ ] Command: **Lights** (Connect Plus)
+- [ ] Sensor: **Battery capacity** validity
+- [ ] Sensor: **Battery residual** validity
+- [ ] Sensor: **Doors** accurance
+- [ ] Sensor: **Engine** accurance
 
 Before any issue request please enable the debug log of this integration by your configuration.yaml:
 
