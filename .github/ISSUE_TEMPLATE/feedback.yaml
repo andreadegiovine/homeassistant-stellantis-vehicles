@@ -4,7 +4,7 @@ body:
   - type: dropdown
     id: mark
     attributes:
-      label: Vehicle mark
+      label: Mark
       options:
         - Peugeot
         - Citroen
@@ -17,14 +17,14 @@ body:
   - type: input
     id: model
     attributes:
-      label: Vehicle model
+      label: Model
       placeholder: ex. e208
     validations:
       required: true
   - type: dropdown
     id: year
     attributes:
-      label: Vehicle year
+      label: Year
       options:
         - 2025
         - 2024
@@ -42,7 +42,7 @@ body:
   - type: dropdown
     id: engine
     attributes:
-      label: Vehicle engine
+      label: Engine
       options:
         - Electric
         - Fuel
