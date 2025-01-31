@@ -1,5 +1,5 @@
 ---
-name: Feedback
+name: Feedback2
 about: Bug report - Feature request
 title: ''
 labels: ''
