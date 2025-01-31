@@ -1,64 +1,76 @@
-name: Bug Report
+name: Feedback
 description: File a bug report.
-title: "[Bug]: "
-labels: ["bug", "triage"]
-projects: ["octo-org/1", "octo-org/44"]
-assignees:
-  - octocat
+title: ""
 body:
-  - type: markdown
+  - type: dropdown
+    id: mark
     attributes:
-      value: |
-        Thanks for taking the time to fill out this bug report!
-  - type: input
-    id: contact
-    attributes:
-      label: Contact Details
-      description: How can we get in touch with you if we need more info?
-      placeholder: ex. email@example.com
+      label: Vehicle mark
+      options:
+        - Peugeot
+        - Citroen
+        - DS
+        - Opel
+        - Vauxhall
+      default: 0
     validations:
-      required: false
-  - type: textarea
-    id: what-happened
+      required: true
+  - type: input
+    id: model
     attributes:
-      label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
-      value: "A bug happened!"
+      label: Vehicle model
+      placeholder: ex. e208
     validations:
       required: true
   - type: dropdown
-    id: version
+    id: year
     attributes:
-      label: Version
-      description: What version of our software are you running?
+      label: Vehicle year
       options:
-        - 1.0.2 (Default)
-        - 1.0.3 (Edge)
+        - 2025
+        - 2024
+        - 2023
+        - 2022
+        - 2021
+        - 2020
+        - 2019
+        - 2018
+        - 2017
+        - 2016
       default: 0
     validations:
       required: true
   - type: dropdown
-    id: browsers
+    id: engine
     attributes:
-      label: What browsers are you seeing the problem on?
-      multiple: true
+      label: Vehicle engine
       options:
-        - Firefox
-        - Chrome
-        - Safari
-        - Microsoft Edge
+        - Electric
+        - Fuel
+        - Hybrid
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        Enable the debug log of this integration from your configuration.yaml:
+        ```
+        logger:
+            default: error
+            logs:
+                custom_components.stellantis_vehicles: debug
+        ```
+        before pasting here, please remove your personal data (access_token, refresh_token, customer_id, vin, vehicle_id, coordinates, etc).
   - type: textarea
     id: logs
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      label: Log output
+      description: Please copy and paste the log output. This will be automatically formatted into code, so no need for backticks.
       render: shell
-  - type: checkboxes
-    id: terms
-    attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://example.com). 
-      options:
-        - label: I agree to follow this project's Code of Conduct
-          required: true
