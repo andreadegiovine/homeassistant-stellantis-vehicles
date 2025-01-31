@@ -1,6 +1,5 @@
 name: Feedback
 description: File a bug report.
-title: ""
 body:
   - type: dropdown
     id: mark
