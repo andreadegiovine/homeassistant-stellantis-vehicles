@@ -132,9 +132,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_final(self, user_input=None):
-        await self.async_set_unique_id(self.data["mobile_app"].lower()+str(self.data["access_token"][:5]))
+        await self.async_set_unique_id(self.data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5]))
         self._abort_if_unique_id_configured()
-        return self.async_create_entry(title=self.data["mobile_app"], data=self.data)
+        return self.async_create_entry(title=self.data[FIELD_MOBILE_APP], data=self.data)
 
 
 class StellantisOauthView(HomeAssistantView):

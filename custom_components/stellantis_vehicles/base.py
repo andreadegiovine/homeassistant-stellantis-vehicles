@@ -15,7 +15,8 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
 
 from .const import (
-    DOMAIN
+    DOMAIN,
+    FIELD_MOBILE_APP
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,6 +47,12 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("---------- END _async_update_data")
 
         await self.after_async_update_data(self._data)
+
+    @property
+    def vehicle_type(self):
+        if "service" in self._data and "type" in self._data["service"]:
+            return self._data["service"]["type"]
+        return None
 
     @property
     def command_history(self):
@@ -159,21 +166,22 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if not hasattr(self, "_manage_charge_limit_sent"):
             self._manage_charge_limit_sent = False
 
-        if data["service"]["type"] == "Electric":
-            if "battery_charging" in self._sensors:
-                if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
-                    charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]
-                    charge_limit = None
-                    if "number_battery_charging_limit" in self._sensors and self._sensors["number_battery_charging_limit"]:
-                        charge_limit = self._sensors["number_battery_charging_limit"]
-                    if charge_limit_on and charge_limit and "battery" in self._sensors:
-                        current_battery = self._sensors["battery"]
-                        if int(current_battery) >= int(charge_limit):
-                            button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop.name")
-                            await self.send_charge_command(button_name)
-                            self._manage_charge_limit_sent = True
-                elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
-                    self._manage_charge_limit_sent = False
+        if "service" in data and "type" in data["service"]:
+            if data["service"]["type"] == "Electric":
+                if "battery_charging" in self._sensors:
+                    if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
+                        charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]
+                        charge_limit = None
+                        if "number_battery_charging_limit" in self._sensors and self._sensors["number_battery_charging_limit"]:
+                            charge_limit = self._sensors["number_battery_charging_limit"]
+                        if charge_limit_on and charge_limit and "battery" in self._sensors:
+                            current_battery = self._sensors["battery"]
+                            if int(current_battery) >= int(charge_limit):
+                                button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop.name")
+                                await self.send_charge_command(button_name)
+                                self._manage_charge_limit_sent = True
+                    elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
+                        self._manage_charge_limit_sent = False
 
 
 class StellantisBaseEntity(CoordinatorEntity):
@@ -219,7 +227,7 @@ class StellantisBaseEntity(CoordinatorEntity):
             },
             "name": self._vehicle["vin"],
             "model": self._vehicle["type"] + " - " + self._vehicle["vin"],
-            "manufacturer": self._config["mobile_app"]
+            "manufacturer": self._config[FIELD_MOBILE_APP]
         }
 
     def get_value_from_map(self, data_map):

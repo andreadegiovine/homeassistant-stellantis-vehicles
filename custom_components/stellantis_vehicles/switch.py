@@ -17,7 +17,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
     for vehicle in vehicles:
         coordinator = await stellantis.async_get_coordinator(vehicle)
-        if coordinator._data["service"]["type"] == "Electric":
+        if coordinator.vehicle_type == "Electric":
             description = SwitchEntityDescription(
                 name = "battery_charging_limit",
                 key = "battery_charging_limit",

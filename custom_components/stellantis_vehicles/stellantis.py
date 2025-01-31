@@ -9,14 +9,17 @@ import paho.mqtt.client as mqtt
 import json
 from uuid import uuid4
 import asyncio
-from datetime import ( datetime, timedelta )
+from datetime import ( datetime, timedelta, UTC )
 
 from homeassistant.helpers import translation
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp
+from .utils import get_datetime
 
 from .const import (
     DOMAIN,
+    FIELD_MOBILE_APP,
+    FIELD_COUNTRY_CODE,
     MOBILE_APPS,
     OAUTH_AUTHORIZE_URL,
     OAUTH_TOKEN_URL,
@@ -64,10 +67,10 @@ class StellantisBase:
     def save_config(self, data):
         for key in data:
             self._config[key] = data[key]
-            if key == "mobile_app" and "country_code" in self._config:
-                self.set_mobile_app(data[key], self._config["country_code"])
-            elif key == "country_code" and "mobile_app" in self._config:
-                self.set_mobile_app(self._config["mobile_app"], data[key])
+            if key == FIELD_MOBILE_APP and FIELD_COUNTRY_CODE in self._config:
+                self.set_mobile_app(data[key], self._config[FIELD_COUNTRY_CODE])
+            elif key == FIELD_COUNTRY_CODE and FIELD_MOBILE_APP in self._config:
+                self.set_mobile_app(self._config[FIELD_MOBILE_APP], data[key])
 
     def get_config(self, key):
         if key in self._config:
@@ -94,27 +97,26 @@ class StellantisBase:
         return self.replace_placeholders(f"{url}?{query_params}")
 
     async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
+        _LOGGER.debug("---------- START make_http_request")
         async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
             result = {}
             error = None
             if method != "DELETE" and (await resp.text()):
                 result = await resp.json()
             if not str(resp.status).startswith("20"):
-                _LOGGER.debug("---------- START make_http_request")
-                _LOGGER.error(f"{method} request error " + str(resp.status))
-                _LOGGER.error(resp.url)
-                _LOGGER.error(headers)
-                _LOGGER.error(params)
-                _LOGGER.error(json)
-                _LOGGER.error(data)
-                _LOGGER.error(result)
-                _LOGGER.debug("---------- END make_http_request")
+                _LOGGER.error(f"{method} request error {str(resp.status)}: {resp.url}")
+                _LOGGER.debug(headers)
+                _LOGGER.debug(params)
+                _LOGGER.debug(json)
+                _LOGGER.debug(data)
+                _LOGGER.debug(result)
                 if "httpMessage" in result and "moreInformation" in result:
                     error = result["httpMessage"] + " - " + result["moreInformation"]
                 elif "error" in result and "error_description" in result:
                     error = result["error"] + " - " + result["error_description"]
                 elif "message" in result and "code" in result:
                     error = result["message"] + " - " + str(result["code"])
+            _LOGGER.debug("---------- END make_http_request")
             if error:
                 raise Exception(error)
             return result
@@ -231,7 +233,11 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- START refresh_token")
         # Aggiungere notifica frontend di rinconfigurazione oauth token in caso di errore
         token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
-        if token_expiry < (datetime.now() - timedelta(0, 10)):
+        # Temporany fix
+        if not token_expiry.tzinfo:
+            token_expiry = get_datetime() - timedelta(0, 20)
+        # End - Temporany fix
+        if token_expiry < (get_datetime() - timedelta(0, 10)):
             url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
             headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
             token_request = await self.make_http_request(url, 'POST', headers)
@@ -241,7 +247,7 @@ class StellantisVehicles(StellantisBase):
             new_config = {
                 "access_token": token_request["access_token"],
                 "refresh_token": token_request["refresh_token"],
-                "expires_in": (datetime.now() + timedelta(0, int(token_request["expires_in"]))).isoformat()
+                "expires_in": (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat()
             }
             self.save_config(new_config)
             self.update_stored_config("access_token", new_config["access_token"])
@@ -286,7 +292,11 @@ class StellantisVehicles(StellantisBase):
         await self.refresh_token()
         mqtt_config = self.get_config("mqtt")
         token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
-        if (token_expiry < (datetime.now() - timedelta(0, 10))) or force:
+        # Temporany fix
+        if not token_expiry.tzinfo:
+            token_expiry = get_datetime() - timedelta(0, 20)
+        # End - Temporany fix
+        if (token_expiry < (get_datetime() - timedelta(0, 10))) or force:
             url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_headers_params(GET_OTP_HEADERS)
             token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
@@ -294,7 +304,7 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.debug(headers)
             _LOGGER.debug(token_request)
             mqtt_config["access_token"] = token_request["access_token"]
-            mqtt_config["expires_in"] = (datetime.now() + timedelta(0, int(token_request["expires_in"]))).isoformat()
+            mqtt_config["expires_in"] = (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat()
             self.save_config({"mqtt": mqtt_config})
             self.update_stored_config("mqtt", mqtt_config)
             if self._mqtt:

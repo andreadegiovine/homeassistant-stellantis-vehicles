@@ -51,20 +51,21 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         entities.extend([StellantisLightsButton(coordinator, description)])
 
         description = ButtonEntityDescription(
-            name = "charge_start_stop",
-            key = "charge_start_stop",
-            translation_key = "charge_start_stop",
-            icon = "mdi:play-pause"
-        )
-        entities.extend([StellantisChargingStartStopButton(coordinator, description)])
-
-        description = ButtonEntityDescription(
             name = "air_conditioning",
             key = "air_conditioning",
             translation_key = "air_conditioning",
             icon = "mdi:air-conditioner"
         )
         entities.extend([StellantisAirConditioningButton(coordinator, description)])
+
+        if coordinator.vehicle_type == "Elettric":
+            description = ButtonEntityDescription(
+                name = "charge_start_stop",
+                key = "charge_start_stop",
+                translation_key = "charge_start_stop",
+                icon = "mdi:play-pause"
+            )
+            entities.extend([StellantisChargingStartStopButton(coordinator, description)])
 
     async_add_entities(entities)
 

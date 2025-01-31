@@ -6,6 +6,7 @@ from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 
 from .const import (
     DOMAIN,
+    FIELD_COUNTRY_CODE,
     SENSORS_DEFAULT
 )
 
@@ -22,25 +23,27 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
         for key in SENSORS_DEFAULT:
             default_value = SENSORS_DEFAULT.get(key, {})
-            if default_value.get("data_map", None):
+            sensor_engine_limit = default_value.get("engine", [])
+            if not sensor_engine_limit or coordinator.vehicle_type in sensor_engine_limit:
+                if default_value.get("data_map", None):
 
-                unit_of_measurement = default_value.get("unit_of_measurement", None)
-                if stellantis.get_config("country_code") == "GB":
-                    if key in ["mileage","autonomy"]:
-                        unit_of_measurement = UnitOfLength.MILES
-                    if key == "battery_charging_rate":
-                        unit_of_measurement = UnitOfLength.MILES_PER_HOUR
+                    unit_of_measurement = default_value.get("unit_of_measurement", None)
+                    if stellantis.get_config(FIELD_COUNTRY_CODE) == "GB":
+                        if key in ["mileage","autonomy"]:
+                            unit_of_measurement = UnitOfLength.MILES
+                        if key == "battery_charging_rate":
+                            unit_of_measurement = UnitOfLength.MILES_PER_HOUR
 
-                description = SensorEntityDescription(
-                    name = key,
-                    key = key,
-                    translation_key = key,
-                    icon = default_value.get("icon", None),
-                    unit_of_measurement = unit_of_measurement,
-                    device_class = default_value.get("device_class", None),
-                    suggested_display_precision = default_value.get("suggested_display_precision", None)
-                )
-                entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("data_map", None), default_value.get("available", None))])
+                    description = SensorEntityDescription(
+                        name = key,
+                        key = key,
+                        translation_key = key,
+                        icon = default_value.get("icon", None),
+                        unit_of_measurement = unit_of_measurement,
+                        device_class = default_value.get("device_class", None),
+                        suggested_display_precision = default_value.get("suggested_display_precision", None)
+                    )
+                    entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("data_map", None), default_value.get("available", None))])
 
         description = SensorEntityDescription(
             name = "command_status",

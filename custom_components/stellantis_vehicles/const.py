@@ -117,48 +117,56 @@ SENSORS_DEFAULT = {
     "battery" : {
         "unit_of_measurement" : PERCENTAGE,
         "device_class": SensorDeviceClass.BATTERY,
-        "data_map" : ["energies", 0, "level"]
+        "data_map" : ["energies", 0, "level"],
+        "engine": ["Electric"]
     },
     "battery_soh" : {
         "icon" : "mdi:battery-heart-variant",
         "unit_of_measurement" : PERCENTAGE,
-        "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"]
+        "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
+        "engine": ["Electric"]
     },
     "battery_charging_rate" : {
         "icon" : "mdi:ev-station",
         "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
         "device_class": SensorDeviceClass.SPEED,
-        "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingRate"]
+        "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingRate"],
+        "engine": ["Electric"]
     },
     "battery_charging_type" : {
         "icon" : "mdi:lightning-bolt",
-        "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"]
+        "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"],
+        "engine": ["Electric"]
     },
     "battery_charging_time" : {
         "icon" : "mdi:battery-clock",
         "device_class" : SensorDeviceClass.TIMESTAMP,
         "data_map" : ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"],
-        "available" : {"battery_charging": "InProgress"}
+        "available" : {"battery_charging": "InProgress"},
+        "engine": ["Electric"]
     },
      "battery_charging_end" : {
          "icon" : "mdi:battery-check",
          "device_class" : SensorDeviceClass.TIMESTAMP,
          "data_map" : ["energies", 0, "extension", "electric", "charging", "remainingTime"],
-         "available" : {"battery_charging": "InProgress"}
+         "available" : {"battery_charging": "InProgress"},
+         "engine": ["Electric"]
      },
      "battery_capacity" : {
          "icon" : "mdi:battery-arrow-up-outline",
          "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
          "device_class" : SensorDeviceClass.ENERGY_STORAGE,
          "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"],
-         "suggested_display_precision": 2
+         "suggested_display_precision": 2,
+         "engine": ["Electric"]
      },
      "battery_residual" : {
          "icon" : "mdi:battery-arrow-up",
          "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
          "device_class" : SensorDeviceClass.ENERGY_STORAGE,
          "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"],
-         "suggested_display_precision": 2
+         "suggested_display_precision": 2,
+         "engine": ["Electric"]
      }
 }
 
@@ -179,13 +187,15 @@ BINARY_SENSORS_DEFAULT = {
         "icon" : "mdi:power-plug-battery",
         "data_map" : ["energies", 0, "extension", "electric", "charging", "plugged"],
         "device_class" : BinarySensorDeviceClass.PLUG,
-        "on_value": True
+        "on_value": True,
+        "engine": ["Electric"]
     },
     "battery_charging" : {
         "icon" : "mdi:battery-charging-medium",
         "data_map" : ["energies", 0, "extension", "electric", "charging", "status"],
         "device_class" : BinarySensorDeviceClass.BATTERY_CHARGING,
-        "on_value": "InProgress"
+        "on_value": "InProgress",
+        "engine": ["Electric"]
     },
     "engine" : {
         "icon" : "mdi:power",
