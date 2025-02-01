@@ -1,0 +1,140 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Konfigurera och koppla ihop med ditt Stellantis fordon",
+        "data": {
+          "mobile_app": "Fordonets mobilapp"
+        }
+      },
+      "country": {
+        "description": "Konfigurera och koppla ihop med ditt Stellantis fordon",
+        "data": {
+          "country_code": "Din landskod"
+        }
+      },
+      "otp": {
+        "description": "Konfigurera och verifiera OTP",
+        "data": {
+          "sms_code": "SMS kod från Stellantis",
+          "pin_code": "Pinkod från fordonets mobilapp"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Service batteri"
+      },
+      "type": {
+        "name": "Typ",
+        "state": {
+          "Electric": "Elektrisk"
+        }
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "mileage": {
+        "name": "Miltal"
+      },
+      "autonomy": {
+        "name": "Räckvidd"
+      },
+      "battery": {
+        "name": "Batteri"
+      },
+      "battery_soh": {
+        "name": "Batteri SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Batteri laddningshastighet"
+      },
+      "battery_charging_type": {
+        "name": "Batteri laddningstyp"
+      },
+      "battery_charging_time": {
+        "name": "Batteri laddningstid"
+      },
+      "battery_charging_end": {
+        "name": "Batteriladdning klar"
+      },
+      "battery_capacity": {
+        "name": "Batteri kapacitet"
+      },
+      "battery_residual": {
+        "name": "Batteri kvarvarande kapacitet"
+      },
+      "command_status": {
+        "name": "Kommando",
+        "state": {
+          "99": "Ej kompatibel",
+          "900": "Accepterad",
+          "901": "Fordonet i viloläge",
+          "903": "Skickat till fordonet",
+          "0": "Klar",
+          "300": "Avbruten"
+        }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Kör"
+      },
+      "doors": {
+        "name": "Dörrar"
+      },
+      "battery_plugged": {
+        "name": "Inkopplad"
+      },
+      "battery_charging": {
+        "name": "Laddar"
+      },
+      "engine": {
+        "name": "Motor"
+      },
+      "air_conditioning": {
+        "name": "Klimatanläggning"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Väck"
+      },
+      "doors": {
+        "name": "Dörrar"
+      },
+      "horn": {
+        "name": "Tuta"
+      },
+      "lights": {
+        "name": "Ljus"
+      },
+      "charge_full": {
+        "name": "Ladda fullt"
+      },
+      "charge_start_stop": {
+        "name": "Ladda Start/Stop"
+      },
+      "air_conditioning": {
+        "name": "Klimatanläggning Start/Stop"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Fordon"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Batteri laddningsgräns"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Batteri laddningsgräns"
+      }
+    }
+  }
+}
