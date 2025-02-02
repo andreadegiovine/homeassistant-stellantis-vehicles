@@ -176,7 +176,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                             charge_limit = self._sensors["number_battery_charging_limit"]
                         if charge_limit_on and charge_limit and "battery" in self._sensors:
                             current_battery = self._sensors["battery"]
-                            if int(current_battery) >= int(charge_limit):
+                            if int(float(current_battery)) >= int(float(charge_limit)):
                                 button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop.name")
                                 await self.send_charge_command(button_name)
                                 self._manage_charge_limit_sent = True
@@ -362,7 +362,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                     now_timestamp = datetime.timestamp(get_datetime())
                     value_timestamp = datetime.timestamp(value)
                     diff = value_timestamp - now_timestamp
-                    limit_diff = (diff / (100 - int(current_battery))) * (int(charge_limit) - int(current_battery))
+                    limit_diff = (diff / (100 - int(float(current_battery)))) * (int(float(charge_limit)) - int(float(current_battery)))
                     value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
 
         if self._key in ["battery_capacity", "battery_residual"]:
