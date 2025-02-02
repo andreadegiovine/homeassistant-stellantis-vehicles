@@ -16,7 +16,8 @@ from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
 
 from .const import (
     DOMAIN,
-    FIELD_MOBILE_APP
+    FIELD_MOBILE_APP,
+    VEHICLE_TYPE_ELECTRIC
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -167,7 +168,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             self._manage_charge_limit_sent = False
 
         if "service" in data and "type" in data["service"]:
-            if data["service"]["type"] == "Electric":
+            if data["service"]["type"] == VEHICLE_TYPE_ELECTRIC:
                 if "battery_charging" in self._sensors:
                     if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
                         charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]

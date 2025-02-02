@@ -4,7 +4,8 @@ from homeassistant.components.button import ButtonEntityDescription
 from .base import StellantisBaseButton
 
 from .const import (
-    DOMAIN
+    DOMAIN,
+    VEHICLE_TYPE_ELECTRIC
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         )
         entities.extend([StellantisAirConditioningButton(coordinator, description)])
 
-        if coordinator.vehicle_type == "Elettric":
+        if coordinator.vehicle_type == VEHICLE_TYPE_ELECTRIC:
             description = ButtonEntityDescription(
                 name = "charge_start_stop",
                 key = "charge_start_stop",

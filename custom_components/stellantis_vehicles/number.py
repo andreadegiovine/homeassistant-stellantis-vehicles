@@ -6,7 +6,8 @@ from homeassistant.components.number.const import NumberMode
 from .base import StellantisBaseNumber
 
 from .const import (
-    DOMAIN
+    DOMAIN,
+    VEHICLE_TYPE_ELECTRIC
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
     for vehicle in vehicles:
         coordinator = await stellantis.async_get_coordinator(vehicle)
-        if coordinator.vehicle_type == "Electric":
+        if coordinator.vehicle_type == VEHICLE_TYPE_ELECTRIC:
             description = NumberEntityDescription(
                 name = "battery_charging_limit",
                 key = "battery_charging_limit",
