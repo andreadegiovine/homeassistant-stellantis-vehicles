@@ -1,0 +1,140 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Määrittele ja kytke Stellantis autosi",
+        "data": {
+          "mobile_app": "Vehicle mobile app"
+        }
+      },
+      "country": {
+        "description": "Määrittele ja kytke Stellantis autosi",
+        "data": {
+          "country_code": "Maakoodi"
+        }
+      },
+      "otp": {
+        "description": "Määrittele ja hyväksy OTP",
+        "data": {
+          "sms_code": "Tekstiviesti Stellantikselta",
+          "pin_code": "Mobiililaitteen pin-koodi"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Käynnistysakun jännite"
+      },
+      "type": {
+        "name": "Type",
+        "state": {
+          "Electric": "Sähkö"
+        }
+      },
+      "temperature": {
+        "name": "Lämpötila"
+      },
+      "mileage": {
+        "name": "Mittarilukema"
+      },
+      "autonomy": {
+        "name": "Autolla pääsee"
+      },
+      "battery": {
+        "name": "Akku"
+      },
+      "battery_soh": {
+        "name": "Ajoakun SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Ajoakun latausmäärä"
+      },
+      "battery_charging_type": {
+        "name": "Lataustapa"
+      },
+      "battery_charging_time": {
+        "name": "Latausaika"
+      },
+      "battery_charging_end": {
+        "name": "Lataus päättyy"
+      },
+      "battery_capacity": {
+        "name": "Ajoakun kokonaiskapasiteetti"
+      },
+      "battery_residual": {
+        "name": "Ajoakun kapasiteettiä jäljellä"
+      },
+      "command_status": {
+        "name": "Käskyn tila",
+        "state": {
+          "99": "Ei yhteensopiva",
+          "900": "Hyväksytty",
+          "901": "Lepotila",
+          "903": "Yhdistetty autoon",
+          "0": "Suoritettu",
+          "300": "Keskeytetty"
+        }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Auto liikkeellä"
+      },
+      "doors": {
+        "name": "Ovet"
+      },
+      "battery_plugged": {
+        "name": "Lataus kytketty"
+      },
+      "battery_charging": {
+        "name": "Latauksessa"
+      },
+      "engine": {
+        "name": "Auto käynnissä"
+      },
+      "air_conditioning": {
+        "name": "Esi-ilmastointi"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Herätetään"
+      },
+      "doors": {
+        "name": "Ovet"
+      },
+      "horn": {
+        "name": "Äänimerkki"
+      },
+      "lights": {
+        "name": "Valot"
+      },
+      "charge_full": {
+        "name": "Ladattu täyteen"
+      },
+      "charge_start_stop": {
+        "name": "Lataus Start/Stop"
+      },
+      "air_conditioning": {
+        "name": "Esi-lmastointi Start/Stop"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Ajoneuvon sijainti"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Latauksen rajoitus"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Latauksen rajoitus päälle"
+      }
+    }
+  }
+}
