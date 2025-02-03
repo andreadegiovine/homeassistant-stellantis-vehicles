@@ -30,7 +30,10 @@
       "type": {
         "name": "Tipo",
         "state": {
-          "Electric": "Elettrico"
+          "Electric": "Elettrico",
+          "Hybrid": "Ibrido",
+          "Thermic": "Termico",
+          "Hydrogen": "Idrogeno"
         }
       },
       "temperature": {

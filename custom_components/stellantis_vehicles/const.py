@@ -83,6 +83,9 @@ PLATFORMS = [
 ]
 
 VEHICLE_TYPE_ELECTRIC = "Electric"
+VEHICLE_TYPE_HYBRID = "Hybrid"
+VEHICLE_TYPE_THERMIC = "Thermic"
+VEHICLE_TYPE_HYDROGEN = "Hydrogen"
 
 SENSORS_DEFAULT = {
     "vehicle" : {
@@ -93,10 +96,6 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : PERCENTAGE,
         "device_class": SensorDeviceClass.BATTERY,
         "data_map" : ["battery", "voltage"]
-    },
-    "type" : {
-        "icon" : "mdi:car-info",
-        "data_map" : ["service", "type"]
     },
     "temperature" : {
         "icon" : "mdi:thermometer",

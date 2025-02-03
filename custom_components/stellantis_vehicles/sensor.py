@@ -46,6 +46,14 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                     entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("data_map", None), default_value.get("available", None))])
 
         description = SensorEntityDescription(
+            name = "type",
+            key = "type",
+            translation_key = "type",
+            icon = "mdi:car-info"
+        )
+        entities.extend([StellantisTypeSensor(coordinator, description)])
+
+        description = SensorEntityDescription(
             name = "command_status",
             key = "command_status",
             translation_key = "command_status",
@@ -56,6 +64,11 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 #         await coordinator.async_request_refresh()
 
     async_add_entities(entities)
+
+
+class StellantisTypeSensor(StellantisRestoreSensor):
+    def coordinator_update(self):
+        self._attr_native_value = self._coordinator.vehicle_type
 
 
 class StellantisCommandStatusSensor(StellantisRestoreSensor):
