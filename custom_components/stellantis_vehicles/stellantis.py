@@ -12,6 +12,8 @@ import asyncio
 from datetime import ( datetime, timedelta, UTC )
 
 from homeassistant.helpers import translation
+from homeassistant.exceptions import ConfigEntryAuthFailed
+
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp
 from .utils import get_datetime
@@ -117,7 +119,12 @@ class StellantisBase:
                 elif "message" in result and "code" in result:
                     error = result["message"] + " - " + str(result["code"])
             _LOGGER.debug("---------- END make_http_request")
+
+            if str(resp.status) == "400" and "error" in result and result["error"] == "invalid_grant":
+                # MQTT token error
+                raise ConfigEntryAuthFailed(error)
             if error:
+                # Generic error
                 raise Exception(error)
             return result
 
@@ -127,15 +134,27 @@ class StellantisOauth(StellantisBase):
         return self.apply_query_params(OAUTH_AUTHORIZE_URL, OAUTH_AUTHORIZE_QUERY_PARAMS)
 
     async def get_access_token(self):
+        _LOGGER.debug("---------- START get_access_token")
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_GET_TOKEN_QUERY_PARAMS)
         headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
-        return await self.make_http_request(url, 'POST', headers)
+        token_request = await self.make_http_request(url, 'POST', headers)
+        _LOGGER.debug(url)
+        _LOGGER.debug(headers)
+        _LOGGER.debug(token_request)
+        _LOGGER.debug("---------- END get_access_token")
+        return token_request
 
     async def get_user_info(self):
+        _LOGGER.debug("---------- START get_user_info")
         url = self.apply_query_params(GET_USER_INFO_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
-        return await self.make_http_request(url, 'GET', headers)
+        user_request = await self.make_http_request(url, 'GET', headers)
+        _LOGGER.debug(url)
+        _LOGGER.debug(headers)
+        _LOGGER.debug(user_request)
+        _LOGGER.debug("---------- END get_user_info")
+        return user_request
 
     def new_otp(self, sms_code, pin_code):
         try:
@@ -150,15 +169,27 @@ class StellantisOauth(StellantisBase):
             raise Exception(str(e))
 
     async def get_otp_sms(self):
+        _LOGGER.debug("---------- START get_otp_sms")
         url = self.apply_query_params(GET_OTP_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(GET_OTP_HEADERS)
-        return await self.make_http_request(url, 'POST', headers)
+        sms_request = await self.make_http_request(url, 'POST', headers)
+        _LOGGER.debug(url)
+        _LOGGER.debug(headers)
+        _LOGGER.debug(sms_request)
+        _LOGGER.debug("---------- END get_otp_sms")
+        return sms_request
 
     async def get_mqtt_access_token(self):
+        _LOGGER.debug("---------- START get_mqtt_access_token")
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(GET_OTP_HEADERS)
         otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
-        return await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+        token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+        _LOGGER.debug(url)
+        _LOGGER.debug(headers)
+        _LOGGER.debug(token_request)
+        _LOGGER.debug("---------- END get_mqtt_access_token")
+        return token_request
 
 
 class StellantisVehicles(StellantisBase):

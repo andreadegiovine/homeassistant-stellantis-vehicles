@@ -9,6 +9,7 @@ from homeassistant import config_entries
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers.network import get_url
 
+from .utils import get_datetime
 from .stellantis import StellantisOauth
 from .const import (
     DOMAIN,
@@ -86,7 +87,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.data.update({
             "access_token": token_request["access_token"],
             "refresh_token": token_request["refresh_token"],
-            "expires_in": (datetime.now() + timedelta(0, int(token_request["expires_in"]))).isoformat()
+            "expires_in": (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat()
         })
 
         self.stellantis.save_config({"access_token": self.data["access_token"]})
@@ -125,16 +126,30 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.data.update({"mqtt": {
             "access_token": otp_token_request["access_token"],
             "refresh_token": otp_token_request["refresh_token"],
-            "expires_in": (datetime.now() + timedelta(0, int(otp_token_request["expires_in"]))).isoformat()
+            "expires_in": (get_datetime() + timedelta(0, int(otp_token_request["expires_in"]))).isoformat()
         }})
 
         return await self.async_step_final(user_input)
 
 
     async def async_step_final(self, user_input=None):
+        if self.source == config_entries.SOURCE_REAUTH:
+            self._abort_if_unique_id_mismatch()
+            return self.async_update_reload_and_abort(self._get_reauth_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
+
         await self.async_set_unique_id(self.data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5]))
         self._abort_if_unique_id_configured()
         return self.async_create_entry(title=self.data[FIELD_MOBILE_APP], data=self.data)
+
+
+    async def async_step_reauth(self, entry_data):
+        _LOGGER.debug("---------- START async_step_reauth")
+        self.data.update(entry_data)
+        self.stellantis = StellantisOauth(self.hass)
+        self.stellantis.save_config(self.data)
+        _LOGGER.debug("---------- END async_step_reauth")
+        return await self.async_step_otp()
+
 
 
 class StellantisOauthView(HomeAssistantView):

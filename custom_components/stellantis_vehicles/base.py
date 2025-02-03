@@ -51,9 +51,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     @property
     def vehicle_type(self):
-        if "service" in self._data and "type" in self._data["service"]:
-            return self._data["service"]["type"]
-        return None
+        self._stellantis.get_config("type")
 
     @property
     def command_history(self):
