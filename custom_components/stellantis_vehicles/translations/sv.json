@@ -52,7 +52,12 @@
         "name": "Batteri laddningshastighet"
       },
       "battery_charging_type": {
-        "name": "Batteri laddningstyp"
+        "name": "Batteri laddningstyp",
+        "state": {
+          "No": "No",
+          "Slow": "Slow",
+          "Quick": "Fast"
+        }
       },
       "battery_charging_time": {
         "name": "Batteri laddningstid"
@@ -76,6 +81,15 @@
           "0": "Klar",
           "300": "Avbruten"
         }
+      },
+      "fuel": {
+        "name": "Fuel"
+      },
+      "fuel_consumption_total": {
+        "name": "Fuel consumption total"
+      },
+      "fuel_consumption_instant": {
+        "name": "Fuel consumption instant"
       }
     },
     "binary_sensor": {
@@ -110,9 +124,6 @@
       },
       "lights": {
         "name": "Ljus"
-      },
-      "charge_full": {
-        "name": "Ladda fullt"
       },
       "charge_start_stop": {
         "name": "Ladda Start/Stop"

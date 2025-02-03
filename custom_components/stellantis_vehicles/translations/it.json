@@ -55,7 +55,12 @@
         "name": "Velocità ricarica batteria"
       },
       "battery_charging_type": {
-        "name": "Tipo ricarica batteria"
+        "name": "Tipo ricarica batteria",
+        "state": {
+          "No": "No",
+          "Slow": "Lento",
+          "Quick": "Veloce"
+        }
       },
       "battery_charging_time": {
         "name": "Orario ricarica batteria"
@@ -79,6 +84,15 @@
           "0": "Completato",
           "300": "Annullato"
         }
+      },
+      "fuel": {
+        "name": "Carburante"
+      },
+      "fuel_consumption_total": {
+        "name": "Consumo carburante totale"
+      },
+      "fuel_consumption_instant": {
+        "name": "Consumo carburante istantaneo"
       }
     },
     "binary_sensor": {
@@ -113,9 +127,6 @@
       },
       "lights": {
         "name": "Luci"
-      },
-      "charge_full": {
-        "name": "Ricarica completa"
       },
       "charge_start_stop": {
         "name": "Start/Stop ricarica"

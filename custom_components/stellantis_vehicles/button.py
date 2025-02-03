@@ -5,7 +5,8 @@ from .base import StellantisBaseButton
 
 from .const import (
     DOMAIN,
-    VEHICLE_TYPE_ELECTRIC
+    VEHICLE_TYPE_ELECTRIC,
+    VEHICLE_TYPE_HYBRID
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         )
         entities.extend([StellantisAirConditioningButton(coordinator, description)])
 
-        if coordinator.vehicle_type == VEHICLE_TYPE_ELECTRIC:
+        if coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             description = ButtonEntityDescription(
                 name = "charge_start_stop",
                 key = "charge_start_stop",

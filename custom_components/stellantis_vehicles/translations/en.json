@@ -55,7 +55,12 @@
         "name": "Battery charging rate"
       },
       "battery_charging_type": {
-        "name": "Battery charging type"
+        "name": "Battery charging type",
+        "state": {
+          "No": "No",
+          "Slow": "Slow",
+          "Quick": "Fast"
+        }
       },
       "battery_charging_time": {
         "name": "Battery charging time"
@@ -79,6 +84,15 @@
           "0": "Complete",
           "300": "Canceled"
         }
+      },
+      "fuel": {
+        "name": "Fuel"
+      },
+      "fuel_consumption_total": {
+        "name": "Fuel consumption total"
+      },
+      "fuel_consumption_instant": {
+        "name": "Fuel consumption instant"
       }
     },
     "binary_sensor": {
@@ -113,9 +127,6 @@
       },
       "lights": {
         "name": "Lights"
-      },
-      "charge_full": {
-        "name": "Charge full"
       },
       "charge_start_stop": {
         "name": "Charge Start/Stop"

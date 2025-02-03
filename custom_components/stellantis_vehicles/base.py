@@ -17,7 +17,8 @@ from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
 from .const import (
     DOMAIN,
     FIELD_MOBILE_APP,
-    VEHICLE_TYPE_ELECTRIC
+    VEHICLE_TYPE_ELECTRIC,
+    VEHICLE_TYPE_HYBRID
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -165,22 +166,21 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if not hasattr(self, "_manage_charge_limit_sent"):
             self._manage_charge_limit_sent = False
 
-        if "service" in data and "type" in data["service"]:
-            if data["service"]["type"] == VEHICLE_TYPE_ELECTRIC:
-                if "battery_charging" in self._sensors:
-                    if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
-                        charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]
-                        charge_limit = None
-                        if "number_battery_charging_limit" in self._sensors and self._sensors["number_battery_charging_limit"]:
-                            charge_limit = self._sensors["number_battery_charging_limit"]
-                        if charge_limit_on and charge_limit and "battery" in self._sensors:
-                            current_battery = self._sensors["battery"]
-                            if int(float(current_battery)) >= int(float(charge_limit)):
-                                button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop.name")
-                                await self.send_charge_command(button_name)
-                                self._manage_charge_limit_sent = True
-                    elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
-                        self._manage_charge_limit_sent = False
+        if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
+            if "battery_charging" in self._sensors:
+                if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
+                    charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]
+                    charge_limit = None
+                    if "number_battery_charging_limit" in self._sensors and self._sensors["number_battery_charging_limit"]:
+                        charge_limit = self._sensors["number_battery_charging_limit"]
+                    if charge_limit_on and charge_limit and "battery" in self._sensors:
+                        current_battery = self._sensors["battery"]
+                        if int(float(current_battery)) >= int(float(charge_limit)):
+                            button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop.name")
+                            await self.send_charge_command(button_name)
+                            self._manage_charge_limit_sent = True
+                elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
+                    self._manage_charge_limit_sent = False
 
 
 class StellantisBaseEntity(CoordinatorEntity):
@@ -328,6 +328,9 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
+        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID and self._data_map[0] == "energies" and self._data_map[1] == 0 and not self._key.startswith("fuel"):
+            self._data_map[1] = 1
+
         self._available = available
 
     @property
@@ -348,6 +351,9 @@ class StellantisBaseSensor(StellantisRestoreSensor):
             if self._attr_native_value == "unknown":
                 self._attr_native_value = None
             return
+
+        if self._key == "fuel_consumption_total":
+            value = float(value)/100
 
         if self._key in ["battery_charging_time", "battery_charging_end"]:
             value = timestring_to_datetime(value, self._key == "battery_charging_end")
@@ -375,6 +381,9 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
+        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID and self._data_map[0] == "energies" and self._data_map[1] == 0:
+            self._data_map[1] = 1
+
         self._on_value = on_value
 
         self._attr_device_class = description.device_class

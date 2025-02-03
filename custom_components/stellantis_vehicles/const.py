@@ -1,7 +1,7 @@
 import os
 import json
 
-from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfElectricPotential, UnitOfEnergy, UnitOfSpeed )
+from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfElectricPotential, UnitOfEnergy, UnitOfSpeed, UnitOfVolume )
 from homeassistant.components.sensor.const import SensorDeviceClass
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
@@ -119,39 +119,39 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : PERCENTAGE,
         "device_class": SensorDeviceClass.BATTERY,
         "data_map" : ["energies", 0, "level"],
-        "engine": [VEHICLE_TYPE_ELECTRIC]
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_soh" : {
         "icon" : "mdi:battery-heart-variant",
         "unit_of_measurement" : PERCENTAGE,
         "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
-        "engine": [VEHICLE_TYPE_ELECTRIC]
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_rate" : {
         "icon" : "mdi:ev-station",
         "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
         "device_class": SensorDeviceClass.SPEED,
         "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingRate"],
-        "engine": [VEHICLE_TYPE_ELECTRIC]
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_type" : {
         "icon" : "mdi:lightning-bolt",
         "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"],
-        "engine": [VEHICLE_TYPE_ELECTRIC]
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_time" : {
         "icon" : "mdi:battery-clock",
         "device_class" : SensorDeviceClass.TIMESTAMP,
         "data_map" : ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"],
         "available" : {"battery_charging": "InProgress"},
-        "engine": [VEHICLE_TYPE_ELECTRIC]
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
      "battery_charging_end" : {
          "icon" : "mdi:battery-check",
          "device_class" : SensorDeviceClass.TIMESTAMP,
          "data_map" : ["energies", 0, "extension", "electric", "charging", "remainingTime"],
          "available" : {"battery_charging": "InProgress"},
-         "engine": [VEHICLE_TYPE_ELECTRIC]
+         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
      "battery_capacity" : {
          "icon" : "mdi:battery-arrow-up-outline",
@@ -159,7 +159,7 @@ SENSORS_DEFAULT = {
          "device_class" : SensorDeviceClass.ENERGY_STORAGE,
          "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"],
          "suggested_display_precision": 2,
-         "engine": [VEHICLE_TYPE_ELECTRIC]
+         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
      "battery_residual" : {
          "icon" : "mdi:battery-arrow-up",
@@ -167,8 +167,27 @@ SENSORS_DEFAULT = {
          "device_class" : SensorDeviceClass.ENERGY_STORAGE,
          "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"],
          "suggested_display_precision": 2,
-         "engine": [VEHICLE_TYPE_ELECTRIC]
-     }
+         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
+     },
+    "fuel" : {
+        "unit_of_measurement" : PERCENTAGE,
+        "icon": "mdi:gas-station",
+        "data_map" : ["energies", 0, "level"],
+        "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    },
+    "fuel_consumption_total" : {
+        "unit_of_measurement" : UnitOfVolume.LITERS,
+        "icon": "mdi:gas-station-outline",
+        "data_map" : ["energies", 0, "extension", "fuel", "consumptions", "total"],
+         "suggested_display_precision": 2,
+        "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    },
+    "fuel_consumption_instant" : {
+        "unit_of_measurement" : UnitOfVolume.LITERS+"/100"+UnitOfLength.KILOMETERS,
+        "icon": "mdi:gas-station-outline",
+        "data_map" : ["energies", 0, "extension", "fuel", "consumptions", "instant"],
+        "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    },
 }
 
 BINARY_SENSORS_DEFAULT = {
@@ -180,29 +199,29 @@ BINARY_SENSORS_DEFAULT = {
     },
     "doors" : {
         "icon" : "mdi:car-door-lock",
-        "data_map" : ["alarm", "status", "activation"],
+        "data_map" : ["doorsState", "lockedStates", 0],
         "device_class" : BinarySensorDeviceClass.LOCK,
-        "on_value": "Deactive"
+        "on_value": "Locked"
     },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",
         "data_map" : ["energies", 0, "extension", "electric", "charging", "plugged"],
         "device_class" : BinarySensorDeviceClass.PLUG,
         "on_value": True,
-        "engine": [VEHICLE_TYPE_ELECTRIC]
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging" : {
         "icon" : "mdi:battery-charging-medium",
         "data_map" : ["energies", 0, "extension", "electric", "charging", "status"],
         "device_class" : BinarySensorDeviceClass.BATTERY_CHARGING,
         "on_value": "InProgress",
-        "engine": [VEHICLE_TYPE_ELECTRIC]
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "engine" : {
         "icon" : "mdi:power",
         "data_map" : ["ignition", "type"],
         "device_class" : BinarySensorDeviceClass.POWER,
-        "on_value": "Start"
+        "on_value": "StartUp"
     },
     "air_conditioning" : {
         "icon" : "mdi:air-conditioner",

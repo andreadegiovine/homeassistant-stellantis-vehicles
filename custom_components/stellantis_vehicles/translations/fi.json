@@ -52,7 +52,12 @@
         "name": "Ajoakun latausmäärä"
       },
       "battery_charging_type": {
-        "name": "Lataustapa"
+        "name": "Lataustapa",
+        "state": {
+          "No": "No",
+          "Slow": "Slow",
+          "Quick": "Fast"
+        }
       },
       "battery_charging_time": {
         "name": "Latausaika"
@@ -76,6 +81,15 @@
           "0": "Suoritettu",
           "300": "Keskeytetty"
         }
+      },
+      "fuel": {
+        "name": "Fuel"
+      },
+      "fuel_consumption_total": {
+        "name": "Fuel consumption total"
+      },
+      "fuel_consumption_instant": {
+        "name": "Fuel consumption instant"
       }
     },
     "binary_sensor": {
@@ -110,9 +124,6 @@
       },
       "lights": {
         "name": "Valot"
-      },
-      "charge_full": {
-        "name": "Ladattu täyteen"
       },
       "charge_start_stop": {
         "name": "Lataus Start/Stop"
