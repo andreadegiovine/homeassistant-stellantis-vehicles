@@ -90,7 +90,7 @@ class StellantisLightsButton(StellantisBaseButton):
 class StellantisChargingStartStopButton(StellantisBaseButton):
     @property
     def available(self):
-        return super().available and self._coordinator._sensors["battery_plugged"] and self._coordinator._sensors["battery_charging"] in ["InProgress", "Stopped"]
+        return super().available and "battery_plugged" in self._coordinator._sensors and self._coordinator._sensors["battery_plugged"] and self._coordinator._sensors["battery_charging"] in ["InProgress", "Stopped"]
 
     async def async_press(self):
         await self._coordinator.send_charge_command(self.name)
@@ -98,7 +98,7 @@ class StellantisChargingStartStopButton(StellantisBaseButton):
 class StellantisAirConditioningButton(StellantisBaseButton):
     @property
     def available(self):
-        return super().available and self._coordinator._sensors["battery"] and int(self._coordinator._sensors["battery"]) >= 50
+        return super().available and "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"] and int(self._coordinator._sensors["battery"]) >= 50
 
     async def async_press(self):
         await self._coordinator.send_air_conditioning_command(self.name)
