@@ -50,6 +50,17 @@ body:
       default: 0
     validations:
       required: true
+  - type: dropdown
+    id: remote
+    attributes:
+      label: Remote service
+      options:
+        - No
+        - E-remote
+        - Connect Plus
+      default: 0
+    validations:
+      required: true
   - type: textarea
     id: request
     attributes:

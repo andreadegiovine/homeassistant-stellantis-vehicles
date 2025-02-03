@@ -34,6 +34,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 - [x] Opel Mokka-e 2022 [e-remote] (me)
 - [x] Peugeot e208 2021 [e-remote] (@bgoncal, @Ladida1)
 - [x] Vauxhall Mokka-e (@pantha007)
+- [x] Citroen C5 X 2022 (@bycippy)
 - [ ] Others EV vehicles
 - [ ] Others thermal vehicles
 - [ ] Multi vehicles account
