@@ -79,7 +79,8 @@
           "901": "Lepotila",
           "903": "Yhdistetty autoon",
           "0": "Suoritettu",
-          "300": "Keskeytetty"
+          "300": "Keskeytetty",
+          "500": "Error"
         }
       },
       "fuel": {

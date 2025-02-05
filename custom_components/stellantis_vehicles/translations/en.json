@@ -80,9 +80,10 @@
           "99": "Not compatible",
           "900": "Accepted",
           "901": "Vehicle as sleep",
-          "903": "Forwarded to vehicle",
+          "903": "Forwarded",
           "0": "Complete",
-          "300": "Canceled"
+          "300": "Canceled",
+          "500": "Error"
         }
       },
       "fuel": {

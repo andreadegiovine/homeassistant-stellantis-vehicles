@@ -80,9 +80,10 @@
           "99": "Non compatibile",
           "900": "Accettato",
           "901": "Il veicolo dorme",
-          "903": "Inoltrato al veicolo",
+          "903": "Inoltrato",
           "0": "Completato",
-          "300": "Annullato"
+          "300": "Annullato",
+          "500": "Errore"
         }
       },
       "fuel": {

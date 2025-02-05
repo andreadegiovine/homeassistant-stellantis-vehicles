@@ -390,12 +390,13 @@ class StellantisVehicles(StellantisBase):
             charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
                 coordinator = asyncio.run_coroutine_threadsafe(self.async_get_coordinator_by_vin(data["vin"]), self._hass.loop).result()
-                if "return_code" not in data or data["return_code"] in ["0", "300"]:
+                if "return_code" not in data or data["return_code"] in ["0", "300", "500"]:
                     if "return_code" not in data:
                         result_code = data["process_code"]
                     else:
                         result_code = data["return_code"]
-                    asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], {"status": result_code, "details": None}), self._hass.loop).result()
+                    if result_code != "901": # Not store "Vehicle as sleep" event
+                        asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], {"status": result_code, "details": None}), self._hass.loop).result()
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
                         asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], {"status": "99", "details": None}), self._hass.loop).result()
@@ -405,7 +406,7 @@ class StellantisVehicles(StellantisBase):
                             _LOGGER.debug("last request is send again, token was expired")
                             last_request = self._mqtt_last_request
                             self._mqtt_last_request = None
-                            self.send_mqtt_message(last_request[0], last_request[1], store=False)
+                            asyncio.run_coroutine_threadsafe(self.send_mqtt_message(last_request[0], last_request[1], store=False)).result()
                         else:
                             _LOGGER.error("Last request might have been send twice without success")
                 elif data["return_code"] != "0":

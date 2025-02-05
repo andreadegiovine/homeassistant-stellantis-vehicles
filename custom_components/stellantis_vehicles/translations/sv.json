@@ -79,7 +79,8 @@
           "901": "Fordonet i viloläge",
           "903": "Skickat till fordonet",
           "0": "Klar",
-          "300": "Avbruten"
+          "300": "Avbruten",
+          "500": "Error"
         }
       },
       "fuel": {
