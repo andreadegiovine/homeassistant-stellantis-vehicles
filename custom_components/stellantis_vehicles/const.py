@@ -175,6 +175,13 @@ SENSORS_DEFAULT = {
         "data_map" : ["energies", 0, "level"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
+    "fuel_autonomy" : {
+        "icon" : "mdi:map-marker-distance",
+        "unit_of_measurement" : UnitOfLength.KILOMETERS,
+        "device_class": SensorDeviceClass.DISTANCE,
+        "data_map" : ["energies", 0, "autonomy"],
+        "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    },
     "fuel_consumption_total" : {
         "unit_of_measurement" : UnitOfVolume.LITERS,
         "icon": "mdi:gas-station-outline",

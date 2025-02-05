@@ -29,7 +29,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
                     unit_of_measurement = default_value.get("unit_of_measurement", None)
                     if stellantis.get_config(FIELD_COUNTRY_CODE) == "GB":
-                        if key in ["mileage","autonomy"]:
+                        if key in ["mileage","autonomy","fuel_autonomy"]:
                             unit_of_measurement = UnitOfLength.MILES
                         if key == "battery_charging_rate":
                             unit_of_measurement = UnitOfLength.MILES_PER_HOUR

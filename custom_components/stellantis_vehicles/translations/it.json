@@ -88,6 +88,9 @@
       "fuel": {
         "name": "Carburante"
       },
+      "fuel_autonomy": {
+        "name": "Autonomia carburante"
+      },
       "fuel_consumption_total": {
         "name": "Consumo carburante totale"
       },

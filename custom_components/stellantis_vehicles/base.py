@@ -294,8 +294,8 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def location_accuracy(self):
         if "lastPosition" in self._coordinator._data:
-            return int(self._coordinator._data["lastPosition"]["properties"]["heading"])
-        return 0
+            return 20
+        return None
 
     @property
     def source_type(self):
@@ -371,7 +371,10 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                     value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
 
         if self._key in ["battery_capacity", "battery_residual"]:
-            value = (float(value) / 1000) + 10
+            if int(value) < 1:
+                value = None
+            else:
+                value = (float(value) / 1000) + 10
 
         self._attr_native_value = value
 

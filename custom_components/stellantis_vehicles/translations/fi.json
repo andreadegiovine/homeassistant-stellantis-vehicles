@@ -85,6 +85,9 @@
       "fuel": {
         "name": "Fuel"
       },
+      "fuel_autonomy": {
+        "name": "Fuel autonomy"
+      },
       "fuel_consumption_total": {
         "name": "Fuel consumption total"
       },
