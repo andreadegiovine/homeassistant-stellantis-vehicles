@@ -1,7 +1,7 @@
 import logging
 
 from homeassistant.components.sensor import SensorEntityDescription
-from homeassistant.const import UnitOfLength
+from homeassistant.const import ( UnitOfLength, UnitOfSpeed )
 from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 
 from .const import (
@@ -32,7 +32,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                         if key in ["mileage","autonomy","fuel_autonomy"]:
                             unit_of_measurement = UnitOfLength.MILES
                         if key == "battery_charging_rate":
-                            unit_of_measurement = UnitOfLength.MILES_PER_HOUR
+                            unit_of_measurement = UnitOfSpeed.MILES_PER_HOUR
 
                     description = SensorEntityDescription(
                         name = key,
