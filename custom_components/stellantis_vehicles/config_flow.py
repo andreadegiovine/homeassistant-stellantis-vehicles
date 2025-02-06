@@ -44,7 +44,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.stellantis_oauth_panel_exist = False
         self.vehicles = {}
         self.errors = {}
-        self.init_reauth = False
 
     async def async_step_user(self, user_input=None):
         if user_input is None:
@@ -110,13 +109,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_otp(self, user_input=None):
         if user_input is None:
-            if not self.init_reauth:
-                try:
-                    await self.stellantis.get_otp_sms()
-                except Exception as e:
-                    self.errors[FIELD_MOBILE_APP] = str(e)
-                    return await self.async_step_user()
-            self.init_reauth = False
+            try:
+                await self.stellantis.get_otp_sms()
+            except Exception as e:
+                self.errors[FIELD_MOBILE_APP] = str(e)
+                return await self.async_step_user()
             return self.async_show_form(step_id="otp", data_schema=DATA_SCHEMA_2)
 
         try:
@@ -148,11 +145,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_reauth(self, entry_data):
         _LOGGER.debug("---------- START async_step_reauth")
         self.data.update(entry_data)
-        self.stellantis = StellantisOauth(self.hass)
-        self.stellantis.save_config(self.data)
-        self.init_reauth = True
         _LOGGER.debug("---------- END async_step_reauth")
-        return await self.async_step_otp()
+        return await self.async_step_oauth()
 
 
 
