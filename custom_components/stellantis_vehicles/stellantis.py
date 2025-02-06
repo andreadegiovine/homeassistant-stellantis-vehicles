@@ -122,7 +122,7 @@ class StellantisBase:
             _LOGGER.debug("---------- END make_http_request")
 
             if str(resp.status) == "400" and "error" in result and result["error"] == "invalid_grant":
-                # MQTT token error
+                # Token expiration
                 raise ConfigEntryAuthFailed(error)
             if error:
                 # Generic error
