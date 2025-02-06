@@ -1,0 +1,158 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configurer et connecter votre véhicule Stellantis",
+        "data": {
+          "mobile_app": "Application mobile du véhicule"
+        }
+      },
+      "country": {
+        "description": "Configurer et connecter votre véhicule Stellantis",
+        "data": {
+          "country_code": "Votre code pays"
+        }
+      },
+      "otp": {
+        "description": "Configurer et vérifier le code OTP",
+        "data": {
+          "sms_code": "Code SMS reçu de Stellantis",
+          "pin_code": "Code PIN de votre application mobile du véhicule"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Batterie de service"
+      },
+      "type": {
+        "name": "Type",
+        "state": {
+          "Electric": "Electrique",
+          "Hybrid": "Hybride",
+          "Thermic": "Thermique",
+          "Hydrogen": "Hydrogène"
+        }
+      },
+      "temperature": {
+        "name": "Température"
+      },
+      "mileage": {
+        "name": "Kilométrage"
+      },
+      "autonomy": {
+        "name": "Autonomie"
+      },
+      "battery": {
+        "name": "Batterie"
+      },
+      "battery_soh": {
+        "name": "Batterie SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Batterie vitesse de charge"
+      },
+      "battery_charging_type": {
+        "name": "Batterie type de charge",
+        "state": {
+          "No": "Non",
+          "Slow": "Lente",
+          "Quick": "Rapide"
+        }
+      },
+      "battery_charging_time": {
+        "name": "Batterie temps de charge"
+      },
+      "battery_charging_end": {
+        "name": "Batterie fin de charge estimée"
+      },
+      "battery_capacity": {
+        "name": "Batterie capacité"
+      },
+      "battery_residual": {
+        "name": "Batterie restante"
+      },
+      "command_status": {
+        "name": "Statut de la commande",
+        "state": {
+          "99": "Non compatible",
+          "900": "Acceptée",
+          "901": "Véhicule en veille",
+          "903": "Transmise",
+          "0": "Terminée",
+          "300": "Annulée",
+          "500": "Erreur"
+        }
+      },
+      "fuel": {
+        "name": "Carburant"
+      },
+      "fuel_autonomy": {
+        "name": "Autonomie du carburant"
+      },
+      "fuel_consumption_total": {
+        "name": "Consommation totale de carburant"
+      },
+      "fuel_consumption_instant": {
+        "name": "Consommation instantannée de carburant"
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Déplacement"
+      },
+      "doors": {
+        "name": "Portes"
+      },
+      "battery_plugged": {
+        "name": "Batterie branchée"
+      },
+      "battery_charging": {
+        "name": "Batterie en charge"
+      },
+      "engine": {
+        "name": "Moteur"
+      },
+      "air_conditioning": {
+        "name": "Air conditionné"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Réveil"
+      },
+      "doors": {
+        "name": "Portes"
+      },
+      "horn": {
+        "name": "Klaxon"
+      },
+      "lights": {
+        "name": "Phares"
+      },
+      "charge_start_stop": {
+        "name": "Charger Marche/Arrêt"
+      },
+      "air_conditioning": {
+        "name": "Air conditionné Marche/Arrêt"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Véhicule"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Batterie limite de charge"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Batterie limiter la charge"
+      }
+    }
+  }
+}
