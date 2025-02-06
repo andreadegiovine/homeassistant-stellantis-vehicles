@@ -13,6 +13,7 @@ from datetime import ( datetime, timedelta, UTC )
 
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp
@@ -265,7 +266,7 @@ class StellantisVehicles(StellantisBase):
         # Aggiungere notifica frontend di rinconfigurazione oauth token in caso di errore
         token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
         # Temporany fix
-        if not token_expiry.tzinfo:
+        if not token_expiry.tzinfo or token_expiry.tzinfo != dt.get_default_time_zone():
             token_expiry = get_datetime() - timedelta(0, 20)
         # End - Temporany fix
         if token_expiry < (get_datetime() - timedelta(0, 10)):
@@ -324,7 +325,7 @@ class StellantisVehicles(StellantisBase):
         mqtt_config = self.get_config("mqtt")
         token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
         # Temporany fix
-        if not token_expiry.tzinfo:
+        if not token_expiry.tzinfo or token_expiry.tzinfo != dt.get_default_time_zone():
             token_expiry = get_datetime() - timedelta(0, 20)
         # End - Temporany fix
         if (token_expiry < (get_datetime() - timedelta(0, 10))) or force:

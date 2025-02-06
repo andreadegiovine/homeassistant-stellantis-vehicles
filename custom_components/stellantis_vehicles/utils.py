@@ -1,6 +1,7 @@
 import logging
 from datetime import UTC, datetime, timezone, timedelta
-import pytz
+
+from homeassistant.util import dt
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -9,7 +10,7 @@ def get_datetime(date=None):
         date = datetime.now()
     if date.tzinfo != UTC:
         date = date.astimezone(UTC)
-    return date.astimezone(pytz.timezone('Europe/Rome'))
+    return date.astimezone(dt.get_default_time_zone())
 
 def date_from_pt_string(pt_string):
     regex = 'PT'
