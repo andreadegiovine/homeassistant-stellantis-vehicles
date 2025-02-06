@@ -146,7 +146,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug("---------- START async_step_reauth")
         self.data.update(entry_data)
         _LOGGER.debug("---------- END async_step_reauth")
-        return await self.async_step_oauth()
+        return await self.async_step_country()
 
 
 
