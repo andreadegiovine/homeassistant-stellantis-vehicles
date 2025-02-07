@@ -1,5 +1,6 @@
 import logging
 from datetime import UTC, datetime, timezone, timedelta
+# import json
 
 from homeassistant.util import dt
 
@@ -37,3 +38,20 @@ def timestring_to_datetime(timestring, sum_to_now = False):
     except Exception as e:
         _LOGGER.error(str(e))
         return None
+
+# def masked_configs(configs = {}):
+#     masked_params = ["access_token","customer_id","refresh_token","vehicle_id","vin","client_id","client_secret","basic_token"]
+#     masks = {}
+#     for key in configs:
+#         if isinstance(configs[key], (tuple, list, set, dict)):
+#             masks.update(masked_configs(configs[key]))
+#         elif key in masked_params:
+#             masks.update({configs[key]: str(configs[key][:8]) + "******"})
+#     return masks
+#
+# def masked_log(data, configs = {}):
+#     masks = masked_configs(configs)
+#     result = json.dumps(data)
+#     for mask in masks:
+#         result = result.replace(mask, masks[mask])
+#     return result
