@@ -1,0 +1,158 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configuur en verbind je Stellantis voertuig",
+        "data": {
+          "mobile_app": "Voertuig mobiele app"
+        }
+      },
+      "country": {
+        "description": "Configuur en verbind je Stellantis voertuig",
+        "data": {
+          "country_code": "Je land code"
+        }
+      },
+      "otp": {
+        "description": "Configureer en verifieer OTP",
+        "data": {
+          "sms_code": "SMS code van Stellantis",
+          "pin_code": "Pin code van je mobiele app"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Service batterij"
+      },
+      "type": {
+        "name": "Type",
+        "state": {
+          "Electric": "Electrisch",
+          "Hybrid": "Hybride",
+          "Thermic": "Thermisch",
+          "Hydrogen": "Waterstof"
+        }
+      },
+      "temperature": {
+        "name": "Temperatuur"
+      },
+      "mileage": {
+        "name": "Kilometerstand"
+      },
+      "autonomy": {
+        "name": "Autonomie"
+      },
+      "battery": {
+        "name": "Batterij"
+      },
+      "battery_soh": {
+        "name": "Batterij SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Batterij laad snelheid"
+      },
+      "battery_charging_type": {
+        "name": "Battery laad type",
+        "state": {
+          "No": "Nee",
+          "Slow": "Traag",
+          "Quick": "Snel"
+        }
+      },
+      "battery_charging_time": {
+        "name": "Battery laadtijd"
+      },
+      "battery_charging_end": {
+        "name": "Battery opladen einde"
+      },
+      "battery_capacity": {
+        "name": "Batterij capaciteit"
+      },
+      "battery_residual": {
+        "name": "Batterij residual"
+      },
+      "command_status": {
+        "name": "Command status",
+        "state": {
+          "99": "Niet compatibel",
+          "900": "Geaccepteerd",
+          "901": "Voertuig in slaapmodus",
+          "903": "Doorgestuurd",
+          "0": "Afgerond",
+          "300": "Geannuleerd",
+          "500": "Error"
+        }
+      },
+      "fuel": {
+        "name": "Brandstof"
+      },
+      "fuel_autonomy": {
+        "name": "Brandstof autonomie"
+      },
+      "fuel_consumption_total": {
+        "name": "Totaal brandstof verbruik"
+      },
+      "fuel_consumption_instant": {
+        "name": "Huidig brandstof verbruik"
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Bewegend"
+      },
+      "doors": {
+        "name": "Deuren"
+      },
+      "battery_plugged": {
+        "name": "Batterij gekoppeld"
+      },
+      "battery_charging": {
+        "name": "Batterij aan het laden"
+      },
+      "engine": {
+        "name": "Motor"
+      },
+      "air_conditioning": {
+        "name": "Air conditioning"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Wakker worden"
+      },
+      "doors": {
+        "name": "Deuren"
+      },
+      "horn": {
+        "name": "Toeter"
+      },
+      "lights": {
+        "name": "Lichten"
+      },
+      "charge_start_stop": {
+        "name": "Laden Starten/Stoppen"
+      },
+      "air_conditioning": {
+        "name": "Air conditioning Starten/Stoppen"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Voertuig"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Batterij laad limiet"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Batterij laad limiet"
+      }
+    }
+  }
+}
