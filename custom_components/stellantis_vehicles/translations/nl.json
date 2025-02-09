@@ -43,7 +43,7 @@
         "name": "Kilometerstand"
       },
       "autonomy": {
-        "name": "Autonomie"
+        "name": "Bereik"
       },
       "battery": {
         "name": "Batterij"
@@ -66,13 +66,13 @@
         "name": "Battery laadtijd"
       },
       "battery_charging_end": {
-        "name": "Battery opladen einde"
+        "name": "Battery verwachte eindtijd"
       },
       "battery_capacity": {
-        "name": "Batterij capaciteit"
+        "name": "Batterij maximum capaciteit"
       },
       "battery_residual": {
-        "name": "Batterij residual"
+        "name": "Batterij huidige capaciteit"
       },
       "command_status": {
         "name": "Command status",
@@ -90,7 +90,7 @@
         "name": "Brandstof"
       },
       "fuel_autonomy": {
-        "name": "Brandstof autonomie"
+        "name": "Brandstof bereik"
       },
       "fuel_consumption_total": {
         "name": "Totaal brandstof verbruik"
@@ -101,7 +101,7 @@
     },
     "binary_sensor": {
       "moving": {
-        "name": "Bewegend"
+        "name": "Rijden"
       },
       "doors": {
         "name": "Deuren"
