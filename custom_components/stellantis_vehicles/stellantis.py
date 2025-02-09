@@ -407,7 +407,7 @@ class StellantisVehicles(StellantisBase):
                             _LOGGER.debug("last request is send again, token was expired")
                             last_request = self._mqtt_last_request
                             self._mqtt_last_request = None
-                            asyncio.run_coroutine_threadsafe(self.send_mqtt_message(last_request[0], last_request[1], store=False)).result()
+                            asyncio.run_coroutine_threadsafe(self.send_mqtt_message(last_request[0], last_request[1], store=False), self._hass.loop).result()
                         else:
                             _LOGGER.error("Last request might have been send twice without success")
                 elif data["return_code"] != "0":
