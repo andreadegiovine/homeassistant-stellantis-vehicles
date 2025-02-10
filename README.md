@@ -68,7 +68,10 @@ and paste the log data on the issue request.
 ![Sensors](./images/sensors.png)
 
 ## Translations
-Copy the content of file `custom_components/stellantis_vehicles/translations/en.json`, edit all labels ("key": **"Label"**) and open a issue request choosing Translation request.
+### Pull request
+Fork this repo and create/update your language file under `custom_components/stellantis_vehicles/translations/` starting from `en.json`.
+### Manual
+Copy the content of file `custom_components/stellantis_vehicles/translations/en.json` to a new file, edit all labels ("key": **"Label"**) and open a issue request including the new/updated json language file.
 
 ## File "configs.json"
 This file contains all app api credentials by culture.
