@@ -1,4 +1,4 @@
-# Stellantis Vehicles
+# HomeAssistant - Stellantis Vehicles
 ## Requisite
 - **Vehicle native mobile app** installed and active;
 - **Remote service** compatible vehicle;
@@ -70,7 +70,7 @@ and paste the log data on the issue request.
 ## Translations
 ### Pull request
 Fork this repo and create/update your language file under `custom_components/stellantis_vehicles/translations/` starting from `en.json`.
-### Manual
+### Manually
 Copy the content of file `custom_components/stellantis_vehicles/translations/en.json` to a new file, edit all labels ("key": **"Label"**) and open a issue request including the new/updated json language file.
 
 ## File "configs.json"
