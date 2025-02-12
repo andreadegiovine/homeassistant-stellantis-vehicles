@@ -348,7 +348,7 @@ class StellantisVehicles(StellantisBase):
         if not self._mqtt:
             await self.refresh_mqtt_token()
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
-#             self._mqtt.enable_logger(logger=True)
+            self._mqtt.enable_logger(logger=_LOGGER)
             self._mqtt.tls_set_context()
             self._mqtt.on_connect = self._on_mqtt_connect
             self._mqtt.on_disconnect = self._on_mqtt_disconnect

@@ -405,7 +405,8 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
-        return self.name not in self._coordinator._disabled_commands and not self._coordinator.pending_action
+        engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
+        return engine_is_off and (self.name not in self._coordinator._disabled_commands) and not self._coordinator.pending_action
 
     async def async_press(self):
         raise NotImplementedError

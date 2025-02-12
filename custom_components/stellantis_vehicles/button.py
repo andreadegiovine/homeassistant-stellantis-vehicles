@@ -1,7 +1,11 @@
 import logging
+from datetime import timedelta
 
 from homeassistant.components.button import ButtonEntityDescription
+from homeassistant.helpers.event import async_track_point_in_time
+
 from .base import StellantisBaseButton
+from .utils import get_datetime
 
 from .const import (
     DOMAIN,
@@ -73,6 +77,22 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 
 class StellantisWakeUpButton(StellantisBaseButton):
+    def __init__(self, coordinator, description):
+        super().__init__(coordinator, description)
+        self.is_scheduled = None
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        await self.scheduled_press()
+
+    async def scheduled_press(self, now=None):
+        if self.is_scheduled is not None:
+            self.is_scheduled()
+            self.is_scheduled = None
+            await self.async_press()
+        next_run = get_datetime() + timedelta(hours=12)
+        self.is_scheduled = async_track_point_in_time(self._coordinator._hass, self.scheduled_press, next_run)
+
     async def async_press(self):
         await self._coordinator.send_wakeup_command(self.name)
 
@@ -101,12 +121,16 @@ class StellantisAirConditioningButton(StellantisBaseButton):
     def available(self):
         if not self._coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
+
+        doors_locked = "doors" in self._coordinator._sensors and self._coordinator._sensors["doors"] in ["Locked", None]
+
         min_charge = 50
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
             min_charge = 20
         check_battery_level = "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"] and int(self._coordinator._sensors["battery"]) >= min_charge
         check_battery_charging = "battery_charging" in self._coordinator._sensors and self._coordinator._sensors["battery_charging"] == "InProgress"
-        return super().available and (check_battery_level or check_battery_charging)
+
+        return super().available and doors_locked and (check_battery_level or check_battery_charging)
 
     async def async_press(self):
         await self._coordinator.send_air_conditioning_command(self.name)
