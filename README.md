@@ -67,6 +67,17 @@ and paste the log data on the issue request.
 ![Controls](./images/controls.png)
 ![Sensors](./images/sensors.png)
 
+## Air conditioning Start/Stop
+As described in the Stellantis apps, the command is enabled when:
+1. the vehicle engine is off;
+2. the vehicle doors are locked;
+3. the battery level is at least 50% (25% for hybrids) or in charging.
+
+## OTP errors
+### NOK:MAXNBTOOLS
+It seems that this error is due to reaching the limit of associated devices / SMS received. Restore your Stellantis account and try again:
+[Follow this procedure from Peugeot community](https://peugeot.my-customerportal.com/peugeot/s/article/AP-I-have-problems-with-the-pin-safety-code-or-I-want-to-change-it-What-can-I-do?language=en_GB).
+
 ## Translations
 ### Pull request
 Fork this repo and create/update your language file under `custom_components/stellantis_vehicles/translations/` starting from `en.json`.
