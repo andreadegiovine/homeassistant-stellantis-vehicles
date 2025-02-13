@@ -10,6 +10,7 @@ import json
 from uuid import uuid4
 import asyncio
 from datetime import ( datetime, timedelta, UTC )
+import ssl
 
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -47,6 +48,14 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 IMAGE_PATH = "stellantis-vehicles"
+
+def _create_ssl_context() -> ssl.SSLContext:
+    """Create a SSL context for the MQTT connection."""
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context.load_default_certs()
+    return context
+
+_SSL_CONTEXT = _create_ssl_context()
 
 class StellantisBase:
     def __init__(self, hass) -> None:
@@ -349,7 +358,7 @@ class StellantisVehicles(StellantisBase):
             await self.refresh_mqtt_token()
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
-            self._mqtt.tls_set_context()
+            self._mqtt.tls_set_context(_SSL_CONTEXT)
             self._mqtt.on_connect = self._on_mqtt_connect
             self._mqtt.on_disconnect = self._on_mqtt_disconnect
             self._mqtt.on_message = self._on_mqtt_message
@@ -417,7 +426,7 @@ class StellantisVehicles(StellantisBase):
 #                 programs = data["precond_state"].get("programs", None)
 #                 if programs:
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
-                _LOGGER.debug("Aggiornare i dati")
+                _LOGGER.debug("Update data from mqtt?!?")
         except KeyError:
             _LOGGER.error("message error")
         _LOGGER.debug("---------- END _on_mqtt_message")
