@@ -35,6 +35,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 - [x] Peugeot e208 2021 [e-remote] (@bgoncal, @Ladida1)
 - [x] Vauxhall Mokka-e (@pantha007)
 - [x] Citroen C5 X 2022 (@bycippy)
+- [x] Opel Astra GSe 2023 (@xplore93)
 - [ ] Others EV vehicles
 - [ ] Others thermal vehicles
 - [ ] Multi vehicles account
@@ -71,7 +72,7 @@ and paste the log data on the issue request.
 As described in the Stellantis apps, the command is enabled when:
 1. the vehicle engine is off;
 2. the vehicle doors are locked;
-3. the battery level is at least 50% (25% for hybrids) or in charging.
+3. the battery level is at least 50% (20% for hybrids) or in charging.
 
 ## OTP errors
 ### NOK:MAXNBTOOLS
