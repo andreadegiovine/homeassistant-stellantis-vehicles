@@ -52,7 +52,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("---------- END _async_update_data")
 
         await self.after_async_update_data(self._data)
-        await self.get_trip_scheduled()
 
     @property
     def vehicle_type(self):
@@ -196,7 +195,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
                     self._last_trip = trips["_embedded"]["trips"][-1]
 
-        next_run = get_datetime() + timedelta(minutes=2)
+        next_run = get_datetime() + timedelta(minutes=5)
         self._get_trip_scheduled = async_track_point_in_time(self._hass, self.get_trip_scheduled, next_run)
 
 
