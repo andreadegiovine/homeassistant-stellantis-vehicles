@@ -106,6 +106,35 @@
       },
       "air_temperature": {
         "name": "Air temperature"
+      },
+      "last_trip": {
+        "name": "Last trip",
+        "state_attributes": {
+          "duration": {
+            "name": "Duration"
+          },
+          "startMileage": {
+            "name": "Start mileage"
+          },
+          "avg_speed": {
+            "name": "Average speed"
+          },
+          "max_speed": {
+            "name": "Max speed"
+          },
+          "electric_consumption": {
+            "name": "Electric consumption"
+          },
+          "electric_avg_consumption": {
+            "name": "Electric average consumption"
+          },
+          "fuel_consumption": {
+            "name": "Fuel consumption"
+          },
+          "fuel_avg_consumption": {
+            "name": "Fuel average consumption"
+          }
+        }
       }
     },
     "binary_sensor": {

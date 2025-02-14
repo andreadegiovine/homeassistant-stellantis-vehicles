@@ -21,6 +21,7 @@ GET_MQTT_TOKEN_URL = API_BASE_URL + "/connectedcar/v4/virtualkey/remoteaccess/to
 CAR_API_BASE_URL = API_BASE_URL + "/connectedcar/v4/user"
 CAR_API_VEHICLES_URL = CAR_API_BASE_URL + "/vehicles"
 CAR_API_GET_VEHICLE_STATUS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/status"
+CAR_API_GET_VEHICLE_TRIPS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/trips"
 
 MQTT_SERVER = "mwa.mpsa.com"
 MQTT_RESP_TOPIC = "psa/RemoteServices/to/cid/"

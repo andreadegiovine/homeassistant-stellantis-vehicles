@@ -42,7 +42,8 @@ from .const import (
     MQTT_RESP_TOPIC,
     MQTT_EVENT_TOPIC,
     MQTT_REQ_TOPIC,
-    GET_USER_INFO_URL
+    GET_USER_INFO_URL,
+    CAR_API_GET_VEHICLE_TRIPS_URL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -327,6 +328,25 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug(vehicle_status_request)
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
+
+    async def get_vehicle_trips(self, page_token=False):
+        _LOGGER.debug("---------- START get_vehicle_trips")
+        await self.refresh_tokens()
+        url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
+        headers = self.apply_headers_params(CAR_API_HEADERS)
+        if page_token:
+            url = url + "&pageToken=" + page_token
+        vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
+        _LOGGER.debug(url)
+#         _LOGGER.debug(headers)
+#         _LOGGER.debug(vehicle_trips_request)
+        if not page_token and "_links" in vehicle_trips_request and "last" in vehicle_trips_request["_links"] and "href" in vehicle_trips_request["_links"]["last"]:
+            last_page_url = vehicle_trips_request["_links"]["last"]["href"]
+            page_token = last_page_url.split("pageToken=")[1]
+            _LOGGER.debug("---------- END get_vehicle_trips")
+            return await self.get_vehicle_trips(page_token)
+        _LOGGER.debug("---------- END get_vehicle_trips")
+        return vehicle_trips_request
 
     async def refresh_tokens(self, force=False):
         await self.refresh_token()
