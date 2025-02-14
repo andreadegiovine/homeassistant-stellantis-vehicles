@@ -298,7 +298,7 @@ class StellantisVehicles(StellantisBase):
 
     async def get_user_vehicles(self):
         _LOGGER.debug("---------- START get_user_vehicles")
-        await self.refresh_token()
+        await self.refresh_tokens()
         if not self._vehicles:
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_headers_params(CAR_API_HEADERS)
@@ -318,7 +318,7 @@ class StellantisVehicles(StellantisBase):
 
     async def get_vehicle_status(self):
         _LOGGER.debug("---------- START get_vehicle_status")
-        await self.refresh_token()
+        await self.refresh_tokens()
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(CAR_API_HEADERS)
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
@@ -328,9 +328,12 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
+    async def refresh_tokens(self, force=False):
+        await self.refresh_token()
+        await self.refresh_mqtt_token(force)
+
     async def refresh_mqtt_token(self, force=False):
         _LOGGER.debug("---------- START refresh_mqtt_token")
-        await self.refresh_token()
         mqtt_config = self.get_config("mqtt")
         token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
         # Temporany fix
@@ -355,7 +358,7 @@ class StellantisVehicles(StellantisBase):
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
         if not self._mqtt:
-            await self.refresh_mqtt_token()
+            await self.refresh_tokens()
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
             self._mqtt.tls_set_context(_SSL_CONTEXT)
@@ -383,7 +386,7 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
         _LOGGER.debug("Code %s", result_code)
         if result_code == 1:
-            self.refresh_mqtt_token(force=True)
+            self.refresh_tokens(force=True)
         elif result_code == 7:
             _LOGGER.debug("Disconnect and reconnect")
             self._mqtt.disconnect()
@@ -411,7 +414,7 @@ class StellantisVehicles(StellantisBase):
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
                         asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], {"status": "99", "details": None}), self._hass.loop).result()
                     else:
-                        self.refresh_mqtt_token(force=True)
+                        self.refresh_tokens(force=True)
                         if self._mqtt_last_request:
                             _LOGGER.debug("last request is send again, token was expired")
                             last_request = self._mqtt_last_request
@@ -433,7 +436,7 @@ class StellantisVehicles(StellantisBase):
 
     async def send_mqtt_message(self, service, message, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
-        await self.refresh_mqtt_token()
+        await self.refresh_tokens()
         customer_id = self.get_config("customer_id")
         topic = MQTT_REQ_TOPIC + customer_id + service
         date = datetime.utcnow()
