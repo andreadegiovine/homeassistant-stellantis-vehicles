@@ -113,7 +113,7 @@
           "duration": {
             "name": "Durata"
           },
-          "startMileage": {
+          "start_mileage": {
             "name": "Kilometraggio iniziale"
           },
           "avg_speed": {
