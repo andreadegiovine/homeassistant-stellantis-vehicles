@@ -97,6 +97,15 @@
       },
       "fuel_consumption_instant": {
         "name": "Fuel consumption instant"
+      },
+      "coolant_temperature": {
+        "name": "Coolant temperature"
+      },
+      "oil_temperature": {
+        "name": "Oil temperature"
+      },
+      "air_temperature": {
+        "name": "Air temperature"
       }
     },
     "binary_sensor": {

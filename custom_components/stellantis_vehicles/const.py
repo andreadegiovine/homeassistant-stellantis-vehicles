@@ -121,12 +121,6 @@ SENSORS_DEFAULT = {
         "data_map" : ["energies", 0, "level"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
-    "battery_soh" : {
-        "icon" : "mdi:battery-heart-variant",
-        "unit_of_measurement" : PERCENTAGE,
-        "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
-        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
-    },
     "battery_charging_rate" : {
         "icon" : "mdi:ev-station",
         "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
@@ -169,6 +163,18 @@ SENSORS_DEFAULT = {
          "suggested_display_precision": 2,
          "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
+    "battery_soh" : {
+        "icon" : "mdi:battery-heart-variant",
+        "unit_of_measurement" : PERCENTAGE,
+        "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
+        "engine": [VEHICLE_TYPE_ELECTRIC]
+    },
+    "battery_soh" : {
+        "icon" : "mdi:battery-heart-variant",
+        "unit_of_measurement" : PERCENTAGE,
+        "data_map" : ["energies", 1, "extension", "electric", "battery", "health", "capacity"],
+        "engine": [VEHICLE_TYPE_HYBRID]
+    },
     "fuel" : {
         "unit_of_measurement" : PERCENTAGE,
         "icon": "mdi:gas-station",
@@ -195,6 +201,27 @@ SENSORS_DEFAULT = {
         "data_map" : ["energies", 0, "extension", "fuel", "consumptions", "instant"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
+    "coolant_temperature" : {
+        "unit_of_measurement" : UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "icon": "mdi:coolant-temperature",
+        "data_map" : ["engines", 0, "extension", "thermic", "coolant", "temp"],
+        "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    },
+    "oil_temperature" : {
+        "unit_of_measurement" : UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "icon": "mdi:oil-temperature",
+        "data_map" : ["engines", 0, "extension", "thermic", "oil", "temp"],
+        "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    },
+    "air_temperature" : {
+        "unit_of_measurement" : UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "icon": "mdi:thermometer-lines",
+        "data_map" : ["engines", 0, "extension", "thermic", "air", "temp"],
+        "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    }
 }
 
 BINARY_SENSORS_DEFAULT = {
@@ -208,7 +235,7 @@ BINARY_SENSORS_DEFAULT = {
         "icon" : "mdi:car-door-lock",
         "data_map" : ["doorsState", "lockedStates", 0],
         "device_class" : BinarySensorDeviceClass.LOCK,
-        "on_value": "Locked"
+        "on_value": "Unlocked"
     },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",

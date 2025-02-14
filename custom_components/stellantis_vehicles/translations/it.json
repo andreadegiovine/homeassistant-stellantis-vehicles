@@ -97,6 +97,15 @@
       },
       "fuel_consumption_instant": {
         "name": "Consumo carburante istantaneo"
+      },
+      "coolant_temperature": {
+        "name": "Temperatura liquido refrigerante"
+      },
+      "oil_temperature": {
+        "name": "Temperatura olio"
+      },
+      "air_temperature": {
+        "name": "Temperatura aria"
       }
     },
     "binary_sensor": {
