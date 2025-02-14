@@ -117,6 +117,35 @@
       },
       "air_conditioning": {
         "name": "Climatización"
+      },
+      "last_trip": {
+        "name": "Último viaje",
+        "state_attributes": {
+          "duration": {
+            "name": "Duración"
+          },
+          "start_mileage": {
+            "name": "Kilometraje inicial"
+          },
+          "avg_speed": {
+            "name": "Velocidad media"
+          },
+          "max_speed": {
+            "name": "Velocidad máxima"
+          },
+          "electric_consumption": {
+            "name": "Consumo eléctrico"
+          },
+          "electric_avg_consumption": {
+            "name": "Consumo eléctrico medio"
+          },
+          "fuel_consumption": {
+            "name": "Consumo de combustible"
+          },
+          "fuel_avg_consumption": {
+            "name": "Consumo medio de combustible"
+          }
+        }
       }
     },
     "button": {
