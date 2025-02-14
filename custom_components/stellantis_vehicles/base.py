@@ -344,8 +344,12 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
-        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID and self._data_map[0] == "energies" and self._data_map[1] == 0 and not self._key.startswith("fuel"):
-            self._data_map[1] = 1
+        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
+            if self._data_map[0] == "energies" and self._data_map[1] == 0 and not self._key.startswith("fuel"):
+                self._data_map[1] = 1
+            if self._key == "battery_soh":
+                self._data_map[6] = "capacity"
+
 
         self._available = available
 

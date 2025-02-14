@@ -122,6 +122,12 @@ SENSORS_DEFAULT = {
         "data_map" : ["energies", 0, "level"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
+    "battery_soh" : {
+        "icon" : "mdi:battery-heart-variant",
+        "unit_of_measurement" : PERCENTAGE,
+        "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
+    },
     "battery_charging_rate" : {
         "icon" : "mdi:ev-station",
         "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
@@ -164,18 +170,6 @@ SENSORS_DEFAULT = {
          "suggested_display_precision": 2,
          "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
-    "battery_soh" : {
-        "icon" : "mdi:battery-heart-variant",
-        "unit_of_measurement" : PERCENTAGE,
-        "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
-        "engine": [VEHICLE_TYPE_ELECTRIC]
-    },
-    "battery_soh" : {
-        "icon" : "mdi:battery-heart-variant",
-        "unit_of_measurement" : PERCENTAGE,
-        "data_map" : ["energies", 1, "extension", "electric", "battery", "health", "capacity"],
-        "engine": [VEHICLE_TYPE_HYBRID]
-    },
     "fuel" : {
         "unit_of_measurement" : PERCENTAGE,
         "icon": "mdi:gas-station",
