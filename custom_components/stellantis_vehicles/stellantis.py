@@ -338,7 +338,7 @@ class StellantisVehicles(StellantisBase):
             url = url + "&pageToken=" + page_token
         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
         _LOGGER.debug(url)
-#         _LOGGER.debug(headers)
+        _LOGGER.debug(headers)
 #         _LOGGER.debug(vehicle_trips_request)
         if not page_token and "_links" in vehicle_trips_request and "last" in vehicle_trips_request["_links"] and "href" in vehicle_trips_request["_links"]["last"]:
             last_page_url = vehicle_trips_request["_links"]["last"]["href"]

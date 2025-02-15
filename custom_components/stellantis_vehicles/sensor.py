@@ -104,14 +104,14 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
         self._attr_native_value = state
 
         attributes = {}
-        if "duration" in last_trip:
+        if "duration" in last_trip and float(last_trip["duration"]) > 0:
             attributes["duration"] = strftime("%H:%M:%S", gmtime(last_trip["duration"]))
         if "startMileage" in last_trip:
             attributes["start_mileage"] = str(last_trip["startMileage"]) + " " + UnitOfLength.KILOMETERS
         if "kinetic" in last_trip:
-            if "avgSpeed" in last_trip["kinetic"]:
+            if "avgSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["avgSpeed"]) > 0:
                 attributes["avg_speed"] = str(last_trip["kinetic"]["avgSpeed"]) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
-            if "maxSpeed" in last_trip["kinetic"]:
+            if "maxSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["maxSpeed"]) > 0:
                 attributes["max_speed"] = str(last_trip["kinetic"]["maxSpeed"]) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
         if "energyConsumptions" in last_trip:
             for consuption in last_trip["energyConsumptions"]:
@@ -125,9 +125,9 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                 else:
                     consumption_unit_of_measurement = UnitOfVolume.LITERS
                     avg_consumption_unit_of_measurement = UnitOfVolume.LITERS+"/100"+UnitOfLength.KILOMETERS
-                if "consumption" in consuption:
+                if "consumption" in consuption and round(float(consuption["consumption"])/1000, 2) > 0:
                     attributes[consuption["type"].lower() + "_consumption"] = str(round(float(consuption["consumption"])/1000, 2)) + " " + consumption_unit_of_measurement
-                if "avgConsumption" in consuption:
+                if "avgConsumption" in consuption and round(float(consuption["avgConsumption"])/1000, 2) > 0:
                     attributes[consuption["type"].lower() + "_avg_consumption"] = str(round(float(consuption["avgConsumption"])/1000, 2)) + " " + avg_consumption_unit_of_measurement
 
 

@@ -33,7 +33,6 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     for vehicle in vehicles:
         coordinator = await stellantis.async_get_coordinator(vehicle)
         await coordinator.async_config_entry_first_refresh()
-        await coordinator.get_trip_scheduled()
 
     if vehicles:
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)

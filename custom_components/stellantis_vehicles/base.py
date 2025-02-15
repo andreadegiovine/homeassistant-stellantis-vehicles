@@ -11,7 +11,6 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.event import async_track_point_in_time
 
 from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
 
@@ -37,7 +36,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._sensors = {}
         self._commands_history = {}
         self._disabled_commands = []
-        self._get_trip_scheduled = False
         self._last_trip = None
 
     async def _async_update_data(self):
@@ -49,9 +47,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.error(str(e))
         _LOGGER.debug(self._config)
         _LOGGER.debug(self._data)
+        await self.after_async_update_data()
         _LOGGER.debug("---------- END _async_update_data")
-
-        await self.after_async_update_data(self._data)
 
     @property
     def vehicle_type(self):
@@ -166,7 +163,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             new_status = "deactivate"
         await self.send_command(button_name, "/ThermalPrecond", {"asap": new_status, "programs": self.get_programs()})
 
-    async def after_async_update_data(self, data):
+    async def after_async_update_data(self):
         if not hasattr(self, "_manage_charge_limit_sent"):
             self._manage_charge_limit_sent = False
 
@@ -186,17 +183,17 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
                     self._manage_charge_limit_sent = False
 
-    async def get_trip_scheduled(self, now=None):
-        if self._get_trip_scheduled:
-            self._get_trip_scheduled()
-            self._get_trip_scheduled = False
-            trips = await self._stellantis.get_vehicle_trips()
-            if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
-                if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
-                    self._last_trip = trips["_embedded"]["trips"][-1]
+        if "engine" in self._sensors and "ignition" in self._data and "type" in self._data["ignition"]:
+            current_engine_status = self._sensors["engine"]
+            new_engine_status = self._data["ignition"]["type"]
+            if current_engine_status != "Stop" and new_engine_status == "Stop":
+                await self.get_trip_scheduled()
 
-        next_run = get_datetime() + timedelta(minutes=5)
-        self._get_trip_scheduled = async_track_point_in_time(self._hass, self.get_trip_scheduled, next_run)
+    async def get_trip_scheduled(self):
+        trips = await self._stellantis.get_vehicle_trips()
+        if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
+            if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
+                self._last_trip = trips["_embedded"]["trips"][-1]
 
 
 class StellantisBaseEntity(CoordinatorEntity):
@@ -331,8 +328,7 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
                 value = datetime.fromisoformat(value)
             self._attr_native_value = value
             for key in restored_data.attributes:
-                if isinstance(restored_data.attributes[key], (int, float)):
-                    self._attr_extra_state_attributes[key] = restored_data.attributes[key]
+                self._attr_extra_state_attributes[key] = restored_data.attributes[key]
         self.coordinator_update()
 
     def coordinator_update(self):
