@@ -396,7 +396,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator, description, data_map = [], on_value = None):
+    def __init__(self, coordinator, description, data_map = [], on_value = None, off_value = None):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
@@ -404,6 +404,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
             self._data_map[1] = 1
 
         self._on_value = on_value
+        self._off_value = off_value
 
         self._attr_device_class = description.device_class
 
@@ -415,6 +416,8 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         if value == None:
             return
         self._attr_is_on = value == self._on_value
+        if self._off_value:
+            self._attr_is_on = value != self._off_value
 
 
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
