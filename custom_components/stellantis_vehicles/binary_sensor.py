@@ -23,7 +23,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
             default_value = BINARY_SENSORS_DEFAULT.get(key, {})
             sensor_engine_limit = default_value.get("engine", [])
             if not sensor_engine_limit or coordinator.vehicle_type in sensor_engine_limit:
-                if default_value.get("data_map", None) and default_value.get("on_value", None):
+                if default_value.get("data_map", None):
                     description = BinarySensorEntityDescription(
                         name = key,
                         key = key,
