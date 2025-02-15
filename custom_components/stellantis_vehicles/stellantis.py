@@ -334,13 +334,16 @@ class StellantisVehicles(StellantisBase):
         await self.refresh_tokens()
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(CAR_API_HEADERS)
+        limit_date = (get_datetime() - timedelta(days=1)).isoformat()
+        limit_date = limit_date.split(".")[0] + "+" + limit_date.split(".")[1].split("+")[1]
+        url = url + "&timestamps=" + limit_date + "/&distance=0.1-"
         if page_token:
             url = url + "&pageToken=" + page_token
         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
-#         _LOGGER.debug(vehicle_trips_request)
-        if not page_token and "_links" in vehicle_trips_request and "last" in vehicle_trips_request["_links"] and "href" in vehicle_trips_request["_links"]["last"]:
+        _LOGGER.debug(vehicle_trips_request)
+        if int(vehicle_trips_request["total"]) > 60 and not page_token:
             last_page_url = vehicle_trips_request["_links"]["last"]["href"]
             page_token = last_page_url.split("pageToken=")[1]
             _LOGGER.debug("---------- END get_vehicle_trips")

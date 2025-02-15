@@ -187,9 +187,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             current_engine_status = self._sensors["engine"]
             new_engine_status = self._data["ignition"]["type"]
             if current_engine_status != "Stop" and new_engine_status == "Stop":
-                await self.get_trip_scheduled()
+                await self.get_vehicle_last_trip()
 
-    async def get_trip_scheduled(self):
+    async def get_vehicle_last_trip(self):
         trips = await self._stellantis.get_vehicle_trips()
         if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
             if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
