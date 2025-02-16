@@ -144,14 +144,14 @@ SENSORS_DEFAULT = {
         "icon" : "mdi:battery-clock",
         "device_class" : SensorDeviceClass.TIMESTAMP,
         "data_map" : ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"],
-        "available" : {"battery_charging": "InProgress"},
+        "available" : [{"battery_plugged": True}, {"battery_charging": ["Stopped", "Finished", "Failure"]}],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
      "battery_charging_end" : {
          "icon" : "mdi:battery-check",
          "device_class" : SensorDeviceClass.TIMESTAMP,
          "data_map" : ["energies", 0, "extension", "electric", "charging", "remainingTime"],
-         "available" : {"battery_charging": "InProgress"},
+         "available" : [{"battery_charging": "InProgress"}],
          "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
      "battery_capacity" : {

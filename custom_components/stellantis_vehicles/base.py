@@ -354,9 +354,17 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         result = True
         if not self._available:
             return result
-        for key in self._available:
-            if result and key in self._coordinator._sensors:
-                result = self._available[key] == self._coordinator._sensors[key]
+        for rule in self._available:
+            if not result:
+                break
+            for key in rule:
+                if not result:
+                    break
+                if result and key in self._coordinator._sensors:
+                    if isinstance(rule[key], list):
+                        result = self._coordinator._sensors[key] in rule[key]
+                    else:
+                        result = rule[key] == self._coordinator._sensors[key]
         return result
 
     def coordinator_update(self):
