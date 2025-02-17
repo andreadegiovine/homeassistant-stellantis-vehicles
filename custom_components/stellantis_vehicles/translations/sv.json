@@ -31,6 +31,9 @@
         "name": "Typ",
         "state": {
           "Electric": "Elektrisk"
+          "Hybrid": "Hybrid",
+          "Thermic": "Förbränningsmotor",
+          "Hydrogen": "Bränslecell"
         }
       },
       "temperature": {
@@ -54,9 +57,9 @@
       "battery_charging_type": {
         "name": "Batteri laddningstyp",
         "state": {
-          "No": "No",
-          "Slow": "Slow",
-          "Quick": "Fast"
+          "No": "Laddar ej",
+          "Slow": "Långsam",
+          "Quick": "Snabb"
         }
       },
       "battery_charging_time": {
@@ -84,16 +87,54 @@
         }
       },
       "fuel": {
-        "name": "Fuel"
+        "name": "Bränsle"
       },
       "fuel_autonomy": {
-        "name": "Fuel autonomy"
+        "name": "Bränsleräckvidd"
       },
       "fuel_consumption_total": {
-        "name": "Fuel consumption total"
+        "name": "Bränsleförbrukning total"
       },
       "fuel_consumption_instant": {
-        "name": "Fuel consumption instant"
+        "name": "Bränsleförbrukning senaste"
+      },
+      "coolant_temperature": {
+        "name": "Kylvätsketemperatur"
+      },
+      "oil_temperature": {
+        "name": "Oljetemperatur"
+      },
+      "air_temperature": {
+        "name": "Lufttemperatur"
+      },
+      "last_trip": {
+        "name": "Senaste resan",
+        "state_attributes": {
+          "duration": {
+            "name": "Varaktighet"
+          },
+          "start_mileage": {
+            "name": "Miltal vid start"
+          },
+          "avg_speed": {
+            "name": "Genomsnittshastighet"
+          },
+          "max_speed": {
+            "name": "Maxhastighet"
+          },
+          "electric_consumption": {
+            "name": "Elförbrukning"
+          },
+          "electric_avg_consumption": {
+            "name": "Genomsnittlig elförbrukning"
+          },
+          "fuel_consumption": {
+            "name": "Bränsleförbrukning"
+          },
+          "fuel_avg_consumption": {
+            "name": "Genomsnittlig bränsleförbrukning"
+          }
+        }
       }
     },
     "binary_sensor": {
