@@ -4,7 +4,7 @@
       "user": {
         "description": "Määrittele ja kytke Stellantis autosi",
         "data": {
-          "mobile_app": "Vehicle mobile app"
+          "mobile_app": "Valitse ajoneuvo"
         }
       },
       "country": {
@@ -28,7 +28,7 @@
         "name": "Käynnistysakun jännite"
       },
       "type": {
-        "name": "Type",
+        "name": "Tyyppi",
         "state": {
           "Electric": "Sähkö"
         }
@@ -54,9 +54,9 @@
       "battery_charging_type": {
         "name": "Lataustapa",
         "state": {
-          "No": "No",
-          "Slow": "Slow",
-          "Quick": "Fast"
+          "No": "Ei latauksessa",
+          "Slow": "Hidas",
+          "Quick": "Nopea"
         }
       },
       "battery_charging_time": {
@@ -66,10 +66,10 @@
         "name": "Lataus päättyy"
       },
       "battery_capacity": {
-        "name": "Ajoakun kokonaiskapasiteetti"
+        "name": "Ajoakun kapasiteetti"
       },
       "battery_residual": {
-        "name": "Ajoakun kapasiteettiä jäljellä"
+        "name": "Ajoakkua jäljellä"
       },
       "command_status": {
         "name": "Käskyn tila",
@@ -80,20 +80,20 @@
           "903": "Yhdistetty autoon",
           "0": "Suoritettu",
           "300": "Keskeytetty",
-          "500": "Error"
+          "500": "Virhe"
         }
       },
       "fuel": {
-        "name": "Fuel"
+        "name": "Polttoaine"
       },
       "fuel_autonomy": {
-        "name": "Fuel autonomy"
+        "name": "Polttoainetta jäljellä"
       },
       "fuel_consumption_total": {
-        "name": "Fuel consumption total"
+        "name": "Kokonaiskulutus"
       },
       "fuel_consumption_instant": {
-        "name": "Fuel consumption instant"
+        "name": "Hetkellinen kulutus"
       }
     },
     "binary_sensor": {
