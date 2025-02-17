@@ -1,6 +1,7 @@
 import logging
 import re
 from datetime import datetime, timedelta
+# import math
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -37,6 +38,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._commands_history = {}
         self._disabled_commands = []
         self._last_trip = None
+#        self._total_trip = None
 
     async def _async_update_data(self):
         _LOGGER.debug("---------- START _async_update_data")
@@ -195,6 +197,49 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
                 self._last_trip = trips["_embedded"]["trips"][-1]
 
+#     def parse_trips_page_data(self, data):
+#         result = []
+#         if "_embedded" in data and "trips" in data["_embedded"] and data["_embedded"]["trips"]:
+#             for trip in data["_embedded"]["trips"]:
+#                 item = {"engine": {}}
+#                 if "startMileage" in trip:
+#                     item["start_mileage"] = float(trip["startMileage"])
+#                 if "energyConsumptions" in trip:
+#                     for consuption in trip["energyConsumptions"]:
+#                         if not "type" in consuption or not "consumption" in consuption or not "avgConsumption" in consuption:
+#                             _LOGGER.error(consuption)
+#                             continue
+#                         trip_consumption = float(consuption["consumption"]) / 1000
+#                         trip_avg_consumption = float(consuption["avgConsumption"]) / 1000
+#                         if trip_consumption <= 0 or trip_avg_consumption <= 0:
+#                             _LOGGER.error(consuption)
+#                             continue
+#                         trip_distance = trip_consumption / (trip_avg_consumption / 100)
+#                         item["engine"][consuption["type"].lower()] = {
+#                             "distance": trip_distance,
+#                             "consumption": trip_consumption
+#                         }
+#                 else:
+#                     continue
+#                 if not item["engine"]:
+#                     continue
+#                 result.append(item)
+#         return result
+#
+#     async def get_vehicle_trips(self):
+#         vehicle_trips_request = await self._stellantis.get_vehicle_trips()
+#         total_trips = int(vehicle_trips_request["total"])
+#         next_page_url = vehicle_trips_request["_links"]["next"]["href"]
+#         pages = math.ceil(total_trips / 60) - 1
+#         result = self.parse_trips_page_data(vehicle_trips_request)
+#         if pages > 1:
+#             for _ in range(pages):
+#                 page_token = next_page_url.split("pageToken=")[1]
+#                 page_trips_request = await self._stellantis.get_vehicle_trips(page_token)
+#                 result = result + self.parse_trips_page_data(page_trips_request)
+#                 if "next" in page_trips_request["_links"]:
+#                     next_page_url = page_trips_request["_links"]["next"]["href"]
+#         self._total_trip = {"totals": total_trips, "trips": result}
 
 class StellantisBaseEntity(CoordinatorEntity):
     def __init__(self, coordinator, description):

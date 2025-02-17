@@ -351,6 +351,21 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- END get_vehicle_last_trip")
         return vehicle_trips_request
 
+#     async def get_vehicle_trips(self, page_token=False):
+#         _LOGGER.debug("---------- START get_vehicle_trips")
+#         await self.refresh_tokens()
+#         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
+#         headers = self.apply_headers_params(CAR_API_HEADERS)
+#         url = url + "&distance=0.1-"
+#         if page_token:
+#             url = url + "&pageToken=" + page_token
+#         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
+#         _LOGGER.debug(url)
+#         _LOGGER.debug(headers)
+#         _LOGGER.debug(vehicle_trips_request)
+#         _LOGGER.debug("---------- END get_vehicle_trips")
+#         return vehicle_trips_request
+
     async def refresh_tokens(self, force=False):
         await self.refresh_token()
         await self.refresh_mqtt_token(force)

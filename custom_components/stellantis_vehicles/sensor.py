@@ -67,6 +67,14 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         )
         entities.extend([StellantisLastTripSensor(coordinator, description)])
 
+#         description = SensorEntityDescription(
+#             name = "total_trip",
+#             key = "total_trip",
+#             translation_key = "total_trip",
+#             icon = "mdi:map-marker-path"
+#         )
+#         entities.extend([StellantisTotalTripSensor(coordinator, description)])
+
 #         await coordinator.async_request_refresh()
 
     async_add_entities(entities)
@@ -129,6 +137,30 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                     attributes[consuption["type"].lower() + "_consumption"] = str(round(float(consuption["consumption"])/1000, 2)) + " " + consumption_unit_of_measurement
                 if "avgConsumption" in consuption and round(float(consuption["avgConsumption"])/1000, 2) > 0:
                     attributes[consuption["type"].lower() + "_avg_consumption"] = str(round(float(consuption["avgConsumption"])/1000, 2)) + " " + avg_consumption_unit_of_measurement
-
-
         self._attr_extra_state_attributes = attributes
+
+
+# class StellantisTotalTripSensor(StellantisRestoreSensor):
+#     def coordinator_update(self):
+#         total_trip = self._coordinator._total_trip
+#         if not total_trip:
+#             return
+#         totals = total_trip["totals"]
+#         trips = total_trip["trips"]
+#         included = len(trips)
+#         results = {}
+#         inde = 1
+#         for trip in trips:
+#             _LOGGER.error(inde)
+#             inde = inde + 1
+#             for engine in trip["engine"]:
+#                 if not engine + "_distance" in results:
+#                     results[engine + "_distance"] = 0
+#                 if not engine + "_consumption" in results:
+#                     results[engine + "_consumption"] = 0
+#                 results[engine + "_distance"] = results[engine + "_distance"] + trip["engine"][engine]["distance"]
+#                 results[engine + "_consumption"] = results[engine + "_consumption"] + trip["engine"][engine]["consumption"]
+#                 results[engine + "_avg_consumption"] = results[engine + "_consumption"] / results[engine + "_distance"] * 100
+#
+#         self._attr_native_value = str(included) + "/" + str(totals)
+#         self._attr_extra_state_attributes = results
