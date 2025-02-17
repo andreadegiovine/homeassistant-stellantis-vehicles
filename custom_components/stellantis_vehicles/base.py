@@ -108,9 +108,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     async def send_doors_command(self, button_name):
         current_status = self._sensors["doors"]
-        new_status = "unlock"
-        if current_status == "Deactive":
-            new_status = "lock"
+        new_status = "lock"
+        if current_status == "Locked":
+            new_status = "unlock"
         await self.send_command(button_name, "/Doors", {"action": new_status})
 
     async def send_horn_command(self, button_name):
