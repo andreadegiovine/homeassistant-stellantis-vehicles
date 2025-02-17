@@ -329,8 +329,8 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
-    async def get_vehicle_trips(self, page_token=False):
-        _LOGGER.debug("---------- START get_vehicle_trips")
+    async def get_vehicle_last_trip(self, page_token=False):
+        _LOGGER.debug("---------- START get_vehicle_last_trip")
         await self.refresh_tokens()
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(CAR_API_HEADERS)
@@ -346,9 +346,9 @@ class StellantisVehicles(StellantisBase):
         if int(vehicle_trips_request["total"]) > 60 and not page_token:
             last_page_url = vehicle_trips_request["_links"]["last"]["href"]
             page_token = last_page_url.split("pageToken=")[1]
-            _LOGGER.debug("---------- END get_vehicle_trips")
-            return await self.get_vehicle_trips(page_token)
-        _LOGGER.debug("---------- END get_vehicle_trips")
+            _LOGGER.debug("---------- END get_vehicle_last_trip")
+            return await self.get_vehicle_last_trip(page_token)
+        _LOGGER.debug("---------- END get_vehicle_last_trip")
         return vehicle_trips_request
 
     async def refresh_tokens(self, force=False):

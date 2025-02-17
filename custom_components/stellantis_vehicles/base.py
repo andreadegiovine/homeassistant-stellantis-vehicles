@@ -190,7 +190,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 await self.get_vehicle_last_trip()
 
     async def get_vehicle_last_trip(self):
-        trips = await self._stellantis.get_vehicle_trips()
+        trips = await self._stellantis.get_vehicle_last_trip()
         if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
             if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
                 self._last_trip = trips["_embedded"]["trips"][-1]
