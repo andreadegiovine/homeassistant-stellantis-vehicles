@@ -130,13 +130,15 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                 if consuption["type"] == VEHICLE_TYPE_ELECTRIC:
                     consumption_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
                     avg_consumption_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR+"/100"+UnitOfLength.KILOMETERS
+                    divide = 1000
                 else:
                     consumption_unit_of_measurement = UnitOfVolume.LITERS
                     avg_consumption_unit_of_measurement = UnitOfVolume.LITERS+"/100"+UnitOfLength.KILOMETERS
-                if "consumption" in consuption and round(float(consuption["consumption"])/1000, 2) > 0:
-                    attributes[consuption["type"].lower() + "_consumption"] = str(round(float(consuption["consumption"])/1000, 2)) + " " + consumption_unit_of_measurement
-                if "avgConsumption" in consuption and round(float(consuption["avgConsumption"])/1000, 2) > 0:
-                    attributes[consuption["type"].lower() + "_avg_consumption"] = str(round(float(consuption["avgConsumption"])/1000, 2)) + " " + avg_consumption_unit_of_measurement
+                    divide = 100
+                if "consumption" in consuption and round(float(consuption["consumption"])/divide, 2) > 0:
+                    attributes[consuption["type"].lower() + "_consumption"] = str(round(float(consuption["consumption"])/divide, 2)) + " " + consumption_unit_of_measurement
+                if "avgConsumption" in consuption and round(float(consuption["avgConsumption"])/divide, 2) > 0:
+                    attributes[consuption["type"].lower() + "_avg_consumption"] = str(round(float(consuption["avgConsumption"])/divide, 2)) + " " + avg_consumption_unit_of_measurement
         self._attr_extra_state_attributes = attributes
 
 
