@@ -97,6 +97,44 @@
       },
       "fuel_consumption_instant": {
         "name": "Kraftstoffverbrauch momentan"
+      },
+      "coolant_temperature": {
+        "name": "Kühlmitteltemperatur"
+      },
+      "oil_temperature": {
+        "name": "Öltemperatur"
+      },
+      "air_temperature": {
+        "name": "Lufttemperatur"
+      },
+      "last_trip": {
+        "name": "Letzte Fahrt",
+        "state_attributes": {
+          "duration": {
+            "name": "Dauer"
+          },
+          "start_mileage": {
+            "name": "Start mileage"
+          },
+          "avg_speed": {
+            "name": "Durchschnittsgeschwindigkeit"
+          },
+          "max_speed": {
+            "name": "Maximale Geschwindigkeit"
+          },
+          "electric_consumption": {
+            "name": "Stromverbrauch"
+          },
+          "electric_avg_consumption": {
+            "name": "Durchschnittlicher Stromverbrauch"
+          },
+          "fuel_consumption": {
+            "name": "Kraftstoffverbrauch"
+          },
+          "fuel_avg_consumption": {
+            "name": "Durchschnittlicher Kraftstoffverbrauch"
+          }
+        }
       }
     },
     "binary_sensor": {
