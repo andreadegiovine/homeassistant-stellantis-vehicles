@@ -31,6 +31,6 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                         icon = default_value.get("icon", None),
                         device_class = default_value.get("device_class", None)
                     )
-                    entities.extend([StellantisBaseBinarySensor(coordinator, description, default_value.get("data_map", None), default_value.get("on_value", None), default_value.get("off_value", None))])
+                    entities.extend([StellantisBaseBinarySensor(coordinator, description, default_value.get("data_map", None), default_value.get("on_value", None))])
 
     async_add_entities(entities)

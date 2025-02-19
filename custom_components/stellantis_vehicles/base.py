@@ -303,7 +303,7 @@ class StellantisBaseEntity(CoordinatorEntity):
             elif value and key in value:
                 value = value[key]
 
-        if value and not isinstance(value, (float, int, str, bool)):
+        if value and not isinstance(value, (float, int, str, bool, list)):
             value = None
 
         if value and updated_at:
@@ -449,7 +449,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator, description, data_map = [], on_value = None, off_value = None):
+    def __init__(self, coordinator, description, data_map = [], on_value = None):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
@@ -457,7 +457,6 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
             self._data_map[1] = 1
 
         self._on_value = on_value
-        self._off_value = off_value
 
         self._attr_device_class = description.device_class
 
@@ -468,9 +467,10 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         self._coordinator._sensors[self._key] = value
         if value == None:
             return
-        self._attr_is_on = value == self._on_value
-        if self._off_value:
-            self._attr_is_on = value != self._off_value
+        elif isinstance(value, list):
+            self._attr_is_on = self._on_value in value
+        else:
+            self._attr_is_on = value == self._on_value
 
 
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):

@@ -228,9 +228,9 @@ BINARY_SENSORS_DEFAULT = {
     },
     "doors" : {
         "icon" : "mdi:car-door-lock",
-        "data_map" : ["doorsState", "lockedStates", 0],
+        "data_map" : ["doorsState", "lockedStates"],
         "device_class" : BinarySensorDeviceClass.LOCK,
-        "off_value": "Locked"
+        "on_value": "Unlocked"
     },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",
