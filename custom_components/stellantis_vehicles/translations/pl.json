@@ -1,0 +1,196 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Konfiguracja i podłączenie samochou grupy Stellantis",
+        "data": {
+          "mobile_app": "Aplikacja mobilna"
+        }
+      },
+      "country": {
+        "description": "Konfiguracja i podłączenie samochou grupy Stellantis",
+        "data": {
+          "country_code": "Twój kod kraju"
+        }
+      },
+      "otp": {
+        "description": "Konfiguracja i sprawdzenie OTP",
+        "data": {
+          "sms_code": "Kod SMS od Stellantis",
+          "pin_code": "Kod Pin z aplikacji mobilnej"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Service battery"
+      },
+      "type": {
+        "name": "Typ",
+        "state": {
+          "Electric": "Elektryczny",
+          "Hybrid": "Hybryda",
+          "Thermic": "Thermic",
+          "Hydrogen": "Hydrogen"
+        }
+      },
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "mileage": {
+        "name": "Przebieg"
+      },
+      "autonomy": {
+        "name": "Zasięg na baterii"
+      },
+      "battery": {
+        "name": "Bateria"
+      },
+      "battery_soh": {
+        "name": "SOH baterii"
+      },
+      "battery_charging_rate": {
+        "name": "Prękość ładowania"
+      },
+      "battery_charging_type": {
+        "name": "Tryb ładowania baterii",
+        "state": {
+          "No": "Nie",
+          "Slow": "Wolno",
+          "Quick": "Szybko"
+        }
+      },
+      "battery_charging_time": {
+        "name": "Battery charging time"
+      },
+      "battery_charging_end": {
+        "name": "Zakończenie baterii za"
+      },
+      "battery_capacity": {
+        "name": "Pojemność baterii"
+      },
+      "battery_residual": {
+        "name": "Battery residual"
+      },
+      "command_status": {
+        "name": "Command status",
+        "state": {
+          "99": "Nie kompatybilne",
+          "900": "Zaakceptowano",
+          "901": "Vehicle as sleep",
+          "903": "Forwarded",
+          "0": "Zakończono",
+          "300": "Canceled",
+          "500": "Błąd"
+        }
+      },
+      "fuel": {
+        "name": "Paliwo w zbiorniku"
+      },
+      "fuel_autonomy": {
+        "name": "Zasięg na paliwie"
+      },
+      "fuel_consumption_total": {
+        "name": "Suma zużytego paliwa"
+      },
+      "fuel_consumption_instant": {
+        "name": "Fuel consumption instant"
+      },
+      "coolant_temperature": {
+        "name": "Temperatura płynu chłodniczego"
+      },
+      "oil_temperature": {
+        "name": "Temperatura oleju"
+      },
+      "air_temperature": {
+        "name": "Temperatura powietrza"
+      },
+      "last_trip": {
+        "name": "Ostatnia trasa",
+        "state_attributes": {
+          "duration": {
+            "name": "Czas trwania"
+          },
+          "start_mileage": {
+            "name": "Start mileage"
+          },
+          "avg_speed": {
+            "name": "Średnia prękość"
+          },
+          "max_speed": {
+            "name": "Maksymalna prędkość"
+          },
+          "electric_consumption": {
+            "name": "Zużycie energii elektrycznej"
+          },
+          "electric_avg_consumption": {
+            "name": "Średnie zużycie energii elektrycznej"
+          },
+          "fuel_consumption": {
+            "name": "Zużycie paliwa"
+          },
+          "fuel_avg_consumption": {
+            "name": "Średni zużycie paliwa"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Moving"
+      },
+      "doors": {
+        "name": "Drzwi"
+      },
+      "battery_plugged": {
+        "name": "Gniazdo zasilania"
+      },
+      "battery_charging": {
+        "name": "Ładowanie baterii"
+      },
+      "engine": {
+        "name": "Silnik"
+      },
+      "air_conditioning": {
+        "name": "Klimatyzacja"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Wybudzenie"
+      },
+      "doors": {
+        "name": "Drzwi"
+      },
+      "horn": {
+        "name": "Klaklson"
+      },
+      "lights": {
+        "name": "Światła"
+      },
+      "charge_start_stop": {
+        "name": "Ładowanie Włącz/Wyłącz"
+      },
+      "air_conditioning": {
+        "name": "Klimatyzacja Włącz/Wyłącz"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Pojazd"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Limit ładowania baterii"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Limit ładowania baterii"
+      }
+    }
+  }
+}
