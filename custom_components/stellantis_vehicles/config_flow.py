@@ -47,9 +47,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input=None):
         if user_input is None:
-            errors = self.errors
-            self.errors = {}
-            return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA_1, errors=errors)
+            return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA_1)
 
         self.data.update(user_input)
 
@@ -81,8 +79,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             token_request = await self.stellantis.get_access_token()
         except Exception as e:
-            self.errors[FIELD_MOBILE_APP] = str(e)
-            return self.async_external_step_done(next_step_id="user")
+            self.errors[FIELD_COUNTRY_CODE] = "get_access_token"
+            return self.async_external_step_done(next_step_id="country")
 
         self.data.update({
             "access_token": token_request["access_token"],
@@ -95,12 +93,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             user_info_request = await self.stellantis.get_user_info()
         except Exception as e:
-            self.errors[FIELD_MOBILE_APP] = str(e)
-            return self.async_external_step_done(next_step_id="user")
+            self.errors[FIELD_COUNTRY_CODE] = "get_user_info"
+            return self.async_external_step_done(next_step_id="country")
 
         if not user_info_request or not "customer" in user_info_request[0]:
-            self.errors[FIELD_MOBILE_APP] = "Customer info error"
-            return self.async_external_step_done(next_step_id="user")
+            self.errors[FIELD_COUNTRY_CODE] = "missing_user_info"
+            return self.async_external_step_done(next_step_id="country")
 
         self.data.update({"customer_id": user_info_request[0]["customer"]})
 
@@ -112,16 +110,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await self.stellantis.get_otp_sms()
             except Exception as e:
-                self.errors[FIELD_MOBILE_APP] = str(e)
-                return await self.async_step_user()
+                self.errors[FIELD_COUNTRY_CODE] = "get_otp_sms"
+                return await self.async_step_country()
             return self.async_show_form(step_id="otp", data_schema=DATA_SCHEMA_2)
 
         try:
             await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])
             otp_token_request = await self.stellantis.get_mqtt_access_token()
         except Exception as e:
-            self.errors[FIELD_MOBILE_APP] = str(e)
-            return await self.async_step_user()
+            self.errors[FIELD_COUNTRY_CODE] = "get_mqtt_access_token"
+            return await self.async_step_country()
 
         self.data.update({"mqtt": {
             "access_token": otp_token_request["access_token"],
@@ -144,7 +142,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_reauth(self, entry_data):
         _LOGGER.debug("---------- START async_step_reauth")
-        self.data.update(entry_data)
+        self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP]})
         _LOGGER.debug("---------- END async_step_reauth")
         return await self.async_step_country()
 

@@ -20,6 +20,17 @@
           "pin_code": "Pin code from vehicle mobile app"
         }
       }
+    },
+    "error": {
+      "get_access_token": "Get access token error",
+      "get_user_info": "Get user info error",
+      "missing_user_info": "Missing user info error",
+      "get_otp_sms": "Get OTP sms error",
+      "get_mqtt_access_token": "Get mqtt access token error"
+    },
+    "abort": {
+      "already_configured": "Account is already configured",
+      "reauth_successful": "Re-authentication was successful"
     }
   },
   "entity": {

@@ -20,6 +20,17 @@
           "pin_code": "Codice pin dell'app mobile del veicolo"
         }
       }
+    },
+    "error": {
+      "get_access_token": "Errore access token",
+      "get_user_info": "Errore informazioni utente",
+      "missing_user_info": "Informazioni utente mancanti",
+      "get_otp_sms": "Errore sms OTP",
+      "get_mqtt_access_token": "Errore access token mqtt"
+    },
+    "abort": {
+      "already_configured": "Account già configurato",
+      "reauth_successful": "Autenticazione completata"
     }
   },
   "entity": {
