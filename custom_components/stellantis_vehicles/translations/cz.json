@@ -1,0 +1,207 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Nakonfigurujte a připojte své vozidlo Stellantis",
+        "data": {
+          "mobile_app": "Mobilní aplikace vozidla"
+        }
+      },
+      "country": {
+        "description": "Nakonfigurujte a připojte své vozidlo Stellantis",
+        "data": {
+          "country_code": "Kód vaší země"
+        }
+      },
+      "otp": {
+        "description": "Nakonfigurujte a ověřte OTP",
+        "data": {
+          "sms_code": "SMS kód od Stellantis",
+          "pin_code": "PIN kód z mobilní aplikace vozidla"
+        }
+      }
+    },
+    "error": {
+      "get_access_token": "Chyba při získávání přístupového tokenu",
+      "get_user_info": "Chyba při získávání informací o uživateli",
+      "missing_user_info": "Chybějící informace o uživateli",
+      "get_otp_sms": "Chyba při získávání OTP SMS",
+      "get_mqtt_access_token": "Chyba při získávání MQTT přístupového tokenu"
+    },
+    "abort": {
+      "already_configured": "Účet je již nakonfigurován",
+      "reauth_successful": "Opětovná autentizace byla úspěšná"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Servisní baterie"
+      },
+      "type": {
+        "name": "Typ",
+        "state": {
+          "Electric": "Elektrické",
+          "Hybrid": "Hybridní",
+          "Thermic": "Spalovací",
+          "Hydrogen": "Vodíkové"
+        }
+      },
+      "temperature": {
+        "name": "Teplota"
+      },
+      "mileage": {
+        "name": "Nájezd"
+      },
+      "autonomy": {
+        "name": "Dojed"
+      },
+      "battery": {
+        "name": "Baterie"
+      },
+      "battery_soh": {
+        "name": "SOH baterie"
+      },
+      "battery_charging_rate": {
+        "name": "Rychlost nabíjení baterie"
+      },
+      "battery_charging_type": {
+        "name": "Typ nabíjení baterie",
+        "state": {
+          "No": "Ne",
+          "Slow": "Pomalé",
+          "Quick": "Rychlé"
+        }
+      },
+      "battery_charging_time": {
+        "name": "Doba nabíjení baterie"
+      },
+      "battery_charging_end": {
+        "name": "Konec nabíjení baterie"
+      },
+      "battery_capacity": {
+        "name": "Kapacita baterie"
+      },
+      "battery_residual": {
+        "name": "Zbývající kapacita baterie"
+      },
+      "command_status": {
+        "name": "Stav příkazu",
+        "state": {
+          "99": "Nekompatibilní",
+          "900": "Přijato",
+          "901": "Vozidlo spí",
+          "903": "Předáno",
+          "0": "Dokončeno",
+          "300": "Zrušeno",
+          "500": "Chyba"
+        }
+      },
+      "fuel": {
+        "name": "Palivo"
+      },
+      "fuel_autonomy": {
+        "name": "Dojed na palivo"
+      },
+      "fuel_consumption_total": {
+        "name": "Celková spotřeba paliva"
+      },
+      "fuel_consumption_instant": {
+        "name": "Okamžitá spotřeba paliva"
+      },
+      "coolant_temperature": {
+        "name": "Teplota chladicí kapaliny"
+      },
+      "oil_temperature": {
+        "name": "Teplota oleje"
+      },
+      "air_temperature": {
+        "name": "Teplota vzduchu"
+      },
+      "last_trip": {
+        "name": "Poslední jízda",
+        "state_attributes": {
+          "duration": {
+            "name": "Doba trvání"
+          },
+          "start_mileage": {
+            "name": "Počáteční nájezd"
+          },
+          "avg_speed": {
+            "name": "Průměrná rychlost"
+          },
+          "max_speed": {
+            "name": "Maximální rychlost"
+          },
+          "electric_consumption": {
+            "name": "Spotřeba elektřiny"
+          },
+          "electric_avg_consumption": {
+            "name": "Průměrná spotřeba elektřiny"
+          },
+          "fuel_consumption": {
+            "name": "Spotřeba paliva"
+          },
+          "fuel_avg_consumption": {
+            "name": "Průměrná spotřeba paliva"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "V pohybu"
+      },
+      "doors": {
+        "name": "Dveře"
+      },
+      "battery_plugged": {
+        "name": "Baterie připojena"
+      },
+      "battery_charging": {
+        "name": "Baterie se nabíjí"
+      },
+      "engine": {
+        "name": "Motor"
+      },
+      "air_conditioning": {
+        "name": "Klimatizace"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Probudit"
+      },
+      "doors": {
+        "name": "Dveře"
+      },
+      "horn": {
+        "name": "Klakson"
+      },
+      "lights": {
+        "name": "Světlomety"
+      },
+      "charge_start_stop": {
+        "name": "Nabíjení Start/Stop"
+      },
+      "air_conditioning": {
+        "name": "Klimatizace Start/Stop"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Vozidlo"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Limit nabíjení baterie"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Limit nabíjení baterie"
+      }
+    }
+  }
+}
