@@ -20,6 +20,17 @@
           "pin_code": "Pin code van je mobiele app"
         }
       }
+    },
+    "error": {
+      "get_access_token": "Get access token error",
+      "get_user_info": "Get user info error",
+      "missing_user_info": "Missing user info error",
+      "get_otp_sms": "Get OTP sms error",
+      "get_mqtt_access_token": "Get mqtt access token error"
+    },
+    "abort": {
+      "already_configured": "Account is al geconfigureerd",
+      "reauth_successful": "Herauthenticatie was successvol"
     }
   },
   "entity": {
@@ -97,6 +108,44 @@
       },
       "fuel_consumption_instant": {
         "name": "Huidig brandstof verbruik"
+      },
+      "coolant_temperature": {
+        "name": "Koelvloeistoftemperatuur"
+      },
+      "oil_temperature": {
+        "name": "Olietemperatuur"
+      },
+      "air_temperature": {
+        "name": "Luchttemperatuur"
+      }
+    },
+    "last_trip": {
+      "name": "Laatste rit",
+      "state_attributes": {
+        "duration": {
+          "name": "Duur"
+        },
+        "start_mileage": {
+          "name": "Kilometerstand bij start"
+        },
+        "avg_speed": {
+          "name": "Gemiddelde snelheid"
+        },
+        "max_speed": {
+          "name": "Maximale snelheid"
+        },
+        "electric_consumption": {
+          "name": "Energie verbruik"
+        },
+        "electric_avg_consumption": {
+          "name": "Gemiddelde elektrische verbruik"
+        },
+        "fuel_consumption": {
+          "name": "Brandstof verbruik"
+        },
+        "fuel_avg_consumption": {
+          "name": "Gemiddelde brandstof verbruik"
+        }
       }
     },
     "binary_sensor": {
