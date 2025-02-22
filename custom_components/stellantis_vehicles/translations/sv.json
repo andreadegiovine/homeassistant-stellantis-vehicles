@@ -30,7 +30,7 @@
       "type": {
         "name": "Typ",
         "state": {
-          "Electric": "Elektrisk"
+          "Electric": "Elektrisk",
           "Hybrid": "Hybrid",
           "Thermic": "Förbränningsmotor",
           "Hydrogen": "Bränslecell"
