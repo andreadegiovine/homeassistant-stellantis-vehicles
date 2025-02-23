@@ -2,24 +2,35 @@
   "config": {
     "step": {
       "user": {
-        "description": "Määrittele ja kytke Stellantis autosi",
+        "description": "Määritä ja kytke Stellantis autosi",
         "data": {
-          "mobile_app": "Valitse ajoneuvo"
+          "mobile_app": "Ajoneuvosi sovellus"
         }
       },
       "country": {
-        "description": "Määrittele ja kytke Stellantis autosi",
+        "description": "Määritä ja kytke Stellanti autosi",
         "data": {
-          "country_code": "Maakoodi"
+          "country_code": "Syötä maakoodisi"
         }
       },
       "otp": {
-        "description": "Määrittele ja hyväksy OTP",
+        "description": "Määritä ja hyväksy OTP",
         "data": {
           "sms_code": "Tekstiviesti Stellantikselta",
-          "pin_code": "Mobiililaitteen pin-koodi"
+          "pin_code": "Stellantis-sovelluksen pin-koodi"
         }
       }
+    },
+    "virhe": {
+      "get_access_token": "Tunnuksen hankinta epäonnistui",
+      "get_user_info": "Käyttäjätietojen hankinta epäonnistui ",
+      "missing_user_info": "Käyttäjätiedot puuttuu",
+      "get_otp_sms": "OTP-tekstiviestivirhe",
+      "get_mqtt_access_token": "MQTT-todennusvirhe"
+    },
+    "abort": {
+      "already_configured": "Tili on jo käytössä",
+      "reauth_successful": "Autentikointi uudelleen onnistui"
     }
   },
   "entity": {
@@ -30,7 +41,10 @@
       "type": {
         "name": "Tyyppi",
         "state": {
-          "Electric": "Sähkö"
+          "Electric": "Sähkö",
+          "Hybrid": "Hybridi",
+          "Thermic": "Polttomoottori",
+          "Hydrogen": "Vety"
         }
       },
       "temperature": {
@@ -54,7 +68,7 @@
       "battery_charging_type": {
         "name": "Lataustapa",
         "state": {
-          "No": "Ei latauksessa",
+          "No": "Ei",
           "Slow": "Hidas",
           "Quick": "Nopea"
         }
@@ -76,7 +90,7 @@
         "state": {
           "99": "Ei yhteensopiva",
           "900": "Hyväksytty",
-          "901": "Lepotila",
+          "901": "Lepotilassa",
           "903": "Yhdistetty autoon",
           "0": "Suoritettu",
           "300": "Keskeytetty",
@@ -94,6 +108,44 @@
       },
       "fuel_consumption_instant": {
         "name": "Hetkellinen kulutus"
+      },
+      "coolant_temperature": {
+        "name": "Jäähdytysnesteen lämpötila"
+      },
+      "oil_temperature": {
+        "name": "Öljyn lämpötila"
+      },
+      "air_temperature": {
+        "name": "Ilman lämpötila"
+      },
+      "last_trip": {
+        "name": "Viimeisin matka",
+        "state_attributes": {
+          "duration": {
+            "name": "Kesto"
+          },
+          "start_mileage": {
+            "name": "Lähtökilometrit"
+          },
+          "avg_speed": {
+            "name": "Keskinopeus"
+          },
+          "max_speed": {
+            "name": "Max nopeus"
+          },
+          "electric_consumption": {
+            "name": "Sähkön kulutus"
+          },
+          "electric_avg_consumption": {
+            "name": "Sähkön keskikulutus"
+          },
+          "fuel_consumption": {
+            "name": "Polttoaineen kulutus"
+          },
+          "fuel_avg_consumption": {
+            "name": "Polttoaineen keskikulutus"
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -118,7 +170,7 @@
     },
     "button": {
       "wakeup": {
-        "name": "Herätetään"
+        "name": "Herätys"
       },
       "doors": {
         "name": "Ovet"
@@ -133,7 +185,7 @@
         "name": "Lataus Start/Stop"
       },
       "air_conditioning": {
-        "name": "Esi-lmastointi Start/Stop"
+        "name": "Esi-ilmastointi Start/Stop"
       }
     },
     "device_tracker": {
