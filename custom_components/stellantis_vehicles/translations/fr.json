@@ -20,6 +20,17 @@
           "pin_code": "Code PIN de votre application mobile du véhicule"
         }
       }
+    },
+    "error": {
+      "get_access_token": "Erreur récupération jeton d'accès",
+      "get_user_info": "Erreur récupération informations utilisateurs",
+      "missing_user_info": "Erreur informations utilisateurs manquantes",
+      "get_otp_sms": "Erreur récupération code OTP SMS",
+      "get_mqtt_access_token": "Erreur récupération jeton accès mqtt"
+    },
+    "abort": {
+      "already_configured": "Compte déjà configuré",
+      "reauth_successful": "Ré-authentification réussie"
     }
   },
   "entity": {
@@ -97,6 +108,44 @@
       },
       "fuel_consumption_instant": {
         "name": "Consommation instantannée de carburant"
+      },
+      "coolant_temperature": {
+        "name": "Température liquide de refroidissement"
+      },
+      "oil_temperature": {
+        "name": "Température huile"
+      },
+      "air_temperature": {
+        "name": "Température air"
+      },
+      "last_trip": {
+        "name": "Dernier trajet",
+        "state_attributes": {
+          "duration": {
+            "name": "Durée"
+          },
+          "start_mileage": {
+            "name": "Kilométrage au départ"
+          },
+          "avg_speed": {
+            "name": "Vitesse moyenne"
+          },
+          "max_speed": {
+            "name": "Vitesse max"
+          },
+          "electric_consumption": {
+            "name": "Consommation électrique"
+          },
+          "electric_avg_consumption": {
+            "name": "Consommation moyenne électrique"
+          },
+          "fuel_consumption": {
+            "name": "Consommation carburant"
+          },
+          "fuel_avg_consumption": {
+            "name": "Consommation moyenne carburant"
+          }
+        }
       }
     },
     "binary_sensor": {
