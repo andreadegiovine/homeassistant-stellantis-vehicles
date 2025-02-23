@@ -108,26 +108,15 @@
       },
       "fuel_consumption_instant": {
         "name": "Consumo instantáneo de combustible"
-      }
-    },
-    "binary_sensor": {
-      "moving": {
-        "name": "En movimiento"
       },
-      "doors": {
-        "name": "Puertas"
+      "coolant_temperature": {
+        "name": "Temperatura del refrigerante"
       },
-      "battery_plugged": {
-        "name": "Batería conectada"
+      "oil_temperature": {
+        "name": "Temperatura del aceite"
       },
-      "battery_charging": {
-        "name": "Batería en carga"
-      },
-      "engine": {
-        "name": "Motor"
-      },
-      "air_conditioning": {
-        "name": "Climatización"
+      "air_temperature": {
+        "name": "Temperatura del aire"
       },
       "last_trip": {
         "name": "Último viaje",
@@ -157,6 +146,26 @@
             "name": "Consumo medio de combustible"
           }
         }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "En movimiento"
+      },
+      "doors": {
+        "name": "Puertas"
+      },
+      "battery_plugged": {
+        "name": "Batería conectada"
+      },
+      "battery_charging": {
+        "name": "Batería en carga"
+      },
+      "engine": {
+        "name": "Motor"
+      },
+      "air_conditioning": {
+        "name": "Climatización"
       }
     },
     "button": {
