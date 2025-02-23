@@ -20,6 +20,17 @@
           "pin_code": "Código PIN de la aplicación móvil del vehículo"
         }
       }
+    },
+    "error": {
+      "get_access_token": "Error al obtener el token de acceso",
+      "get_user_info": "Error al obtener la información del usuario",
+      "missing_user_info": "Falta la información del usuario",
+      "get_otp_sms": "Error al obtener el SMS con el código OTP",
+      "get_mqtt_access_token": "Error al obtener el token de acceso MQTT"
+    },
+    "abort": {
+      "already_configured": "La cuenta ya está configurada",
+      "reauth_successful": "La reautenticación se realizó con éxito"
     }
   },
   "entity": {
@@ -97,26 +108,15 @@
       },
       "fuel_consumption_instant": {
         "name": "Consumo instantáneo de combustible"
-      }
-    },
-    "binary_sensor": {
-      "moving": {
-        "name": "En movimiento"
       },
-      "doors": {
-        "name": "Puertas"
+      "coolant_temperature": {
+        "name": "Temperatura del refrigerante"
       },
-      "battery_plugged": {
-        "name": "Batería conectada"
+      "oil_temperature": {
+        "name": "Temperatura del aceite"
       },
-      "battery_charging": {
-        "name": "Batería en carga"
-      },
-      "engine": {
-        "name": "Motor"
-      },
-      "air_conditioning": {
-        "name": "Climatización"
+      "air_temperature": {
+        "name": "Temperatura del aire"
       },
       "last_trip": {
         "name": "Último viaje",
@@ -146,6 +146,26 @@
             "name": "Consumo medio de combustible"
           }
         }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "En movimiento"
+      },
+      "doors": {
+        "name": "Puertas"
+      },
+      "battery_plugged": {
+        "name": "Batería conectada"
+      },
+      "battery_charging": {
+        "name": "Batería en carga"
+      },
+      "engine": {
+        "name": "Motor"
+      },
+      "air_conditioning": {
+        "name": "Climatización"
       }
     },
     "button": {
