@@ -424,7 +424,7 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
         _LOGGER.debug("Code %s", result_code)
         if result_code == 1:
-            self.refresh_tokens(force=True)
+            asyncio.run_coroutine_threadsafe(self.refresh_tokens(force=True), self._hass.loop).result()
         elif result_code == 7:
             _LOGGER.debug("Disconnect and reconnect")
             self._mqtt.disconnect()
@@ -452,7 +452,6 @@ class StellantisVehicles(StellantisBase):
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
                         asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], {"status": "99", "details": None}), self._hass.loop).result()
                     else:
-                        self.refresh_tokens(force=True)
                         if self._mqtt_last_request:
                             _LOGGER.debug("last request is send again, token was expired")
                             last_request = self._mqtt_last_request
@@ -474,7 +473,7 @@ class StellantisVehicles(StellantisBase):
 
     async def send_mqtt_message(self, service, message, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
-        await self.refresh_tokens()
+        await self.refresh_tokens(force=(store == False))
         customer_id = self.get_config("customer_id")
         topic = MQTT_REQ_TOPIC + customer_id + service
         date = datetime.utcnow()
