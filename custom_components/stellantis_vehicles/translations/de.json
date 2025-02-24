@@ -20,6 +20,17 @@
           "pin_code": "Pin-Code aus der Fahrzeug App"
         }
       }
+    },
+    "error": {
+      "get_access_token": "Fehler beim Abrufen des Zugriffstokens",
+      "get_user_info": "Fehler beim Abrufen der Benutzerinformationen",
+      "missing_user_info": "Fehler: Fehlende Benutzerinformationen",
+      "get_otp_sms": "SMS-Fehler beim OTP-Code",
+      "get_mqtt_access_token": "Fehler beim Abrufen des MQTT-Zugriffstokens"
+    },
+    "abort": {
+      "already_configured": "Der Account ist bereits konfiguriert",
+      "reauth_successful": "Die erneute Authentifizierung war erfolgreich"
     }
   },
   "entity": {
@@ -114,7 +125,7 @@
             "name": "Dauer"
           },
           "start_mileage": {
-            "name": "Start mileage"
+            "name": "Kilometerstand beim Start"
           },
           "avg_speed": {
             "name": "Durchschnittsgeschwindigkeit"
