@@ -16,18 +16,23 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 - Set a charge limit (only EV);
 
 ## Installation
-### Using [HACS](https://hacs.xyz/)
-1. Go to HACS section;
+<details><summary><b>Using HACS</b></summary>
+
+1. Go to [HACS](https://hacs.xyz/) section;
 2. From the 3 dots menu (top right) click on **Add custom repository**;
 3. Add as **Integration** this url https://github.com/andreadegiovine/homeassistant-stellantis-vehicles;
 4. Search and install **Stellantis Vehicles** from the HACS integration list;
 5. Add this integration from the **Home Assistant** integrations.
 
-### Manually
+</details>
+<details><summary><b>Manually</b></summary>
+
 1. Download this repository;
 2. Copy the directory **custom_components/stellantis_vehicles** on your Home Assistant **config/custom_components/stellantis_vehicles**;
 3. Restart HomeAssistant;
 4. Add this integration from the **Home Assistant** integrations.
+
+</details>
 
 ## Testing roadmap
 ### Vehicles tested
@@ -55,7 +60,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 
 Before any issue request please enable the debug log of this integration by your configuration.yaml:
 
-```
+```yaml
 logger:
     default: error
     logs:
@@ -80,10 +85,14 @@ It seems that this error is due to reaching the limit of associated devices / SM
 [Follow this procedure from Peugeot community](https://peugeot.my-customerportal.com/peugeot/s/article/AP-I-have-problems-with-the-pin-safety-code-or-I-want-to-change-it-What-can-I-do?language=en_GB).
 
 ## Translations
-### Pull request
+<details><summary><b>Pull request</b></summary>
+
 Fork this repo and create/update your language file under `custom_components/stellantis_vehicles/translations/` starting from `en.json`.
-### Manually
+</details>
+<details><summary><b>Manually</b></summary>
+
 Copy the content of file `custom_components/stellantis_vehicles/translations/en.json` to a new file, edit all labels ("key": **"Label"**) and open a issue request including the new/updated json language file.
+</details>
 
 ## File "configs.json"
 This file contains all app api credentials by culture.
