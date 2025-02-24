@@ -122,7 +122,7 @@ class StellantisAirConditioningButton(StellantisBaseButton):
         if not self._coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
 
-        doors_locked = "doors" in self._coordinator._sensors and self._coordinator._sensors["doors"] in ["Locked", None]
+        doors_locked = "doors" in self._coordinator._sensors and (self._coordinator._sensors["doors"] == None or "Locked" in self._coordinator._sensors["doors"])
 
         min_charge = 50
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
