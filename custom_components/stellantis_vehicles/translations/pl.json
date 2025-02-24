@@ -10,7 +10,7 @@
       "country": {
         "description": "Konfiguracja i podłączenie samochou grupy Stellantis",
         "data": {
-          "country_code": "Twój kod kraju"
+          "country_code": "Kod Twojego kraju"
         }
       },
       "otp": {
@@ -25,7 +25,7 @@
   "entity": {
     "sensor": {
       "service_battery_voltage": {
-        "name": "Service battery"
+        "name": "Bateria serwisowa"
       },
       "type": {
         "name": "Typ",
