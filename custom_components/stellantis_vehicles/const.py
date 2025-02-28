@@ -83,6 +83,8 @@ PLATFORMS = [
     "switch"
 ]
 
+UPDATE_INTERVAL = 60 # seconds
+
 VEHICLE_TYPE_ELECTRIC = "Electric"
 VEHICLE_TYPE_HYBRID = "Hybrid"
 VEHICLE_TYPE_THERMIC = "Thermic"

@@ -12,6 +12,8 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
+from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
 
@@ -19,14 +21,15 @@ from .const import (
     DOMAIN,
     FIELD_MOBILE_APP,
     VEHICLE_TYPE_ELECTRIC,
-    VEHICLE_TYPE_HYBRID
+    VEHICLE_TYPE_HYBRID,
+    UPDATE_INTERVAL
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, config, vehicle, stellantis, translations):
-        super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=30))
+        super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
         self._translations = translations
@@ -45,6 +48,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             # Vehicle status
             self._data = await self._stellantis.get_vehicle_status()
+        except ConfigEntryAuthFailed as e:
+            raise e
         except Exception as e:
             _LOGGER.error(str(e))
         _LOGGER.debug(self._config)
@@ -67,20 +72,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             action_updates = self._commands_history[action_id]["updates"]
             reorder_updates = reversed(action_updates)
             for update in reorder_updates:
-                status = update["info"]["status"]
+                status = update["info"]
                 translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{status}"
                 status = self._translations.get(translation_path, status)
-
-                details = update["info"]["details"]
-                if details:
-                    translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{details}"
-                    details = self._translations.get(translation_path, details)
-                    status = status + " (" + details + ")"
-
-                if "source" in update["info"]:
-                    status = status + " [" + str(update["info"]["source"]) + "]"
                 history.update({update["date"].strftime("%d/%m/%y %H:%M:%S:%f")[:-4]: str(action_name) + ": " + status})
-
         return history
 
     @property
@@ -90,18 +85,18 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         last_action_id = list(self._commands_history.keys())[-1]
         return not self._commands_history[last_action_id]["updates"]
 
-    async def update_command_history(self, action_id, update = None, retry = None):
+    async def update_command_history(self, action_id, update = None):
         if not action_id in self._commands_history:
             return
         if update:
             self._commands_history[action_id]["updates"].append({"info": update, "date": get_datetime()})
-            if update["status"] == "99":
+            if update == "99":
                 self._disabled_commands.append(self._commands_history[action_id]["name"])
         self.async_update_listeners()
 
     async def send_command(self, name, service, message):
         action_id = await self._stellantis.send_mqtt_message(service, message)
-        self._commands_history.update({action_id: {"name": name, "updates": [], "retry": 0}})
+        self._commands_history.update({action_id: {"name": name, "updates": []}})
 
     async def send_wakeup_command(self, button_name):
         await self.send_command(button_name, "/VehCharge/state", {"action": "state"})
@@ -252,7 +247,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         self._stellantis = self._coordinator._stellantis
         self._data = {}
 
-        self._key                   = description.key
+        self._key = description.key
 
         key_formatted = re.sub(r'(?<!^)(?=[A-Z])', '_', self._key).lower()
 
@@ -367,7 +362,7 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
         restored_data = await self.async_get_last_state()
-        if restored_data and restored_data.state not in ["unavailable", "unknown"]:
+        if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
             value = restored_data.state
             if self._key in ["battery_charging_time", "battery_charging_end"]:
                 value = datetime.fromisoformat(value)
@@ -417,7 +412,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         self._coordinator._sensors[self._key] = value
 
         if value == None:
-            if self._attr_native_value == "unknown":
+            if self._attr_native_value == STATE_UNKNOWN:
                 self._attr_native_value = None
             return
 
@@ -490,11 +485,11 @@ class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
         restored_data = await self.async_get_last_state()
-        if restored_data and restored_data.state not in ["unavailable", "unknown"]:
+        if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
             value = restored_data.state
-            if restored_data.state == "on":
+            if restored_data.state == STATE_ON:
                 value = True
-            elif restored_data.state == "off":
+            elif restored_data.state == STATE_OFF:
                 value = False
             self._coordinator._sensors[self._sensor_key] = value
         self.coordinator_update()

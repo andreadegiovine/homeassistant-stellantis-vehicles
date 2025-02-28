@@ -43,7 +43,8 @@ from .const import (
     MQTT_EVENT_TOPIC,
     MQTT_REQ_TOPIC,
     GET_USER_INFO_URL,
-    CAR_API_GET_VEHICLE_TRIPS_URL
+    CAR_API_GET_VEHICLE_TRIPS_URL,
+    UPDATE_INTERVAL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -273,13 +274,8 @@ class StellantisVehicles(StellantisBase):
 
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
-        # Aggiungere notifica frontend di rinconfigurazione oauth token in caso di errore
         token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
-        # Temporany fix
-        if not token_expiry.tzinfo or token_expiry.utcoffset() != get_datetime().utcoffset():
-            token_expiry = get_datetime() - timedelta(0, 20)
-        # End - Temporany fix
-        if token_expiry < (get_datetime() - timedelta(0, 10)):
+        if token_expiry < (get_datetime() - timedelta(seconds=UPDATE_INTERVAL)):
             url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
             headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
             token_request = await self.make_http_request(url, 'POST', headers)
@@ -374,11 +370,7 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- START refresh_mqtt_token")
         mqtt_config = self.get_config("mqtt")
         token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
-        # Temporany fix
-        if not token_expiry.tzinfo or token_expiry.utcoffset() != get_datetime().utcoffset():
-            token_expiry = get_datetime() - timedelta(0, 20)
-        # End - Temporany fix
-        if (token_expiry < (get_datetime() - timedelta(0, 10))) or force:
+        if (token_expiry < (get_datetime() - timedelta(seconds=UPDATE_INTERVAL))) or force:
             url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_headers_params(GET_OTP_HEADERS)
             token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
@@ -447,10 +439,10 @@ class StellantisVehicles(StellantisBase):
                     else:
                         result_code = data["return_code"]
                     if result_code != "901": # Not store "Vehicle as sleep" event
-                        asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], {"status": result_code, "details": None}), self._hass.loop).result()
+                        asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], result_code), self._hass.loop).result()
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
-                        asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], {"status": "99", "details": None}), self._hass.loop).result()
+                        asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], "99"), self._hass.loop).result()
                     else:
                         if self._mqtt_last_request:
                             _LOGGER.debug("last request is send again, token was expired")
