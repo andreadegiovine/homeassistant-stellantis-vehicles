@@ -275,7 +275,7 @@ class StellantisVehicles(StellantisBase):
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
         token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
-        if token_expiry < (get_datetime() - timedelta(seconds=UPDATE_INTERVAL)):
+        if token_expiry < (get_datetime() + timedelta(seconds=UPDATE_INTERVAL)):
             url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
             headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
             token_request = await self.make_http_request(url, 'POST', headers)
@@ -285,7 +285,7 @@ class StellantisVehicles(StellantisBase):
             new_config = {
                 "access_token": token_request["access_token"],
                 "refresh_token": token_request["refresh_token"],
-                "expires_in": (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat()
+                "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
             }
             self.save_config(new_config)
             self.update_stored_config("access_token", new_config["access_token"])
@@ -375,7 +375,7 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- START refresh_mqtt_token")
         mqtt_config = self.get_config("mqtt")
         token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
-        if (token_expiry < (get_datetime() - timedelta(seconds=UPDATE_INTERVAL))) or force:
+        if (token_expiry < (get_datetime() + timedelta(seconds=UPDATE_INTERVAL))) or force:
             url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_headers_params(GET_OTP_HEADERS)
             token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
@@ -383,7 +383,7 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.debug(headers)
             _LOGGER.debug(token_request)
             mqtt_config["access_token"] = token_request["access_token"]
-            mqtt_config["expires_in"] = (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat()
+            mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
             self.save_config({"mqtt": mqtt_config})
             self.update_stored_config("mqtt", mqtt_config)
             if self._mqtt:
