@@ -320,7 +320,9 @@ class StellantisBaseEntity(CoordinatorEntity):
 class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def entity_picture(self):
-        return str(self._coordinator._vehicle["picture"])
+        if "picture" in self._coordinator._vehicle:
+            return str(self._coordinator._vehicle["picture"])
+        return None
 
     @property
     def force_update(self):
