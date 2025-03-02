@@ -94,7 +94,8 @@
           "903": "Inoltrato",
           "0": "Completato",
           "300": "Annullato",
-          "500": "Errore"
+          "500": "Errore",
+          "502": "Duplicato"
         }
       },
       "fuel": {

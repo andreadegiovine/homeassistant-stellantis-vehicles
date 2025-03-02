@@ -94,7 +94,8 @@
           "903": "Forwarded",
           "0": "Complete",
           "300": "Canceled",
-          "500": "Error"
+          "500": "Error",
+          "502": "Duplicate"
         }
       },
       "fuel": {

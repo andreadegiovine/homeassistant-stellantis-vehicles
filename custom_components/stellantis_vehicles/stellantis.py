@@ -438,7 +438,7 @@ class StellantisVehicles(StellantisBase):
             charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
                 coordinator = asyncio.run_coroutine_threadsafe(self.async_get_coordinator_by_vin(data["vin"]), self._hass.loop).result()
-                if "return_code" not in data or data["return_code"] in ["0", "300", "500"]:
+                if "return_code" not in data or data["return_code"] in ["0", "300", "500", "502"]:
                     if "return_code" not in data:
                         result_code = data["process_code"]
                     else:
