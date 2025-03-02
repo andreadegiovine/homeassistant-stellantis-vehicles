@@ -49,7 +49,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             # Vehicle status
             self._data = await self._stellantis.get_vehicle_status()
         except ConfigEntryAuthFailed as e:
-            raise e
+            raise ConfigEntryAuthFailed from e
         except Exception as e:
             _LOGGER.error(str(e))
         _LOGGER.debug(self._config)
