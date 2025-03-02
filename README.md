@@ -47,15 +47,15 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 ### Features tested
 - [x] Command: **Charge Start/Stop** (E-remote)
 - [x] Command: **Air conditioning Start/Stop** (E-remote)
-- [ ] Command: **Charge Start/Stop** (Connect Plus)
-- [ ] Command: **Air conditioning Start/Stop** (Connect Plus)
-- [ ] Command: **Doors** (Connect Plus)
-- [ ] Command: **Horn** (Connect Plus)
-- [ ] Command: **Lights** (Connect Plus)
+- [x] Command: **Charge Start/Stop** (Connect Plus)
+- [x] Command: **Air conditioning Start/Stop** (Connect Plus)
+- [x] Command: **Doors** (Connect Plus)
+- [x] Command: **Horn** (Connect Plus)
+- [x] Command: **Lights** (Connect Plus)
 - [ ] Sensor: **Battery capacity** accurance
 - [ ] Sensor: **Battery residual** accurance
-- [ ] Sensor: **Doors** accurance
-- [ ] Sensor: **Engine** accurance
+- [x] Sensor: **Doors** accurance
+- [x] Sensor: **Engine** accurance
 - [ ] Sensor: **Moving** accurance
 
 Before any issue request please enable the debug log of this integration by your configuration.yaml:
@@ -73,14 +73,59 @@ and paste the log data on the issue request.
 ![Controls](./images/controls.png)
 ![Sensors](./images/sensors.png)
 
+## WakeUp
+For some vehicles no updates are received a few minutes after the engine is turned off. Use automations like these to wake up the vehicle:
+
+```yaml
+- id: "standby_wakeup"
+  alias: Vehicle standby WakeUp (every 1 hour)
+  description: ""
+  mode: single
+  triggers:
+    - trigger: time_pattern
+      hours: /1
+  conditions:
+    - condition: state
+      entity_id: binary_sensor.#####VIN#####_battery_charging
+      state: "off"
+  actions:
+    - action: button.press
+      metadata: {}
+      data: {}
+      target:
+        entity_id: button.#####VIN#####_wakeup
+```
+
+```yaml
+- id: "charging_wakeup"
+  alias: Vehicle charging WakeUp (every 5 minutes)
+  description: ""
+  mode: single
+  triggers:
+    - trigger: time_pattern
+      minutes: /5
+  conditions:
+    - condition: state
+      entity_id: binary_sensor.#####VIN#####_battery_charging
+      state: "on"
+  actions:
+    - action: button.press
+      metadata: {}
+      data: {}
+      target:
+        entity_id: button.#####VIN#####_wakeup
+```
+
+**Some users report that performing too many wakeups drains the service battery, making some functions unavailable (such as keyless entry).**
+
 ## Air conditioning Start/Stop
 As described in the Stellantis apps, the command is enabled when:
 1. the vehicle engine is off;
 2. the vehicle doors are locked;
 3. the battery level is at least 50% (20% for hybrids) or in charging.
 
-## OTP errors
-### NOK:MAXNBTOOLS
+## Errors
+### OTP error - NOK:MAXNBTOOLS
 It seems that this error is due to reaching the limit of associated devices / SMS received. Restore your Stellantis account and try again:
 [Follow this procedure from Peugeot community](https://peugeot.my-customerportal.com/peugeot/s/article/AP-I-have-problems-with-the-pin-safety-code-or-I-want-to-change-it-What-can-I-do?language=en_GB).
 
@@ -93,11 +138,6 @@ Fork this repo and create/update your language file under `custom_components/ste
 
 Copy the content of file `custom_components/stellantis_vehicles/translations/en.json` to a new file, edit all labels ("key": **"Label"**) and open a issue request including the new/updated json language file.
 </details>
-
-## File "configs.json"
-This file contains all app api credentials by culture.
-
-To update this file run the Dockerfile under **configs_updater** directory and use the final output as file content.
 
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
