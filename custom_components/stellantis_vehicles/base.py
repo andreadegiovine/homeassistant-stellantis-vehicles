@@ -1,7 +1,7 @@
 import logging
 import re
-from datetime import datetime, timedelta
-# import math
+from datetime import datetime, timedelta, UTC
+import json
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -10,6 +10,7 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.button import ButtonEntity
 from homeassistant.components.number import NumberEntity
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.components.text import TextEntity
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
@@ -160,11 +161,52 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             new_status = "deactivate"
         await self.send_command(button_name, "/ThermalPrecond", {"asap": new_status, "programs": self.get_programs()})
 
-    async def after_async_update_data(self):
-        if not hasattr(self, "_manage_charge_limit_sent"):
-            self._manage_charge_limit_sent = False
+    async def send_abrp_data(self):
+        tlm = {
+            "utc": int(get_datetime().astimezone(UTC).timestamp()),
+            "soc": None,
+            "power": None,
+            "speed": None,
+            "lat": None,
+            "lon": None,
+            "is_charging": False,
+            "is_dcfc": False,
+            "is_parked": False
+        }
 
+        if "battery" in self._sensors:
+            tlm["soc"] = self._sensors["battery"]
+        if "kinetic" in self._data and "speed" in self._data["kinetic"]:
+            tlm["speed"] = self._data["kinetic"]["speed"]
+        if "lastPosition" in self._data:
+            tlm["lat"] = float(self._data["lastPosition"]["geometry"]["coordinates"][1])
+            tlm["lon"] = float(self._data["lastPosition"]["geometry"]["coordinates"][0])
+        if "battery_charging" in self._sensors:
+            tlm["is_charging"] = self._sensors["battery_charging"] == "InProgress"
+        if "battery_charging_type" in self._sensors:
+            tlm["is_dcfc"] = tlm["is_charging"] and self._sensors["battery_charging_type"] == "Quick"
+        if "battery_soh" in self._sensors:
+            tlm["soh"] = self._sensors["battery_soh"]
+        if "lastPosition" in self._data and "properties" in self._data["lastPosition"] and "heading" in self._data["lastPosition"]["properties"]:
+            tlm["heading"] = float(self._data["lastPosition"]["properties"]["heading"])
+        if "lastPosition" in self._data and len(self._data["lastPosition"]["geometry"]["coordinates"]) == 3:
+            tlm["elevation"] = float(self._data["lastPosition"]["geometry"]["coordinates"][2])
+        if "temperature" in self._sensors:
+            tlm["ext_temp"] = self._sensors["temperature"]
+        if "mileage" in self._sensors:
+            tlm["odometer"] = self._sensors["mileage"]
+        if "autonomy" in self._sensors:
+            tlm["est_battery_range "] = self._sensors["autonomy"]
+
+        params = {"tlm": json.dumps(tlm), "token": self._sensors["text_abrp_token"]}
+        await self._stellantis.send_abrp_data(params)
+
+
+    async def after_async_update_data(self):
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
+            if not hasattr(self, "_manage_charge_limit_sent"):
+                self._manage_charge_limit_sent = False
+
             if "battery_charging" in self._sensors:
                 if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
                     charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]
@@ -179,6 +221,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                             self._manage_charge_limit_sent = True
                 elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
                     self._manage_charge_limit_sent = False
+
+            if "switch_abrp_sync" in self._sensors and self._sensors["switch_abrp_sync"] and "text_abrp_token" in self._sensors and len(self._sensors["text_abrp_token"]) == 36:
+                await self.send_abrp_data()
 
         if "engine" in self._sensors and "ignition" in self._data and "type" in self._data["ignition"]:
             current_engine_status = self._sensors["engine"]
@@ -528,6 +573,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
     def coordinator_update(self):
         return True
 
+
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
     def __init__(self, coordinator, description):
         super().__init__(coordinator, description)
@@ -545,6 +591,26 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs):
         self._attr_is_on = False
         self._coordinator._sensors[self._sensor_key] = False
+        await self._coordinator.async_refresh()
+
+    def coordinator_update(self):
+        return True
+
+
+class StellantisBaseText(StellantisRestoreEntity, TextEntity):
+    def __init__(self, coordinator, description):
+        super().__init__(coordinator, description)
+        self._sensor_key = f"text_{self._key}"
+
+    @property
+    def native_value(self):
+        if self._sensor_key in self._coordinator._sensors:
+            return self._coordinator._sensors[self._sensor_key]
+        return ""
+
+    async def async_set_value(self, value: str):
+        self._attr_native_value = value
+        self._coordinator._sensors[self._sensor_key] = str(value)
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):

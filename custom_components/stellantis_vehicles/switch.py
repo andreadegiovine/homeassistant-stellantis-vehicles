@@ -28,6 +28,14 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
             )
             entities.extend([StellantisBatteryChargingLimitSwitch(coordinator, description)])
 
+            description = SwitchEntityDescription(
+                name = "abrp_sync",
+                key = "abrp_sync",
+                translation_key = "abrp_sync",
+                icon = "mdi:source-branch-sync"
+            )
+            entities.extend([StellantisAbrpSyncSwitch(coordinator, description)])
+
     async_add_entities(entities)
 
 
@@ -35,3 +43,9 @@ class StellantisBatteryChargingLimitSwitch(StellantisBaseSwitch):
     @property
     def available(self):
         return super().available and "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]
+
+
+class StellantisAbrpSyncSwitch(StellantisBaseSwitch):
+    @property
+    def available(self):
+        return super().available and "text_abrp_token" in self._coordinator._sensors and len(self._coordinator._sensors["text_abrp_token"]) == 36

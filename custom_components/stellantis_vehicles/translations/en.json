@@ -205,6 +205,14 @@
     "switch": {
       "battery_charging_limit": {
         "name": "Battery charging limit"
+      },
+      "abrp_sync": {
+        "name": "ABRP sync"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP token"
       }
     }
   }

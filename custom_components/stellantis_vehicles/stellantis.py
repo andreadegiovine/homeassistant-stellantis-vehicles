@@ -491,3 +491,13 @@ class StellantisVehicles(StellantisBase):
             self._mqtt_last_request = [service, message]
         _LOGGER.debug("---------- END send_mqtt_message")
         return action_id
+
+    async def send_abrp_data(self, params):
+        _LOGGER.debug("---------- START send_abrp_data")
+        params["api_key"] = "1e28ad14-df16-49f0-97da-364c9154b44a"
+        abrp_request = await self.make_http_request("https://api.iternio.com/1/tlm/send", "POST", None, params)
+        _LOGGER.debug(params)
+        _LOGGER.debug(abrp_request)
+        if not "status" in abrp_request or abrp_request["status"] != "ok":
+            _LOGGER.error(abrp_request)
+        _LOGGER.debug("---------- END send_abrp_data")

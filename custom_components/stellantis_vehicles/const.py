@@ -80,6 +80,7 @@ PLATFORMS = [
     "binary_sensor",
     "button",
     "number",
+    "text",
     "switch"
 ]
 
