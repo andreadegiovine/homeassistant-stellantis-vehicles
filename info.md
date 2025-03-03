@@ -63,9 +63,9 @@ Before any issue request please enable the debug log of this integration by your
 
 ```yaml
 logger:
-    default: error
-    logs:
-        custom_components.stellantis_vehicles: debug
+  default: error
+  logs:
+    custom_components.stellantis_vehicles: debug
 ```
 
 and paste the log data on the issue request.
@@ -126,14 +126,14 @@ As described in the Stellantis apps, the command is enabled when:
 3. the battery level is at least 50% (20% for hybrids) or in charging.
 
 ## ABRP - A Better Routeplanner
-Get a token from ABRP:
+Get a token from [ABRP](https://abetterrouteplanner.com/):
 1. login to your account;
-2. navigate to your vehicle settings;
-3. navigate to real time data ;
+2. navigate to vehicle settings;
+3. navigate to real time data;
 4. navigate to edit connections;
-5. generate a token using "Generic" button;
+5. generate a token using "Generic" method;
 
-Use the genenrated token in abrp_token sensor and enable abrp_sync switch.
+Use the generated token in **abrp_token sensor** and enable **abrp_sync switch** to send updates.
 
 ## Errors
 ### OTP error - NOK:MAXNBTOOLS
