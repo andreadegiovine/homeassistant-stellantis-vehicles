@@ -14,6 +14,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 - Get vehicles status;
 - Send remote command;
 - Set a charge limit (only EV);
+- Sync data with **ABRP - A Better Routeplanner** (only EV);
 
 ## Installation
 <details><summary><b>Using HACS</b></summary>
@@ -123,6 +124,16 @@ As described in the Stellantis apps, the command is enabled when:
 1. the vehicle engine is off;
 2. the vehicle doors are locked;
 3. the battery level is at least 50% (20% for hybrids) or in charging.
+
+## ABRP - A Better Routeplanner
+Get a token from ABRP:
+1. login to your account;
+2. navigate to your vehicle settings;
+3. navigate to real time data ;
+4. navigate to edit connections;
+5. generate a token using "Generic" button;
+
+Use the genenrated token in abrp_token sensor and enable abrp_sync switch.
 
 ## Errors
 ### OTP error - NOK:MAXNBTOOLS
