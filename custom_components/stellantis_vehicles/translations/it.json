@@ -197,6 +197,9 @@
     "number": {
       "battery_charging_limit": {
         "name": "Limite ricarica batteria"
+      },
+      "refresh_interval": {
+        "name": "Intervallo aggiornamento dati"
       }
     },
     "switch": {
