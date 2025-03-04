@@ -2,19 +2,22 @@
   "config": {
     "step": {
       "user": {
-        "description": "Configura e connetti il tuo veicolo Stellantis",
         "data": {
           "mobile_app": "App mobile del veicolo"
         }
       },
       "country": {
-        "description": "Configura e connetti il tuo veicolo Stellantis",
         "data": {
           "country_code": "Il codice del tuo paese"
         }
       },
+      "oauth": {
+        "description": "Segui questi step dal **browser desktop**:\n\n1. vai sulla pagina di login {oauth_link};\n2. apri il **DevTools** (F12) del browser e vai al tab **Network**;\n3. accedi al tuo account e clicca l'ultimo bottone di conferma;\n4. dal tab **Network**  trova la richiesta in basso e copia il **CODICE_OAUTH**;\n\n>***://oauth2redirect...?code=`CODICE_OAUTH`&scope=openid...",
+        "data": {
+          "oauth_code": "Codice OAuth"
+        }
+      },
       "otp": {
-        "description": "Configura e verifica OTP",
         "data": {
           "sms_code": "Codice SMS ricevuto da Stellantis",
           "pin_code": "Codice pin dell'app mobile del veicolo"

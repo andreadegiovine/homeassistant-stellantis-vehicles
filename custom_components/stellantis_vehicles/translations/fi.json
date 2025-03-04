@@ -2,19 +2,16 @@
   "config": {
     "step": {
       "user": {
-        "description": "Määritä ja kytke Stellantis autosi",
         "data": {
           "mobile_app": "Ajoneuvosi sovellus"
         }
       },
       "country": {
-        "description": "Määritä ja kytke Stellanti autosi",
         "data": {
           "country_code": "Syötä maakoodisi"
         }
       },
       "otp": {
-        "description": "Määritä ja hyväksy OTP",
         "data": {
           "sms_code": "Tekstiviesti Stellantikselta",
           "pin_code": "Stellantis-sovelluksen pin-koodi"

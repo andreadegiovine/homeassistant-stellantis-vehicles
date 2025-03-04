@@ -2,19 +2,16 @@
   "config": {
     "step": {
       "user": {
-        "description": "Konfigurera och koppla ihop med ditt Stellantis fordon",
         "data": {
           "mobile_app": "Fordonets mobilapp"
         }
       },
       "country": {
-        "description": "Konfigurera och koppla ihop med ditt Stellantis fordon",
         "data": {
           "country_code": "Din landskod"
         }
       },
       "otp": {
-        "description": "Konfigurera och verifiera OTP",
         "data": {
           "sms_code": "SMS kod från Stellantis",
           "pin_code": "Pinkod från fordonets mobilapp"

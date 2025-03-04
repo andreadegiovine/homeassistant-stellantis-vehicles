@@ -2,19 +2,22 @@
   "config": {
     "step": {
       "user": {
-        "description": "Configure and connect your Stellantis vehicle",
         "data": {
           "mobile_app": "Vehicle mobile app"
         }
       },
       "country": {
-        "description": "Configure and connect your Stellantis vehicle",
         "data": {
           "country_code": "Your country code"
         }
       },
+      "oauth": {
+        "description": "Follow this steps from **desktop browser**:\n\n1. go to {oauth_link} login page;\n2. open the browser **DevTools** (F12) and go to **Network** tab;\n3. login to your account and click the last confirm button;\n4. from **Network** tab find above request and copy the **OAUTH_CODE**;\n\n>***://oauth2redirect...?code=`OAUTH_CODE`&scope=openid...",
+        "data": {
+          "oauth_code": "OAuth code"
+        }
+      },
       "otp": {
-        "description": "Configure and verify OTP",
         "data": {
           "sms_code": "SMS code from Stellantis",
           "pin_code": "Pin code from vehicle mobile app"

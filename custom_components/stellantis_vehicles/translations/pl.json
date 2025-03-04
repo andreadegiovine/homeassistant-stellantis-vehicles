@@ -2,19 +2,16 @@
   "config": {
     "step": {
       "user": {
-        "description": "Konfiguracja i podłączenie samochou grupy Stellantis",
         "data": {
           "mobile_app": "Aplikacja mobilna"
         }
       },
       "country": {
-        "description": "Konfiguracja i podłączenie samochou grupy Stellantis",
         "data": {
           "country_code": "Kod Twojego kraju"
         }
       },
       "otp": {
-        "description": "Konfiguracja i sprawdzenie OTP",
         "data": {
           "sms_code": "Kod SMS od Stellantis",
           "pin_code": "Kod Pin z aplikacji mobilnej"

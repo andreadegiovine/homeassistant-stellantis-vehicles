@@ -2,19 +2,16 @@
   "config": {
     "step": {
       "user": {
-        "description": "Configuur en verbind je Stellantis voertuig",
         "data": {
           "mobile_app": "Voertuig mobiele app"
         }
       },
       "country": {
-        "description": "Configuur en verbind je Stellantis voertuig",
         "data": {
           "country_code": "Je land code"
         }
       },
       "otp": {
-        "description": "Configureer en verifieer OTP",
         "data": {
           "sms_code": "SMS code van Stellantis",
           "pin_code": "Pin code van je mobiele app"

@@ -2,19 +2,16 @@
   "config": {
     "step": {
       "user": {
-        "description": "Nakonfigurujte a připojte své vozidlo Stellantis",
         "data": {
           "mobile_app": "Mobilní aplikace vozidla"
         }
       },
       "country": {
-        "description": "Nakonfigurujte a připojte své vozidlo Stellantis",
         "data": {
           "country_code": "Kód vaší země"
         }
       },
       "otp": {
-        "description": "Nakonfigurujte a ověřte OTP",
         "data": {
           "sms_code": "SMS kód od Stellantis",
           "pin_code": "PIN kód z mobilní aplikace vozidla"

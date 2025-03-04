@@ -37,7 +37,7 @@ OAUTH_AUTHORIZE_QUERY_PARAMS = {
     "client_id": "{#client_id#}",
     "response_type": "code",
     "redirect_uri": "{#scheme#}://oauth2redirect/{#culture#}",
-    "scope": "openid profile email",
+    "scope": "openid%20profile%20email",
     "locale": "{#locale#}"
 }
 
@@ -71,6 +71,7 @@ CAR_API_HEADERS = {
 
 FIELD_MOBILE_APP = "mobile_app"
 FIELD_COUNTRY_CODE = "country_code"
+FIELD_OAUTH_CODE = "oauth_code"
 FIELD_SMS_CODE = "sms_code"
 FIELD_PIN_CODE = "pin_code"
 

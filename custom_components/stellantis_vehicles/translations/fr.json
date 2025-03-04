@@ -2,19 +2,16 @@
   "config": {
     "step": {
       "user": {
-        "description": "Configurer et connecter votre véhicule Stellantis",
         "data": {
           "mobile_app": "Application mobile du véhicule"
         }
       },
       "country": {
-        "description": "Configurer et connecter votre véhicule Stellantis",
         "data": {
           "country_code": "Votre code pays"
         }
       },
       "otp": {
-        "description": "Configurer et vérifier le code OTP",
         "data": {
           "sms_code": "Code SMS reçu de Stellantis",
           "pin_code": "Code PIN de votre application mobile du véhicule"
