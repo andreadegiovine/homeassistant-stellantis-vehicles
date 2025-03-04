@@ -6,15 +6,16 @@
 
 Currently only PSA vehicles are compatibile (Peugeot, Citroen, DS, Opel and Vauxhall).
 
-Currently Stellantis not provide B2C api credentials, this integration use the mobile app auth credentials and flow.
+Currently Stellantis not provide B2C api credentials, this integration use the mobile apps api credentials and login flow.
 
 **Inspired by https://github.com/flobz/psa_car_controller (OTP step its a fork).**
 
 ## Features
 - Get vehicles status;
 - Send remote command;
-- Set a charge limit (only EV);
-- Sync data with **ABRP - A Better Routeplanner** (only EV);
+### Only EV
+- Set charging limit;
+- Sync data with **ABRP - A Better Routeplanner**;
 
 ## Installation
 <details><summary><b>Using HACS</b></summary>
@@ -36,7 +37,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 </details>
 
 ## Testing roadmap
-### Vehicles tested
+### Vehicles
 - [x] Opel Mokka-e 2022 [e-remote] (me)
 - [x] Peugeot e208 2021 [e-remote] (@bgoncal, @Ladida1)
 - [x] Vauxhall Mokka-e (@pantha007)
@@ -45,7 +46,7 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 - [ ] Others EV vehicles
 - [ ] Others thermal vehicles
 - [ ] Multi vehicles account
-### Features tested
+### Features
 - [x] Command: **Charge Start/Stop** (E-remote)
 - [x] Command: **Air conditioning Start/Stop** (E-remote)
 - [x] Command: **Charge Start/Stop** (Connect Plus)
@@ -59,13 +60,13 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 - [x] Sensor: **Engine** accurance
 - [ ] Sensor: **Moving** accurance
 
-Before any issue request please enable the debug log of this integration by your configuration.yaml:
+Before any issue request please enable the debug log of this integration from your configuration.yaml:
 
 ```yaml
 logger:
-  default: error
-  logs:
-    custom_components.stellantis_vehicles: debug
+    default: error
+    logs:
+        custom_components.stellantis_vehicles: debug
 ```
 
 and paste the log data on the issue request.
@@ -75,7 +76,7 @@ and paste the log data on the issue request.
 ![Sensors](./images/sensors.png)
 
 ## WakeUp
-For some vehicles no updates are received a few minutes after the engine is turned off. Use automations like these to wake up the vehicle:
+For some vehicles no updates are received a few minutes after the engine is turned off. Use automations like these to schedule the vehicle wake up:
 
 ```yaml
 - id: "standby_wakeup"
@@ -117,7 +118,7 @@ For some vehicles no updates are received a few minutes after the engine is turn
         entity_id: button.#####VIN#####_wakeup
 ```
 
-**Some users report that performing too many wakeups drains the service battery, making some functions unavailable (such as keyless entry).**
+**Some users report that performing too many wakeups drains the service battery, making some features unavailable (such as keyless entry).**
 
 ## Air conditioning Start/Stop
 As described in the Stellantis apps, the command is enabled when:
