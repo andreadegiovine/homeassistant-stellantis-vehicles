@@ -423,15 +423,13 @@ class StellantisVehicles(StellantisBase):
 
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
-        _LOGGER.debug("Code %s", result_code)
+        _LOGGER.debug("Code %s (%s)", result_code, mqtt.error_string(result_code))
         if result_code == 1:
             asyncio.run_coroutine_threadsafe(self.refresh_tokens(force=True), self._hass.loop).result()
-        elif result_code == 7:
+        else:
             _LOGGER.debug("Disconnect and reconnect")
             self._mqtt.disconnect()
             asyncio.run_coroutine_threadsafe(self.connect_mqtt(), self._hass.loop).result()
-        else:
-            _LOGGER.error(mqtt.error_string(result_code))
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
     def _on_mqtt_message(self, client, userdata, msg):
