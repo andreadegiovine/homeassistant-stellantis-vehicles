@@ -66,6 +66,9 @@ class StellantisBase:
         self._session = aiohttp.ClientSession()
         self.otp = None
 
+    async def close_session(self):
+        await self._session.close()
+
     def set_mobile_app(self, mobile_app, country_code):
         if mobile_app in MOBILE_APPS:
             app_data = deepcopy(MOBILE_APPS[mobile_app])
