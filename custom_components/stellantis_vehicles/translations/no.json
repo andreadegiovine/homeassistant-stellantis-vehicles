@@ -27,7 +27,7 @@
       "type": {
         "name": "Type",
         "state": {
-          "Electric": "Elektrisk"
+          "electric": "Elektrisk"
         }
       },
       "temperature": {
@@ -51,9 +51,9 @@
       "battery_charging_type": {
         "name": "Batteri ladetype",
         "state": {
-          "No": "Nei",
-          "Slow": "Sakte",
-          "Quick": "Hurtig"
+          "no": "Nei",
+          "slow": "Sakte",
+          "quick": "Hurtig"
         }
       },
       "battery_charging_time": {

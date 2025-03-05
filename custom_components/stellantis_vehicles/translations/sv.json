@@ -44,10 +44,10 @@
       "type": {
         "name": "Typ",
         "state": {
-          "Electric": "Elektrisk",
-          "Hybrid": "Hybrid",
-          "Thermic": "Förbränningsmotor",
-          "Hydrogen": "Bränslecell"
+          "electric": "Elektrisk",
+          "hybrid": "Hybrid",
+          "thermic": "Förbränningsmotor",
+          "hydrogen": "Bränslecell"
         }
       },
       "temperature": {
@@ -71,9 +71,9 @@
       "battery_charging_type": {
         "name": "Batteri laddningstyp",
         "state": {
-          "No": "Laddar ej",
-          "Slow": "Långsam",
-          "Quick": "Snabb"
+          "no": "Laddar ej",
+          "slow": "Långsam",
+          "quick": "Snabb"
         }
       },
       "battery_charging_time": {

@@ -143,6 +143,9 @@ class StellantisBase:
                 raise Exception(error)
             return result
 
+    def do_async(self, async_func):
+        return asyncio.run_coroutine_threadsafe(async_func, self._hass.loop).result()
+
 
 class StellantisOauth(StellantisBase):
     def get_oauth_url(self):
@@ -423,15 +426,13 @@ class StellantisVehicles(StellantisBase):
 
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
-        _LOGGER.debug("Code %s", result_code)
+        _LOGGER.debug("Code %s (%s)", result_code, mqtt.error_string(result_code))
         if result_code == 1:
-            asyncio.run_coroutine_threadsafe(self.refresh_tokens(force=True), self._hass.loop).result()
-        elif result_code == 7:
+            self.do_async(self.refresh_tokens(force=True))
+        else:
             _LOGGER.debug("Disconnect and reconnect")
             self._mqtt.disconnect()
-            asyncio.run_coroutine_threadsafe(self.connect_mqtt(), self._hass.loop).result()
-        else:
-            _LOGGER.error(mqtt.error_string(result_code))
+            self.do_async(self.connect_mqtt())
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
     def _on_mqtt_message(self, client, userdata, msg):
@@ -441,23 +442,23 @@ class StellantisVehicles(StellantisBase):
             data = json.loads(msg.payload)
             charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
-                coordinator = asyncio.run_coroutine_threadsafe(self.async_get_coordinator_by_vin(data["vin"]), self._hass.loop).result()
+                coordinator = self.do_async(self.async_get_coordinator_by_vin(data["vin"]))
                 if "return_code" not in data or data["return_code"] in ["0", "300", "500", "502"]:
                     if "return_code" not in data:
                         result_code = data["process_code"]
                     else:
                         result_code = data["return_code"]
                     if result_code != "901": # Not store "Vehicle as sleep" event
-                        asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], result_code), self._hass.loop).result()
+                        self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
-                        asyncio.run_coroutine_threadsafe(coordinator.update_command_history(data["correlation_id"], "99"), self._hass.loop).result()
+                        self.do_async(coordinator.update_command_history(data["correlation_id"], "99"))
                     else:
                         if self._mqtt_last_request:
                             _LOGGER.debug("last request is send again, token was expired")
                             last_request = self._mqtt_last_request
                             self._mqtt_last_request = None
-                            asyncio.run_coroutine_threadsafe(self.send_mqtt_message(last_request[0], last_request[1], store=False), self._hass.loop).result()
+                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], store=False))
                         else:
                             _LOGGER.error("Last request might have been send twice without success")
                 elif data["return_code"] != "0":
