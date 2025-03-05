@@ -186,7 +186,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if "battery_charging_type" in self._sensors:
             tlm["is_dcfc"] = tlm["is_charging"] and self._sensors["battery_charging_type"] == "Quick"
         if "battery_soh" in self._sensors:
-            tlm["soh"] = self._sensors["battery_soh"]
+            tlm["soh"] = float(self._sensors["battery_soh"])
         if "lastPosition" in self._data and "properties" in self._data["lastPosition"] and "heading" in self._data["lastPosition"]["properties"]:
             tlm["heading"] = float(self._data["lastPosition"]["properties"]["heading"])
         if "lastPosition" in self._data and len(self._data["lastPosition"]["geometry"]["coordinates"]) == 3:
@@ -196,7 +196,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if "mileage" in self._sensors:
             tlm["odometer"] = self._sensors["mileage"]
         if "autonomy" in self._sensors:
-            tlm["est_battery_range "] = self._sensors["autonomy"]
+            tlm["est_battery_range"] = self._sensors["autonomy"]
 
         params = {"tlm": json.dumps(tlm), "token": self._sensors["text_abrp_token"]}
         await self._stellantis.send_abrp_data(params)
@@ -418,6 +418,7 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
             if self._key in ["battery_charging_time", "battery_charging_end"]:
                 value = datetime.fromisoformat(value)
             self._attr_native_value = value
+            self._coordinator._sensors[self._key] = value
             for key in restored_data.attributes:
                 self._attr_extra_state_attributes[key] = restored_data.attributes[key]
         self.coordinator_update()
@@ -460,7 +461,8 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
-        self._coordinator._sensors[self._key] = value
+        if value or (not self._key in self._coordinator._sensors):
+            self._coordinator._sensors[self._key] = value
 
         if value == None:
             if self._attr_native_value == STATE_UNKNOWN:
