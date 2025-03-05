@@ -3,6 +3,7 @@
   "name": "Stellantis Vehicles",
   "codeowners": ["@andreadegiovine"],
   "config_flow": true,
+  "dependencies": ["webhook"],
   "documentation": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues",
@@ -11,6 +12,5 @@
     "pycryptodome==3.*",
     "paho-mqtt==1.*"
   ],
-  "dependencies": ["webhook"],
   "version": "0.3.4"
 }
