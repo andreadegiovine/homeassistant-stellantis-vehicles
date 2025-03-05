@@ -38,10 +38,10 @@
       "type": {
         "name": "Typ",
         "state": {
-          "Electric": "Elektrické",
-          "Hybrid": "Hybridní",
-          "Thermic": "Spalovací",
-          "Hydrogen": "Vodíkové"
+          "electric": "Elektrické",
+          "hybrid": "Hybridní",
+          "thermic": "Spalovací",
+          "hydrogen": "Vodíkové"
         }
       },
       "temperature": {
@@ -65,9 +65,9 @@
       "battery_charging_type": {
         "name": "Typ nabíjení baterie",
         "state": {
-          "No": "Ne",
-          "Slow": "Pomalé",
-          "Quick": "Rychlé"
+          "no": "Ne",
+          "slow": "Pomalé",
+          "quick": "Rychlé"
         }
       },
       "battery_charging_time": {

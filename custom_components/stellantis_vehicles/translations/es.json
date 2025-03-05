@@ -38,10 +38,10 @@
       "type": {
         "name": "Tipo",
         "state": {
-          "Electric": "Eléctrico",
-          "Hybrid": "Híbrido",
-          "Thermic": "Térmico",
-          "Hydrogen": "Hidrógeno"
+          "electric": "Eléctrico",
+          "hybrid": "Híbrido",
+          "thermic": "Térmico",
+          "hydrogen": "Hidrógeno"
         }
       },
       "temperature": {
@@ -65,9 +65,9 @@
       "battery_charging_type": {
         "name": "Tipo de carga de la batería",
         "state": {
-          "No": "No",
-          "Slow": "Lenta",
-          "Quick": "Rápida"
+          "no": "No",
+          "slow": "Lenta",
+          "quick": "Rápida"
         }
       },
       "battery_charging_time": {

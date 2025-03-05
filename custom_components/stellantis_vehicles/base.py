@@ -493,6 +493,9 @@ class StellantisBaseSensor(StellantisRestoreSensor):
             else:
                 value = (float(value) / 1000) + 10
 
+        if isinstance(value, str):
+            value = value.lower()
+
         self._attr_native_value = value
 
 

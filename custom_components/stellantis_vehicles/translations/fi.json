@@ -38,10 +38,10 @@
       "type": {
         "name": "Tyyppi",
         "state": {
-          "Electric": "Sähkö",
-          "Hybrid": "Hybridi",
-          "Thermic": "Polttomoottori",
-          "Hydrogen": "Vety"
+          "electric": "Sähkö",
+          "hybrid": "Hybridi",
+          "thermic": "Polttomoottori",
+          "hydrogen": "Vety"
         }
       },
       "temperature": {
@@ -65,9 +65,9 @@
       "battery_charging_type": {
         "name": "Lataustapa",
         "state": {
-          "No": "Ei",
-          "Slow": "Hidas",
-          "Quick": "Nopea"
+          "no": "Ei",
+          "slow": "Hidas",
+          "quick": "Nopea"
         }
       },
       "battery_charging_time": {
