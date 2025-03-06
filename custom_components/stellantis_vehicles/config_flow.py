@@ -50,8 +50,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.errors = {}
         self._translations = None
 
+
+    def get_translation(self, path, default = None):
+        return self._translations.get(path, default)
+
+
     def get_error_message(self, error, message = None):
-        result = str(self._translations.get(f"component.stellantis_vehicles.config.error.{error}", error))
+        result = str(self.get_translation(f"component.stellantis_vehicles.config.error.{error}", error))
         if message:
             result = result + ": " + str(message)
         return result
@@ -84,7 +89,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.stellantis.set_mobile_app(self.data[FIELD_MOBILE_APP], self.data[FIELD_COUNTRY_CODE])
 
         if user_input is None:
-            return self.async_show_form(step_id="oauth", data_schema=OAUTH_SCHEMA, description_placeholders={"oauth_link": f"[{self.data[FIELD_MOBILE_APP]}]({self.stellantis.get_oauth_url()})"})
+            oauth_label = self.get_translation("component.stellantis_vehicles.config.step.oauth.data.oauth_code").replace(" ", "_").upper()
+            oauth_devtools = f"\n\n>***://oauth2redirect...?code=`{oauth_label}`&scope=openid..."
+            return self.async_show_form(step_id="oauth", data_schema=OAUTH_SCHEMA, description_placeholders={"oauth_link": f"[{self.data[FIELD_MOBILE_APP]}]({self.stellantis.get_oauth_url()})", "oauth_label": oauth_label, "oauth_devtools": oauth_devtools})
 
         self.data.update(user_input)
 

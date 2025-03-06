@@ -12,7 +12,7 @@
         }
       },
       "oauth": {
-        "description": "Segui questi step dal **browser desktop**:\n\n1. vai sulla pagina di login {oauth_link};\n2. apri il **DevTools** (F12) del browser e vai al tab **Network**;\n3. accedi al tuo account e clicca l'ultimo bottone di conferma;\n4. dal tab **Network**  trova la richiesta in basso e copia il **CODICE_OAUTH**;\n\n>***://oauth2redirect...?code=`CODICE_OAUTH`&scope=openid...",
+        "description": "Segui questi step dal **browser desktop**:\n\n1. vai sulla pagina di login {oauth_link};\n2. apri il **DevTools** (F12) del browser e vai al tab **Network**;\n3. accedi al tuo account e clicca l'ultimo bottone di conferma;\n4. dal tab **Network**  trova la richiesta in basso e copia il **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "Codice OAuth"
         }

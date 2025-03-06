@@ -12,7 +12,7 @@
         }
       },
       "oauth": {
-        "description": "Seuraa näitä ohjeita **tietokoneen selaimella**:\n\n1. ja mene osoitteessa {oauth_link} kirjautumissivulle;\n2. Avaa selaimessa **DevTools** (F12) ja mene **Network** tab;\n3. kirjaudu tunnuksillasi ja klikkaa OK;\n4. Kopioi **Network** välilehdeltä seuraava pyyntö **OAUTH_CODE**;\n\n>***://oauth2redirect...?code=`OAUTH_KOODI`&scope=openid...",
+        "description": "Seuraa näitä ohjeita **tietokoneen selaimella**:\n\n1. ja mene osoitteessa {oauth_link} kirjautumissivulle;\n2. Avaa selaimessa **DevTools** (F12) ja mene **Network** tab;\n3. kirjaudu tunnuksillasi ja klikkaa OK;\n4. Kopioi **Network** välilehdeltä seuraava pyyntö **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth-koodi"
         }

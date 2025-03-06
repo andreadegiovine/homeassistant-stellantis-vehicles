@@ -12,7 +12,7 @@
         }
       },
       "oauth": {
-        "description": "Follow this steps from **desktop browser**:\n\n1. go to {oauth_link} login page;\n2. open the browser **DevTools** (F12) and go to **Network** tab;\n3. login to your account and click the last confirm button;\n4. from **Network** tab find above request and copy the **OAUTH_CODE**;\n\n>***://oauth2redirect...?code=`OAUTH_CODE`&scope=openid...",
+        "description": "Follow this steps from **desktop browser**:\n\n1. go to {oauth_link} login page;\n2. open the browser **DevTools** (F12) and go to **Network** tab;\n3. login to your account and click the last confirm button;\n4. from **Network** tab find above request and copy the **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth code"
         }

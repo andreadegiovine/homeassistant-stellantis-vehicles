@@ -12,7 +12,7 @@
         }
       },
       "oauth": {
-        "description": "Följ dessa steg från **desktop browser**:\n\n1. gå till {oauth_link} login sida;\n2. öppna webläsarens **DevTools** (F12) och går till **Network** tab;\n3. logga in på ditt konto och klicka på sista confirm knappen;\n4. från **Network** tabben hitta följande request och kopiera **OAUTH_CODE**;\n\n>***://oauth2redirect...?code=`OAUTH_CODE`&scope=openid...",
+        "description": "Följ dessa steg från **desktop browser**:\n\n1. gå till {oauth_link} login sida;\n2. öppna webläsarens **DevTools** (F12) och går till **Network** tab;\n3. logga in på ditt konto och klicka på sista confirm knappen;\n4. från **Network** tabben hitta följande request och kopiera **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth kod"
         }
