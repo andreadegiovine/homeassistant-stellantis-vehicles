@@ -11,6 +11,12 @@
           "country_code": "Syötä maakoodisi"
         }
       },
+      "oauth": {
+        "description": "Seuraa näitä ohjeita **tietokoneen selaimella**:\n\n1. ja mene osoitteessa {oauth_link} kirjautumissivulle;\n2. Avaa selaimessa **DevTools** (F12) ja mene **Network** tab;\n3. kirjaudu tunnuksillasi ja klikkaa OK;\n4. Kopioi **Network** välilehdeltä seuraava pyyntö **OAUTH_CODE**;\n\n>***://oauth2redirect...?code=`OAUTH_KOODI`&scope=openid...",
+        "data": {
+          "oauth_code": "OAuth-koodi"
+        }
+      },
       "otp": {
         "data": {
           "sms_code": "Tekstiviesti Stellantikselta",
@@ -18,9 +24,9 @@
         }
       }
     },
-    "virhe": {
+    "error": {
       "get_access_token": "Tunnuksen hankinta epäonnistui",
-      "get_user_info": "Käyttäjätietojen hankinta epäonnistui ",
+      "get_user_info": "Käyttäjätietojen hankinta epäonnistui",
       "missing_user_info": "Käyttäjätiedot puuttuu",
       "get_otp_sms": "OTP-tekstiviestivirhe",
       "get_mqtt_access_token": "MQTT-todennusvirhe"
@@ -67,7 +73,7 @@
         "state": {
           "no": "Ei",
           "slow": "Hidas",
-          "quick": "Nopea"
+          "quick": "Pika"
         }
       },
       "battery_charging_time": {
@@ -91,7 +97,8 @@
           "903": "Yhdistetty autoon",
           "0": "Suoritettu",
           "300": "Keskeytetty",
-          "500": "Virhe"
+          "500": "Virhe",
+          "502": "Komento jo käynnissä"
         }
       },
       "fuel": {
@@ -187,17 +194,28 @@
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Ajoneuvon sijainti"
+        "name": "Auton sijainti"
       }
     },
     "number": {
       "battery_charging_limit": {
         "name": "Latauksen rajoitus"
+      },
+      "refresh_interval": {
+        "name": "Päivitysväli"
       }
     },
     "switch": {
       "battery_charging_limit": {
         "name": "Latauksen rajoitus päälle"
+      },
+      "abrp_sync": {
+        "name": "ABRP synkronointi"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP token"
       }
     }
   }
