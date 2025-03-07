@@ -141,6 +141,8 @@ Use the generated token in **abrp_token sensor** and enable **abrp_sync switch**
 It seems that this error is due to reaching the limit of associated devices / SMS received. Restore your Stellantis account and try again:
 [Follow this procedure from Peugeot community](https://peugeot.my-customerportal.com/peugeot/s/article/AP-I-have-problems-with-the-pin-safety-code-or-I-want-to-change-it-What-can-I-do?language=en_GB).
 
+**<u>This operation removes the devices connected to your vehicle, no vehicle data will be lost.</u>**
+
 ## Translations
 <details><summary><b>Pull request</b></summary>
 
