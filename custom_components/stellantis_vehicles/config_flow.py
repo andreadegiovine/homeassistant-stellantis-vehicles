@@ -93,7 +93,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is None:
             oauth_link = f"[{self.data[FIELD_MOBILE_APP]}]({self.stellantis.get_oauth_url()})"
-            oauth_label = self.get_translation("component.stellantis_vehicles.config.step.oauth.data.oauth_code").replace(" ", "_").upper()
+            oauth_label = self.get_translation("component.stellantis_vehicles.config.step.oauth.data.oauth_code")
+            if not oauth_label is None:
+                oauth_label = oauth_label.replace(" ", "_").upper()
             oauth_devtools = f"\n\n>***://oauth2redirect...?code=`{oauth_label}`&scope=openid..."
             return self.async_show_form(step_id="oauth", data_schema=OAUTH_SCHEMA, description_placeholders={"oauth_link": oauth_link, "oauth_label": oauth_label, "oauth_devtools": oauth_devtools})
 
