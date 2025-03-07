@@ -50,6 +50,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.errors = {}
         self._translations = None
 
+    async def init_translations(self):
+        if not self._translations:
+            self._translations = await translation.async_get_translations(self.hass, self.hass.config.language, "config")
 
     def get_translation(self, path, default = None):
         return self._translations.get(path, default)
@@ -63,8 +66,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_user(self, user_input=None):
-        self._translations = await translation.async_get_translations(self.hass, self.hass.config.language, "config")
-
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=MOBILE_APP_SCHEMA)
 
@@ -74,6 +75,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_country(self, user_input=None):
+        await self.init_translations()
+
         if user_input is None:
             errors = self.errors
             self.errors = {}
@@ -89,9 +92,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.stellantis.set_mobile_app(self.data[FIELD_MOBILE_APP], self.data[FIELD_COUNTRY_CODE])
 
         if user_input is None:
+            oauth_link = f"[{self.data[FIELD_MOBILE_APP]}]({self.stellantis.get_oauth_url()})"
             oauth_label = self.get_translation("component.stellantis_vehicles.config.step.oauth.data.oauth_code").replace(" ", "_").upper()
             oauth_devtools = f"\n\n>***://oauth2redirect...?code=`{oauth_label}`&scope=openid..."
-            return self.async_show_form(step_id="oauth", data_schema=OAUTH_SCHEMA, description_placeholders={"oauth_link": f"[{self.data[FIELD_MOBILE_APP]}]({self.stellantis.get_oauth_url()})", "oauth_label": oauth_label, "oauth_devtools": oauth_devtools})
+            return self.async_show_form(step_id="oauth", data_schema=OAUTH_SCHEMA, description_placeholders={"oauth_link": oauth_link, "oauth_label": oauth_label, "oauth_devtools": oauth_devtools})
 
         self.data.update(user_input)
 
