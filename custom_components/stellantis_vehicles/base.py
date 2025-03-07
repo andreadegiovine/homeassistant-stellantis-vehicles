@@ -29,11 +29,12 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, config, vehicle, stellantis, translations):
+    def __init__(self, hass, config, vehicle, stellantis, translations, translations_default):
         super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
         self._translations = translations
+        self._translations_default = translations_default
         self._config = config
         self._vehicle = vehicle
         self._stellantis = stellantis
@@ -58,6 +59,12 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         await self.after_async_update_data()
         _LOGGER.debug("---------- END _async_update_data")
 
+    def get_translation(self, path, default = None):
+        result = self._translations.get(path, default)
+        if not result:
+            result = self._translations_default.get(path, default)
+        return result
+
     @property
     def vehicle_type(self):
         return self._stellantis.get_config("type")
@@ -75,7 +82,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             for update in reorder_updates:
                 status = update["info"]
                 translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{status}"
-                status = self._translations.get(translation_path, status)
+                status = self.get_translation(translation_path, status)
                 history.update({update["date"].strftime("%d/%m/%y %H:%M:%S:%f")[:-4]: str(action_name) + ": " + status})
         return history
 
@@ -216,7 +223,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     if charge_limit_on and charge_limit and "battery" in self._sensors:
                         current_battery = self._sensors["battery"]
                         if int(float(current_battery)) >= int(charge_limit):
-                            button_name = self._translations.get("component.stellantis_vehicles.entity.button.charge_start_stop.name")
+                            button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_start_stop.name")
                             await self.send_charge_command(button_name)
                             self._manage_charge_limit_sent = True
                 elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:

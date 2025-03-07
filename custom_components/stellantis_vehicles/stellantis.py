@@ -22,6 +22,7 @@ from .utils import get_datetime
 
 from .const import (
     DOMAIN,
+    DEFAULT_LANG,
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
     MOBILE_APPS,
@@ -253,7 +254,8 @@ class StellantisVehicles(StellantisBase):
         if vin in self._coordinator_dict:
             return self._coordinator_dict[vin]
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "entity")
-        coordinator = StellantisVehicleCoordinator(self._hass, self._config, vehicle, self, translations)
+        translations_default = await translation.async_get_translations(self._hass, DEFAULT_LANG, "entity")
+        coordinator = StellantisVehicleCoordinator(self._hass, self._config, vehicle, self, translations, translations_default)
         self._coordinator_dict[vin] = coordinator
         return coordinator
 
