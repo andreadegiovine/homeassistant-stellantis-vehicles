@@ -11,6 +11,12 @@
           "country_code": "Votre code pays"
         }
       },
+      "oauth": {
+        "description": "Suivez ces étapes depuis **navigateur sur ordinateur**:\n\n1. Allez sur {oauth_link} la page d'authentification;\n2. Dans le navigateur, ouvrez les **DevTools** (F12) et allez sur l'onglet **Réseau** ;\n3. Identifiez vous et cliquez sur le dernier bouton de cofnirmation;\n4. Sur l'onglet **Réseau** cherchez la requete ci dessous et copier le **{oauth_label}**;{oauth_devtools}",
+        "data": {
+          "oauth_code": "Code OAuth"
+        }
+      },
       "otp": {
         "data": {
           "sms_code": "Code SMS reçu de Stellantis",
@@ -91,7 +97,8 @@
           "903": "Transmise",
           "0": "Terminée",
           "300": "Annulée",
-          "500": "Erreur"
+          "500": "Erreur",
+          "502": "Dupliquée"
         }
       },
       "fuel": {
@@ -193,11 +200,22 @@
     "number": {
       "battery_charging_limit": {
         "name": "Batterie limite de charge"
+      },
+      "refresh_interval": {
+        "name": "Intervalle de rafraichissement de données"
       }
     },
     "switch": {
       "battery_charging_limit": {
         "name": "Batterie limiter la charge"
+      },
+      "abrp_sync": {
+        "name": "ABRP synchronisation"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP jeton"
       }
     }
   }
