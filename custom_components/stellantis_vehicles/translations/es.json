@@ -11,6 +11,12 @@
           "country_code": "Tu código de país"
         }
       },
+      "oauth": {
+        "description": "Sigue estos pasos desde un **navegador de escritorio**:\n\n1. ve a la página de inicio de sesión {oauth_link};\n2. abre las **DevTools** del navegador (F12) y ve a la pestaña **Network**;\n3. inicia sesión en tu cuenta y haz clic en el último botón de confirmación;\n4. desde la pestaña **Network**, encuentra la solicitud anterior y copia el **{oauth_label}**;{oauth_devtools}",
+        "data": {
+          "oauth_code": "Código OAuth"
+        }
+      },
       "otp": {
         "data": {
           "sms_code": "Código SMS de Stellantis",
@@ -91,7 +97,8 @@
           "903": "Reenviado",
           "0": "Completo",
           "300": "Cancelado",
-          "500": "Error"
+          "500": "Error",
+          "502": "Duplicado"
         }
       },
       "fuel": {
@@ -193,11 +200,22 @@
     "number": {
       "battery_charging_limit": {
         "name": "Límite de carga de la batería"
+      },
+      "refresh_interval": {
+        "name": "Intervalo de actualización de datos"
       }
     },
     "switch": {
       "battery_charging_limit": {
         "name": "Límite de carga de la batería"
+      },
+      "abrp_sync": {
+        "name": "Sincronización ABRP"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "Token ABRP"
       }
     }
   }
