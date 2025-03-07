@@ -7,8 +7,6 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
 DOMAIN = "stellantis_vehicles"
 
-DEFAULT_LANG = "en"
-
 with open(os.path.dirname(os.path.abspath(__file__)) + "/configs.json", "r") as f:
     MOBILE_APPS = json.load(f)
 

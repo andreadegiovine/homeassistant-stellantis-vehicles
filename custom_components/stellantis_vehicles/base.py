@@ -29,12 +29,11 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, config, vehicle, stellantis, translations, translations_default):
+    def __init__(self, hass, config, vehicle, stellantis, translations):
         super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
         self._translations = translations
-        self._translations_default = translations_default
         self._config = config
         self._vehicle = vehicle
         self._stellantis = stellantis
@@ -60,10 +59,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("---------- END _async_update_data")
 
     def get_translation(self, path, default = None):
-        result = self._translations.get(path, default)
-        if not result:
-            result = self._translations_default.get(path, default)
-        return result
+        return self._translations.get(path, default)
 
     @property
     def vehicle_type(self):

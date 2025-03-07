@@ -10,7 +10,6 @@ from .utils import get_datetime
 from .stellantis import StellantisOauth
 from .const import (
     DOMAIN,
-    DEFAULT_LANG,
     MOBILE_APPS,
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
@@ -50,21 +49,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.vehicles = {}
         self.errors = {}
         self._translations = None
-        self._translations_default = None
 
 
     async def init_translations(self):
         if not self._translations:
-            self._translations = await translation.async_get_translations(self.hass, self.hass.config.language, "config")
-        if not self._translations_default:
-            self._translations_default = await translation.async_get_translations(self.hass, DEFAULT_LANG, "config")
+            self._translations = await translation.async_get_translations(self.hass, self.hass.config.language, "config", {DOMAIN})
 
 
     def get_translation(self, path, default = None):
-        result = self._translations.get(path, default)
-        if not result:
-            result = self._translations_default.get(path, default)
-        return result
+        return self._translations.get(path, default)
 
 
     def get_error_message(self, error, message = None):
