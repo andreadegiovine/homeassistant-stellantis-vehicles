@@ -169,7 +169,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_reauth(self, entry_data):
         _LOGGER.debug("---------- START async_step_reauth")
-        self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP]})
+        self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP], FIELD_COUNTRY_CODE: entry_data[FIELD_COUNTRY_CODE]})
         _LOGGER.debug("---------- END async_step_reauth")
         return await self.async_step_reauth_confirm()
 
