@@ -119,13 +119,12 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         await self.send_command(button_name, "/Lights", {"duration": "10", "action": "activate"})
 
     async def send_charge_command(self, button_name):
-        current_hour = self._data["energies"][0]["extension"]["electric"]["charging"]["nextDelayedTime"]
-        date = date_from_pt_string(current_hour)
+        current_hour = self._sensors["battery_charging_time"]
         current_status = self._sensors["battery_charging"]
         charge_type = "immediate"
         if current_status == "InProgress":
             charge_type = "delayed"
-        await self.send_command(button_name, "/VehCharge", {"program": {"hour": date.hour, "minute": date.minute}, "type": charge_type})
+        await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": charge_type})
 
     def get_programs(self):
         default_programs = {
@@ -489,6 +488,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                     diff = value_timestamp - now_timestamp
                     limit_diff = (diff / (100 - int(float(current_battery)))) * (int(charge_limit) - int(float(current_battery)))
                     value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
+            self._coordinator._sensors[self._key] = value
 
         if self._key in ["battery_capacity", "battery_residual"]:
             if int(value) < 1:
