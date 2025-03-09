@@ -77,8 +77,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_country(self, user_input=None):
-        await self.init_translations()
-
         if user_input is None:
             return self.async_show_form(step_id="country", data_schema=COUNTRY_SCHEMA(self.data[FIELD_MOBILE_APP]))
 
@@ -88,6 +86,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_oauth(self, user_input=None):
+        await self.init_translations()
+
         self.stellantis = StellantisOauth(self.hass)
         self.stellantis.set_mobile_app(self.data[FIELD_MOBILE_APP], self.data[FIELD_COUNTRY_CODE])
 
