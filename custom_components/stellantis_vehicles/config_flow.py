@@ -80,9 +80,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         await self.init_translations()
 
         if user_input is None:
-            errors = self.errors
-            self.errors = {}
-            return self.async_show_form(step_id="country", data_schema=COUNTRY_SCHEMA(self.data[FIELD_MOBILE_APP]), errors=errors)
+            return self.async_show_form(step_id="country", data_schema=COUNTRY_SCHEMA(self.data[FIELD_MOBILE_APP]))
 
         self.data.update(user_input)
 
@@ -94,10 +92,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.stellantis.set_mobile_app(self.data[FIELD_MOBILE_APP], self.data[FIELD_COUNTRY_CODE])
 
         if user_input is None:
+            errors = self.errors
+            self.errors = {}
             oauth_link = f"[{self.data[FIELD_MOBILE_APP]}]({self.stellantis.get_oauth_url()})"
             oauth_label = self.get_translation("component.stellantis_vehicles.config.step.oauth.data.oauth_code").replace(" ", "_").upper()
             oauth_devtools = f"\n\n>***://oauth2redirect...?code=`{oauth_label}`&scope=openid..."
-            return self.async_show_form(step_id="oauth", data_schema=OAUTH_SCHEMA, description_placeholders={"oauth_link": oauth_link, "oauth_label": oauth_label, "oauth_devtools": oauth_devtools})
+            return self.async_show_form(step_id="oauth", data_schema=OAUTH_SCHEMA, description_placeholders={"oauth_link": oauth_link, "oauth_label": oauth_label, "oauth_devtools": oauth_devtools}, errors=errors)
 
         self.data.update(user_input)
 
@@ -106,8 +106,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             token_request = await self.stellantis.get_access_token()
         except Exception as e:
-            self.errors[FIELD_COUNTRY_CODE] = self.get_error_message("get_access_token", e)
-            return await self.async_step_country()
+            self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_access_token", e)
+            return await self.async_step_oauth()
 
         self.data.update({
             "access_token": token_request["access_token"],
@@ -120,12 +120,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             user_info_request = await self.stellantis.get_user_info()
         except Exception as e:
-            self.errors[FIELD_COUNTRY_CODE] = self.get_error_message("get_user_info", e)
-            return await self.async_step_country()
+            self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_user_info", e)
+            return await self.async_step_oauth()
 
         if not user_info_request or not "customer" in user_info_request[0]:
-            self.errors[FIELD_COUNTRY_CODE] = self.get_error_message("missing_user_info")
-            return await self.async_step_country()
+            self.errors[FIELD_OAUTH_CODE] = self.get_error_message("missing_user_info")
+            return await self.async_step_oauth()
 
         self.data.update({"customer_id": user_info_request[0]["customer"]})
 
@@ -137,16 +137,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await self.stellantis.get_otp_sms()
             except Exception as e:
-                self.errors[FIELD_COUNTRY_CODE] = self.get_error_message("get_otp_sms", e)
-                return await self.async_step_country()
+                self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_otp_sms", e)
+                return await self.async_step_oauth()
             return self.async_show_form(step_id="otp", data_schema=OTP_SCHEMA)
 
         try:
             await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])
             otp_token_request = await self.stellantis.get_mqtt_access_token()
         except Exception as e:
-            self.errors[FIELD_COUNTRY_CODE] = self.get_error_message("get_mqtt_access_token", e)
-            return await self.async_step_country()
+            self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_mqtt_access_token", e)
+            return await self.async_step_oauth()
 
         self.data.update({"mqtt": {
             "access_token": otp_token_request["access_token"],
@@ -171,4 +171,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug("---------- START async_step_reauth")
         self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP]})
         _LOGGER.debug("---------- END async_step_reauth")
-        return await self.async_step_country()
+        return await self.async_step_reauth_confirm()
+
+
+    async def async_step_reauth_confirm(self, user_input=None):
+        if user_input is None:
+            return self.async_show_form(step_id="reauth_confirm")
+
+        return await self.async_step_oauth()

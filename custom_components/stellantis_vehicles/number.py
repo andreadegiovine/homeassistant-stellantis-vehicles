@@ -8,7 +8,8 @@ from .base import StellantisBaseNumber
 from .const import (
     DOMAIN,
     VEHICLE_TYPE_ELECTRIC,
-    VEHICLE_TYPE_HYBRID
+    VEHICLE_TYPE_HYBRID,
+    UPDATE_INTERVAL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,6 +47,6 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
             native_step = 5,
             mode = NumberMode.BOX
         )
-        entities.extend([StellantisBaseNumber(coordinator, description)])
+        entities.extend([StellantisBaseNumber(coordinator, description, UPDATE_INTERVAL)])
 
     async_add_entities(entities)
