@@ -565,7 +565,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
         self._sensor_key = f"number_{self._key}"
         self._default_value = None
         if default_value:
-            self._default_value = float(self._default_value)
+            self._default_value = float(default_value)
 
     @property
     def native_value(self):
