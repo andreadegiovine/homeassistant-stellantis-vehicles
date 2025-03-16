@@ -22,15 +22,15 @@
   "entity": {
     "sensor": {
       "service_battery_voltage": {
-        "name": "Bateria serwisowa"
+        "name": "Akumulator 12V"
       },
       "type": {
         "name": "Typ",
         "state": {
           "electric": "Elektryczny",
           "hybrid": "Hybryda",
-          "thermic": "Thermic",
-          "hydrogen": "Hydrogen"
+          "thermic": "Spalinowy",
+          "hydrogen": "Wodorowy"
         }
       },
       "temperature": {
@@ -60,26 +60,26 @@
         }
       },
       "battery_charging_time": {
-        "name": "Battery charging time"
+        "name": "Czas  ładowania baterii"
       },
       "battery_charging_end": {
-        "name": "Zakończenie baterii za"
+        "name": "Zakończenie ładowania za"
       },
       "battery_capacity": {
         "name": "Pojemność baterii"
       },
       "battery_residual": {
-        "name": "Battery residual"
+        "name": "Pozostała pojemność baterii"
       },
       "command_status": {
-        "name": "Command status",
+        "name": "Status polecenia",
         "state": {
           "99": "Nie kompatybilne",
           "900": "Zaakceptowano",
-          "901": "Vehicle as sleep",
-          "903": "Forwarded",
+          "901": "Pojazd w uśpieniu",
+          "903": "Przekazano",
           "0": "Zakończono",
-          "300": "Canceled",
+          "300": "Anulowano",
           "500": "Błąd"
         }
       },
@@ -93,7 +93,7 @@
         "name": "Suma zużytego paliwa"
       },
       "fuel_consumption_instant": {
-        "name": "Fuel consumption instant"
+        "name": "Chwilowe zużycie paliwa"
       },
       "coolant_temperature": {
         "name": "Temperatura płynu chłodniczego"
@@ -102,7 +102,7 @@
         "name": "Temperatura oleju"
       },
       "air_temperature": {
-        "name": "Temperatura powietrza"
+        "name": "Temperatura powietrza silnika"
       },
       "last_trip": {
         "name": "Ostatnia trasa",
@@ -111,7 +111,7 @@
             "name": "Czas trwania"
           },
           "start_mileage": {
-            "name": "Start mileage"
+            "name": "Przebieg początkowy"
           },
           "avg_speed": {
             "name": "Średnia prękość"
@@ -136,13 +136,13 @@
     },
     "binary_sensor": {
       "moving": {
-        "name": "Moving"
+        "name": "Czy pojazd się porusza"
       },
       "doors": {
         "name": "Drzwi"
       },
       "battery_plugged": {
-        "name": "Gniazdo zasilania"
+        "name": "Gniazdo ładowania"
       },
       "battery_charging": {
         "name": "Ładowanie baterii"
@@ -162,7 +162,7 @@
         "name": "Drzwi"
       },
       "horn": {
-        "name": "Klaklson"
+        "name": "Klakson"
       },
       "lights": {
         "name": "Światła"
