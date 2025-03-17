@@ -90,7 +90,7 @@
           "901": "Fahrzeug schläft",
           "903": "Weitergeleitet",
           "0": "Abgeschlossen",
-          "300": "Zurückgestellt",
+          "300": "Abgebrochen",
           "500": "Fehler"
         }
       },
@@ -193,6 +193,9 @@
     "number": {
       "battery_charging_limit": {
         "name": "Batterieladelimit"
+      },
+      "refresh_interval": {
+        "name": "Aktualisierungsintervall"
       }
     },
     "switch": {
