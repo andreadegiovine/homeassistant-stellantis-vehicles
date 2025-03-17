@@ -136,24 +136,26 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         active_programs = None
         if "programs" in self._data["preconditionning"]["airConditioning"]:
             current_programs = self._data["preconditionning"]["airConditioning"]["programs"]
-            for program in current_programs:
-                if "occurence" in program and "day" in program["occurence"]:
-                    date = date_from_pt_string(program["start"])
-                    config = {
-                        "day": [
-                            int("Mon" in program["occurence"]["day"]),
-                            int("Tue" in program["occurence"]["day"]),
-                            int("Wed" in program["occurence"]["day"]),
-                            int("Thu" in program["occurence"]["day"]),
-                            int("Fri" in program["occurence"]["day"]),
-                            int("Sat" in program["occurence"]["day"]),
-                            int("Sun" in program["occurence"]["day"])
-                        ],
-                        "hour": date.hour,
-                        "minute": date.minute,
-                        "on": int(program["enabled"])
-                    }
-                    default_programs["program"+str(program["slot"])] = config
+            if current_programs:
+                for program in current_programs:
+                    if program:
+                        if "occurence" in program and "day" in program["occurence"]:
+                            date = date_from_pt_string(program["start"])
+                            config = {
+                                "day": [
+                                    int("Mon" in program["occurence"]["day"]),
+                                    int("Tue" in program["occurence"]["day"]),
+                                    int("Wed" in program["occurence"]["day"]),
+                                    int("Thu" in program["occurence"]["day"]),
+                                    int("Fri" in program["occurence"]["day"]),
+                                    int("Sat" in program["occurence"]["day"]),
+                                    int("Sun" in program["occurence"]["day"])
+                                ],
+                                "hour": date.hour,
+                                "minute": date.minute,
+                                "on": int(program["enabled"])
+                            }
+                            default_programs["program"+str(program["slot"])] = config
         return default_programs
 
     async def send_air_conditioning_command(self, button_name):
