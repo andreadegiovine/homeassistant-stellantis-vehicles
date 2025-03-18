@@ -96,6 +96,10 @@ SENSORS_DEFAULT = {
     "vehicle" : {
         "icon" : "mdi:car",
     },
+    "remote_signal_quality" : {
+        "icon" : "mdi:signal-cellular-2",
+        "data_map" : ["lastPosition", "properties", "signalQuality"]
+    },
     "service_battery_voltage" : {
         "icon" : "mdi:car-battery",
         "unit_of_measurement" : PERCENTAGE,
@@ -113,6 +117,12 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : UnitOfLength.KILOMETERS,
         "device_class": SensorDeviceClass.DISTANCE,
         "data_map" : ["odometer", "mileage"]
+    },
+    "speed" : {
+        "icon" : "mdi:speedometer",
+        "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
+        "device_class": SensorDeviceClass.SPEED,
+        "data_map" : ["kinetic", "speed"]
     },
     "autonomy" : {
         "icon" : "mdi:map-marker-distance",

@@ -139,7 +139,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if current_programs:
                 for program in current_programs:
                     if program:
-                        if "occurence" in program and "day" in program["occurence"]:
+                        if program and "occurence" in program and "day" in program["occurence"] and "start" in program:
                             date = date_from_pt_string(program["start"])
                             config = {
                                 "day": [
@@ -189,7 +189,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["is_charging"] = self._sensors["battery_charging"] == "InProgress"
         if "battery_charging_type" in self._sensors:
             tlm["is_dcfc"] = tlm["is_charging"] and self._sensors["battery_charging_type"] == "Quick"
-        if "battery_soh" in self._sensors:
+        if "battery_soh" in self._sensors and self._sensors["battery_soh"]:
             tlm["soh"] = float(self._sensors["battery_soh"])
         if "lastPosition" in self._data and "properties" in self._data["lastPosition"] and "heading" in self._data["lastPosition"]["properties"]:
             tlm["heading"] = float(self._data["lastPosition"]["properties"]["heading"])
