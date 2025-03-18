@@ -11,6 +11,12 @@
           "country_code": "Dein Ländercode"
         }
       },
+      "oauth": {
+        "description": "Führen Sie diese Schritte im **Desktop-Browser** aus:\n\n1. Gehen Sie zur Anmeldeseite {oauth_link};\n2. Öffnen Sie den Browser **DevTools** (F12) und wechseln Sie zur Registerkarte **Netzwerk**;\n3. Melden Sie sich bei Ihrem Konto an und klicken Sie auf die letzte Schaltfläche „Bestätigen“;\n4. Suchen Sie in der Registerkarte **Netzwerk** die obige Anfrage und kopieren Sie die **{oauth_label}**;{oauth_devtools}",
+        "data": {
+          "oauth_code": "OAuth code"
+        }
+      },
       "otp": {
         "data": {
           "sms_code": "SMS-Code von Stellantis",
@@ -34,6 +40,9 @@
     "sensor": {
       "service_battery_voltage": {
         "name": "Service-Batterie"
+	},
+      "remote_signal_quality": {
+        "name": "Signalqualität"						   
       },
       "type": {
         "name": "Typ",
@@ -49,6 +58,9 @@
       },
       "mileage": {
         "name": "Kilometer"
+      },
+      "speed": {
+        "name": "Geschwindigkeit"
       },
       "autonomy": {
         "name": "Reichweite"
@@ -91,7 +103,8 @@
           "903": "Weitergeleitet",
           "0": "Abgeschlossen",
           "300": "Abgebrochen",
-          "500": "Fehler"
+          "500": "Fehler",
+          "502": "Doppelt"		  							
         }
       },
       "fuel": {
@@ -201,6 +214,14 @@
     "switch": {
       "battery_charging_limit": {
         "name": "Batterieladelimit"
+      },
+    "abrp_sync": {
+        "name": "ABRP Sync"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP Token"
       }
     }
   }
