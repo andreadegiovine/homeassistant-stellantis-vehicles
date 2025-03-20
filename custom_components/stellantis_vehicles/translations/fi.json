@@ -41,6 +41,9 @@
       "service_battery_voltage": {
         "name": "Käynnistysakun jännite"
       },
+        "remote_signal_quality": {
+        "name": "Ohjauksen signaali"
+      },
       "type": {
         "name": "Tyyppi",
         "state": {
@@ -55,6 +58,9 @@
       },
       "mileage": {
         "name": "Mittarilukema"
+      },
+       "speed": {
+        "name": "Nopeus"
       },
       "autonomy": {
         "name": "Autolla pääsee"
