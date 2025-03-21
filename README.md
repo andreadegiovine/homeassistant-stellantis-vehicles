@@ -155,3 +155,5 @@ Copy the content of file `custom_components/stellantis_vehicles/translations/en.
 
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+
+[!["Buy me a coffee"](https://storage.ko-fi.com/cdn/kofi5.png|width=170)](https://ko-fi.com/andreatito)
