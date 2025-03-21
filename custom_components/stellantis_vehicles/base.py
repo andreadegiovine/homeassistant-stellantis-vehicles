@@ -139,7 +139,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if current_programs:
                 for program in current_programs:
                     if program:
-                        if program and "occurence" in program and "day" in program["occurence"] and "start" in program:
+                        if program and program.get("occurence", {}).get("day", None) and program.get("start", None):
                             date = date_from_pt_string(program["start"])
                             config = {
                                 "day": [
