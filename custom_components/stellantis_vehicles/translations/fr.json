@@ -26,8 +26,8 @@
     },
     "error": {
       "get_access_token": "Erreur récupération jeton d'accès",
-      "get_user_info": "Erreur récupération informations utilisateurs",
-      "missing_user_info": "Erreur informations utilisateurs manquantes",
+      "get_user_info": "Erreur récupération informations utilisateur",
+      "missing_user_info": "Erreur informations utilisateur manquantes",
       "get_otp_sms": "Erreur récupération code OTP SMS",
       "get_mqtt_access_token": "Erreur récupération jeton accès mqtt"
     },
@@ -56,11 +56,14 @@
       "mileage": {
         "name": "Kilométrage"
       },
+      "speed": {
+        "name": "Vitesse"
+      },
       "autonomy": {
-        "name": "Autonomie"
+        "name": "Batterie autonomie"
       },
       "battery": {
-        "name": "Batterie"
+        "name": "Batterie niveau"
       },
       "battery_soh": {
         "name": "Batterie SOH"
@@ -102,16 +105,16 @@
         }
       },
       "fuel": {
-        "name": "Carburant"
+        "name": "Carburant niveau"
       },
       "fuel_autonomy": {
-        "name": "Autonomie du carburant"
+        "name": "Carburant autonomie"
       },
       "fuel_consumption_total": {
-        "name": "Consommation totale de carburant"
+        "name": "Carburant consommation totale"
       },
       "fuel_consumption_instant": {
-        "name": "Consommation instantannée de carburant"
+        "name": "Carburant consommation instantannée"
       },
       "coolant_temperature": {
         "name": "Température liquide de refroidissement"
