@@ -41,9 +41,6 @@
       "service_battery_voltage": {
         "name": "Batteria di servizio"
       },
-      "remote_signal_quality": {
-        "name": "Qualità segnale remoto"
-      },
       "type": {
         "name": "Tipo",
         "state": {

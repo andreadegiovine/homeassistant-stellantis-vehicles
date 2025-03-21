@@ -402,7 +402,7 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def location_accuracy(self):
         if "lastPosition" in self._coordinator._data:
-            return 10
+            return float(self._coordinator._data["lastPosition"]["properties"]["signalQuality"])
         return None
 
     @property

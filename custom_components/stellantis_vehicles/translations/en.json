@@ -41,9 +41,6 @@
       "service_battery_voltage": {
         "name": "Service battery"
       },
-      "remote_signal_quality": {
-        "name": "Remote signal quality"
-      },
       "type": {
         "name": "Type",
         "state": {
