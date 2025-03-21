@@ -12,6 +12,7 @@ import asyncio
 from datetime import ( datetime, timedelta, UTC )
 import ssl
 
+from homeassistant.core import HomeAssistant 
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.util import dt
@@ -60,7 +61,7 @@ def _create_ssl_context() -> ssl.SSLContext:
 _SSL_CONTEXT = _create_ssl_context()
 
 class StellantisBase:
-    def __init__(self, hass) -> None:
+    def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
         self._config = {}
         self._session = aiohttp.ClientSession()
@@ -211,7 +212,7 @@ class StellantisOauth(StellantisBase):
 
 
 class StellantisVehicles(StellantisBase):
-    def __init__(self, hass) -> None:
+    def __init__(self, hass: HomeAssistant) -> None:
         super().__init__(hass)
 
         self._refresh_interval = UPDATE_INTERVAL

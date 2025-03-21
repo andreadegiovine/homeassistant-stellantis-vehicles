@@ -2,11 +2,18 @@ import logging
 from time import strftime
 from time import gmtime
 
-from homeassistant.components.sensor import SensorEntityDescription
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.update_coordinator import (CoordinatorEntity, DataUpdateCoordinator)
+from homeassistant.components.sensor import RestoreSensor
+
+from homeassistant.components.sensor import SensorEntityDescription, SensorEntity
 from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume )
 from homeassistant.components.sensor.const import SensorDeviceClass
-from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 
+# from .base import *
+from .base import StellantisBaseSensor, StellantisRestoreSensor, StellantisBaseEntity
+from .stellantis import StellantisVehicles
 from .const import (
     DOMAIN,
     FIELD_COUNTRY_CODE,
@@ -16,7 +23,8 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
+    stellantis : StellantisVehicles
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
@@ -76,7 +84,6 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 #         entities.extend([StellantisTotalTripSensor(coordinator, description)])
 
 #         await coordinator.async_request_refresh()
-
     async_add_entities(entities)
 
 
