@@ -3,9 +3,12 @@ import re
 from datetime import datetime, timedelta, UTC
 import json
 
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
-from homeassistant.components.sensor import RestoreSensor
+from homeassistant.components.sensor import RestoreSensor, SensorEntityDescription
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.button import ButtonEntity
 from homeassistant.components.number import NumberEntity
@@ -15,6 +18,8 @@ from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
 from homeassistant.exceptions import ConfigEntryAuthFailed
+
+from .stellantis import StellantisVehicles
 
 from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
 
@@ -29,7 +34,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, config, vehicle, stellantis, translations):
+    def __init__(self, hass: HomeAssistant, config: ConfigEntry, vehicle, stellantis: StellantisVehicles, translations):
         super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
@@ -290,7 +295,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 #         self._total_trip = {"totals": total_trips, "trips": result}
 
 class StellantisBaseEntity(CoordinatorEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription):
         super().__init__(coordinator)
 
         self._coordinator = coordinator
@@ -505,7 +510,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator, description, data_map = [], on_value = None):
+    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription, data_map = [], on_value = None):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
@@ -562,7 +567,7 @@ class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
 
 
 class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
-    def __init__(self, coordinator, description, default_value = None):
+    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription, default_value = None):
         super().__init__(coordinator, description)
         self._sensor_key = f"number_{self._key}"
         self._default_value = None
@@ -585,7 +590,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
 
 
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription):
         super().__init__(coordinator, description)
         self._sensor_key = f"switch_{self._key}"
 
@@ -608,7 +613,7 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
 
 
 class StellantisBaseText(StellantisRestoreEntity, TextEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription):
         super().__init__(coordinator, description)
         self._sensor_key = f"text_{self._key}"
 

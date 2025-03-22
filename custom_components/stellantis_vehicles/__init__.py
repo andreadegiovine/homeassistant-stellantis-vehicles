@@ -43,6 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
 
 async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
+    stellantis: StellantisVehicles
     stellantis = hass.data[DOMAIN][config.entry_id]
 
     if unload_ok := await hass.config_entries.async_unload_platforms(config, PLATFORMS):
