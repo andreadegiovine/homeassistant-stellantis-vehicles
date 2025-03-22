@@ -229,6 +229,8 @@ class StellantisVehicles(StellantisBase):
         self._callback_id = None
         self._mqtt = None
         self._mqtt_last_request = None
+        self._lock_refresh_token = asyncio.Lock()
+        self._lock_refresh_mqtt_token = asyncio.Lock()
 
     def set_entry(self, entry):
         self._entry = entry
@@ -290,23 +292,26 @@ class StellantisVehicles(StellantisBase):
 
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
-        token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
-        if token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval)):
-            url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
-            headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
-            token_request = await self.make_http_request(url, 'POST', headers)
-            _LOGGER.debug(url)
-            _LOGGER.debug(headers)
-            _LOGGER.debug(token_request)
-            new_config = {
-                "access_token": token_request["access_token"],
-                "refresh_token": token_request["refresh_token"],
-                "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
-            }
-            self.save_config(new_config)
-            self.update_stored_config("access_token", new_config["access_token"])
-            self.update_stored_config("refresh_token", new_config["refresh_token"])
-            self.update_stored_config("expires_in", new_config["expires_in"])
+        # to prevent concurrent updates
+        async with self._lock_refresh_token:
+            token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
+            _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
+            if token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval)):
+                url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
+                headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
+                token_request = await self.make_http_request(url, 'POST', headers)
+                _LOGGER.debug(url)
+                _LOGGER.debug(headers)
+                _LOGGER.debug(token_request)
+                new_config = {
+                    "access_token": token_request["access_token"],
+                    "refresh_token": token_request["refresh_token"],
+                    "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+                }
+                self.save_config(new_config)
+                self.update_stored_config("access_token", new_config["access_token"])
+                self.update_stored_config("refresh_token", new_config["refresh_token"])
+                self.update_stored_config("expires_in", new_config["expires_in"])
         _LOGGER.debug("---------- END refresh_token")
 
     async def get_user_vehicles(self):
@@ -381,21 +386,24 @@ class StellantisVehicles(StellantisBase):
 
     async def refresh_mqtt_token(self, force=False):
         _LOGGER.debug("---------- START refresh_mqtt_token")
-        mqtt_config = self.get_config("mqtt")
-        token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
-        if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
-            url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
-            headers = self.apply_headers_params(GET_OTP_HEADERS)
-            token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
-            _LOGGER.debug(url)
-            _LOGGER.debug(headers)
-            _LOGGER.debug(token_request)
-            mqtt_config["access_token"] = token_request["access_token"]
-            mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
-            self.save_config({"mqtt": mqtt_config})
-            self.update_stored_config("mqtt", mqtt_config)
-            if self._mqtt:
-                self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
+        # to prevent concurrent updates
+        async with self._lock_refresh_mqtt_token:
+            mqtt_config = self.get_config("mqtt")
+            token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
+            _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
+            if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
+                url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
+                headers = self.apply_headers_params(GET_OTP_HEADERS)
+                token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
+                _LOGGER.debug(url)
+                _LOGGER.debug(headers)
+                _LOGGER.debug(token_request)
+                mqtt_config["access_token"] = token_request["access_token"]
+                mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+                self.save_config({"mqtt": mqtt_config})
+                self.update_stored_config("mqtt", mqtt_config)
+                if self._mqtt:
+                    self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
         _LOGGER.debug("---------- END refresh_mqtt_token")
 
     async def connect_mqtt(self):
