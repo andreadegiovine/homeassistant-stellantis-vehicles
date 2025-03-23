@@ -64,11 +64,16 @@ class StellantisBase:
     def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
         self._config = {}
-        self._session = aiohttp.ClientSession()
+        self._session = None
         self.otp = None
+
+    def start_session(self):
+        if not self._session:
+            self._session = aiohttp.ClientSession()
 
     async def close_session(self):
         await self._session.close()
+        self._session = None
 
     def set_mobile_app(self, mobile_app, country_code):
         if mobile_app in MOBILE_APPS:
@@ -116,6 +121,8 @@ class StellantisBase:
 
     async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
         _LOGGER.debug("---------- START make_http_request")
+        self.start_session()
+
         async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
             result = {}
             error = None
@@ -136,10 +143,12 @@ class StellantisBase:
                     error = result["message"] + " - " + str(result["code"])
             _LOGGER.debug("---------- END make_http_request")
 
-            if str(resp.status) == "400" and "error" in result and result["error"] == "invalid_grant":
+            if str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
+                await self.close_session()
                 # Token expiration
                 raise ConfigEntryAuthFailed(error)
             if error:
+                await self.close_session()
                 # Generic error
                 raise Exception(error)
             return result
