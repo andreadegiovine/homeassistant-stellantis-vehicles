@@ -15,7 +15,7 @@ import ssl
 from homeassistant.core import HomeAssistant 
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.util import dt
+# from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp
@@ -450,9 +450,9 @@ class StellantisVehicles(StellantisBase):
         try:
             _LOGGER.debug("MQTT msg received: %s %s", msg.topic, msg.payload)
             data = json.loads(msg.payload)
-            charge_info = None
+#            charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
-                coordinator = self.do_async(self.async_get_coordinator_by_vin(data["vin"]))
+                coordinator: StellantisVehicleCoordinator = self.do_async(self.async_get_coordinator_by_vin(data["vin"]))
                 if "return_code" not in data or data["return_code"] in ["0", "300", "500", "502"]:
                     if "return_code" not in data:
                         result_code = data["process_code"]
@@ -485,7 +485,7 @@ class StellantisVehicles(StellantisBase):
 
     async def send_mqtt_message(self, service, message, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
-        await self.refresh_tokens(force=(store == False))
+        await self.refresh_tokens(force=(store is False))
         customer_id = self.get_config("customer_id")
         topic = MQTT_REQ_TOPIC + customer_id + service
         date = datetime.utcnow()
@@ -512,6 +512,6 @@ class StellantisVehicles(StellantisBase):
         abrp_request = await self.make_http_request("https://api.iternio.com/1/tlm/send", "POST", None, params)
         _LOGGER.debug(params)
         _LOGGER.debug(abrp_request)
-        if not "status" in abrp_request or abrp_request["status"] != "ok":
+        if "status" not in abrp_request or abrp_request["status"] != "ok":
             _LOGGER.error(abrp_request)
         _LOGGER.debug("---------- END send_abrp_data")

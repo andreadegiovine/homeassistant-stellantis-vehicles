@@ -34,7 +34,14 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry, vehicle, stellantis: StellantisVehicles, translations):
+    def __init__(
+            self, 
+            hass: HomeAssistant, 
+            config: ConfigEntry, 
+            vehicle, 
+            stellantis: StellantisVehicles, 
+            translations
+        ):
         super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
@@ -95,7 +102,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         return not self._commands_history[last_action_id]["updates"]
 
     async def update_command_history(self, action_id, update = None):
-        if not action_id in self._commands_history:
+        if action_id not in self._commands_history:
             return
         if update:
             self._commands_history[action_id]["updates"].append({"info": update, "date": get_datetime()})
@@ -138,7 +145,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
            "program3": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
            "program4": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0}
         }
-        active_programs = None
+#        active_programs = None
         if "programs" in self._data["preconditionning"]["airConditioning"]:
             current_programs = self._data["preconditionning"]["airConditioning"]["programs"]
             if current_programs:
@@ -295,7 +302,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 #         self._total_trip = {"totals": total_trips, "trips": result}
 
 class StellantisBaseEntity(CoordinatorEntity):
-    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription):
+    def __init__(
+            self,
+            coordinator: StellantisVehicleCoordinator,
+            description: SensorEntityDescription
+        ):
         super().__init__(coordinator)
 
         self._coordinator = coordinator
@@ -437,7 +448,13 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
 
 
 class StellantisBaseSensor(StellantisRestoreSensor):
-    def __init__(self, coordinator, description, data_map = [], available = None):
+    def __init__(
+            self,
+            coordinator: StellantisVehicleCoordinator,
+            description: SensorEntityDescription,
+            data_map = [],
+            available = None
+        ):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
@@ -470,10 +487,10 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
-        if value or (not self._key in self._coordinator._sensors):
+        if value or (self._key not in self._coordinator._sensors):
             self._coordinator._sensors[self._key] = value
 
-        if value == None:
+        if value is None:
             if self._attr_native_value == STATE_UNKNOWN:
                 self._attr_native_value = None
             return
@@ -510,7 +527,13 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription, data_map = [], on_value = None):
+    def __init__(
+            self,
+            coordinator: StellantisVehicleCoordinator,
+            description: SensorEntityDescription,
+            data_map = [],
+            on_value = None
+        ):
         super().__init__(coordinator, description)
 
         self._data_map = data_map
@@ -526,7 +549,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
     def coordinator_update(self):
         value = self.get_value_from_map(self._data_map)
         self._coordinator._sensors[self._key] = value
-        if value == None:
+        if value is None:
             return
         elif isinstance(value, list):
             self._attr_is_on = self._on_value in value
@@ -567,7 +590,12 @@ class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
 
 
 class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
-    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription, default_value = None):
+    def __init__(
+            self,
+            coordinator: StellantisVehicleCoordinator,
+            description: SensorEntityDescription,
+            default_value = None
+        ):
         super().__init__(coordinator, description)
         self._sensor_key = f"number_{self._key}"
         self._default_value = None
@@ -590,7 +618,11 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
 
 
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
-    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription):
+    def __init__(
+            self,
+            coordinator: StellantisVehicleCoordinator, 
+            description: SensorEntityDescription
+        ):
         super().__init__(coordinator, description)
         self._sensor_key = f"switch_{self._key}"
 
@@ -613,7 +645,11 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
 
 
 class StellantisBaseText(StellantisRestoreEntity, TextEntity):
-    def __init__(self, coordinator: StellantisVehicleCoordinator, description: SensorEntityDescription):
+    def __init__(
+            self,
+            coordinator: StellantisVehicleCoordinator,
+            description: SensorEntityDescription
+        ):
         super().__init__(coordinator, description)
         self._sensor_key = f"text_{self._key}"
 
