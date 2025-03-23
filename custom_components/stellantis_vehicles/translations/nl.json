@@ -56,6 +56,9 @@
       "mileage": {
         "name": "Kilometerstand"
       },
+      "speed": {
+        "name": "Snelheid"
+      },
       "autonomy": {
         "name": "Bereik"
       },
@@ -208,6 +211,14 @@
     "switch": {
       "battery_charging_limit": {
         "name": "Batterij laad limiet"
+      },
+      "abrp_sync": {
+        "name": "ABRP sync"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP token"
       }
     }
   }

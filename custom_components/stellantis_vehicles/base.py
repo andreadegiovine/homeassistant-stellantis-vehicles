@@ -144,7 +144,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if current_programs:
                 for program in current_programs:
                     if program:
-                        if program and "occurence" in program and "day" in program["occurence"] and "start" in program:
+                        if program and program.get("occurence", {}).get("day", None) and program.get("start", None):
                             date = date_from_pt_string(program["start"])
                             config = {
                                 "day": [
@@ -407,7 +407,7 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def location_accuracy(self):
         if "lastPosition" in self._coordinator._data:
-            return 10
+            return float(self._coordinator._data["lastPosition"]["properties"]["signalQuality"])
         return None
 
     @property

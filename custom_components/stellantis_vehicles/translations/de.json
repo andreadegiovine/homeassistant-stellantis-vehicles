@@ -40,9 +40,6 @@
     "sensor": {
       "service_battery_voltage": {
         "name": "Service-Batterie"
-	},
-      "remote_signal_quality": {
-        "name": "Signalqualität"						   
       },
       "type": {
         "name": "Typ",
@@ -104,7 +101,7 @@
           "0": "Abgeschlossen",
           "300": "Abgebrochen",
           "500": "Fehler",
-          "502": "Doppelt"		  							
+          "502": "Doppelt"
         }
       },
       "fuel": {
@@ -215,7 +212,7 @@
       "battery_charging_limit": {
         "name": "Batterieladelimit"
       },
-    "abrp_sync": {
+      "abrp_sync": {
         "name": "ABRP Sync"
       }
     },

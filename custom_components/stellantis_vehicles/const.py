@@ -96,10 +96,6 @@ SENSORS_DEFAULT = {
     "vehicle" : {
         "icon" : "mdi:car",
     },
-    "remote_signal_quality" : {
-        "icon" : "mdi:signal-cellular-2",
-        "data_map" : ["lastPosition", "properties", "signalQuality"]
-    },
     "service_battery_voltage" : {
         "icon" : "mdi:car-battery",
         "unit_of_measurement" : PERCENTAGE,

@@ -56,6 +56,9 @@
       "mileage": {
         "name": "Mittarilukema"
       },
+      "speed": {
+        "name": "Nopeus"
+      },
       "autonomy": {
         "name": "Autolla pääsee"
       },

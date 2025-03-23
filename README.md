@@ -64,9 +64,9 @@ Before any issue request please enable the debug log of this integration from yo
 
 ```yaml
 logger:
-    default: error
-    logs:
-        custom_components.stellantis_vehicles: debug
+  default: error
+  logs:
+    custom_components.stellantis_vehicles: debug
 ```
 
 and paste the log data on the issue request.
@@ -155,3 +155,5 @@ Copy the content of file `custom_components/stellantis_vehicles/translations/en.
 
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
