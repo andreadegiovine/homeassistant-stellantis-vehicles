@@ -63,7 +63,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     @property
     def vehicle_type(self):
-        return self._stellantis.get_config("type")
+        return self._vehicle["type"]
 
     @property
     def command_history(self):
