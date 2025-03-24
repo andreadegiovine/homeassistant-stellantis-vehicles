@@ -150,6 +150,9 @@
             "name": "Consumo medio de combustible"
           }
         }
+      },
+      "speed": {
+        "name": "Speed"
       }
     },
     "binary_sensor": {
