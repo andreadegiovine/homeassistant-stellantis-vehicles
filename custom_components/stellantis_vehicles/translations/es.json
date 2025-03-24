@@ -152,7 +152,7 @@
         }
       },
       "speed": {
-        "name": "Speed"
+        "name": "Velocidad"
       }
     },
     "binary_sensor": {
