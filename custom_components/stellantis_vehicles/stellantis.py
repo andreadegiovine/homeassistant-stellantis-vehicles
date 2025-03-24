@@ -99,7 +99,9 @@ class StellantisBase:
             return self._config[key]
         return None
 
-    def replace_placeholders(self, string):
+    def replace_placeholders(self, string, vehicle = []):
+        for key in vehicle:
+            string = string.replace("{#"+key+"#}", str(vehicle[key]))
         for key in self._config:
             string = string.replace("{#"+key+"#}", str(self._config[key]))
         return string
@@ -110,13 +112,13 @@ class StellantisBase:
             new_headers[key] = self.replace_placeholders(headers[key])
         return new_headers
 
-    def apply_query_params(self, url, params):
+    def apply_query_params(self, url, params, vehicle = []):
         query_params = []
         for key in params:
             value = params[key]
             query_params.append(f"{key}={value}")
         query_params = '&'.join(query_params)
-        return self.replace_placeholders(f"{url}?{query_params}")
+        return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
     async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
         self.start_session()
@@ -222,7 +224,6 @@ class StellantisVehicles(StellantisBase):
 
         self._refresh_interval = UPDATE_INTERVAL
         self._entry = None
-        self._vehicle = None
         self._coordinator_dict  = {}
         self._vehicles = []
         self._callback_id = None
@@ -243,19 +244,13 @@ class StellantisVehicles(StellantisBase):
         self._hass.config_entries.async_update_entry(self._entry, data=new_data)
         self._hass.config_entries._async_schedule_save()
 
-    def set_vehicle(self, vehicle):
-        if not self._vehicle and vehicle:
-            self._vehicle = vehicle
-            self.save_config(vehicle)
-
     async def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:
             return self._coordinator_dict[vin]
         return None
 
     async def async_get_coordinator(self, vehicle):
-        self.set_vehicle(vehicle)
-        vin = vehicle.get("vin", "")
+        vin = vehicle["vin"]
         if vin in self._coordinator_dict:
             return self._coordinator_dict[vin]
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "entity", {DOMAIN})
@@ -338,9 +333,9 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- END get_user_vehicles")
         return self._vehicles
 
-    async def get_vehicle_status(self):
+    async def get_vehicle_status(self, vehicle):
         _LOGGER.debug("---------- START get_vehicle_status")
-        url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS)
+        url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_headers_params(CAR_API_HEADERS)
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
         _LOGGER.debug(url)
@@ -349,9 +344,9 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
-    async def get_vehicle_last_trip(self, page_token=False):
+    async def get_vehicle_last_trip(self, vehicle, page_token = False):
         _LOGGER.debug("---------- START get_vehicle_last_trip")
-        url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
+        url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_headers_params(CAR_API_HEADERS)
         limit_date = (get_datetime() - timedelta(days=1)).isoformat()
         limit_date = limit_date.split(".")[0] + "+" + limit_date.split(".")[1].split("+")[1]
@@ -464,7 +459,7 @@ class StellantisVehicles(StellantisBase):
                             _LOGGER.debug("last request is send again, token was expired")
                             last_request = self._mqtt_last_request
                             self._mqtt_last_request = None
-                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], store=False))
+                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, store=False))
                         else:
                             _LOGGER.error("Last request might have been send twice without success")
                 elif data["return_code"] != "0":
@@ -479,7 +474,7 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.error("message error")
         _LOGGER.debug("---------- END _on_mqtt_message")
 
-    async def send_mqtt_message(self, service, message, store=True):
+    async def send_mqtt_message(self, service, message, vehicle, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
         await self.refresh_mqtt_token(force=(store == False))
         customer_id = self.get_config("customer_id")
@@ -491,7 +486,7 @@ class StellantisVehicles(StellantisBase):
             "customer_id": customer_id,
             "correlation_id": action_id,
             "req_date": date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "vin": self.get_config("vin"),
+            "vin": vehicle["vin"],
             "req_parameters": message
         })
         _LOGGER.debug(topic)
