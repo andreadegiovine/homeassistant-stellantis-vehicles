@@ -119,9 +119,7 @@ class StellantisBase:
         return self.replace_placeholders(f"{url}?{query_params}")
 
     async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
-        _LOGGER.debug("---------- START make_http_request")
         self.start_session()
-
         async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
             result = {}
             error = None
@@ -140,7 +138,6 @@ class StellantisBase:
                     error = result["error"] + " - " + result["error_description"]
                 elif "message" in result and "code" in result:
                     error = result["message"] + " - " + str(result["code"])
-            _LOGGER.debug("---------- END make_http_request")
 
             if str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
                 await self.close_session()
@@ -288,6 +285,14 @@ class StellantisVehicles(StellantisBase):
         im.save(new_image_path)
         return new_image_url
 
+    async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
+        _LOGGER.debug("---------- START make_http_request")
+        if method == "GET":
+            await self.refresh_token()
+        result = await super(StellantisVehicles, self).make_http_request(url, method, headers, params, json, data)
+        _LOGGER.debug("---------- END make_http_request")
+        return result
+
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
         token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
@@ -311,7 +316,6 @@ class StellantisVehicles(StellantisBase):
 
     async def get_user_vehicles(self):
         _LOGGER.debug("---------- START get_user_vehicles")
-        await self.refresh_tokens()
         if not self._vehicles:
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_headers_params(CAR_API_HEADERS)
@@ -336,7 +340,6 @@ class StellantisVehicles(StellantisBase):
 
     async def get_vehicle_status(self):
         _LOGGER.debug("---------- START get_vehicle_status")
-        await self.refresh_tokens()
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(CAR_API_HEADERS)
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
@@ -348,7 +351,6 @@ class StellantisVehicles(StellantisBase):
 
     async def get_vehicle_last_trip(self, page_token=False):
         _LOGGER.debug("---------- START get_vehicle_last_trip")
-        await self.refresh_tokens()
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(CAR_API_HEADERS)
         limit_date = (get_datetime() - timedelta(days=1)).isoformat()
@@ -370,7 +372,6 @@ class StellantisVehicles(StellantisBase):
 
 #     async def get_vehicle_trips(self, page_token=False):
 #         _LOGGER.debug("---------- START get_vehicle_trips")
-#         await self.refresh_tokens()
 #         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
 #         headers = self.apply_headers_params(CAR_API_HEADERS)
 #         url = url + "&distance=0.1-"
@@ -382,10 +383,6 @@ class StellantisVehicles(StellantisBase):
 #         _LOGGER.debug(vehicle_trips_request)
 #         _LOGGER.debug("---------- END get_vehicle_trips")
 #         return vehicle_trips_request
-
-    async def refresh_tokens(self, force=False):
-        await self.refresh_token()
-        await self.refresh_mqtt_token(force)
 
     async def refresh_mqtt_token(self, force=False):
         _LOGGER.debug("---------- START refresh_mqtt_token")
@@ -409,7 +406,7 @@ class StellantisVehicles(StellantisBase):
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
         if not self._mqtt:
-            await self.refresh_tokens()
+            await self.refresh_mqtt_token()
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
             self._mqtt.tls_set_context(_SSL_CONTEXT)
@@ -437,7 +434,7 @@ class StellantisVehicles(StellantisBase):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
         _LOGGER.debug("Code %s (%s)", result_code, mqtt.error_string(result_code))
         if result_code == 1:
-            self.do_async(self.refresh_tokens(force=True))
+            self.do_async(self.refresh_mqtt_token(force=True))
         else:
             _LOGGER.debug("Disconnect and reconnect")
             self._mqtt.disconnect()
@@ -484,7 +481,7 @@ class StellantisVehicles(StellantisBase):
 
     async def send_mqtt_message(self, service, message, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
-        await self.refresh_tokens(force=(store == False))
+        await self.refresh_mqtt_token(force=(store == False))
         customer_id = self.get_config("customer_id")
         topic = MQTT_REQ_TOPIC + customer_id + service
         date = datetime.utcnow()
