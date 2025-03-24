@@ -56,6 +56,9 @@
       "mileage": {
         "name": "Kilometraje"
       },
+      "speed": {
+        "name": "Speed"
+      },
       "autonomy": {
         "name": "Autonomía"
       },
@@ -150,9 +153,6 @@
             "name": "Consumo medio de combustible"
           }
         }
-      },
-      "speed": {
-        "name": "Velocidad"
       }
     },
     "binary_sensor": {
