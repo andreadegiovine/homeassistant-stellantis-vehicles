@@ -1,10 +1,13 @@
 import logging
 
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ( PERCENTAGE, UnitOfTime )
 from homeassistant.components.number import NumberEntityDescription
 from homeassistant.components.number.const import NumberMode
-from .base import StellantisBaseNumber
 
+from .base import StellantisBaseNumber
+from .stellantis import StellantisVehicles
 from .const import (
     DOMAIN,
     VEHICLE_TYPE_ELECTRIC,
@@ -14,8 +17,8 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+async def async_setup_entry(hass: HomeAssistant, entry:ConfigEntry, async_add_entities) -> None:
+    stellantis: StellantisVehicles = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()

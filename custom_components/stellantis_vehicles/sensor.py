@@ -2,11 +2,16 @@ import logging
 from time import strftime
 from time import gmtime
 
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume )
 from homeassistant.components.sensor.const import SensorDeviceClass
-from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 
+# from .base import *
+from .base import StellantisBaseSensor, StellantisRestoreSensor
+from .stellantis import StellantisVehicles
 from .const import (
     DOMAIN,
     FIELD_COUNTRY_CODE,
@@ -16,8 +21,8 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
+    stellantis: StellantisVehicles = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()
@@ -76,7 +81,6 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 #         entities.extend([StellantisTotalTripSensor(coordinator, description)])
 
 #         await coordinator.async_request_refresh()
-
     async_add_entities(entities)
 
 
@@ -123,7 +127,7 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                 attributes["max_speed"] = str(last_trip["kinetic"]["maxSpeed"]) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
         if "energyConsumptions" in last_trip:
             for consuption in last_trip["energyConsumptions"]:
-                if not "type" in consuption:
+                if "type" not in consuption:
                     continue
                 consumption_unit_of_measurement = ""
                 avg_consumption_unit_of_measurement = ""

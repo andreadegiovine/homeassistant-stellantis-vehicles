@@ -1,10 +1,13 @@
 import logging
 from datetime import timedelta
 
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.button import ButtonEntityDescription
 from homeassistant.helpers.event import async_track_point_in_time
 
 from .base import StellantisBaseButton
+from .stellantis import (StellantisVehicles, StellantisVehicleCoordinator)
 from .utils import get_datetime
 
 from .const import (
@@ -15,8 +18,12 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+async def async_setup_entry(
+        hass : HomeAssistant,
+        entry: ConfigEntry,
+        async_add_entities
+    ) -> None:
+    stellantis: StellantisVehicles = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()
@@ -77,7 +84,11 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 
 class StellantisWakeUpButton(StellantisBaseButton):
-    def __init__(self, coordinator, description):
+    def __init__(
+            self,
+            coordinator: StellantisVehicleCoordinator,
+            description: ButtonEntityDescription
+        ):
         super().__init__(coordinator, description)
         self.is_scheduled = None
 
@@ -111,7 +122,10 @@ class StellantisLightsButton(StellantisBaseButton):
 class StellantisChargingStartStopButton(StellantisBaseButton):
     @property
     def available(self):
-        return super().available and "battery_plugged" in self._coordinator._sensors and self._coordinator._sensors["battery_plugged"] and self._coordinator._sensors["battery_charging"] in ["InProgress", "Stopped"]
+        return super().available and \
+                    "battery_plugged" in self._coordinator._sensors and \
+                    self._coordinator._sensors["battery_plugged"] and \
+                    self._coordinator._sensors["battery_charging"] in ["InProgress", "Stopped"]
 
     async def async_press(self):
         await self._coordinator.send_charge_command(self.name)
@@ -119,16 +133,20 @@ class StellantisChargingStartStopButton(StellantisBaseButton):
 class StellantisAirConditioningButton(StellantisBaseButton):
     @property
     def available(self):
-        if not self._coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
+        if self._coordinator.vehicle_type not in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
 
-        doors_locked = "doors" in self._coordinator._sensors and (self._coordinator._sensors["doors"] == None or "Locked" in self._coordinator._sensors["doors"])
+        doors_locked = "doors" in self._coordinator._sensors and \
+            (self._coordinator._sensors["doors"] is None or "Locked" in self._coordinator._sensors["doors"])
 
         min_charge = 50
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
             min_charge = 20
-        check_battery_level = "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"] and int(self._coordinator._sensors["battery"]) >= min_charge
-        check_battery_charging = "battery_charging" in self._coordinator._sensors and self._coordinator._sensors["battery_charging"] == "InProgress"
+        check_battery_level = "battery" in self._coordinator._sensors and \
+                                self._coordinator._sensors["battery"] and \
+                                int(self._coordinator._sensors["battery"]) >= min_charge
+        check_battery_charging = "battery_charging" in self._coordinator._sensors and \
+                                self._coordinator._sensors["battery_charging"] == "InProgress"
 
         return super().available and doors_locked and (check_battery_level or check_battery_charging)
 

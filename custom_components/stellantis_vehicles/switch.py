@@ -1,7 +1,10 @@
 import logging
 
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.switch import SwitchEntityDescription
 from .base import StellantisBaseSwitch
+from .stellantis import StellantisVehicles
 
 from .const import (
     DOMAIN,
@@ -11,8 +14,8 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+async def async_setup_entry(hass: HomeAssistant, entry:ConfigEntry, async_add_entities) -> None:
+    stellantis:StellantisVehicles = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()
