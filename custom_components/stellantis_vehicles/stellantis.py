@@ -14,7 +14,6 @@ import ssl
 
 
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from homeassistant.helpers import translation
@@ -295,6 +294,8 @@ class StellantisVehicles(StellantisBase):
 
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
+        _LOGGER.debug(f"Expire in: {self.get_config("expires_in")}")
+
         token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
         if token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval)):
             url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
@@ -395,6 +396,8 @@ class StellantisVehicles(StellantisBase):
     async def refresh_mqtt_token(self, force=False):
         _LOGGER.debug("---------- START refresh_mqtt_token")
         mqtt_config = self.get_config("mqtt")
+        _LOGGER.debug(f"Expire in: {mqtt_config["expires_in"]}")
+
         token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
         if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
             url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
@@ -456,7 +459,7 @@ class StellantisVehicles(StellantisBase):
             data = json.loads(msg.payload)
 #            charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
-                coordinator = StellantisVehicleCoordinator(self.do_async(self.async_get_coordinator_by_vin(data["vin"])))
+                coordinator: StellantisVehicleCoordinator = self.do_async(self.async_get_coordinator_by_vin(data["vin"]))
                 if "return_code" not in data or data["return_code"] in ["0", "300", "500", "502"]:
                     if "return_code" not in data:
                         result_code = data["process_code"]
@@ -520,12 +523,12 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.error(abrp_request)
         _LOGGER.debug("---------- END send_abrp_data")
 
-        
+
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def __init__(
             self, 
             hass: HomeAssistant, 
-            config: ConfigEntry, 
+            config, 
             vehicle, 
             stellantis: StellantisVehicles, 
             translations
