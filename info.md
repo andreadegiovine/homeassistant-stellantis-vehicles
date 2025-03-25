@@ -36,6 +36,11 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 
 </details>
 
+## OAuth2 Code
+As described on config flow, please get the right code from the mobile app redirect like this example (Chrome browser):
+
+![Oauth2](./images/oauth2-code.png)
+
 ## Testing roadmap
 ### Vehicles
 - [x] Opel Mokka-e 2022 [e-remote] (me)
@@ -125,6 +130,9 @@ As described in the Stellantis apps, the command is enabled when:
 1. the vehicle engine is off;
 2. the vehicle doors are locked;
 3. the battery level is at least 50% (20% for hybrids) or in charging.
+
+## Air conditioning Start/Stop - Charge Start/Stop - Doors
+These commands depend on the relative binary sensor, before send the opposite command please wait until the relative sensor state change.
 
 ## ABRP - A Better Routeplanner
 Get a token from [ABRP](https://abetterrouteplanner.com/):
