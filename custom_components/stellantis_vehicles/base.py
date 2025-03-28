@@ -48,7 +48,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("---------- START _async_update_data")
         try:
             # Vehicle status
-            self._data = await self._stellantis.get_vehicle_status()
+            self._data = await self._stellantis.get_vehicle_status(self._vehicle)
         except ConfigEntryAuthFailed as e:
             raise ConfigEntryAuthFailed from e
         except Exception as e:
@@ -63,7 +63,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     @property
     def vehicle_type(self):
-        return self._stellantis.get_config("type")
+        return self._vehicle["type"]
 
     @property
     def command_history(self):
@@ -99,7 +99,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self.async_update_listeners()
 
     async def send_command(self, name, service, message):
-        action_id = await self._stellantis.send_mqtt_message(service, message)
+        action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
         self._commands_history.update({action_id: {"name": name, "updates": []}})
 
     async def send_wakeup_command(self, button_name):
@@ -240,7 +240,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             self._stellantis._refresh_interval = self._sensors["number_refresh_interval"]
 
     async def get_vehicle_last_trip(self):
-        trips = await self._stellantis.get_vehicle_last_trip()
+        trips = await self._stellantis.get_vehicle_last_trip(self._vehicle)
         if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
             if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
                 self._last_trip = trips["_embedded"]["trips"][-1]
