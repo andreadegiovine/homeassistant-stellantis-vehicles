@@ -161,6 +161,18 @@ Fork this repo and create/update your language file under `custom_components/ste
 Copy the content of file `custom_components/stellantis_vehicles/translations/en.json` to a new file, edit all labels ("key": **"Label"**) and open a issue request including the new/updated json language file.
 </details>
 
+## Contributors
+Start from the "**develop**" branch and submit PRs in that branch.
+
+Before each PR please test:
+- New installation;
+- Reconfiguration;
+- Commands;
+- Sensors;
+- 1 week without errors in logs;
+
+If the checklist is complete, a BETA version will be released at the beginning of each month, if no issues are reported a stable version will be released.
+
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
 
