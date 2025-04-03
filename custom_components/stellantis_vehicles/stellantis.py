@@ -487,7 +487,7 @@ class StellantisVehicles(StellantisBase):
     async def send_mqtt_message(self, service, message, vehicle, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
         #TODO: check/confirm if a mqtt refresh_token is really needed here
-        await self.refresh_tokens(force=(store == False))
+        await self.refresh_mqtt_token(force=(store == False))
         customer_id = self.get_config("customer_id")
         topic = MQTT_REQ_TOPIC + customer_id + service
         date = datetime.utcnow()
