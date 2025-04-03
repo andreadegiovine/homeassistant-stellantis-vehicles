@@ -408,17 +408,19 @@ class StellantisVehicles(StellantisBase):
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
+        await self.refresh_mqtt_token()
         if not self._mqtt:
-            await self.refresh_mqtt_token()
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
             self._mqtt.tls_set_context(_SSL_CONTEXT)
             self._mqtt.on_connect = self._on_mqtt_connect
             self._mqtt.on_disconnect = self._on_mqtt_disconnect
             self._mqtt.on_message = self._on_mqtt_message
-            self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
-            self._mqtt.connect(MQTT_SERVER, 8885, 60)
-            self._mqtt.loop_start()
+        if self._mqtt.is_connected():
+            self._mqtt.disconnect()
+        self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
+        self._mqtt.connect(MQTT_SERVER, 8885, 60)
+        self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
         _LOGGER.debug("---------- END connect_mqtt")
         return self._mqtt.is_connected()
 
@@ -484,7 +486,8 @@ class StellantisVehicles(StellantisBase):
 
     async def send_mqtt_message(self, service, message, vehicle, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
-        await self.refresh_mqtt_token(force=(store == False))
+        #TODO: check/confirm if a mqtt refresh_token is really needed here
+        await self.refresh_tokens(force=(store == False))
         customer_id = self.get_config("customer_id")
         topic = MQTT_REQ_TOPIC + customer_id + service
         date = datetime.utcnow()
