@@ -173,6 +173,11 @@ Before each PR please test:
 
 If the checklist is complete, a BETA version will be released at the beginning of each month, if no issues are reported a stable version will be released.
 
+Thanks to all users who contribute to this integration by updating translations and reporting issues.
+
+Special thanks to:
+- @MoellerDi for multivehicles management;
+
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
 
