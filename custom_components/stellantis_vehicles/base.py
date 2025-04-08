@@ -223,7 +223,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                             button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_start_stop.name")
                             await self.send_charge_command(button_name)
                             self._manage_charge_limit_sent = True
-                elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
+                elif self._sensors["battery_charging"] != "InProgress" and self._manage_charge_limit_sent:
                     self._manage_charge_limit_sent = False
 
             if "switch_abrp_sync" in self._sensors and self._sensors["switch_abrp_sync"] and "text_abrp_token" in self._sensors and len(self._sensors["text_abrp_token"]) == 36:
