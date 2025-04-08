@@ -24,6 +24,9 @@
       "service_battery_voltage": {
         "name": "Akumulator 12V"
       },
+      "remote_signal_quality": {
+        "name": "Siła sygnału"
+      },
       "type": {
         "name": "Typ",
         "state": {
@@ -38,6 +41,9 @@
       },
       "mileage": {
         "name": "Przebieg"
+      },
+      "speed": {
+        "name": "Prędkość"
       },
       "autonomy": {
         "name": "Zasięg na baterii"
@@ -60,7 +66,7 @@
         }
       },
       "battery_charging_time": {
-        "name": "Czas  ładowania baterii"
+        "name": "Godzina rozpoczęcia odroczonego ładowania"
       },
       "battery_charging_end": {
         "name": "Zakończenie ładowania za"
@@ -182,6 +188,9 @@
     "number": {
       "battery_charging_limit": {
         "name": "Limit ładowania baterii"
+      },
+    "refresh_interval": {
+        "name": "Czestotliwość odświeżania"
       }
     },
     "switch": {
