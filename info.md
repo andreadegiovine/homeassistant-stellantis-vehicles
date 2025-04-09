@@ -122,6 +122,7 @@ For some vehicles no updates are received a few minutes after the engine is turn
       target:
         entity_id: button.#####VIN#####_wakeup
 ```
+\* the entity names above are in english, please use your language entity names.
 
 **Some users report that performing too many wakeups drains the service battery, making some features unavailable (such as keyless entry).**
 
@@ -171,11 +172,11 @@ Before each PR please test:
 - Sensors;
 - 1 week without errors in logs;
 
-If the checklist is complete, a BETA version will be released at the beginning of each month, if no issues are reported a stable version will be released.
+If the checklist is complete, the PR will be merged and will be released a BETA version, if no issues are reported the changes will included on next stable release.
 
 Thanks to all users who contribute to this integration by updating translations and reporting issues.
 
-Special thanks to:
+### Special thanks:
 - @MoellerDi for multivehicles management;
 
 ## Support the project
