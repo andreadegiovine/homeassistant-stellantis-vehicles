@@ -437,13 +437,9 @@ class StellantisVehicles(StellantisBase):
 
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
-        _LOGGER.debug("Code %s (%s)", result_code, mqtt.error_string(result_code))
+        _LOGGER.debug(f"mqtt disconnected with result code {result_code} -> {mqtt.error_string(result_code)}")
         if result_code == 1:
             self.do_async(self.refresh_mqtt_token(force=True))
-        else:
-            _LOGGER.debug("Disconnect and reconnect")
-            self._mqtt.disconnect()
-            self.do_async(self.connect_mqtt())
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
     def _on_mqtt_message(self, client, userdata, msg):
