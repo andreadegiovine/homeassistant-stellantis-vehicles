@@ -400,6 +400,11 @@ class StellantisVehicles(StellantisBase):
                 _LOGGER.debug(token_request)
                 mqtt_config["access_token"] = token_request["access_token"]
                 mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+                if "refresh_token" in token_request:
+                    _LOGGER.debug("------------- refreshing mqtt refresh_token:")
+                    _LOGGER.debug(f"-------------- old refresh_token: {mqtt_config["refresh_token"]}")
+                    _LOGGER.debug(f"-------------- new refresh_token: {token_request["refresh_token"]}")
+                    mqtt_config["refresh_token"] = token_request["refresh_token"]
                 self.save_config({"mqtt": mqtt_config})
                 self.update_stored_config("mqtt", mqtt_config)
                 if self._mqtt:
@@ -486,7 +491,7 @@ class StellantisVehicles(StellantisBase):
 
     async def send_mqtt_message(self, service, message, vehicle, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
-        #TODO: check/confirm if a mqtt refresh_token is really needed here
+        # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
         await self.refresh_mqtt_token(force=(store == False))
         customer_id = self.get_config("customer_id")
         topic = MQTT_REQ_TOPIC + customer_id + service
