@@ -7,7 +7,10 @@ on:
 
 jobs:
   deploy:
-    permissions: write-all
+    permissions:
+      contents: write
+      pull-requests: write
+      repository-projects: write
     if: ${{ github.event.pull_request.merged }}
     runs-on: ubuntu-latest
     steps:
