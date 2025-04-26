@@ -71,6 +71,10 @@ class StellantisBase:
             self._session = aiohttp.ClientSession()
 
     async def close_session(self):
+        if not self._session:
+            return
+        if self._session.closed:
+            return
         await self._session.close()
         self._session = None
 
