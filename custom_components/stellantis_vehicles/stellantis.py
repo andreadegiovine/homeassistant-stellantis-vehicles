@@ -17,7 +17,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
-from .otp.otp import Otp, OTP_FILE_NAME, save_otp, load_otp
+from .otp.otp import Otp, save_otp, load_otp
 from .utils import get_datetime
 
 from .const import (
@@ -51,6 +51,7 @@ _LOGGER = logging.getLogger(__name__)
 
 IMAGE_PATH = "stellantis-vehicles"
 MQTT_REFRESH_TOKEN_TTL = (60*24*3) # 3 days
+OTP_FILE_NAME = "otp.bin"
 
 def _create_ssl_context() -> ssl.SSLContext:
     """Create a SSL context for the MQTT connection."""
