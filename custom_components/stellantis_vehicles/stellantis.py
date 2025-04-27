@@ -323,18 +323,24 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(vehicles_request)
-            for vehicle in vehicles_request["_embedded"]["vehicles"]:
-                vehicle_data = {
-                    "vehicle_id": vehicle["id"],
-                    "vin": vehicle["vin"],
-                    "type": vehicle["motorization"]
-                }
-                try:
-                    picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
-                    vehicle_data["picture"] = picture
-                except Exception as e:
-                    _LOGGER.error(str(e))
-                self._vehicles.append(vehicle_data)
+            if "_embedded" in vehicles_request:
+                if "vehicles" in vehicles_request["_embedded"]:
+                    for vehicle in vehicles_request["_embedded"]["vehicles"]:
+                        vehicle_data = {
+                            "vehicle_id": vehicle["id"],
+                            "vin": vehicle["vin"],
+                            "type": vehicle["motorization"]
+                        }
+                        try:
+                            picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
+                            vehicle_data["picture"] = picture
+                        except Exception as e:
+                            _LOGGER.error(str(e))
+                        self._vehicles.append(vehicle_data)
+                else:
+                    _LOGGER.error("No vehicles found in vehicles_request['_embedded']")
+            else:
+                _LOGGER.error("No _embedded found in vehicles_request")
         _LOGGER.debug("---------- END get_user_vehicles")
         return self._vehicles
 
