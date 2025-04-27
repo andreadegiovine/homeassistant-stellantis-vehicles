@@ -15,7 +15,7 @@ from . import oaep
 from .load import IWData
 
 # pylint: disable=invalid-name
-CONFIG_NAME = "otp.bin"
+OTP_FILE_NAME = "otp.bin"
 TIMEOUT_IN_S = 10
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ class Otp:
 
         R0 = self.challenge + ";" + iw + ";" + self.get_serial()
         R1 = self.challenge + ";" + iw + ";" + self.data.iwK1
-        logger.debug("%s\n%s\n%s", R0, R1, R2)
+        #logger.debug("%s\n%s\n%s", R0, R1, R2)
         return {"R0": hashlib.sha256(R0.encode("utf-8")).hexdigest(),
                 "R1": hashlib.sha256(R1.encode("utf-8")).hexdigest(),
                 "R2": hashlib.sha256(R2.encode("utf-8")).hexdigest()}
@@ -149,7 +149,7 @@ class Otp:
             mini = x * 128
             ciphertext = cipher.decrypt(enc_b[mini:maxi])
             dec_string += ciphertext.hex()
-        logger.debug(dec_string)
+        #logger.debug(dec_string)
         return dec_string
 
     def request(self, param, setup=False):
@@ -303,7 +303,7 @@ def encode_oeap(text, key):
     return cipher.encrypt(text)
 
 
-def save_otp(obj, filename="otp.bin"):
+def save_otp(obj, filename=OTP_FILE_NAME):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output)
 
@@ -314,7 +314,7 @@ class RenameUnpickler(pickle.Unpickler):
         return super().find_class(renamed_module, name)
 
 
-def load_otp(filename=CONFIG_NAME):
+def load_otp(filename=OTP_FILE_NAME):
     try:
         with open(filename, 'rb') as input_file:
             try:

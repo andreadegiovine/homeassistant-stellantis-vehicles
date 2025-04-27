@@ -17,7 +17,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
-from .otp.otp import Otp
+from .otp.otp import Otp, OTP_FILE_NAME, save_otp, load_otp
 from .utils import get_datetime
 
 from .const import (
@@ -50,6 +50,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 IMAGE_PATH = "stellantis-vehicles"
+MQTT_REFRESH_TOKEN_TTL = (60*24*3) # 3 days
 
 def _create_ssl_context() -> ssl.SSLContext:
     """Create a SSL context for the MQTT connection."""
@@ -190,6 +191,7 @@ class StellantisOauth(StellantisBase):
             if self.otp.activation_start():
                 if self.otp.activation_finalyze() != 0:
                     raise Exception("OTP error")
+            save_otp(self.otp, os.path.join(self._hass.config.config_dir, OTP_FILE_NAME))
         except Exception as e:
             _LOGGER.error(str(e))
             raise Exception(str(e))
@@ -392,23 +394,46 @@ class StellantisVehicles(StellantisBase):
             token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
             _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
             if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
+                if "refresh_token_expires_at" not in mqtt_config:
+                    # Refresh token seems to be valid for 7 days, therefore we need to get a new one from time to time.
+                    # The rate limit for this seems to be 6 requests per 24h
+                    mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
+
+                otp_filename = os.path.join(self._hass.config.config_dir, OTP_FILE_NAME)
+                if not os.path.isfile(otp_filename):
+                    _LOGGER.error("Error: otp.bin file not found, please reauthenticate")
+                    raise ConfigEntryAuthFailed("otp.bin file not found, please reauthenticate")
                 url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
                 headers = self.apply_headers_params(GET_OTP_HEADERS)
-                token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
+                if datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval)):
+                    _LOGGER.debug("------------- mqtt refresh_token is almost expired, use OTP code to get a new one")
+                    self.otp = load_otp(otp_filename)
+                    otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
+                    token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+                else:
+                    token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
                 _LOGGER.debug(url)
                 _LOGGER.debug(headers)
                 _LOGGER.debug(token_request)
-                mqtt_config["access_token"] = token_request["access_token"]
-                mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
-                if "refresh_token" in token_request:
-                    _LOGGER.debug("------------- refreshing mqtt refresh_token:")
-                    _LOGGER.debug(f"-------------- old refresh_token: {mqtt_config["refresh_token"]}")
-                    _LOGGER.debug(f"-------------- new refresh_token: {token_request["refresh_token"]}")
-                    mqtt_config["refresh_token"] = token_request["refresh_token"]
-                self.save_config({"mqtt": mqtt_config})
-                self.update_stored_config("mqtt", mqtt_config)
-                if self._mqtt:
-                    self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
+                if "access_token" in token_request:
+                    _LOGGER.debug("------------- refreshing mqtt access_token:")
+                    _LOGGER.debug(f"-------------- old access_token: {mqtt_config["access_token"]}")
+                    _LOGGER.debug(f"-------------- new access_token: {token_request["access_token"]}")
+                    mqtt_config["access_token"] = token_request["access_token"]
+                    mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+                    if "refresh_token" in token_request:
+                        _LOGGER.debug("------------- refreshing mqtt refresh_token:")
+                        _LOGGER.debug(f"-------------- old refresh_token: {mqtt_config["refresh_token"]}")
+                        _LOGGER.debug(f"-------------- new refresh_token: {token_request["refresh_token"]}")
+                        mqtt_config["refresh_token"] = token_request["refresh_token"]
+                        mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
+                    self.save_config({"mqtt": mqtt_config})
+                    self.update_stored_config("mqtt", mqtt_config)
+                    if self._mqtt:
+                        self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
+                else:
+                    _LOGGER.error("------------- refreshing mqtt access_token failed (no access_token in response)")
+                    _LOGGER.debug(token_request)
         _LOGGER.debug("---------- END refresh_mqtt_token")
 
     async def connect_mqtt(self):
