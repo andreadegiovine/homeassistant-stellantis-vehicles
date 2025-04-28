@@ -396,8 +396,8 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
             if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
                 if "refresh_token_expires_at" not in mqtt_config:
-                    # It's the first time we try to refresh the token, so we need to set the refresh_token_expires_at,
-                    # assuming that the refresh_token is valid for 7 days.
+                    # Just in case we don't have it in the configuration yet. It's actually set in config_flow.
+                    # The refresh token seems to be valid for 7 days, so we need to get a new one from time to time.
                     mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
                 otp_filename = os.path.join(self._hass.config.config_dir, OTP_FILE_NAME)
                 if not os.path.isfile(otp_filename):
