@@ -396,9 +396,9 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
             if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
                 if "refresh_token_expires_at" not in mqtt_config:
-                    # Refresh token seems to be valid for 7 days, therefore we need to get a new one from time to time.
+                    # It's the first time we try to refresh the token, so we need to set the refresh_token_expires_at,
+                    # assuming that the refresh_token is valid for 7 days.
                     mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
-
                 otp_filename = os.path.join(self._hass.config.config_dir, OTP_FILE_NAME)
                 if not os.path.isfile(otp_filename):
                     _LOGGER.error("Error: otp.bin file not found, please reauthenticate")
@@ -431,6 +431,7 @@ class StellantisVehicles(StellantisBase):
                         _LOGGER.debug(f"-------------- old refresh_token: {mqtt_config["refresh_token"]}")
                         _LOGGER.debug(f"-------------- new refresh_token: {token_request["refresh_token"]}")
                         mqtt_config["refresh_token"] = token_request["refresh_token"]
+                        # Refresh token seems to be valid for 7 days, therefore we need to get a new one from time to time.
                         mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
                     self.save_config({"mqtt": mqtt_config})
                     self.update_stored_config("mqtt", mqtt_config)
