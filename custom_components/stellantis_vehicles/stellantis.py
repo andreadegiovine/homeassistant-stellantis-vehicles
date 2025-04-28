@@ -410,6 +410,7 @@ class StellantisVehicles(StellantisBase):
                     self.otp = load_otp(otp_filename)
                     # The rate limit for this seems to be 6 requests per 24h
                     otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
+                    save_otp(self.otp, otp_filename)
                     _LOGGER.debug(f"-------------- OTP Code: {otp_code}")
                     if not otp_code:
                         _LOGGER.error("Error: OTP code is empty, please reauthenticate")
