@@ -139,23 +139,24 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if current_programs:
                 for program in current_programs:
                     if program:
-                        if program and program.get("occurence", {}).get("day", None) and program.get("start", None):
+                        occurence = program.get("occurence")
+                        if occurence and occurence.get("day") and program.get("start"):
                             date = date_from_pt_string(program["start"])
                             config = {
                                 "day": [
-                                    int("Mon" in program["occurence"]["day"]),
-                                    int("Tue" in program["occurence"]["day"]),
-                                    int("Wed" in program["occurence"]["day"]),
-                                    int("Thu" in program["occurence"]["day"]),
-                                    int("Fri" in program["occurence"]["day"]),
-                                    int("Sat" in program["occurence"]["day"]),
-                                    int("Sun" in program["occurence"]["day"])
+                                    int("Mon" in occurence["day"]),
+                                    int("Tue" in occurence["day"]),
+                                    int("Wed" in occurence["day"]),
+                                    int("Thu" in occurence["day"]),
+                                    int("Fri" in occurence["day"]),
+                                    int("Sat" in occurence["day"]),
+                                    int("Sun" in occurence["day"])
                                 ],
                                 "hour": date.hour,
                                 "minute": date.minute,
                                 "on": int(program["enabled"])
                             }
-                            default_programs["program"+str(program["slot"])] = config
+                            default_programs["program" + str(program["slot"])] = config
         return default_programs
 
     async def send_air_conditioning_command(self, button_name):
