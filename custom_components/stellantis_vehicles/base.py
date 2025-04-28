@@ -384,9 +384,9 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def battery_level(self):
         if "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"]:
-            return int(self._coordinator._sensors["battery"])
+            return int(float(self._coordinator._sensors["battery"]))
         elif "service_battery_voltage" in self._coordinator._sensors and self._coordinator._sensors["service_battery_voltage"]:
-            return int(self._coordinator._sensors["service_battery_voltage"])
+            return int(float(self._coordinator._sensors["service_battery_voltage"]))
         return None
 
     @property
