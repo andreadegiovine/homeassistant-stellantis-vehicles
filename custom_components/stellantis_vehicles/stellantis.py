@@ -397,7 +397,6 @@ class StellantisVehicles(StellantisBase):
             if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
                 if "refresh_token_expires_at" not in mqtt_config:
                     # Refresh token seems to be valid for 7 days, therefore we need to get a new one from time to time.
-                    # The rate limit for this seems to be 6 requests per 24h
                     mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
 
                 otp_filename = os.path.join(self._hass.config.config_dir, OTP_FILE_NAME)
@@ -409,7 +408,12 @@ class StellantisVehicles(StellantisBase):
                 if datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval)):
                     _LOGGER.debug("------------- mqtt refresh_token is almost expired, use OTP code to get a new one")
                     self.otp = load_otp(otp_filename)
+                    # The rate limit for this seems to be 6 requests per 24h
                     otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
+                    _LOGGER.debug(f"-------------- OTP Code: {otp_code}")
+                    if not otp_code:
+                        _LOGGER.error("Error: OTP code is empty, please reauthenticate")
+                        raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
                     token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
                 else:
                     token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
