@@ -99,7 +99,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self.async_update_listeners()
 
     async def send_command(self, name, service, message):
-        action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
+        try:
+            action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
+        except ConfigEntryAuthFailed as e:
+            raise ConfigEntryAuthFailed from e
         self._commands_history.update({action_id: {"name": name, "updates": []}})
 
     async def send_wakeup_command(self, button_name):
