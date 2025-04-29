@@ -476,7 +476,10 @@ class StellantisVehicles(StellantisBase):
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
-        await self.refresh_mqtt_token()
+        try:
+            await self.refresh_mqtt_token()
+        except ConfigEntryAuthFailed as e:
+            raise ConfigEntryAuthFailed from e
         if not self._mqtt:
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
@@ -551,7 +554,10 @@ class StellantisVehicles(StellantisBase):
     async def send_mqtt_message(self, service, message, vehicle, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
         # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
-        await self.refresh_mqtt_token(force=(store == False))
+        try:
+            await self.refresh_mqtt_token(force=(store == False))
+        except ConfigEntryAuthFailed as e:
+            raise ConfigEntryAuthFailed from e
         customer_id = self.get_config("customer_id")
         topic = MQTT_REQ_TOPIC + customer_id + service
         date = datetime.utcnow()

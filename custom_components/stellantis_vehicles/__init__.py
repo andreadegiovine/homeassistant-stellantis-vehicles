@@ -37,7 +37,10 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     if vehicles:
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
-        await stellantis.connect_mqtt()
+        try:
+            await stellantis.connect_mqtt()
+        except ConfigEntryAuthFailed as e:
+            raise ConfigEntryAuthFailed from e
 
     return True
 
