@@ -44,14 +44,14 @@ from .const import (
     MQTT_REQ_TOPIC,
     GET_USER_INFO_URL,
     CAR_API_GET_VEHICLE_TRIPS_URL,
-    UPDATE_INTERVAL
+    UPDATE_INTERVAL,
+    MQTT_REFRESH_TOKEN_TTL,
+    OTP_FILE_NAME
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 IMAGE_PATH = "stellantis-vehicles"
-MQTT_REFRESH_TOKEN_TTL = (60*24*3) # 3 days
-OTP_FILE_NAME = "otp.bin"
 
 def _create_ssl_context() -> ssl.SSLContext:
     """Create a SSL context for the MQTT connection."""

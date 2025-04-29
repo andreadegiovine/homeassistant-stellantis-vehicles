@@ -10,6 +10,9 @@ DOMAIN = "stellantis_vehicles"
 with open(os.path.dirname(os.path.abspath(__file__)) + "/configs.json", "r") as f:
     MOBILE_APPS = json.load(f)
 
+MQTT_REFRESH_TOKEN_TTL = (60*24*3) # 3 days
+OTP_FILE_NAME = "otp.bin"
+
 OAUTH_BASE_URL = "{#oauth_url#}/am/oauth2"
 OAUTH_AUTHORIZE_URL = OAUTH_BASE_URL + "/authorize"
 OAUTH_TOKEN_URL = OAUTH_BASE_URL + "/access_token"
