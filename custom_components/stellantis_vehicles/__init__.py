@@ -25,6 +25,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     try:
         vehicles = await stellantis.get_user_vehicles()
     except ConfigEntryAuthFailed as e:
+        await stellantis.close_session()
         raise ConfigEntryAuthFailed from e
     except Exception as e:
         _LOGGER.error(str(e))

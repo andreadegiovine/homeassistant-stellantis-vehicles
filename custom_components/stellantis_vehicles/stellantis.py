@@ -192,7 +192,6 @@ class StellantisOauth(StellantisBase):
             if self.otp.activation_start():
                 if self.otp.activation_finalyze() != 0:
                     raise Exception("OTP error")
-            save_otp(self.otp, os.path.join(self._hass.config.config_dir, OTP_FILE_NAME))
         except Exception as e:
             _LOGGER.error(str(e))
             raise Exception(str(e))
@@ -212,16 +211,39 @@ class StellantisOauth(StellantisBase):
         _LOGGER.debug("---------- START get_mqtt_access_token")
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(GET_OTP_HEADERS)
-        otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
-        token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(token_request)
+        try:
+            otp_code = await self.get_otp_code()
+            token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+            _LOGGER.debug(url)
+            _LOGGER.debug(headers)
+            _LOGGER.debug(token_request)
+        except Exception as e:
+            _LOGGER.error(str(e))
+            raise Exception(str(e))
         _LOGGER.debug("---------- END get_mqtt_access_token")
         return token_request
 
+    async def get_otp_code(self):
+        _LOGGER.debug("---------- START get_otp_code")
+        otp_filename = os.path.join(self._hass.config.config_dir, OTP_FILE_NAME)
+        if not self.otp:
+            # Check if the OTP file exists and load OTP object
+            if not os.path.isfile(otp_filename):
+                _LOGGER.error(f"Error: file '{otp_filename}' not found, please reauthenticate")
+                raise ConfigEntryAuthFailed(f"'{otp_filename}' file not found, please reauthenticate")
+            self.otp = load_otp(otp_filename)
+        # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
+        otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
+        if not otp_code:
+            _LOGGER.error("Error: OTP code is empty, please reauthenticate")
+            raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
+        # Save updated OTP object to file
+        save_otp(self.otp, otp_filename)
+        _LOGGER.debug("---------- END get_otp_code")
+        return otp_code
 
-class StellantisVehicles(StellantisBase):
+
+class StellantisVehicles(StellantisOauth):
     def __init__(self, hass) -> None:
         super().__init__(hass)
 
@@ -397,47 +419,28 @@ class StellantisVehicles(StellantisBase):
             # Check if the token is expired or if a forced refresh is required
             if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
                 try:
-                    await self._handle_mqtt_token_refresh(mqtt_config)
+                    # Fetch a new MQTT token and update the configuration
+                    token_request = await self._fetch_new_mqtt_token(mqtt_config)
+                    _LOGGER.debug(token_request)
+                    await self._update_mqtt_config(mqtt_config, token_request)
                 except ConfigEntryAuthFailed as e:
                     raise ConfigEntryAuthFailed from e
         _LOGGER.debug("---------- END refresh_mqtt_token")
 
-    async def _handle_mqtt_token_refresh(self, mqtt_config):
-        """Handle the process of refreshing the MQTT token."""
-        # Check if the OTP file exists, as it is required for reauthentication with OTP
-        otp_filename = os.path.join(self._hass.config.config_dir, OTP_FILE_NAME)
-        if not os.path.isfile(otp_filename):
-            _LOGGER.error("Error: otp.bin file not found, please reauthenticate")
-            raise ConfigEntryAuthFailed("otp.bin file not found, please reauthenticate")
-        # Set the refresh token expiration time if not already set
-        if "refresh_token_expires_at" not in mqtt_config:
-            mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
-        try:
-            # Fetch a new MQTT token and update the configuration
-            token_request = await self._fetch_new_mqtt_token(mqtt_config, otp_filename)
-            _LOGGER.debug(token_request)
-        except ConfigEntryAuthFailed as e:
-            raise ConfigEntryAuthFailed from e
-        await self._update_mqtt_config(mqtt_config, token_request)
-
-    async def _fetch_new_mqtt_token(self, mqtt_config, otp_filename):
+    async def _fetch_new_mqtt_token(self, mqtt_config):
         """Fetch a new MQTT token using either the refresh token or an OTP code."""
         # Prepare the request URL and headers for fetching a new MQTT token
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(GET_OTP_HEADERS)
         # Check if the refresh token is about to expire and use OTP if necessary
-        if datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval)):
+        if "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval)):
             _LOGGER.debug("------------- mqtt refresh_token is almost expired, use OTP code to get a new one")
-            self.otp = load_otp(otp_filename)
-            otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
-            save_otp(self.otp, otp_filename)
-            _LOGGER.debug(f"-------------- OTP Code: {otp_code}")
-            # Raise an error if the OTP code is empty
-            if not otp_code:
-                _LOGGER.error("Error: OTP code is empty, please reauthenticate")
-                raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
+            try:
+                # It seems there is a rate limit of 6 requests per 24h
+                otp_code = await self.get_otp_code()
+            except ConfigEntryAuthFailed as e:
+                raise ConfigEntryAuthFailed from e
             # Request new tokens (access_token and refresh_token) using the OTP code
-            # It seems there is a rate limit of 6 requests per 24h
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             return await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
