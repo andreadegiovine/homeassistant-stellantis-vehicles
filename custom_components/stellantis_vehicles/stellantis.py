@@ -309,9 +309,12 @@ class StellantisVehicles(StellantisOauth):
 
     async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
         _LOGGER.debug("---------- START make_http_request")
-        if method == "GET":
-            await self.refresh_token()
-        result = await super(StellantisVehicles, self).make_http_request(url, method, headers, params, json, data)
+        try:
+            if method == "GET":
+                await self.refresh_token()
+            result = await super(StellantisVehicles, self).make_http_request(url, method, headers, params, json, data)
+        except ConfigEntryAuthFailed as e:
+            raise ConfigEntryAuthFailed from e
         _LOGGER.debug("---------- END make_http_request")
         return result
 
