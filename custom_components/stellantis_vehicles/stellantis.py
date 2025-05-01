@@ -122,36 +122,43 @@ class StellantisBase:
         query_params = '&'.join(query_params)
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
-    async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
+    async def make_http_request(self, url, method='GET', headers=None, params=None, json=None, data=None):
         self.start_session()
-        async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
-            result = {}
-            error = None
-            if method != "DELETE" and (await resp.text()):
-                result = await resp.json()
-            if not str(resp.status).startswith("20"):
-                _LOGGER.error(f"{method} request error {str(resp.status)}: {resp.url}")
-                _LOGGER.debug(headers)
-                _LOGGER.debug(params)
-                _LOGGER.debug(json)
-                _LOGGER.debug(data)
-                _LOGGER.debug(result)
-                if "httpMessage" in result and "moreInformation" in result:
-                    error = result["httpMessage"] + " - " + result["moreInformation"]
-                elif "error" in result and "error_description" in result:
-                    error = result["error"] + " - " + result["error_description"]
-                elif "message" in result and "code" in result:
-                    error = result["message"] + " - " + str(result["code"])
+        try:
+            async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
+                result = {}
+                error = None
+                if method != "DELETE" and (await resp.text()):
+                    result = await resp.json()
+                if not str(resp.status).startswith("20"):
+                    _LOGGER.error(f"{method} request error {str(resp.status)}: {resp.url}")
+                    _LOGGER.debug(headers)
+                    _LOGGER.debug(params)
+                    _LOGGER.debug(json)
+                    _LOGGER.debug(data)
+                    _LOGGER.debug(result)
+                    if "httpMessage" in result and "moreInformation" in result:
+                        error = result["httpMessage"] + " - " + result["moreInformation"]
+                    elif "error" in result and "error_description" in result:
+                        error = result["error"] + " - " + result["error_description"]
+                    elif "message" in result and "code" in result:
+                        error = result["message"] + " - " + str(result["code"])
 
-            if str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
-                await self.close_session()
-                # Token expiration
-                raise ConfigEntryAuthFailed(error)
-            if error:
-                await self.close_session()
-                # Generic error
-                raise Exception(error)
-            return result
+                if str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
+                    await self.close_session()
+                    # Token expiration
+                    raise ConfigEntryAuthFailed(error)
+                if error:
+                    await self.close_session()
+                    # Generic error
+                    raise Exception(error)
+                return result
+        except ConfigEntryAuthFailed as e:
+            _LOGGER.error("Authentication failed: %s", e)
+            raise
+        except Exception as e:
+            _LOGGER.error("Unexpected error during HTTP request: %s", e)
+            raise
 
     def do_async(self, async_func):
         return asyncio.run_coroutine_threadsafe(async_func, self._hass.loop).result()
@@ -416,18 +423,23 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- START refresh_mqtt_token")
         # Ensure that the MQTT token refresh process is thread-safe
         async with self._lock_refresh_mqtt_token:
-            mqtt_config = self.get_config("mqtt")
-            token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
-            _LOGGER.debug(f"------------- mqtt access_token valid until: {token_expiry}")
-            # Check if the token is expired or if a forced refresh is required
-            if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
-                try:
+            try:
+                mqtt_config = self.get_config("mqtt")
+                token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
+                _LOGGER.debug(f"------------- mqtt access_token valid until: {token_expiry}")
+                # Check if the token is expired or if a forced refresh is required
+                if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
+
                     # Fetch a new MQTT token and update the configuration
                     token_request = await self._fetch_new_mqtt_token(mqtt_config)
                     _LOGGER.debug(token_request)
                     await self._update_mqtt_config(mqtt_config, token_request)
-                except ConfigEntryAuthFailed as e:
-                    raise ConfigEntryAuthFailed from e
+            except ConfigEntryAuthFailed as e:
+                _LOGGER.error("Failed to refresh MQTT token: %s", e)
+                raise
+            except Exception as e:
+                _LOGGER.error("Unexpected error during MQTT token refresh: %s", e)
+                raise
         _LOGGER.debug("---------- END refresh_mqtt_token")
 
     async def _fetch_new_mqtt_token(self, mqtt_config):
@@ -562,27 +574,31 @@ class StellantisVehicles(StellantisOauth):
         # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
         try:
             await self.refresh_mqtt_token(force=(store == False))
+            customer_id = self.get_config("customer_id")
+            topic = MQTT_REQ_TOPIC + customer_id + service
+            date = datetime.utcnow()
+            action_id = str(uuid4()).replace("-", "") + date.strftime("%Y%m%d%H%M%S%f")[:-3]
+            data = json.dumps({
+                "access_token": self.get_config("mqtt")["access_token"],
+                "customer_id": customer_id,
+                "correlation_id": action_id,
+                "req_date": date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "vin": vehicle["vin"],
+                "req_parameters": message
+            })
+            _LOGGER.debug(topic)
+            _LOGGER.debug(data)
+            self._mqtt.publish(topic, data)
+            if store:
+                self._mqtt_last_request = [service, message]
+            _LOGGER.debug("---------- END send_mqtt_message")
+            return action_id
         except ConfigEntryAuthFailed as e:
-            raise ConfigEntryAuthFailed from e
-        customer_id = self.get_config("customer_id")
-        topic = MQTT_REQ_TOPIC + customer_id + service
-        date = datetime.utcnow()
-        action_id = str(uuid4()).replace("-", "") + date.strftime("%Y%m%d%H%M%S%f")[:-3]
-        data = json.dumps({
-            "access_token": self.get_config("mqtt")["access_token"],
-            "customer_id": customer_id,
-            "correlation_id": action_id,
-            "req_date": date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "vin": vehicle["vin"],
-            "req_parameters": message
-        })
-        _LOGGER.debug(topic)
-        _LOGGER.debug(data)
-        self._mqtt.publish(topic, data)
-        if store:
-            self._mqtt_last_request = [service, message]
-        _LOGGER.debug("---------- END send_mqtt_message")
-        return action_id
+            _LOGGER.error("Failed to send MQTT message due to authentication error: %s", e)
+            raise
+        except Exception as e:
+            _LOGGER.error("Unexpected error during MQTT message sending: %s", e)
+            raise
 
     async def send_abrp_data(self, params):
         _LOGGER.debug("---------- START send_abrp_data")
