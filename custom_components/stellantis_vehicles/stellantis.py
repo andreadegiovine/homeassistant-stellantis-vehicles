@@ -426,14 +426,20 @@ class StellantisVehicles(StellantisOauth):
                 _LOGGER.debug(f"------------- mqtt access_token valid until: {token_expiry}")
                 # Check if the token is expired or if a forced refresh is required
                 if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
-
                     # Fetch a new MQTT token and update the configuration
                     token_request = await self._fetch_new_mqtt_token(mqtt_config)
                     _LOGGER.debug(token_request)
                     await self._update_mqtt_config(mqtt_config, token_request)
             except ConfigEntryAuthFailed as e:
-                _LOGGER.error("Failed to refresh MQTT token: %s", e)
-                raise
+                try:
+                    _LOGGER.debug("------------- 1st attempt to refresh MQTT token failed, trying again")
+                    token_request = await self._fetch_new_mqtt_token(mqtt_config)
+                    _LOGGER.debug(token_request)
+                    await self._update_mqtt_config(mqtt_config, token_request)
+                except ConfigEntryAuthFailed as ee:
+                    _LOGGER.error("------------- 2nd refresh MQTT token failed with: %s", ee)
+                    # If the second attempt fails, raise the exception
+                    raise
             except Exception as e:
                 _LOGGER.error("Unexpected error during MQTT token refresh: %s", e)
                 raise
