@@ -27,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         vehicles = await stellantis.get_user_vehicles()
     except ConfigEntryAuthFailed as e:
         await stellantis.close_session()
-        raise ConfigEntryAuthFailed from e
+        raise
     except Exception as e:
         _LOGGER.error(str(e))
         await stellantis.close_session()
@@ -39,10 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     if vehicles:
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
-        try:
-            await stellantis.connect_mqtt()
-        except ConfigEntryAuthFailed as e:
-            raise ConfigEntryAuthFailed from e
+        await stellantis.connect_mqtt()
 
     return True
 

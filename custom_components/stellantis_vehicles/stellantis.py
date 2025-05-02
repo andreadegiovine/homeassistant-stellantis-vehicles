@@ -154,7 +154,7 @@ class StellantisBase:
                     raise Exception(error)
                 return result
         except ConfigEntryAuthFailed as e:
-            _LOGGER.error("Authentication failed: %s", e)
+            _LOGGER.error("Authentication failed during HTTP request: %s", e)
             raise
         except Exception as e:
             _LOGGER.error("Unexpected error during HTTP request: %s", e)
@@ -316,12 +316,9 @@ class StellantisVehicles(StellantisOauth):
 
     async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
         _LOGGER.debug("---------- START make_http_request")
-        try:
-            if method == "GET":
-                await self.refresh_token()
-            result = await super(StellantisVehicles, self).make_http_request(url, method, headers, params, json, data)
-        except ConfigEntryAuthFailed as e:
-            raise ConfigEntryAuthFailed from e
+        if method == "GET":
+            await self.refresh_token()
+        result = await super(StellantisVehicles, self).make_http_request(url, method, headers, params, json, data)
         _LOGGER.debug("---------- END make_http_request")
         return result
 
@@ -450,11 +447,8 @@ class StellantisVehicles(StellantisOauth):
         # Check if the refresh token is about to expire and use OTP if necessary
         if "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval)):
             _LOGGER.debug("------------- mqtt refresh_token is almost expired, use OTP code to get a new one")
-            try:
-                # It seems there is a rate limit of 6 requests per 24h
-                otp_code = await self.get_otp_code()
-            except ConfigEntryAuthFailed as e:
-                raise ConfigEntryAuthFailed from e
+            # It seems there is a rate limit of 6 requests per 24h
+            otp_code = await self.get_otp_code()
             # Request new tokens (access_token and refresh_token) using the OTP code
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
@@ -494,10 +488,7 @@ class StellantisVehicles(StellantisOauth):
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
-        try:
-            await self.refresh_mqtt_token()
-        except ConfigEntryAuthFailed as e:
-            raise ConfigEntryAuthFailed from e
+        await self.refresh_mqtt_token()
         if not self._mqtt:
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
@@ -594,7 +585,7 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug("---------- END send_mqtt_message")
             return action_id
         except ConfigEntryAuthFailed as e:
-            _LOGGER.error("Failed to send MQTT message due to authentication error: %s", e)
+            _LOGGER.error("Failed to send MQTT message for vehicle '%s' due to authentication error: %s", vehicle["vin"], e)
             raise
         except Exception as e:
             _LOGGER.error("Unexpected error during MQTT message sending: %s", e)

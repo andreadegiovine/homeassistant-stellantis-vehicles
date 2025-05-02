@@ -50,7 +50,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             # Vehicle status
             self._data = await self._stellantis.get_vehicle_status(self._vehicle)
         except ConfigEntryAuthFailed as e:
-            raise ConfigEntryAuthFailed from e
+            _LOGGER.error("Authentication failed while updating data for vehicle '%s': %s", self._vehicle, str(e))
+            raise
         except Exception as e:
             _LOGGER.error(str(e))
         _LOGGER.debug(self._config)
@@ -102,7 +103,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
         except ConfigEntryAuthFailed as e:
-            raise ConfigEntryAuthFailed from e
+            _LOGGER.error("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle, str(e))
+            raise
+        except Exception as e:
+            _LOGGER.error("Failed to send command %s: %s", name, str(e))
+            raise
         self._commands_history.update({action_id: {"name": name, "updates": []}})
 
     async def send_wakeup_command(self, button_name):
