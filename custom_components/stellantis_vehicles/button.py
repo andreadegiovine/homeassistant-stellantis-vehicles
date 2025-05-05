@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from homeassistant.components.button import ButtonEntityDescription
 from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .base import StellantisBaseButton
 from .utils import get_datetime
@@ -89,7 +90,14 @@ class StellantisWakeUpButton(StellantisBaseButton):
         if self.is_scheduled is not None:
             self.is_scheduled()
             self.is_scheduled = None
-            await self.async_press()
+            try:
+                await self.async_press()
+            except ConfigEntryAuthFailed as e:
+                _LOGGER.error("Authentication failed during scheduled press: %s", str(e))
+                # Optionally, add recovery logic here
+            except Exception as e:
+                _LOGGER.error("Unexpected error during scheduled press: %s", str(e))
+                raise
         next_run = get_datetime() + timedelta(hours=12)
         self.is_scheduled = async_track_point_in_time(self._coordinator._hass, self.scheduled_press, next_run)
 
