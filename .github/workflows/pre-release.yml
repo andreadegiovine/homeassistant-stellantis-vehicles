@@ -5,10 +5,11 @@ on:
     branches: [ develop ]
     types: [closed]
   workflow_dispatch:
+  
+permissions: write-all
 
 jobs:
   deploy:
-    permissions: write-all
     if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
