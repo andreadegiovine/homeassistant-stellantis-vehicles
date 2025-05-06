@@ -586,11 +586,14 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
     def native_value(self):
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors[self._sensor_key]
+        if self._stellantis.get_stored_config(self._sensor_key):
+            return self._stellantis.get_stored_config(self._sensor_key)
         return self._default_value
 
     async def async_set_native_value(self, value: float):
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = float(value)
+        self._stellantis.update_stored_config(self._sensor_key, float(value))
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):
@@ -604,16 +607,22 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
 
     @property
     def is_on(self):
-        return self._sensor_key in self._coordinator._sensors and self._coordinator._sensors[self._sensor_key]
+        if self._sensor_key in self._coordinator._sensors:
+            return self._coordinator._sensors[self._sensor_key]
+        if self._stellantis.get_stored_config(self._sensor_key):
+            return self._stellantis.get_stored_config(self._sensor_key)
+        return False
 
     async def async_turn_on(self, **kwargs):
         self._attr_is_on = True
         self._coordinator._sensors[self._sensor_key] = True
+        self._stellantis.update_stored_config(self._sensor_key, True)
         await self._coordinator.async_refresh()
 
     async def async_turn_off(self, **kwargs):
         self._attr_is_on = False
         self._coordinator._sensors[self._sensor_key] = False
+        self._stellantis.update_stored_config(self._sensor_key, False)
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):
@@ -629,11 +638,14 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
     def native_value(self):
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors[self._sensor_key]
+        if self._stellantis.get_stored_config(self._sensor_key):
+            return self._stellantis.get_stored_config(self._sensor_key)
         return ""
 
     async def async_set_value(self, value: str):
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = str(value)
+        self._stellantis.update_stored_config(self._sensor_key, str(value))
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):

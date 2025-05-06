@@ -282,6 +282,12 @@ class StellantisVehicles(StellantisOauth):
         self._hass.config_entries.async_update_entry(self._entry, data=new_data)
         self._hass.config_entries._async_schedule_save()
 
+    def get_stored_config(self, config):
+        data = self._entry.data
+        if config in self._entry.data:
+            return self._entry.data[config]
+        return False
+
     async def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:
             return self._coordinator_dict[vin]
