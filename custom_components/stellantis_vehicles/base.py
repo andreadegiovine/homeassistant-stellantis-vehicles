@@ -47,6 +47,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         _LOGGER.debug("---------- START _async_update_data")
         try:
+            # Update token
+            await self._stellantis.refresh_token()
             # Vehicle status
             self._data = await self._stellantis.get_vehicle_status(self._vehicle)
         except ConfigEntryAuthFailed as e:
