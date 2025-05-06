@@ -125,6 +125,7 @@ class StellantisBase:
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
     async def make_http_request(self, url, method='GET', headers=None, params=None, json=None, data=None):
+        _LOGGER.debug("---------- START make_http_request")
         self.start_session()
         try:
             async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
@@ -154,6 +155,7 @@ class StellantisBase:
                     await self.close_session()
                     # Generic error
                     raise Exception(error)
+                _LOGGER.debug("---------- END make_http_request")
                 return result
         except ConfigEntryAuthFailed as e:
             _LOGGER.error("Authentication failed during HTTP request: %s", e)
@@ -315,14 +317,6 @@ class StellantisVehicles(StellantisOauth):
             im = ImageOps.pad(im, (400, 400))
         im.save(new_image_path)
         return new_image_url
-
-    async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
-        _LOGGER.debug("---------- START make_http_request")
-        if method == "GET":
-            await self.refresh_token()
-        result = await super(StellantisVehicles, self).make_http_request(url, method, headers, params, json, data)
-        _LOGGER.debug("---------- END make_http_request")
-        return result
 
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
