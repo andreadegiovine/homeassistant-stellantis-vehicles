@@ -221,5 +221,8 @@
         "name": "ABRP Token"
       }
     }
+  },
+  "common": {
+    "notification_no_vehicles_found": "Für dieses Konto wurden keine Fahrzeuge gefunden"
   }
 }
