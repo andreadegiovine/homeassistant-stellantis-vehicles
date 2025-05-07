@@ -17,7 +17,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
-from .otp.otp import Otp
+from .otp.otp import Otp, save_otp, load_otp
 from .utils import get_datetime
 
 from .const import (
@@ -44,7 +44,9 @@ from .const import (
     MQTT_REQ_TOPIC,
     GET_USER_INFO_URL,
     CAR_API_GET_VEHICLE_TRIPS_URL,
-    UPDATE_INTERVAL
+    UPDATE_INTERVAL,
+    MQTT_REFRESH_TOKEN_TTL,
+    OTP_FILE_NAME
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -71,6 +73,8 @@ class StellantisBase:
             self._session = aiohttp.ClientSession()
 
     async def close_session(self):
+        if not self._session or self._session.closed:
+            return
         await self._session.close()
         self._session = None
 
@@ -120,36 +124,45 @@ class StellantisBase:
         query_params = '&'.join(query_params)
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
-    async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
+    async def make_http_request(self, url, method='GET', headers=None, params=None, json=None, data=None):
+        _LOGGER.debug("---------- START make_http_request")
         self.start_session()
-        async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
-            result = {}
-            error = None
-            if method != "DELETE" and (await resp.text()):
-                result = await resp.json()
-            if not str(resp.status).startswith("20"):
-                _LOGGER.error(f"{method} request error {str(resp.status)}: {resp.url}")
-                _LOGGER.debug(headers)
-                _LOGGER.debug(params)
-                _LOGGER.debug(json)
-                _LOGGER.debug(data)
-                _LOGGER.debug(result)
-                if "httpMessage" in result and "moreInformation" in result:
-                    error = result["httpMessage"] + " - " + result["moreInformation"]
-                elif "error" in result and "error_description" in result:
-                    error = result["error"] + " - " + result["error_description"]
-                elif "message" in result and "code" in result:
-                    error = result["message"] + " - " + str(result["code"])
+        try:
+            async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
+                result = {}
+                error = None
+                if method != "DELETE" and (await resp.text()):
+                    result = await resp.json()
+                if not str(resp.status).startswith("20"):
+                    _LOGGER.error(f"{method} request error {str(resp.status)}: {resp.url}")
+                    _LOGGER.debug(headers)
+                    _LOGGER.debug(params)
+                    _LOGGER.debug(json)
+                    _LOGGER.debug(data)
+                    _LOGGER.debug(result)
+                    if "httpMessage" in result and "moreInformation" in result:
+                        error = result["httpMessage"] + " - " + result["moreInformation"]
+                    elif "error" in result and "error_description" in result:
+                        error = result["error"] + " - " + result["error_description"]
+                    elif "message" in result and "code" in result:
+                        error = result["message"] + " - " + str(result["code"])
 
-            if str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
-                await self.close_session()
-                # Token expiration
-                raise ConfigEntryAuthFailed(error)
-            if error:
-                await self.close_session()
-                # Generic error
-                raise Exception(error)
-            return result
+                if str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
+                    await self.close_session()
+                    # Token expiration
+                    raise ConfigEntryAuthFailed(error)
+                if error:
+                    await self.close_session()
+                    # Generic error
+                    raise Exception(error)
+                _LOGGER.debug("---------- END make_http_request")
+                return result
+        except ConfigEntryAuthFailed as e:
+            _LOGGER.error("Authentication failed during HTTP request: %s", e)
+            raise
+        except Exception as e:
+            _LOGGER.error("Unexpected error during HTTP request: %s", e)
+            raise
 
     def do_async(self, async_func):
         return asyncio.run_coroutine_threadsafe(async_func, self._hass.loop).result()
@@ -209,16 +222,39 @@ class StellantisOauth(StellantisBase):
         _LOGGER.debug("---------- START get_mqtt_access_token")
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(GET_OTP_HEADERS)
-        otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
-        token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(token_request)
+        try:
+            otp_code = await self.get_otp_code()
+            token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+            _LOGGER.debug(url)
+            _LOGGER.debug(headers)
+            _LOGGER.debug(token_request)
+        except Exception as e:
+            _LOGGER.error(str(e))
+            raise Exception(str(e))
         _LOGGER.debug("---------- END get_mqtt_access_token")
         return token_request
 
+    async def get_otp_code(self):
+        _LOGGER.debug("---------- START get_otp_code")
+        otp_filename = os.path.join(self._hass.config.config_dir, OTP_FILE_NAME)
+        if not self.otp:
+            # Check if the OTP file exists and load OTP object
+            if not os.path.isfile(otp_filename):
+                _LOGGER.error(f"Error: file '{otp_filename}' not found, please reauthenticate")
+                raise ConfigEntryAuthFailed(f"'{otp_filename}' file not found, please reauthenticate")
+            self.otp = load_otp(otp_filename)
+        # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
+        otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
+        if not otp_code:
+            _LOGGER.error("Error: OTP code is empty, please reauthenticate")
+            raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
+        # Save updated OTP object to file
+        save_otp(self.otp, otp_filename)
+        _LOGGER.debug("---------- END get_otp_code")
+        return otp_code
 
-class StellantisVehicles(StellantisBase):
+
+class StellantisVehicles(StellantisOauth):
     def __init__(self, hass) -> None:
         super().__init__(hass)
 
@@ -245,6 +281,12 @@ class StellantisVehicles(StellantisBase):
         new_data[config] = value
         self._hass.config_entries.async_update_entry(self._entry, data=new_data)
         self._hass.config_entries._async_schedule_save()
+
+    def get_stored_config(self, config):
+        data = self._entry.data
+        if config in self._entry.data:
+            return self._entry.data[config]
+        return False
 
     async def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:
@@ -282,14 +324,6 @@ class StellantisVehicles(StellantisBase):
         im.save(new_image_path)
         return new_image_url
 
-    async def make_http_request(self, url, method = 'GET', headers = None, params = None, json = None, data = None):
-        _LOGGER.debug("---------- START make_http_request")
-        if method == "GET":
-            await self.refresh_token()
-        result = await super(StellantisVehicles, self).make_http_request(url, method, headers, params, json, data)
-        _LOGGER.debug("---------- END make_http_request")
-        return result
-
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
         # to prevent concurrent updates
@@ -323,18 +357,24 @@ class StellantisVehicles(StellantisBase):
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(vehicles_request)
-            for vehicle in vehicles_request["_embedded"]["vehicles"]:
-                vehicle_data = {
-                    "vehicle_id": vehicle["id"],
-                    "vin": vehicle["vin"],
-                    "type": vehicle["motorization"]
-                }
-                try:
-                    picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
-                    vehicle_data["picture"] = picture
-                except Exception as e:
-                    _LOGGER.error(str(e))
-                self._vehicles.append(vehicle_data)
+            if "_embedded" in vehicles_request:
+                if "vehicles" in vehicles_request["_embedded"]:
+                    for vehicle in vehicles_request["_embedded"]["vehicles"]:
+                        vehicle_data = {
+                            "vehicle_id": vehicle["id"],
+                            "vin": vehicle["vin"],
+                            "type": vehicle["motorization"]
+                        }
+                        try:
+                            picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
+                            vehicle_data["picture"] = picture
+                        except Exception as e:
+                            _LOGGER.error(str(e))
+                        self._vehicles.append(vehicle_data)
+                else:
+                    _LOGGER.error("No vehicles found in vehicles_request['_embedded']")
+            else:
+                _LOGGER.error("No _embedded found in vehicles_request")
         _LOGGER.debug("---------- END get_user_vehicles")
         return self._vehicles
 
@@ -386,25 +426,79 @@ class StellantisVehicles(StellantisBase):
 
     async def refresh_mqtt_token(self, force=False):
         _LOGGER.debug("---------- START refresh_mqtt_token")
-        # to prevent concurrent updates
+        # Ensure that the MQTT token refresh process is thread-safe
         async with self._lock_refresh_mqtt_token:
-            mqtt_config = self.get_config("mqtt")
-            token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
-            _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
-            if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
-                url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
-                headers = self.apply_headers_params(GET_OTP_HEADERS)
-                token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
-                _LOGGER.debug(url)
-                _LOGGER.debug(headers)
-                _LOGGER.debug(token_request)
-                mqtt_config["access_token"] = token_request["access_token"]
-                mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
-                self.save_config({"mqtt": mqtt_config})
-                self.update_stored_config("mqtt", mqtt_config)
-                if self._mqtt:
-                    self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
+            try:
+                mqtt_config = self.get_config("mqtt")
+                token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
+                _LOGGER.debug(f"------------- mqtt access_token valid until: {token_expiry}")
+                # Check if the token is expired or if a forced refresh is required
+                if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
+                    # Fetch a new MQTT token and update the configuration
+                    token_request = await self._fetch_new_mqtt_token(mqtt_config)
+                    _LOGGER.debug(token_request)
+                    await self._update_mqtt_config(mqtt_config, token_request)
+            except ConfigEntryAuthFailed as e:
+                try:
+                    _LOGGER.debug("------------- 1st attempt to refresh MQTT token failed, trying again")
+                    token_request = await self._fetch_new_mqtt_token(mqtt_config)
+                    _LOGGER.debug(token_request)
+                    await self._update_mqtt_config(mqtt_config, token_request)
+                except ConfigEntryAuthFailed as ee:
+                    _LOGGER.error("------------- 2nd refresh MQTT token failed with: %s", ee)
+                    # If the second attempt fails, raise the exception
+                    raise
+            except Exception as e:
+                _LOGGER.error("Unexpected error during MQTT token refresh: %s", e)
+                raise
         _LOGGER.debug("---------- END refresh_mqtt_token")
+
+    async def _fetch_new_mqtt_token(self, mqtt_config):
+        """Fetch a new MQTT token using either the refresh token or an OTP code."""
+        # Prepare the request URL and headers for fetching a new MQTT token
+        url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
+        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        # Check if the refresh token is about to expire and use OTP if necessary
+        if "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval)):
+            _LOGGER.debug("------------- mqtt refresh_token is almost expired, use OTP code to get a new one")
+            # It seems there is a rate limit of 6 requests per 24h
+            otp_code = await self.get_otp_code()
+            # Request new tokens (access_token and refresh_token) using the OTP code
+            _LOGGER.debug(url)
+            _LOGGER.debug(headers)
+            return await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+        else:
+            # Request a new access token using the refresh token
+            _LOGGER.debug(url)
+            _LOGGER.debug(headers)
+            return await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
+
+    async def _update_mqtt_config(self, mqtt_config, token_request):
+        """Update the MQTT configuration with the new token details."""
+        if "access_token" in token_request:
+            _LOGGER.debug("------------- refreshing mqtt access_token:")
+            _LOGGER.debug(f"-------------- old access_token: {mqtt_config['access_token']}")
+            _LOGGER.debug(f"-------------- new access_token: {token_request['access_token']}")
+            # Update the access token and its expiration time
+            mqtt_config["access_token"] = token_request["access_token"]
+            mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+            # Update the refresh token if provided in the response
+            if "refresh_token" in token_request:
+                _LOGGER.debug("------------- refreshing mqtt refresh_token:")
+                _LOGGER.debug(f"-------------- old refresh_token: {mqtt_config['refresh_token']}")
+                _LOGGER.debug(f"-------------- new refresh_token: {token_request['refresh_token']}")
+                mqtt_config["refresh_token"] = token_request["refresh_token"]
+                mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
+            # Save the updated MQTT configuration
+            self.save_config({"mqtt": mqtt_config})
+            self.update_stored_config("mqtt", mqtt_config)
+            # Update the MQTT client with the new access token
+            if self._mqtt:
+                self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
+        else:
+            # Log an error if the token refresh failed
+            _LOGGER.error("------------- refreshing mqtt access_token failed (no access_token in response)")
+            _LOGGER.debug(token_request)
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
@@ -437,13 +531,9 @@ class StellantisVehicles(StellantisBase):
 
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
-        _LOGGER.debug("Code %s (%s)", result_code, mqtt.error_string(result_code))
+        _LOGGER.debug(f"mqtt disconnected with result code {result_code} -> {mqtt.error_string(result_code)}")
         if result_code == 1:
             self.do_async(self.refresh_mqtt_token(force=True))
-        else:
-            _LOGGER.debug("Disconnect and reconnect")
-            self._mqtt.disconnect()
-            self.do_async(self.connect_mqtt())
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
     def _on_mqtt_message(self, client, userdata, msg):
@@ -486,27 +576,34 @@ class StellantisVehicles(StellantisBase):
 
     async def send_mqtt_message(self, service, message, vehicle, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
-        #TODO: check/confirm if a mqtt refresh_token is really needed here
-        await self.refresh_mqtt_token(force=(store == False))
-        customer_id = self.get_config("customer_id")
-        topic = MQTT_REQ_TOPIC + customer_id + service
-        date = datetime.utcnow()
-        action_id = str(uuid4()).replace("-", "") + date.strftime("%Y%m%d%H%M%S%f")[:-3]
-        data = json.dumps({
-            "access_token": self.get_config("mqtt")["access_token"],
-            "customer_id": customer_id,
-            "correlation_id": action_id,
-            "req_date": date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "vin": vehicle["vin"],
-            "req_parameters": message
-        })
-        _LOGGER.debug(topic)
-        _LOGGER.debug(data)
-        self._mqtt.publish(topic, data)
-        if store:
-            self._mqtt_last_request = [service, message]
-        _LOGGER.debug("---------- END send_mqtt_message")
-        return action_id
+        # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
+        try:
+            await self.refresh_mqtt_token(force=(store == False))
+            customer_id = self.get_config("customer_id")
+            topic = MQTT_REQ_TOPIC + customer_id + service
+            date = datetime.utcnow()
+            action_id = str(uuid4()).replace("-", "") + date.strftime("%Y%m%d%H%M%S%f")[:-3]
+            data = json.dumps({
+                "access_token": self.get_config("mqtt")["access_token"],
+                "customer_id": customer_id,
+                "correlation_id": action_id,
+                "req_date": date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "vin": vehicle["vin"],
+                "req_parameters": message
+            })
+            _LOGGER.debug(topic)
+            _LOGGER.debug(data)
+            self._mqtt.publish(topic, data)
+            if store:
+                self._mqtt_last_request = [service, message]
+            _LOGGER.debug("---------- END send_mqtt_message")
+            return action_id
+        except ConfigEntryAuthFailed as e:
+            _LOGGER.error("Failed to send MQTT message for vehicle '%s' due to authentication error: %s", vehicle["vin"], e)
+            raise
+        except Exception as e:
+            _LOGGER.error("Unexpected error during MQTT message sending: %s", e)
+            raise
 
     async def send_abrp_data(self, params):
         _LOGGER.debug("---------- START send_abrp_data")

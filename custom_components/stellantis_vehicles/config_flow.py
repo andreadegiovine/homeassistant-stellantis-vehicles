@@ -15,7 +15,8 @@ from .const import (
     FIELD_COUNTRY_CODE,
     FIELD_OAUTH_CODE,
     FIELD_SMS_CODE,
-    FIELD_PIN_CODE
+    FIELD_PIN_CODE,
+    MQTT_REFRESH_TOKEN_TTL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -151,7 +152,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.data.update({"mqtt": {
             "access_token": otp_token_request["access_token"],
             "refresh_token": otp_token_request["refresh_token"],
-            "expires_in": (get_datetime() + timedelta(0, int(otp_token_request["expires_in"]))).isoformat()
+            "expires_in": (get_datetime() + timedelta(0, int(otp_token_request["expires_in"]))).isoformat(),
+            # The refresh token seems to be valid for 7 days, so we need to get a new one from time to time.
+            "refresh_token_expires_at": (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
         }})
 
         return await self.async_step_final()

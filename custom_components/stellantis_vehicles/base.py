@@ -47,10 +47,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         _LOGGER.debug("---------- START _async_update_data")
         try:
+            # Update token
+            await self._stellantis.refresh_token()
             # Vehicle status
             self._data = await self._stellantis.get_vehicle_status(self._vehicle)
         except ConfigEntryAuthFailed as e:
-            raise ConfigEntryAuthFailed from e
+            _LOGGER.error("Authentication failed while updating data for vehicle '%s': %s", self._vehicle['vin'], str(e))
+            raise
         except Exception as e:
             _LOGGER.error(str(e))
         _LOGGER.debug(self._config)
@@ -99,7 +102,14 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self.async_update_listeners()
 
     async def send_command(self, name, service, message):
-        action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
+        try:
+            action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
+        except ConfigEntryAuthFailed as e:
+            _LOGGER.error("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
+            raise
+        except Exception as e:
+            _LOGGER.error("Failed to send command %s: %s", name, str(e))
+            raise
         self._commands_history.update({action_id: {"name": name, "updates": []}})
 
     async def send_wakeup_command(self, button_name):
@@ -139,23 +149,24 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if current_programs:
                 for program in current_programs:
                     if program:
-                        if program and program.get("occurence", {}).get("day", None) and program.get("start", None):
+                        occurence = program.get("occurence")
+                        if occurence and occurence.get("day") and program.get("start"):
                             date = date_from_pt_string(program["start"])
                             config = {
                                 "day": [
-                                    int("Mon" in program["occurence"]["day"]),
-                                    int("Tue" in program["occurence"]["day"]),
-                                    int("Wed" in program["occurence"]["day"]),
-                                    int("Thu" in program["occurence"]["day"]),
-                                    int("Fri" in program["occurence"]["day"]),
-                                    int("Sat" in program["occurence"]["day"]),
-                                    int("Sun" in program["occurence"]["day"])
+                                    int("Mon" in occurence["day"]),
+                                    int("Tue" in occurence["day"]),
+                                    int("Wed" in occurence["day"]),
+                                    int("Thu" in occurence["day"]),
+                                    int("Fri" in occurence["day"]),
+                                    int("Sat" in occurence["day"]),
+                                    int("Sun" in occurence["day"])
                                 ],
                                 "hour": date.hour,
                                 "minute": date.minute,
                                 "on": int(program["enabled"])
                             }
-                            default_programs["program"+str(program["slot"])] = config
+                            default_programs["program" + str(program["slot"])] = config
         return default_programs
 
     async def send_air_conditioning_command(self, button_name):
@@ -223,7 +234,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                             button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_start_stop.name")
                             await self.send_charge_command(button_name)
                             self._manage_charge_limit_sent = True
-                elif self._sensors["battery_charging"] != "InProgress" and not self._manage_charge_limit_sent:
+                elif self._sensors["battery_charging"] != "InProgress" and self._manage_charge_limit_sent:
                     self._manage_charge_limit_sent = False
 
             if "switch_abrp_sync" in self._sensors and self._sensors["switch_abrp_sync"] and "text_abrp_token" in self._sensors and len(self._sensors["text_abrp_token"]) == 36:
@@ -384,9 +395,9 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def battery_level(self):
         if "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"]:
-            return int(self._coordinator._sensors["battery"])
+            return int(float(self._coordinator._sensors["battery"]))
         elif "service_battery_voltage" in self._coordinator._sensors and self._coordinator._sensors["service_battery_voltage"]:
-            return int(self._coordinator._sensors["service_battery_voltage"])
+            return int(float(self._coordinator._sensors["service_battery_voltage"]))
         return None
 
     @property
@@ -575,11 +586,14 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
     def native_value(self):
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors[self._sensor_key]
+        if self._stellantis.get_stored_config(self._sensor_key):
+            return self._stellantis.get_stored_config(self._sensor_key)
         return self._default_value
 
     async def async_set_native_value(self, value: float):
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = float(value)
+        self._stellantis.update_stored_config(self._sensor_key, float(value))
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):
@@ -593,16 +607,22 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
 
     @property
     def is_on(self):
-        return self._sensor_key in self._coordinator._sensors and self._coordinator._sensors[self._sensor_key]
+        if self._sensor_key in self._coordinator._sensors:
+            return self._coordinator._sensors[self._sensor_key]
+        if self._stellantis.get_stored_config(self._sensor_key):
+            return self._stellantis.get_stored_config(self._sensor_key)
+        return False
 
     async def async_turn_on(self, **kwargs):
         self._attr_is_on = True
         self._coordinator._sensors[self._sensor_key] = True
+        self._stellantis.update_stored_config(self._sensor_key, True)
         await self._coordinator.async_refresh()
 
     async def async_turn_off(self, **kwargs):
         self._attr_is_on = False
         self._coordinator._sensors[self._sensor_key] = False
+        self._stellantis.update_stored_config(self._sensor_key, False)
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):
@@ -618,11 +638,14 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
     def native_value(self):
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors[self._sensor_key]
+        if self._stellantis.get_stored_config(self._sensor_key):
+            return self._stellantis.get_stored_config(self._sensor_key)
         return ""
 
     async def async_set_value(self, value: str):
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = str(value)
+        self._stellantis.update_stored_config(self._sensor_key, str(value))
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):

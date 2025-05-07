@@ -4,10 +4,13 @@ on:
   pull_request:
     branches: [ develop ]
     types: [closed]
+  workflow_dispatch:
+  
+permissions: write-all
 
 jobs:
   deploy:
-    if: ${{ github.event.pull_request.merged }}
+    if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from homeassistant.components.button import ButtonEntityDescription
 from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .base import StellantisBaseButton
 from .utils import get_datetime
@@ -89,7 +90,14 @@ class StellantisWakeUpButton(StellantisBaseButton):
         if self.is_scheduled is not None:
             self.is_scheduled()
             self.is_scheduled = None
-            await self.async_press()
+            try:
+                await self.async_press()
+            except ConfigEntryAuthFailed as e:
+                _LOGGER.error("Authentication failed during scheduled press: %s", str(e))
+                # Optionally, add recovery logic here
+            except Exception as e:
+                _LOGGER.error("Unexpected error during scheduled press: %s", str(e))
+                raise
         next_run = get_datetime() + timedelta(hours=12)
         self.is_scheduled = async_track_point_in_time(self._coordinator._hass, self.scheduled_press, next_run)
 
@@ -127,7 +135,7 @@ class StellantisAirConditioningButton(StellantisBaseButton):
         min_charge = 50
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
             min_charge = 20
-        check_battery_level = "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"] and int(self._coordinator._sensors["battery"]) >= min_charge
+        check_battery_level = "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"] and int(float(self._coordinator._sensors["battery"])) >= min_charge
         check_battery_charging = "battery_charging" in self._coordinator._sensors and self._coordinator._sensors["battery_charging"] == "InProgress"
 
         return super().available and doors_locked and (check_battery_level or check_battery_charging)
