@@ -253,6 +253,18 @@ class StellantisOauth(StellantisBase):
         _LOGGER.debug("---------- END get_otp_code")
         return otp_code
 
+    async def create_persistent_notification(self, translation_key, title=None, notification_id=DOMAIN):
+        """Create a persistent notification."""
+        translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
+        message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}", None))
+        if title is None:
+            title = "Stellantis Vehicles - %s" % self._hass.config_entries.async_get_entry(self._entry.entry_id).title
+        self._hass.components.persistent_notification.async_create(
+            message,
+            title=title,
+            notification_id=notification_id
+        )
+
 
 class StellantisVehicles(StellantisOauth):
     def __init__(self, hass) -> None:
