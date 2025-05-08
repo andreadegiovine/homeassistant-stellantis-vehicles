@@ -546,7 +546,10 @@ class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
         engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
-        return engine_is_off and (self.name not in self._coordinator._disabled_commands) and not self._coordinator.pending_action
+        button_not_disabled = self.name not in self._coordinator._disabled_commands
+        no_pending_action = not self._coordinator.pending_action
+        mqtt_connected = self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
+        return engine_is_off and button_not_disabled and no_pending_action and mqtt_connected
 
     async def async_press(self):
         raise NotImplementedError
