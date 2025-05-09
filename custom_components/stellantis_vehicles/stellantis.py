@@ -45,13 +45,12 @@ from .const import (
     GET_USER_INFO_URL,
     CAR_API_GET_VEHICLE_TRIPS_URL,
     UPDATE_INTERVAL,
+    IMAGE_PATH,
     MQTT_REFRESH_TOKEN_TTL,
     OTP_FILE_NAME
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-IMAGE_PATH = "stellantis-vehicles"
 
 def _create_ssl_context() -> ssl.SSLContext:
     """Create a SSL context for the MQTT connection."""
@@ -387,6 +386,9 @@ class StellantisVehicles(StellantisOauth):
                     _LOGGER.error("No vehicles found in vehicles_request['_embedded']")
             else:
                 _LOGGER.error("No _embedded found in vehicles_request")
+            # Store the vehicles in the config entry
+            self.save_config({"vehicles": self._vehicles})
+            self.update_stored_config("vehicles", self._vehicles)
         _LOGGER.debug("---------- END get_user_vehicles")
         return self._vehicles
 
