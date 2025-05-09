@@ -563,7 +563,7 @@ class StellantisVehicles(StellantisOauth):
                     else:
                         result_code = data["return_code"]
                     if result_code in ["300", "500"]:
-                        self.hass_notify("command_error")
+                        self.do_async(self.hass_notify("command_error"))
                     if result_code != "901": # Not store "Vehicle as sleep" event
                         self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                 elif data["return_code"] == "400":
