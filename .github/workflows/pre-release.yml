@@ -15,8 +15,8 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all commits and tags
 
-      - name: Get last pre-release tag or create new one
-        id: last-pre-release-tag
+      - name: Get pre-release name
+        id: pre-release-tag-name
         run: |
           # Fetch all tags
           git fetch --tags
@@ -28,11 +28,10 @@ jobs:
           last_pre_release_tag=$(git tag -l '[0-9]*.[0-9]*.[0-9]*-beta.*' --sort=-v:refname | head -n 1)
           
           if [ -z "$last_pre_release_tag" ]; then
-            # If no pre-release tags found, get the last release tag
+            echo "No pre-release tags found"
             IFS='.' read -r release_major release_minor release_patch <<< "$last_release_tag"
             incremented_release_patch_number=$((release_patch + 1))
             new_pre_release_tag="$release_major.$release_minor.$incremented_release_patch_number-beta.1"
-            echo "No pre-release tags found. Creating a new one: $new_pre_release_tag"
           else
             echo "Last pre-release tag: $last_pre_release_tag"
             IFS='.' read -r prerelease_major prerelease_minor prerelease_patch prerelease_beta_number <<< "$last_pre_release_tag"
@@ -41,19 +40,14 @@ jobs:
           fi
           
 #          echo "::set-output name=new_pre_release_tag::$new_pre_release_tag"
+          echo "New pre-release tag is $new_pre_release_tag"
           echo "new_pre_release_tag=$new_pre_release_tag" >> $GITHUB_OUTPUT
 
-      - name: Set environment variable
-        run: echo "NEW_PRE_RELEASE_TAG=${{ steps.last-pre-release-tag.outputs.new_pre_release_tag }}" >> $GITHUB_ENV
-
-      - name: Display new pre-release tag
-        run: echo "New pre-release tag is $NEW_PRE_RELEASE_TAG"
-
-      - name: Create Release
+      - name: Create pre-release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
         with:
-          tag_name: ${{ steps.last-pre-release-tag.outputs.new_pre_release_tag }}
-          release_name: ${{ steps.last-pre-release-tag.outputs.new_pre_release_tag }}
+          tag_name: ${{ steps.pre-release-tag-name.outputs.new_pre_release_tag }}
+          release_name: ${{ steps.pre-release-tag-name.outputs.new_pre_release_tag }}
           prerelease: true
