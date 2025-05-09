@@ -167,6 +167,17 @@ class StellantisBase:
     def do_async(self, async_func):
         return asyncio.run_coroutine_threadsafe(async_func, self._hass.loop).result()
 
+    async def hass_notify(self, translation_key, notification_id=DOMAIN):
+        """Create a persistent notification."""
+        translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
+        notification_message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}.message", None))
+        notification_title = "Stellantis Vehicles - " + str(translations.get(f"component.stellantis_vehicles.common.{translation_key}.title", None))
+        self._hass.components.persistent_notification.async_create(
+            notification_message,
+            title=notification_title,
+            notification_id=notification_id
+        )
+
 
 class StellantisOauth(StellantisBase):
     def get_oauth_url(self):
@@ -252,18 +263,6 @@ class StellantisOauth(StellantisBase):
         save_otp(self.otp, otp_filename)
         _LOGGER.debug("---------- END get_otp_code")
         return otp_code
-
-    async def create_persistent_notification(self, translation_key, title=None, notification_id=DOMAIN):
-        """Create a persistent notification."""
-        translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
-        message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}", None))
-        if title is None:
-            title = "Stellantis Vehicles - %s" % self._hass.config_entries.async_get_entry(self._entry.entry_id).title
-        self._hass.components.persistent_notification.async_create(
-            message,
-            title=title,
-            notification_id=notification_id
-        )
 
 
 class StellantisVehicles(StellantisOauth):
@@ -561,6 +560,8 @@ class StellantisVehicles(StellantisOauth):
                         result_code = data["process_code"]
                     else:
                         result_code = data["return_code"]
+                    if result_code in ["300", "500"]:
+                        self.hass_notify("notify_command_error")
                     if result_code != "901": # Not store "Vehicle as sleep" event
                         self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                 elif data["return_code"] == "400":

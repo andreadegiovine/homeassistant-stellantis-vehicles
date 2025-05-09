@@ -108,6 +108,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             token_request = await self.stellantis.get_access_token()
         except Exception as e:
             self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_access_token", e)
+            await self.stellantis.hass_notify("notify_access_token_error")
             return await self.async_step_oauth()
 
         self.data.update({
@@ -139,6 +140,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.stellantis.get_otp_sms()
             except Exception as e:
                 self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_otp_sms", e)
+                await self.stellantis.hass_notify("notify_otp_error")
                 return await self.async_step_oauth()
             return self.async_show_form(step_id="otp", data_schema=OTP_SCHEMA)
 
