@@ -40,7 +40,7 @@ jobs:
             new_pre_release_tag="$major.$minor.$patch.$incremented_beta_number"
           fi
           
-          echo "new_pre_release_tag=$new_pre_release_tag" >> $GITHUB_OUTPUT
+          echo "::set-output name=new_pre_release_tag::$new_pre_release_tag"
 
       - name: Set environment variable
         run: echo "NEW_PRE_RELEASE_TAG=${{ steps.last-pre-release-tag.outputs.new_pre_release_tag }}" >> $GITHUB_ENV
