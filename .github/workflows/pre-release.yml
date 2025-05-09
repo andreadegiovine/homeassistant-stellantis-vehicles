@@ -21,26 +21,26 @@ jobs:
           # Fetch all tags
           git fetch --tags
           
-          # Fetch only the tags that match the pre-release format
-          pre_release_tags=$(git tag -l '[0-9]*.[0-9]*.[0-9]*-beta.*' --sort=-v:refname)
+          # Fetch last release
+          last_release_tag=$(git tag -l '[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
           
-          # Get the last pre-release tag
-          last_pre_release_tag=$(echo "$pre_release_tags" | head -n 1)
+          # Fetch last pre-release
+          last_pre_release_tag=$(git tag -l '[0-9]*.[0-9]*.[0-9]*-beta.*' --sort=-v:refname | head -n 1)
           
           if [ -z "$last_pre_release_tag" ]; then
             # If no pre-release tags found, get the last release tag
-            last_release_tag=$(git tag -l '[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
-            IFS='.' read -r major minor patch <<< "$last_release_tag"
-            new_pre_release_tag="$major.$minor.$patch-beta.1"
+            IFS='.' read -r release_major release_minor release_patch <<< "$last_release_tag"
+            incremented_release_patch_number=$((release_patch + 1))
+            new_pre_release_tag="$release_major.$release_minor.$incremented_release_patch_number-beta.1"
             echo "No pre-release tags found. Creating a new one: $new_pre_release_tag"
           else
             echo "Last pre-release tag: $last_pre_release_tag"
-            IFS='.' read -r major minor patch beta_number <<< "$last_pre_release_tag"
-            incremented_beta_number=$((beta_number + 1))
+            IFS='.' read -r prerelease_major prerelease_minor prerelease_patch prerelease_beta_number <<< "$last_pre_release_tag"
+            incremented_beta_number=$((prerelease_beta_number + 1))
             new_pre_release_tag="$major.$minor.$patch.$incremented_beta_number"
           fi
           
-          echo "::set-output name=new_pre_release_tag::$new_pre_release_tag"
+          echo "new_pre_release_tag=$new_pre_release_tag" >> $GITHUB_OUTPUT
 
       - name: Set environment variable
         run: echo "NEW_PRE_RELEASE_TAG=${{ steps.last-pre-release-tag.outputs.new_pre_release_tag }}" >> $GITHUB_ENV
