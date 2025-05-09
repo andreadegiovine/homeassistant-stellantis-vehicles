@@ -37,7 +37,7 @@ jobs:
             echo "Last pre-release tag: $last_pre_release_tag"
             IFS='.' read -r prerelease_major prerelease_minor prerelease_patch prerelease_beta_number <<< "$last_pre_release_tag"
             incremented_beta_number=$((prerelease_beta_number + 1))
-            new_pre_release_tag="$major.$minor.$patch.$incremented_beta_number"
+            new_pre_release_tag="$prerelease_major.$prerelease_minor.$prerelease_patch.$incremented_beta_number"
           fi
           
           echo "::set-output name=new_pre_release_tag::$new_pre_release_tag"
