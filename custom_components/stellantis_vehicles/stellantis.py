@@ -170,8 +170,8 @@ class StellantisBase:
     async def hass_notify(self, translation_key, notification_id=DOMAIN):
         """Create a persistent notification."""
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
-        notification_message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}.message", None))
-        notification_title = "Stellantis Vehicles - " + str(translations.get(f"component.stellantis_vehicles.common.{translation_key}.title", None))
+        notification_message = str(translations.get(f"component.stellantis_vehicles.notify.{translation_key}.message", None))
+        notification_title = "Stellantis Vehicles - " + str(translations.get(f"component.stellantis_vehicles.notify.{translation_key}.title", None))
         self._hass.components.persistent_notification.async_create(
             notification_message,
             title=notification_title,
@@ -561,7 +561,7 @@ class StellantisVehicles(StellantisOauth):
                     else:
                         result_code = data["return_code"]
                     if result_code in ["300", "500"]:
-                        self.hass_notify("notify_command_error")
+                        self.hass_notify("command_error")
                     if result_code != "901": # Not store "Vehicle as sleep" event
                         self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                 elif data["return_code"] == "400":

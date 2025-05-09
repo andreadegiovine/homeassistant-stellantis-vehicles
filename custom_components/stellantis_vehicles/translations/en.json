@@ -222,20 +222,20 @@
       }
     }
   },
-  "common": {
-    "notify_access_token_error": {
+  "notify": {
+    "access_token_error": {
       "title": "Access token error",
       "message": "Check out the official documentation in the [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) section"
     },
-    "notify_otp_error": {
+    "otp_error": {
       "title": "OTP error",
       "message": "Check out the official documentation in the [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) section"
     },
-    "notify_no_vehicles_found": {
+    "no_vehicles_found": {
       "title": "Unavailable",
       "message": "No connected vehicles available on this account"
     },
-    "notify_command_error": {
+    "command_error": {
       "title": "Command",
       "message": "The command was not sent correctly"
     }

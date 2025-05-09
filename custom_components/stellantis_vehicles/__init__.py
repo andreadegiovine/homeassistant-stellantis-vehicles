@@ -42,7 +42,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         await stellantis.connect_mqtt()
     else:
         _LOGGER.error("No vehicles found for this account")
-        await stellantis.hass_notify("notify_no_vehicles_found")
+        await stellantis.hass_notify("no_vehicles_found")
         await stellantis.close_session()
 
     return True
