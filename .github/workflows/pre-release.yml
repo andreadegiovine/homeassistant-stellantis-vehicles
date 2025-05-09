@@ -1,9 +1,6 @@
 name: Pre-Release
 
 on:
-#  pull_request:
-#    branches: [ develop ]
-#    types: [closed]
   workflow_dispatch:
 
 jobs:
@@ -39,7 +36,6 @@ jobs:
             new_pre_release_tag="$prerelease_major.$prerelease_minor.$prerelease_patch.$incremented_beta_number"
           fi
           
-#          echo "::set-output name=new_pre_release_tag::$new_pre_release_tag"
           echo "New pre-release tag is $new_pre_release_tag"
           echo "new_pre_release_tag=$new_pre_release_tag" >> $GITHUB_OUTPUT
 
