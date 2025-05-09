@@ -170,8 +170,10 @@ class StellantisBase:
     async def hass_notify(self, translation_key, notification_id=DOMAIN):
         """Create a persistent notification."""
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
-        notification_message = str(translations.get(f"component.stellantis_vehicles.notify.{translation_key}.message", None))
-        notification_title = "Stellantis Vehicles - " + str(translations.get(f"component.stellantis_vehicles.notify.{translation_key}.title", None))
+        notification_title = "Stellantis Vehicles"
+        if translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None):
+            notification_title = notification_title + " - " + str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None))
+        notification_message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_message", None))
         self._hass.components.persistent_notification.async_create(
             notification_message,
             title=notification_title,

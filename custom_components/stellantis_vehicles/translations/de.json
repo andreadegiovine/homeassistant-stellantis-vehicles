@@ -222,9 +222,7 @@
       }
     }
   },
-  "notify": {
-    "no_vehicles_found": {
-      "message": "Für dieses Konto wurden keine Fahrzeuge gefunden"
-    }
+  "common": {
+    "no_vehicles_found_message": "Für dieses Konto wurden keine Fahrzeuge gefunden"
   }
 }
