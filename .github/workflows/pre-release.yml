@@ -36,7 +36,7 @@ jobs:
             new_pre_release_tag="$prerelease_major.$prerelease_minor.$prerelease_patch.$incremented_beta_number"
           fi
           
-          echo "New pre-release tag is $new_pre_release_tag"
+          echo "New pre-release tag: $new_pre_release_tag"
           echo "new_pre_release_tag=$new_pre_release_tag" >> $GITHUB_OUTPUT
 
       - name: Create pre-release
