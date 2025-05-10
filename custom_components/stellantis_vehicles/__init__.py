@@ -13,7 +13,7 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     IMAGE_PATH,
-    OTP_FILE_NAME
+    OTP_FILENAME
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,6 +26,23 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config.entry_id] = stellantis
+
+    # Migrate to new file structure - can be removed in future versions
+    ### Gennerate path to storage folder and move OTP file
+    hass_config_path = hass.config.path()
+    old_otp_file_path = os.path.join(hass_config_path, ".storage/stellantis_vehicles_otp.pickle")
+    if os.path.isfile(old_otp_file_path):
+        new_storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
+        new_otp_file_path = os.path.join(new_storage_path, OTP_FILENAME)
+        new_otp_file_path = new_otp_file_path.replace("{#customer_id#}", stellantis.get_config("customer_id"))
+        if not os.path.isdir(new_storage_path):
+            os.mkdir(new_storage_path)
+        if not os.path.isfile(new_otp_file_path):
+            _LOGGER.debug(f"Migrating OTP file to new storage path: {old_otp_file_path} -> {new_otp_file_path}")
+            os.rename(old_otp_file_path, new_otp_file_path)
+        else:
+            os.remove(old_otp_file_path)
+    # END Migrate to new file structure
 
     try:
         await stellantis.refresh_token()
@@ -75,26 +92,30 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
         for _entry in hass.config_entries.async_entries(DOMAIN):
             hass.async_create_task(hass.config_entries.async_remove(_entry.entry_id))
 
-        # Remove OTP file
-        # Curently just a single file, but might be changed in the future
-        # to allow for multiple OTP files
-        # (e.g. for multiple Stellantis accounts)
-        otp_filename = os.path.join(hass.config.config_dir, OTP_FILE_NAME)
-        if os.path.isfile(otp_filename):
-            _LOGGER.debug(f"Deleting OTP-File: {otp_filename}")
-            os.remove(otp_filename)
+        # Gennerate path to storage folder and OTP file
+        hass_config_path = hass.config.path()
+        storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
+        otp_file_path = os.path.join(storage_path, OTP_FILENAME)
+        otp_file_path = otp_file_path.replace("{#customer_id#}", config.unique_id)
 
-        # Remove related vehicle images
-        if "vehicles" in config.data:
-            for vehicle in config.data["vehicles"]:
-                vehicle_image_path = os.path.join(hass.config.config_dir, vehicle["picture"].replace("/local", "www"))
-                if os.path.exists(vehicle_image_path) and os.path.isfile(vehicle_image_path):
-                    _LOGGER.debug(f"Deleting Stellantis Vehicle image: {vehicle_image_path}")
-                    os.remove(vehicle_image_path)
+        # Remove OTP file if it exists
+        if os.path.isfile(otp_file_path):
+            _LOGGER.debug(f"Deleting OTP-File: {otp_file_path}")
+            os.remove(otp_file_path)
+
+        # Remove storage folder if empty
+        if (os.path.exists(storage_path) and os.path.isdir(storage_path) and not os.listdir(storage_path)):
+            _LOGGER.debug(f"Deleting empty Stellantis storage folder: {storage_path}")
+            shutil.rmtree(storage_path)
+
+        # Remove Stellantis image folder of this entry
+        entry_image_path = os.path.join(hass_config_path, "www", IMAGE_PATH, config.unique_id)
+        if (os.path.exists(entry_image_path) and os.path.isdir(entry_image_path)):
+            _LOGGER.debug(f"Deleting Stellantis entry image folder: {entry_image_path}")
+            shutil.rmtree(entry_image_path)
 
         # Remove Stellantis image folder if empty
-        public_path = os.path.join(hass.config.config_dir, "www")
-        stellantis_path = f"{public_path}/{IMAGE_PATH}"
-        if (os.path.exists(stellantis_path) and os.path.isdir(stellantis_path) and not os.listdir(stellantis_path)):
-            _LOGGER.debug(f"Deleting empty Stellantis image folder: {stellantis_path}")
-            shutil.rmtree(stellantis_path)
+        image_path = os.path.join(hass_config_path, "www", IMAGE_PATH)
+        if (os.path.exists(image_path) and os.path.isdir(image_path) and not os.listdir(image_path)):
+            _LOGGER.debug(f"Deleting Stellantis image folder: {image_path}")
+            shutil.rmtree(image_path)

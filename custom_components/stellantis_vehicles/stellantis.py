@@ -47,7 +47,7 @@ from .const import (
     UPDATE_INTERVAL,
     IMAGE_PATH,
     MQTT_REFRESH_TOKEN_TTL,
-    OTP_FILE_NAME
+    OTP_FILENAME
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -235,20 +235,27 @@ class StellantisOauth(StellantisBase):
 
     async def get_otp_code(self):
         _LOGGER.debug("---------- START get_otp_code")
-        otp_filename = os.path.join(self._hass.config.config_dir, OTP_FILE_NAME)
+        # Check if storage path exists, if not create it
+        hass_config_path = self._hass.config.path()
+        storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
+        if not os.path.isdir(storage_path):
+            os.mkdir(storage_path)
+        # Generate OTP file path from client_id (unique_id=client_id)
+        otp_file_path = os.path.join(storage_path, OTP_FILENAME)
+        otp_file_path = otp_file_path.replace("{#customer_id#}", self.get_config("customer_id"))
+        # Check if OTP object is already loaded, if not load it
         if not self.otp:
-            # Check if the OTP file exists and load OTP object
-            if not os.path.isfile(otp_filename):
-                _LOGGER.error(f"Error: file '{otp_filename}' not found, please reauthenticate")
-                raise ConfigEntryAuthFailed(f"'{otp_filename}' file not found, please reauthenticate")
-            self.otp = load_otp(otp_filename)
+            if not os.path.isfile(otp_file_path):
+                _LOGGER.error(f"Error: OTP file '{otp_file_path}' not found, please reauthenticate")
+                raise ConfigEntryAuthFailed(f"OTP file not found, please reauthenticate")
+            self.otp = load_otp(otp_file_path)
         # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
         otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
         if not otp_code:
             _LOGGER.error("Error: OTP code is empty, please reauthenticate")
             raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
         # Save updated OTP object to file
-        save_otp(self.otp, otp_filename)
+        save_otp(self.otp, otp_file_path)
         _LOGGER.debug("---------- END get_otp_code")
         return otp_code
 
@@ -315,25 +322,33 @@ class StellantisVehicles(StellantisOauth):
 
     async def resize_and_save_picture(self, url, vin):
         public_path = self._hass.config.path("www")
+        customer_id = self.get_config("customer_id")
 
         if not os.path.isdir(public_path):
             _LOGGER.warning("Folder \"www\" not found in configuration folder")
             return url
 
         stellantis_path = f"{public_path}/{IMAGE_PATH}"
-        if not os.path.isdir(stellantis_path):
-            os.mkdir(stellantis_path)
+        entry_path = f"{stellantis_path}/{customer_id}"
+        if not os.path.isdir(entry_path):
+            os.makedirs(entry_path, exist_ok=True)
 
-        new_image_path = f"{stellantis_path}/{vin}.png"
-        new_image_url = f"/local/{IMAGE_PATH}/{vin}.png"
-        if os.path.isfile(new_image_path):
-            return new_image_url
+        image_path = f"{entry_path}/{vin}.png"
+        image_url = image_path.replace(public_path, "/local")
+        # Migrate to new file structure - can be removed in future versions
+        old_image_path = f"{stellantis_path}/{vin}.png"
+        if os.path.isfile(old_image_path):
+            _LOGGER.debug(f"Migrating image file: {old_image_path} -> {image_path}")
+            os.rename(old_image_path, image_path)
+        # END Migrate to new file structure
+        if os.path.isfile(image_path):
+            return image_url
 
         image = await self._hass.async_add_executor_job(urlopen, url)
         with Image.open(image) as im:
             im = ImageOps.pad(im, (400, 400))
-        im.save(new_image_path)
-        return new_image_url
+        im.save(image_path)
+        return image_url
 
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")

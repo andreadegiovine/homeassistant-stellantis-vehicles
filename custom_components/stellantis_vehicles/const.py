@@ -11,7 +11,7 @@ with open(os.path.dirname(os.path.abspath(__file__)) + "/configs.json", "r") as 
     MOBILE_APPS = json.load(f)
 
 MQTT_REFRESH_TOKEN_TTL = (60*24*3) # 3 days
-OTP_FILE_NAME = ".storage/" + DOMAIN + "_otp.pickle"
+OTP_FILENAME = "{#customer_id#}_otp.pickle"
 
 IMAGE_PATH = "stellantis-vehicles"
 

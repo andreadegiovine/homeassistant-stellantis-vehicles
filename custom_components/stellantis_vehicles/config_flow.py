@@ -130,6 +130,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         self.data.update({"customer_id": user_info_request[0]["customer"]})
 
+        self.stellantis.save_config({"customer_id": self.data["customer_id"]})
+
         return await self.async_step_otp()
 
 
@@ -165,7 +167,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_mismatch()
             return self.async_update_reload_and_abort(self._get_reauth_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
 
-        await self.async_set_unique_id(self.data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5]))
+        await self.async_set_unique_id(str(self.data["customer_id"]))
         self._abort_if_unique_id_configured()
         return self.async_create_entry(title=self.data[FIELD_MOBILE_APP], data=self.data)
 
