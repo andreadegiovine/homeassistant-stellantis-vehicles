@@ -177,7 +177,7 @@ If the checklist is complete, the PR will be merged and will be released a BETA 
 Thanks to all users who contribute to this integration by updating translations and reporting issues.
 
 ### Special thanks:
-- @MoellerDi for multivehicles management;
+- [@MoellerDi](https://github.com/MoellerDi) for the great support;
 
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
