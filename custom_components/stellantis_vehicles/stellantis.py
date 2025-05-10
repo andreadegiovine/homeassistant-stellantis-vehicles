@@ -401,9 +401,6 @@ class StellantisVehicles(StellantisOauth):
                     _LOGGER.error("No vehicles found in vehicles_request['_embedded']")
             else:
                 _LOGGER.error("No _embedded found in vehicles_request")
-            # Store the vehicles in the config entry
-            self.save_config({"vehicles": self._vehicles})
-            self.update_stored_config("vehicles", self._vehicles)
         _LOGGER.debug("---------- END get_user_vehicles")
         return self._vehicles
 
