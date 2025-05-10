@@ -240,7 +240,7 @@ class StellantisOauth(StellantisBase):
         storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
         if not os.path.isdir(storage_path):
             os.mkdir(storage_path)
-        # Generate OTP file path from client_id (unique_id=client_id)
+        # Generate OTP file path from customer_id
         otp_file_path = os.path.join(storage_path, OTP_FILENAME)
         otp_file_path = otp_file_path.replace("{#customer_id#}", self.get_config("customer_id"))
         # Check if OTP object is already loaded, if not load it
