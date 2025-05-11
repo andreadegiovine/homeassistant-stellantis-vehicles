@@ -14,6 +14,7 @@ import ssl
 
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.components import persistent_notification
 from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
@@ -174,7 +175,8 @@ class StellantisBase:
         if translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None):
             notification_title = notification_title + " - " + str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None))
         notification_message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_message", None))
-        self._hass.components.persistent_notification.async_create(
+        persistent_notification.async_create(
+            self._hass,
             notification_message,
             title=notification_title,
             notification_id=notification_id
