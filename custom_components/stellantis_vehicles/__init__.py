@@ -27,23 +27,6 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config.entry_id] = stellantis
 
-    # Migrate to new file structure - can be removed in future versions
-    ### Gennerate path to storage folder and move OTP file
-    hass_config_path = hass.config.path()
-    old_otp_file_path = os.path.join(hass_config_path, ".storage/stellantis_vehicles_otp.pickle")
-    if os.path.isfile(old_otp_file_path):
-        new_storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
-        new_otp_file_path = os.path.join(new_storage_path, OTP_FILENAME)
-        new_otp_file_path = new_otp_file_path.replace("{#customer_id#}", stellantis.get_config("customer_id"))
-        if not os.path.isdir(new_storage_path):
-            os.mkdir(new_storage_path)
-        if not os.path.isfile(new_otp_file_path):
-            _LOGGER.debug(f"Migrating OTP file to new storage path: {old_otp_file_path} -> {new_otp_file_path}")
-            os.rename(old_otp_file_path, new_otp_file_path)
-        else:
-            os.remove(old_otp_file_path)
-    # END Migrate to new file structure
-
     try:
         await stellantis.refresh_token()
         vehicles = await stellantis.get_user_vehicles()
@@ -119,3 +102,35 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
         if (os.path.exists(image_path) and os.path.isdir(image_path) and not os.listdir(image_path)):
             _LOGGER.debug(f"Deleting Stellantis image folder: {image_path}")
             shutil.rmtree(image_path)
+
+
+async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
+    _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+
+    # Migrate config prior 1.2 to 1.2 - unique_id and file structure
+    if config.version == 1 and config.minor_version < 2:
+        # update unique_id with customer_id - used to be data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5])
+        new_unique_id = config.data.get("customer_id")
+        if config.unique_id != new_unique_id:
+            _LOGGER.debug(f"Migrating unique_id from {config.unique_id} to {new_unique_id}")
+            hass.config_entries.async_update_entry(config, unique_id=new_unique_id)
+        # Migrate to new file structure - Generate path to storage folder and move OTP file
+        hass_config_path = hass.config.path()
+        old_otp_file_path = os.path.join(hass_config_path, ".storage/stellantis_vehicles_otp.pickle")
+        if os.path.isfile(old_otp_file_path):
+            new_storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
+            new_otp_file_path = os.path.join(new_storage_path, OTP_FILENAME)
+            new_otp_file_path = new_otp_file_path.replace("{#customer_id#}", new_unique_id)
+            if not os.path.isdir(new_storage_path):
+                os.mkdir(new_storage_path)
+            if not os.path.isfile(new_otp_file_path):
+                _LOGGER.debug(f"Migrating OTP file to new storage path from {old_otp_file_path} to {new_otp_file_path}")
+                os.rename(old_otp_file_path, new_otp_file_path)
+            else:
+                os.remove(old_otp_file_path)
+        # Update config entry object
+        hass.config_entries.async_update_entry(config, version=1, minor_version=2)
+
+    _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
+    return True

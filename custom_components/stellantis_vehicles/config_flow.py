@@ -41,7 +41,7 @@ OTP_SCHEMA = vol.Schema({
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
 
     def __init__(self):
         self.data = dict()
