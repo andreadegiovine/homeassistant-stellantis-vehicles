@@ -19,24 +19,18 @@ jobs:
           git fetch --tags
           
           # Fetch last tag
-          last_tag=$(git tag -l --sort=-creatordate | head -n 1)
+          last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
           
-          # Fetch last release
-          last_release_tag=$(git tag -l '[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
-          
-          # Fetch last pre-release
-          last_pre_release_tag=$(git tag -l '[0-9]*.[0-9]*.[0-9]*-beta.*' --sort=-v:refname | head -n 1)
-          
-          if [ -z "$last_pre_release_tag" ] || [ "$last_release_tag" != "$last_tag" ]; then
-            echo "Create new pre-release"
-            IFS='.' read -r release_major release_minor release_patch <<< "$last_release_tag"
-            incremented_release_patch_number=$((release_patch + 1))
-            new_pre_release_tag="$release_major.$release_minor.$incremented_release_patch_number-beta.1"
-          else
-            echo "Last pre-release tag: $last_pre_release_tag"
-            IFS='.' read -r prerelease_major prerelease_minor prerelease_patch prerelease_beta_number <<< "$last_pre_release_tag"
+          if [[ "$last_tag" =~ ^[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+$ ]]; then
+            echo "Last pre-release tag: $last_tag"
+            IFS='.' read -r prerelease_major prerelease_minor prerelease_patch prerelease_beta_number <<< "$last_tag"
             incremented_beta_number=$((prerelease_beta_number + 1))
             new_pre_release_tag="$prerelease_major.$prerelease_minor.$prerelease_patch.$incremented_beta_number"
+          else
+            echo "Last pre-release not found"
+            IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
+            incremented_release_patch_number=$((release_patch + 1))
+            new_pre_release_tag="$release_major.$release_minor.$incremented_release_patch_number-beta.1"
           fi
           
           echo "New pre-release tag: $new_pre_release_tag"
@@ -54,11 +48,11 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -A
-          git commit -m "Update manifest.json ${{ steps.pre-release-tag-name.outputs.new_pre_release_tag }}"
+          git commit -m "Update manifest.json version to ${{ steps.pre-release-tag-name.outputs.new_pre_release_tag }}"
           git tag ${{ steps.pre-release-tag-name.outputs.new_pre_release_tag }}
           
       - name: Push changes
-        uses: ad-m/github-push-action@v0.6.0
+        uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.PAT }}
           tags: true
