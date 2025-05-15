@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all commits and tags
+
+      - name: Get release name
+        id: release-tag-name
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Fetch last tag
+          last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
+          
+          current_year = $(date +%Y)
+          current_month = $(date +%-m)
+          
+          if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+$ ]]; then
+            echo "Current month last release tag: $last_tag"
+            IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
+            release_path_number=$((release_patch + 1))
+          else
+            echo "Current month first release"
+            release_path_number=1
+          fi
+          
+          new_release_tag="$current_year.$current_month.$release_path_number"
+          
+          echo "New release tag: $new_release_tag"
+          echo "new_release_tag=$new_release_tag" >> $GITHUB_OUTPUT
+          
+      - name: Update manifest.json
+        uses: jossef/action-set-json-field@v2.1
+        with:
+          file: custom_components/stellantis_vehicles/manifest.json
+          field: version
+          value: ${{ steps.release-tag-name.outputs.new_release_tag }}
+          
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "Update manifest.json version to ${{ steps.release-tag-name.outputs.new_release_tag }}"
+          git tag ${{ steps.release-tag-name.outputs.new_release_tag }}
+          
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.PAT }}
+          tags: true
+        
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        with:
+          tag_name: ${{ steps.release-tag-name.outputs.new_release_tag }}
+          release_name: ${{ steps.release-tag-name.outputs.new_release_tag }}
