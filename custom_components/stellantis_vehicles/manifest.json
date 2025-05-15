@@ -1,9 +1,13 @@
 {
   "domain": "stellantis_vehicles",
   "name": "Stellantis Vehicles",
-  "codeowners": ["@andreadegiovine"],
+  "codeowners": [
+    "@andreadegiovine"
+  ],
   "config_flow": true,
-  "dependencies": ["webhook"],
+  "dependencies": [
+    "webhook"
+  ],
   "documentation": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues",
@@ -12,5 +16,5 @@
     "pycryptodome==3.*",
     "paho-mqtt>=1.3"
   ],
-  "version": "2025.5.1"
+  "version": "2025.5.2-beta.1"
 }
