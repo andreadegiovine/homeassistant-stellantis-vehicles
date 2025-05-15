@@ -38,7 +38,12 @@ jobs:
           
           echo "New pre-release tag: $new_pre_release_tag"
           echo "new_pre_release_tag=$new_pre_release_tag" >> $GITHUB_OUTPUT
-
+          
+      - name: Update manifest.json
+        env:
+          RELEASE_TAG: ${{ steps.pre-release-tag-name.outputs.new_pre_release_tag }}
+        run: jq --arg release_tag "$RELEASE_TAG" '.version=$release_tag' custom_components/stellantis_vehicles/manifest.json | sponge custom_components/stellantis_vehicles/manifest.json
+        
       - name: Create pre-release
         uses: actions/create-release@v1
         env:
