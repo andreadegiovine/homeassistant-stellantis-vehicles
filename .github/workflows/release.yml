@@ -21,8 +21,8 @@ jobs:
           # Fetch last tag
           last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
           
-          current_year = $(date +%Y)
-          current_month = $(date +%-m)
+          current_year=$(date +%Y)
+          current_month=$(date +%-m)
           
           if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+$ ]]; then
             echo "Current month last release tag: $last_tag"
