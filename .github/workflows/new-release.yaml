@@ -1,0 +1,95 @@
+name: New release
+
+on:
+  workflow_dispatch:
+    inputs:
+      pre_release:
+        type: boolean
+        description: Pre-release?
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all commits and tags
+
+      - name: Get tag name
+        id: tag-name
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Fetch last tag
+          last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
+          echo "Last tag: $last_tag"
+          
+          current_year=$(date +%Y)
+          current_month=$(date +%-m)
+
+          if ${{ github.event.inputs.pre_release }}; then
+          
+            echo "Pre-release flow"
+            
+            if [[ "$last_tag" =~ ^[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+$ ]]; then
+              echo "Last pre-release: $last_tag"
+              IFS='.' read -r release_major release_minor release_patch release_beta <<< "$last_tag"
+              incremented_release_beta=$((release_beta + 1))
+              new_tag_name="$release_major.$release_minor.$release_patch.$incremented_release_beta"
+            else
+              echo "First pre-release"
+              IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
+              incremented_release_patch=$((release_patch + 1))
+              new_tag_name="$release_major.$release_minor.$incremented_release_patch-beta.1"
+            fi
+          
+          else
+          
+            echo "Release flow"
+            
+            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+$ ]]; then
+              echo "Current month last release: $last_tag"
+              IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
+              release_path_number=$((release_patch + 1))
+            else
+              echo "Current month first release"
+              release_path_number=1
+            fi
+            
+            new_tag_name="$current_year.$current_month.$release_path_number"
+          
+          fi
+          
+          echo "New tag: $new_tag_name"
+          echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
+
+      - name: Update manifest.json
+        uses: jossef/action-set-json-field@v2.1
+        with:
+          file: custom_components/stellantis_vehicles/manifest.json
+          field: version
+          value: ${{ steps.tag-name.outputs.new_tag_name }}
+          
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "Update manifest.json version to ${{ steps.tag-name.outputs.new_tag_name }}"
+          git tag ${{ steps.tag-name.outputs.new_tag_name }}
+          
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.PAT }}
+          tags: true
+        
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        with:
+          tag_name: ${{ steps.tag-name.outputs.new_tag_name }}
+          release_name: ${{ steps.tag-name.outputs.new_tag_name }}
+          prerelease: ${{ github.event.inputs.pre_release }}
