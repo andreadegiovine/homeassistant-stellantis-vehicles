@@ -73,7 +73,7 @@ jobs:
           field: version
           value: ${{ steps.tag-name.outputs.new_tag_name }}
           
-      - name: Commit files
+      - name: Commit manifest.json
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -81,7 +81,7 @@ jobs:
           git commit -m "Update manifest.json version to ${{ steps.tag-name.outputs.new_tag_name }}"
           git tag ${{ steps.tag-name.outputs.new_tag_name }}
           
-      - name: Push changes
+      - name: Push manifest.json
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.PAT }}
@@ -96,8 +96,8 @@ jobs:
           release_name: ${{ steps.tag-name.outputs.new_tag_name }}
           prerelease: ${{ github.event.inputs.pre_release }}
 
-      - name: Update master with develop
-        if: ${{ github.event.inputs.pre_release == false }}
+      - name: Merge in master
+        if: ${{ ! github.event.inputs.pre_release }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
