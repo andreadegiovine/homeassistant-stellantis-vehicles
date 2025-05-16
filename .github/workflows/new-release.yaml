@@ -6,6 +6,8 @@ on:
       pre_release:
         type: boolean
         description: Pre-release?
+        required: true
+        default: true
 
 jobs:
   deploy:
@@ -93,3 +95,16 @@ jobs:
           tag_name: ${{ steps.tag-name.outputs.new_tag_name }}
           release_name: ${{ steps.tag-name.outputs.new_tag_name }}
           prerelease: ${{ github.event.inputs.pre_release }}
+
+      - name: Update master with develop
+        if: ${{ github.event.inputs.pre_release == false }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git checkout develop
+          git pull 
+          git checkout master
+          git pull
+          git merge --no-ff develop "Update master with develop"
+          git push
