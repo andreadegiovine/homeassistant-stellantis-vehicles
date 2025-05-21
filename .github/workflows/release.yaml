@@ -43,9 +43,10 @@ jobs:
           
             echo "Pre-release flow from $branch"
             
-            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+.$beta_prefix.[0-9]+$ ]]; then
+            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+-$beta_prefix.[0-9]+$ ]]; then
               echo "Current month last pre-release: $last_tag"
-              IFS='.' read -r release_major release_minor release_patch release_beta_prefix release_beta <<< "$last_tag"
+              last_tag=${last_tag//"-$beta_prefix"/}
+              IFS='.' read -r release_major release_minor release_patch release_beta <<< "$last_tag"
               new_tag_path="$release_patch"
               new_tag_beta=$((release_beta + 1))
             else
@@ -55,7 +56,7 @@ jobs:
               new_tag_beta=1
             fi
           
-            new_tag_name="$current_year.$current_month.$new_tag_path.$beta_prefix.$new_tag_beta"
+            new_tag_name="$current_year.$current_month.$new_tag_path-$beta_prefix.$new_tag_beta"
           
           else
           
@@ -63,9 +64,10 @@ jobs:
           
             echo "Release flow from $branch"
             
-            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+.$beta_prefix.[0-9]+$ ]]; then
+            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+-$beta_prefix.[0-9]+$ ]]; then
               echo "Current month last pre-release: $last_tag"
-              IFS='.' read -r release_major release_minor release_patch release_beta_prefix release_beta <<< "$last_tag"
+              last_tag=${last_tag//"-$beta_prefix"/}
+              IFS='.' read -r release_major release_minor release_patch release_beta <<< "$last_tag"
               new_tag_path="$release_patch"
             elif [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+$ ]]; then
               echo "Current month last release: $last_tag"
