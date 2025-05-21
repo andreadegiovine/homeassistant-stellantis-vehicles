@@ -90,7 +90,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if not self._commands_history:
             return False
         last_action_id = list(self._commands_history.keys())[-1]
-        return not self._commands_history[last_action_id]["updates"]
+        if not self._commands_history[last_action_id]["updates"]:
+            return False
+        last_update = reversed(self._commands_history[last_action_id]["updates"])[-1]
+        return int((get_datetime() - last_update["date"]).total_seconds() // 60) < 5
 
     async def update_command_history(self, action_id, update = None):
         if not action_id in self._commands_history:
