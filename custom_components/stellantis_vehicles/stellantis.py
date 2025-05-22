@@ -18,7 +18,7 @@ from homeassistant.components import persistent_notification
 from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
-from .otp.otp import Otp, save_otp, load_otp
+from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from .utils import get_datetime
 
 from .const import (
@@ -242,6 +242,9 @@ class StellantisOauth(StellantisBase):
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(token_request)
+        except ConfigException as e:
+            _LOGGER.error(str(e))
+            raise ConfigEntryAuthFailed(str(e))
         except Exception as e:
             _LOGGER.error(str(e))
             raise Exception(str(e))
