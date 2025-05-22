@@ -152,6 +152,9 @@ It seems that this error is due to reaching the limit of associated devices / SM
 
 **<u>This operation removes the devices connected to your vehicle, no vehicle data will be lost.</u>**
 
+### OTP error - NOK:NOK_BLOCKED
+It seems that this error is due to reaching the limit of wrong PIN used. Re-authenticate the integration.
+
 ## Translations
 <details><summary><b>Pull request</b></summary>
 
