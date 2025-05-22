@@ -37,11 +37,18 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 </details>
 
 ## OAuth2 Code
+<details><summary><b>Using browser console</b></summary>
+
 As described on config flow, please get the right code from the mobile app redirect like this example (Chrome browser):
 
 ![Oauth2](./images/oauth2-code.png)
 
+</details>
+<details><summary><b>Using python tool</b></summary>
+
 Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome Python tool to fetch oauth code without using browser console: [stellantis-oauth-helper](https://github.com/benbox69/stellantis-oauth-helper)
+
+</details>
 
 ## Screenshot
 ![Controls](./images/controls.png)
