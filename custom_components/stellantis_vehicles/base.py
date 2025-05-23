@@ -85,6 +85,18 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 history.update({update["date"].strftime("%d/%m/%y %H:%M:%S:%f")[:-4]: str(action_name) + ": " + status})
         return history
 
+    @property
+    def pending_action(self):
+        if not self._commands_history:
+            return False
+        last_action_id = list(self._commands_history.keys())[-1]
+        if not self._commands_history[last_action_id]["updates"]:
+            return False
+        action_updates = self._commands_history[last_action_id]["updates"]
+        last_update = next(reversed(action_updates))
+        _LOGGER.error(len(action_updates))
+        return len(action_updates) < 3 and int((get_datetime() - last_update["date"]).total_seconds()) < 30
+
     async def update_command_history(self, action_id, update = None):
         if not action_id in self._commands_history:
             return
@@ -539,7 +551,7 @@ class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
         engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
-        return engine_is_off and self.name not in self._coordinator._disabled_commands
+        return engine_is_off and (self.name not in self._coordinator._disabled_commands) and not self._coordinator.pending_action
 
     async def async_press(self):
         raise NotImplementedError
