@@ -21,10 +21,8 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 <details><summary><b>Using HACS</b></summary>
 
 1. Go to [HACS](https://hacs.xyz/) section;
-2. From the 3 dots menu (top right) click on **Add custom repository**;
-3. Add as **Integration** this url https://github.com/andreadegiovine/homeassistant-stellantis-vehicles;
-4. Search and install **Stellantis Vehicles** from the HACS integration list;
-5. Add this integration from the **Home Assistant** integrations.
+2. Search and install **Stellantis Vehicles** from the HACS integration list;
+3. Add this integration from the **Home Assistant** integrations.
 
 </details>
 <details><summary><b>Manually</b></summary>

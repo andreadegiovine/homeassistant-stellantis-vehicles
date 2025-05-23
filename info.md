@@ -21,10 +21,8 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 <details><summary><b>Using HACS</b></summary>
 
 1. Go to [HACS](https://hacs.xyz/) section;
-2. From the 3 dots menu (top right) click on **Add custom repository**;
-3. Add as **Integration** this url https://github.com/andreadegiovine/homeassistant-stellantis-vehicles;
-4. Search and install **Stellantis Vehicles** from the HACS integration list;
-5. Add this integration from the **Home Assistant** integrations.
+2. Search and install **Stellantis Vehicles** from the HACS integration list;
+3. Add this integration from the **Home Assistant** integrations.
 
 </details>
 <details><summary><b>Manually</b></summary>
@@ -37,50 +35,25 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 </details>
 
 ## OAuth2 Code
+<details><summary><b>Using browser console</b></summary>
+
 As described on config flow, please get the right code from the mobile app redirect like this example (Chrome browser):
 
 ![Oauth2](./images/oauth2-code.png)
 
-## Testing roadmap
-### Vehicles
-- [x] Opel Mokka-e 2022 [e-remote] (me)
-- [x] Peugeot e208 2021 [e-remote] (@bgoncal, @Ladida1)
-- [x] Vauxhall Mokka-e (@pantha007)
-- [x] Citroen C5 X 2022 (@bycippy)
-- [x] Opel Astra GSe 2023 (@xplore93)
-- [ ] Others EV vehicles
-- [ ] Others thermal vehicles
-- [ ] Multi vehicles account
-### Features
-- [x] Command: **Charge Start/Stop** (E-remote)
-- [x] Command: **Air conditioning Start/Stop** (E-remote)
-- [x] Command: **Charge Start/Stop** (Connect Plus)
-- [x] Command: **Air conditioning Start/Stop** (Connect Plus)
-- [x] Command: **Doors** (Connect Plus)
-- [x] Command: **Horn** (Connect Plus)
-- [x] Command: **Lights** (Connect Plus)
-- [ ] Sensor: **Battery capacity** accurance
-- [ ] Sensor: **Battery residual** accurance
-- [x] Sensor: **Doors** accurance
-- [x] Sensor: **Engine** accurance
-- [ ] Sensor: **Moving** accurance
+</details>
+<details><summary><b>Using python tool</b></summary>
 
-Before any issue request please enable the debug log of this integration from your configuration.yaml:
+Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome Python tool to fetch oauth code without using browser console: [stellantis-oauth-helper](https://github.com/benbox69/stellantis-oauth-helper)
 
-```yaml
-logger:
-  default: error
-  logs:
-    custom_components.stellantis_vehicles: debug
-```
-
-and paste the log data on the issue request.
+</details>
 
 ## Screenshot
 ![Controls](./images/controls.png)
 ![Sensors](./images/sensors.png)
 
-## WakeUp
+## Commands
+### WakeUp
 For some vehicles no updates are received a few minutes after the engine is turned off. Use automations like these to schedule the vehicle wake up:
 
 ```yaml
@@ -126,13 +99,13 @@ For some vehicles no updates are received a few minutes after the engine is turn
 
 **Some users report that performing too many wakeups drains the service battery, making some features unavailable (such as keyless entry).**
 
-## Air conditioning Start/Stop
+### Air conditioning Start/Stop
 As described in the Stellantis apps, the command is enabled when:
 1. the vehicle engine is off;
 2. the vehicle doors are locked;
 3. the battery level is at least 50% (20% for hybrids) or in charging.
 
-## Air conditioning Start/Stop - Charge Start/Stop - Doors
+### Air conditioning Start/Stop - Charge Start/Stop - Doors
 These commands depend on the relative binary sensor, before send the opposite command please wait until the relative sensor state change.
 
 ## ABRP - A Better Routeplanner
@@ -146,11 +119,16 @@ Get a token from [ABRP](https://abetterrouteplanner.com/):
 Use the generated token in **abrp_token sensor** and enable **abrp_sync switch** to send updates.
 
 ## Errors
+Before any issue request, please check the integration log and look for solution below.
+
 ### OTP error - NOK:MAXNBTOOLS
 It seems that this error is due to reaching the limit of associated devices / SMS received. Restore your Stellantis account and try again:
 [Follow this procedure from Peugeot community](https://peugeot.my-customerportal.com/peugeot/s/article/AP-I-have-problems-with-the-pin-safety-code-or-I-want-to-change-it-What-can-I-do?language=en_GB).
 
 **<u>This operation removes the devices connected to your vehicle, no vehicle data will be lost.</u>**
+
+### OTP error - NOK:NOK_BLOCKED
+It seems that this error is due to reaching the limit of wrong PIN used. Re-authenticate the integration.
 
 ## Translations
 <details><summary><b>Pull request</b></summary>
@@ -177,7 +155,12 @@ If the checklist is complete, the PR will be merged and will be released a BETA 
 Thanks to all users who contribute to this integration by updating translations and reporting issues.
 
 ### Special thanks:
-- [@MoellerDi](https://github.com/MoellerDi) for the great support;
+- [@MoellerDi](https://github.com/MoellerDi) for the great work and big support;
+- [@benbox69](https://github.com/benbox69) for the python oauth2 helper tool;
+
+Thanks to everyone for the issues, especially to:
+- [@chmtc94](https://github.com/chmtc94);
+- [@FrankTub](https://github.com/FrankTub);
 
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)

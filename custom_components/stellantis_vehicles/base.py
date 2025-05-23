@@ -95,7 +95,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         action_updates = self._commands_history[last_action_id]["updates"]
         last_update = next(reversed(action_updates))
         _LOGGER.error(len(action_updates))
-        return len(action_updates) < 3 and int((get_datetime() - last_update["date"]).total_seconds()) < 30
+        return len(action_updates) < 3 and int((get_datetime() - last_update["date"]).total_seconds()) < 10
 
     async def update_command_history(self, action_id, update = None):
         if not action_id in self._commands_history:
