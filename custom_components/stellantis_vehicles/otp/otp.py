@@ -1,6 +1,6 @@
 import hashlib
 import logging
-import pickle
+import dill as pickle
 from secrets import token_hex, token_bytes
 from math import ceil
 from collections import defaultdict
@@ -308,20 +308,10 @@ def save_otp(obj, filename="otp.bin"):
         pickle.dump(obj, output)
 
 
-class RenameUnpickler(pickle.Unpickler):
-    def find_class(self, module, name):
-        renamed_module = "psa_car_controller.psa." + module.lower()
-        return super().find_class(renamed_module, name)
-
-
 def load_otp(filename=CONFIG_NAME):
     try:
         with open(filename, 'rb') as input_file:
-            try:
-                return pickle.load(input_file)
-            except ModuleNotFoundError as ex:
-                logger.debug(ex, exc_info=True)
-                return RenameUnpickler(input_file).load()
+            return pickle.load(input_file)
     except FileNotFoundError:
         logger.debug("", exc_info=True)
     return None
