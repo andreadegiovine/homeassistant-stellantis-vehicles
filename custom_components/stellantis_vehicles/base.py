@@ -85,12 +85,17 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 history.update({update["date"].strftime("%d/%m/%y %H:%M:%S:%f")[:-4]: str(action_name) + ": " + status})
         return history
 
-    @property
-    def pending_action(self):
-        if not self._commands_history:
-            return False
-        last_action_id = list(self._commands_history.keys())[-1]
-        return not self._commands_history[last_action_id]["updates"]
+    # @property
+    # def pending_action(self):
+    #     if not self._commands_history:
+    #         return False
+    #     last_action_id = list(self._commands_history.keys())[-1]
+    #     if not self._commands_history[last_action_id]["updates"]:
+    #         return False
+    #     action_updates = self._commands_history[last_action_id]["updates"]
+    #     last_update = next(reversed(action_updates))
+    #     _LOGGER.error(len(action_updates))
+    #     return len(action_updates) < 3 and int((get_datetime() - last_update["date"]).total_seconds()) < 10
 
     async def update_command_history(self, action_id, update = None):
         if not action_id in self._commands_history:
@@ -104,13 +109,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def send_command(self, name, service, message):
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
+            self._commands_history.update({action_id: {"name": name, "updates": []}})
         except ConfigEntryAuthFailed as e:
             _LOGGER.error("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
-            raise
+            self._stellantis._entry.async_start_reauth(self._hass)
         except Exception as e:
             _LOGGER.error("Failed to send command %s: %s", name, str(e))
             raise
-        self._commands_history.update({action_id: {"name": name, "updates": []}})
 
     async def send_wakeup_command(self, button_name):
         await self.send_command(button_name, "/VehCharge/state", {"action": "state"})
@@ -365,7 +370,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         if value and not isinstance(value, (float, int, str, bool, list)):
             value = None
 
-        if value and updated_at:
+        if value is not None and updated_at:
             self._attr_extra_state_attributes["updated_at"] = updated_at
 
         return value
@@ -546,7 +551,9 @@ class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
         engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
-        return engine_is_off and (self.name not in self._coordinator._disabled_commands) and not self._coordinator.pending_action
+        command_is_enabled = self.name not in self._coordinator._disabled_commands
+        return engine_is_off and command_is_enabled
+        # return engine_is_off and (self.name not in self._coordinator._disabled_commands) and not self._coordinator.pending_action
 
     async def async_press(self):
         raise NotImplementedError

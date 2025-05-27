@@ -221,5 +221,15 @@
         "name": "Token ABRP"
       }
     }
+  },
+  "common": {
+    "access_token_error_title": "Access token error",
+    "access_token_error_message": "CConsulta la documentazione ufficiale nella sezione [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "otp_error_title": "Errore OTP",
+    "otp_error_message": "Consulta la documentazione ufficiale nella sezione [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "no_vehicles_found_title": "Non disponibile",
+    "no_vehicles_found_message": "Nessun veicolo connesso disponibile in questo account",
+    "command_error_title": "Comando",
+    "command_error_message": "Il comando non è stato inviato correttamente"
   }
 }
