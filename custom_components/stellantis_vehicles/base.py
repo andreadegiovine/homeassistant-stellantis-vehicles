@@ -370,7 +370,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         if value and not isinstance(value, (float, int, str, bool, list)):
             value = None
 
-        if value and updated_at:
+        if value is not None and updated_at:
             self._attr_extra_state_attributes["updated_at"] = updated_at
 
         return value
