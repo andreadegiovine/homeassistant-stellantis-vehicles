@@ -79,9 +79,6 @@
           "quick": "Rapide"
         }
       },
-      "battery_charging_time": {
-        "name": "Batterie temps de charge"
-      },
       "battery_charging_end": {
         "name": "Batterie fin de charge estimée"
       },

@@ -79,9 +79,6 @@
           "quick": "Veloce"
         }
       },
-      "battery_charging_time": {
-        "name": "Orario ricarica batteria"
-      },
       "battery_charging_end": {
         "name": "Fine ricarica batteria"
       },
@@ -219,6 +216,11 @@
     "text": {
       "abrp_token": {
         "name": "Token ABRP"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Inizio ricarica batteria"
       }
     }
   },

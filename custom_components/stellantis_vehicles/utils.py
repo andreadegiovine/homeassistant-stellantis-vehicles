@@ -6,7 +6,7 @@ from homeassistant.util import dt
 
 _LOGGER = logging.getLogger(__name__)
 
-def get_datetime(date=None):
+def get_datetime(date = None):
     if date == None:
         date = datetime.now()
     if date.tzinfo != UTC:

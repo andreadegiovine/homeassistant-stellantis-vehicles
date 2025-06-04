@@ -11,6 +11,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.components.number import NumberEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.components.text import TextEntity
+from homeassistant.components.time import TimeEntity
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
@@ -128,12 +129,16 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def send_lights_command(self, button_name):
         await self.send_command(button_name, "/Lights", {"duration": "10", "action": "activate"})
 
-    async def send_charge_command(self, button_name):
-        current_hour = self._sensors["battery_charging_time"]
+    async def send_charge_command(self, button_name, update_only_time = False):
+        current_hour = self._sensors["battery_charging_start"]
         current_status = self._sensors["battery_charging"]
         charge_type = "immediate"
+        if update_only_time:
+            charge_type = "delayed"
         if current_status == "InProgress":
             charge_type = "delayed"
+            if update_only_time:
+                charge_type = "immediate"
         await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": charge_type})
 
     def get_programs(self):
@@ -381,9 +386,9 @@ class StellantisBaseEntity(CoordinatorEntity):
         if self._key == "fuel_consumption_total":
             value = float(value)/100
 
-        if self._key in ["battery_charging_time", "battery_charging_end"]:
-            if self._key == "battery_charging_time":
-                value = date_from_pt_string(value)
+        if self._key in ["battery_charging_start", "battery_charging_end"]:
+            if self._key == "battery_charging_start":
+                value = date_from_pt_string(value).time()
             if self._key == "battery_charging_end":
                 value = timestring_to_datetime(value, True)
                 charge_limit_on = "switch_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["switch_battery_charging_limit"]
@@ -472,7 +477,7 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
         restored_data = await self.async_get_last_state()
         if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
             value = restored_data.state
-            if self._key in ["battery_charging_time", "battery_charging_end"]:
+            if self._key == "battery_charging_end":
                 value = datetime.fromisoformat(value)
             self._attr_native_value = value
             self._coordinator._sensors[self._key] = value
@@ -599,9 +604,6 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
         self._stellantis.update_stored_config(self._sensor_key, float(value))
         await self._coordinator.async_refresh()
 
-    def coordinator_update(self):
-        return True
-
 
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
     def __init__(self, coordinator, description):
@@ -628,9 +630,6 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
         self._stellantis.update_stored_config(self._sensor_key, False)
         await self._coordinator.async_refresh()
 
-    def coordinator_update(self):
-        return True
-
 
 class StellantisBaseText(StellantisRestoreEntity, TextEntity):
     def __init__(self, coordinator, description):
@@ -651,5 +650,14 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
         self._stellantis.update_stored_config(self._sensor_key, str(value))
         await self._coordinator.async_refresh()
 
-    def coordinator_update(self):
-        return True
+
+class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):
+    def __init__(self, coordinator, description):
+        super().__init__(coordinator, description)
+        self._sensor_key = f"time_{self._key}"
+        
+    @property
+    def native_value(self):
+        if self._key in self._coordinator._sensors:
+            return self._coordinator._sensors[self._key]
+        return None
