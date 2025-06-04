@@ -370,6 +370,46 @@ class StellantisBaseEntity(CoordinatorEntity):
 
         return value
 
+    def get_value(self, data_map):
+        value = self.get_value_from_map(data_map)
+        if value or (not self._key in self._coordinator._sensors):
+            self._coordinator._sensors[self._key] = value
+        
+        if value == None:
+            return None
+
+        if self._key == "fuel_consumption_total":
+            value = float(value)/100
+
+        if self._key in ["battery_charging_time", "battery_charging_end"]:
+            if self._key == "battery_charging_time":
+                value = date_from_pt_string(value)
+            if self._key == "battery_charging_end":
+                value = timestring_to_datetime(value, True)
+                charge_limit_on = "switch_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["switch_battery_charging_limit"]
+                charge_limit = None
+                if "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]:
+                    charge_limit = self._coordinator._sensors["number_battery_charging_limit"]
+                if charge_limit_on and charge_limit:
+                    current_battery = self._coordinator._sensors["battery"]
+                    now_timestamp = datetime.timestamp(get_datetime())
+                    value_timestamp = datetime.timestamp(value)
+                    diff = value_timestamp - now_timestamp
+                    limit_diff = (diff / (100 - int(float(current_battery)))) * (int(charge_limit) - int(float(current_battery)))
+                    value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
+            self._coordinator._sensors[self._key] = value
+
+        if self._key in ["battery_capacity", "battery_residual"]:
+            if int(value) < 1:
+                value = None
+            else:
+                value = (float(value) / 1000) + 10
+
+        if isinstance(value, str):
+            value = value.lower()
+
+        return value
+
     @callback
     def _handle_coordinator_update(self):
         if self._coordinator.data is False:
@@ -476,44 +516,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         return result
 
     def coordinator_update(self):
-        value = self.get_value_from_map(self._data_map)
-        if value or (not self._key in self._coordinator._sensors):
-            self._coordinator._sensors[self._key] = value
-
-        if value == None:
-            if self._attr_native_value == STATE_UNKNOWN:
-                self._attr_native_value = None
-            return
-
-        if self._key == "fuel_consumption_total":
-            value = float(value)/100
-
-        if self._key in ["battery_charging_time", "battery_charging_end"]:
-            value = timestring_to_datetime(value, self._key == "battery_charging_end")
-            if self._key == "battery_charging_end":
-                charge_limit_on = "switch_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["switch_battery_charging_limit"]
-                charge_limit = None
-                if "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]:
-                    charge_limit = self._coordinator._sensors["number_battery_charging_limit"]
-                if charge_limit_on and charge_limit:
-                    current_battery = self._coordinator._sensors["battery"]
-                    now_timestamp = datetime.timestamp(get_datetime())
-                    value_timestamp = datetime.timestamp(value)
-                    diff = value_timestamp - now_timestamp
-                    limit_diff = (diff / (100 - int(float(current_battery)))) * (int(charge_limit) - int(float(current_battery)))
-                    value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
-            self._coordinator._sensors[self._key] = value
-
-        if self._key in ["battery_capacity", "battery_residual"]:
-            if int(value) < 1:
-                value = None
-            else:
-                value = (float(value) / 1000) + 10
-
-        if isinstance(value, str):
-            value = value.lower()
-
-        self._attr_native_value = value
+        self._attr_native_value = self.get_value(self._data_map)
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
