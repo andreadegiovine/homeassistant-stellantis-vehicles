@@ -177,8 +177,8 @@
       "privacy": {
         "name": "Privacy"
       },
-      "remote_commands_connection": {
-        "name": "Remote commands connection"
+      "remote_control": {
+        "name": "Remote control"
       }
     },
     "button": {
