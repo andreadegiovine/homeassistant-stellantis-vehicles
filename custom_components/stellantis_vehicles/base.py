@@ -415,6 +415,12 @@ class StellantisBaseEntity(CoordinatorEntity):
 
         return value
 
+    @property
+    def available_command(self):
+        engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
+        command_is_enabled = self.name not in self._coordinator._disabled_commands
+        return self._stellantis._mqtt.is_connected() and engine_is_off and command_is_enabled and not self._coordinator.pending_action
+
     @callback
     def _handle_coordinator_update(self):
         if self._coordinator.data is False:
@@ -552,9 +558,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
-        engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
-        command_is_enabled = self.name not in self._coordinator._disabled_commands
-        return engine_is_off and command_is_enabled and not self._coordinator.pending_action
+        return self.available_command
 
     async def async_press(self):
         raise NotImplementedError
