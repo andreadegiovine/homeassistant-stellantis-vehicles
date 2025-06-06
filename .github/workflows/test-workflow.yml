@@ -31,6 +31,3 @@ jobs:
                 echo "- $(echo "$line" | cut -d' ' -f2-)"
             fi
         done
-
-    - name: Visualizza contenuto generato
-      run: cat release.md
