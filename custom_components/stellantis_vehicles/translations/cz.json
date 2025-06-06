@@ -158,7 +158,7 @@
       "engine": {
         "name": "Motor"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Klimatizace"
       }
     },
@@ -178,7 +178,7 @@
       "charge_start_stop": {
         "name": "Nabíjení Start/Stop"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Klimatizace Start/Stop"
       }
     },

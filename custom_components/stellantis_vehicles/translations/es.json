@@ -168,7 +168,7 @@
       "engine": {
         "name": "Motor"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Climatización"
       }
     },
@@ -188,7 +188,7 @@
       "charge_start_stop": {
         "name": "Inicio/Parada de carga"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Inicio/Parada de climatización"
       }
     },

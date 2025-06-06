@@ -168,8 +168,8 @@
       "engine": {
         "name": "Motore"
       },
-      "air_conditioning": {
-        "name": "Aria condizionata"
+      "preconditioning": {
+        "name": "Precondizionamento"
       },
       "alarm": {
         "name": "Allarme"
@@ -197,8 +197,8 @@
       "charge_start_stop": {
         "name": "Start/Stop ricarica"
       },
-      "air_conditioning": {
-        "name": "Start/Stop aria condizionata"
+      "preconditioning_start_stop": {
+        "name": "Start/Stop precondizionamento"
       }
     },
     "device_tracker": {

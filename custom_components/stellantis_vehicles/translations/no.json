@@ -106,7 +106,7 @@
       "engine": {
         "name": "Motor"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Klimaanlegg"
       }
     },
@@ -126,7 +126,7 @@
       "charge_start_stop": {
         "name": "Lading Start/Stop"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Klimaanlegg Start/Stop"
       }
     },
