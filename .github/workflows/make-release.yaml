@@ -49,6 +49,11 @@ jobs:
               IFS='.' read -r release_major release_minor release_patch release_beta <<< "$last_tag"
               new_tag_path="$release_patch"
               new_tag_beta=$((release_beta + 1))
+            elif [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+$ ]]; then
+              echo "Current month last release: $last_tag"
+              IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
+              new_tag_path=$((release_patch + 1))
+              new_tag_beta=1
             else
               echo "Current month first pre-release"
               IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"

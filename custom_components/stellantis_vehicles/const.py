@@ -261,7 +261,7 @@ BINARY_SENSORS_DEFAULT = {
         "device_class" : BinarySensorDeviceClass.POWER,
         "on_value": "StartUp"
     },
-    "air_conditioning" : {
+    "preconditioning" : {
         "icon" : "mdi:air-conditioner",
         "data_map" : ["preconditioning", "airConditioning", "status"],
         "device_class" : BinarySensorDeviceClass.POWER,

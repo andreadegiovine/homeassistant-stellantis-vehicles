@@ -168,7 +168,7 @@
       "engine": {
         "name": "Auto käynnissä"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Esi-ilmastointi"
       }
     },
@@ -188,7 +188,7 @@
       "charge_start_stop": {
         "name": "Lataus Start/Stop"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Esi-ilmastointi Start/Stop"
       }
     },

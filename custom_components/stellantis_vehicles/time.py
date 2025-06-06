@@ -37,14 +37,11 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
         super().__init__(coordinator, description)
         self._data_map = ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"]
 
-    # @property
-    # def available(self):
-    #     return True
-    #     return super().available and "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]
+    @property
+    def available(self):
+        return self.available_command
 
     async def async_set_value(self, value):
-        _LOGGER.error(value)
-        _LOGGER.error(self.name)
         self._attr_native_value = value
         self._coordinator._sensors[self._key] = value
         await self._coordinator.send_charge_command(self.name, True)

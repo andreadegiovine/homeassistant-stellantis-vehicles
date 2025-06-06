@@ -168,8 +168,8 @@
       "engine": {
         "name": "Engine"
       },
-      "air_conditioning": {
-        "name": "Air conditioning"
+      "preconditioning": {
+        "name": "Preconditioning"
       },
       "alarm": {
         "name": "Alarm"
@@ -177,8 +177,8 @@
       "privacy": {
         "name": "Privacy"
       },
-      "remote_commands_connection": {
-        "name": "Remote commands connection"
+      "remote_control": {
+        "name": "Remote control"
       }
     },
     "button": {
@@ -197,8 +197,8 @@
       "charge_start_stop": {
         "name": "Charge Start/Stop"
       },
-      "air_conditioning": {
-        "name": "Air conditioning Start/Stop"
+      "preconditioning_start_stop": {
+        "name": "Preconditioning Start/Stop"
       }
     },
     "device_tracker": {

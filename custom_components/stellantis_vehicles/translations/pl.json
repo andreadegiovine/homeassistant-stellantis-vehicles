@@ -153,7 +153,7 @@
       "engine": {
         "name": "Silnik"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Klimatyzacja"
       }
     },
@@ -173,7 +173,7 @@
       "charge_start_stop": {
         "name": "Ładowanie Włącz/Wyłącz"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Klimatyzacja Włącz/Wyłącz"
       }
     },

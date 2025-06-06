@@ -34,17 +34,17 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                     entities.extend([StellantisBaseBinarySensor(coordinator, description, default_value.get("data_map", None), default_value.get("on_value", None))])
 
         description = BinarySensorEntityDescription(
-            name = "remote_commands_connection",
-            key = "remote_commands_connection",
-            translation_key = "remote_commands_connection",
+            name = "remote_control",
+            key = "remote_control",
+            translation_key = "remote_control",
             icon = "mdi:broadcast",
             device_class = BinarySensorDeviceClass.CONNECTIVITY
         )
-        entities.extend([StellantisRemoteCommandsConnectionBinarySensor(coordinator, description)])
+        entities.extend([StellantisRemoteControlBinarySensor(coordinator, description)])
 
     async_add_entities(entities)
 
 
-class StellantisRemoteCommandsConnectionBinarySensor(StellantisBaseEntity, BinarySensorEntity):
+class StellantisRemoteControlBinarySensor(StellantisBaseEntity, BinarySensorEntity):
     def coordinator_update(self):
         self._attr_is_on = self._stellantis._mqtt.is_connected()
