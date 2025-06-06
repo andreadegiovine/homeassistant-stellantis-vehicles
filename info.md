@@ -8,8 +8,6 @@ Currently only PSA vehicles are compatibile (Peugeot, Citroen, DS, Opel and Vaux
 
 Currently Stellantis not provide B2C api credentials, this integration use the mobile apps api credentials and login flow.
 
-**Inspired by https://github.com/flobz/psa_car_controller (OTP step its a fork).**
-
 ## Features
 - Get vehicles status;
 - Send remote command;
@@ -142,6 +140,8 @@ Copy the content of file `custom_components/stellantis_vehicles/translations/en.
 
 ## Contributors
 Start from the "**develop**" branch and submit PRs in that branch.
+
+Commit messages are included as release notes, please keep them short and understandable.
 
 Before each PR please test:
 - New installation;

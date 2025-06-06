@@ -56,9 +56,6 @@
           "quick": "Hurtig"
         }
       },
-      "battery_charging_time": {
-        "name": "Batteri ladetid"
-      },
       "battery_charging_end": {
         "name": "Batterilading ferdig"
       },

@@ -87,7 +87,8 @@ PLATFORMS = [
     "button",
     "number",
     "text",
-    "switch"
+    "switch",
+    "time"
 ]
 
 UPDATE_INTERVAL = 60 # seconds
@@ -153,13 +154,6 @@ SENSORS_DEFAULT = {
     "battery_charging_type" : {
         "icon" : "mdi:lightning-bolt",
         "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"],
-        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
-    },
-    "battery_charging_time" : {
-        "icon" : "mdi:battery-clock",
-        "device_class" : SensorDeviceClass.TIMESTAMP,
-        "data_map" : ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"],
-        "available" : [{"battery_plugged": True}, {"battery_charging": ["Stopped", "Finished", "Failure"]}],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
      "battery_charging_end" : {
@@ -272,5 +266,17 @@ BINARY_SENSORS_DEFAULT = {
         "data_map" : ["preconditioning", "airConditioning", "status"],
         "device_class" : BinarySensorDeviceClass.POWER,
         "on_value": "Enabled"
+    },
+    "alarm" : {
+        "icon" : "mdi:alarm-light",
+        "data_map" : ["alarm", "status", "activation"],
+        "device_class" : BinarySensorDeviceClass.RUNNING,
+        "on_value": "Active"
+    },
+    "privacy" : {
+        "icon" : "mdi:alarm-light",
+        "data_map" : ["privacy", "state"],
+        "device_class" : BinarySensorDeviceClass.LOCK,
+        "on_value": "None"
     }
 }

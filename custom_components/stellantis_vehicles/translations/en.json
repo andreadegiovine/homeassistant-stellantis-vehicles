@@ -79,9 +79,6 @@
           "quick": "Fast"
         }
       },
-      "battery_charging_time": {
-        "name": "Battery charging time"
-      },
       "battery_charging_end": {
         "name": "Battery charging end"
       },
@@ -173,6 +170,15 @@
       },
       "air_conditioning": {
         "name": "Air conditioning"
+      },
+      "alarm": {
+        "name": "Alarm"
+      },
+      "privacy": {
+        "name": "Privacy"
+      },
+      "remote_commands_connection": {
+        "name": "Remote commands connection"
       }
     },
     "button": {
@@ -219,6 +225,11 @@
     "text": {
       "abrp_token": {
         "name": "ABRP token"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Battery charging start"
       }
     }
   },

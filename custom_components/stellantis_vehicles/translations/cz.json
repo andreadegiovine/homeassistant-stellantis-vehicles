@@ -70,9 +70,6 @@
           "quick": "Rychlé"
         }
       },
-      "battery_charging_time": {
-        "name": "Doba nabíjení baterie"
-      },
       "battery_charging_end": {
         "name": "Konec nabíjení baterie"
       },

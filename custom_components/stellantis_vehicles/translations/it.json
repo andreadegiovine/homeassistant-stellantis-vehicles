@@ -79,9 +79,6 @@
           "quick": "Veloce"
         }
       },
-      "battery_charging_time": {
-        "name": "Orario ricarica batteria"
-      },
       "battery_charging_end": {
         "name": "Fine ricarica batteria"
       },
@@ -173,6 +170,15 @@
       },
       "air_conditioning": {
         "name": "Aria condizionata"
+      },
+      "alarm": {
+        "name": "Allarme"
+      },
+      "privacy": {
+        "name": "Privacy"
+      },
+      "remote_commands_connection": {
+        "name": "Connessione comandi remoti"
       }
     },
     "button": {
@@ -219,6 +225,11 @@
     "text": {
       "abrp_token": {
         "name": "Token ABRP"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Inizio ricarica batteria"
       }
     }
   },

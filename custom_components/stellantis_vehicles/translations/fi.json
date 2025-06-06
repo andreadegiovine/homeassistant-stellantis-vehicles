@@ -79,9 +79,6 @@
           "quick": "Pika"
         }
       },
-      "battery_charging_time": {
-        "name": "Latausaika"
-      },
       "battery_charging_end": {
         "name": "Lataus päättyy"
       },

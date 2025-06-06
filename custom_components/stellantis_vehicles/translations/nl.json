@@ -79,9 +79,6 @@
           "quick": "Snel"
         }
       },
-      "battery_charging_time": {
-        "name": "Battery laadtijd"
-      },
       "battery_charging_end": {
         "name": "Battery verwachte eindtijd"
       },

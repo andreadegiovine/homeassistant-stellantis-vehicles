@@ -52,7 +52,7 @@ jobs:
             else
               echo "Current month first pre-release"
               IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
-              new_tag_path=$((release_patch + 1))
+              new_tag_path=1
               new_tag_beta=1
             fi
           
@@ -109,6 +109,29 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tags: true
 
+      - name: Get release notes
+        id: release-notes
+        run: |
+          notes=$(
+            git log --no-merges --pretty=format:"%H %s [%an]" origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} | \
+            grep -v "^.* Revert \"" | \
+            grep -v "^.* Update manifest.json version to" | \
+            grep -v '\.yaml' | \
+            grep -v '\.json' | \
+            grep -v '\.md' | \
+            while read -r line; do
+              hash=$(echo "$line" | cut -d' ' -f1)
+              msg=$(git log -1 --pretty=%s "$hash")
+              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
+                echo "- $(echo "$line" | cut -d' ' -f2-)"
+              fi
+            done
+          )
+          
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$notes" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Merge in master
         if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
         uses: devmasx/merge-branch@v1.4.0
@@ -127,4 +150,5 @@ jobs:
           tag_name: ${{ steps.tag-name.outputs.new_tag_name }}
           target_commitish: ${{ steps.tag-name.outputs.new_tag_branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          generate_release_notes: true
+          generate_release_notes: false
+          body: ${{ steps.release-notes.outputs.notes }}
