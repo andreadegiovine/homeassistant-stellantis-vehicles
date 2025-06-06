@@ -170,6 +170,15 @@
       },
       "air_conditioning": {
         "name": "Aria condizionata"
+      },
+      "alarm": {
+        "name": "Allarme"
+      },
+      "privacy": {
+        "name": "Privacy"
+      },
+      "remote_commands_connection": {
+        "name": "Connessione comandi remoti"
       }
     },
     "button": {

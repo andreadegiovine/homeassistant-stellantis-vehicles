@@ -1,7 +1,7 @@
 import logging
 
-from homeassistant.components.binary_sensor import BinarySensorEntityDescription
-from .base import StellantisBaseBinarySensor
+from homeassistant.components.binary_sensor import ( BinarySensorEntity, BinarySensorEntityDescription, BinarySensorDeviceClass )
+from .base import ( StellantisBaseBinarySensor, StellantisBaseEntity )
 
 from .const import (
     DOMAIN,
@@ -33,4 +33,18 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                     )
                     entities.extend([StellantisBaseBinarySensor(coordinator, description, default_value.get("data_map", None), default_value.get("on_value", None))])
 
+        description = BinarySensorEntityDescription(
+            name = "remote_commands_connection",
+            key = "remote_commands_connection",
+            translation_key = "remote_commands_connection",
+            icon = "mdi:broadcast",
+            device_class = BinarySensorDeviceClass.CONNECTIVITY
+        )
+        entities.extend([StellantisRemoteCommandsConnectionBinarySensor(coordinator, description)])
+
     async_add_entities(entities)
+
+
+class StellantisRemoteCommandsConnectionBinarySensor(StellantisBaseEntity, BinarySensorEntity):
+    def coordinator_update(self):
+        self._attr_is_on = self._stellantis._mqtt.is_connected()

@@ -266,5 +266,17 @@ BINARY_SENSORS_DEFAULT = {
         "data_map" : ["preconditioning", "airConditioning", "status"],
         "device_class" : BinarySensorDeviceClass.POWER,
         "on_value": "Enabled"
+    },
+    "alarm" : {
+        "icon" : "mdi:alarm-light",
+        "data_map" : ["alarm", "status", "activation"],
+        "device_class" : BinarySensorDeviceClass.RUNNING,
+        "on_value": "Active"
+    },
+    "privacy" : {
+        "icon" : "mdi:alarm-light",
+        "data_map" : ["privacy", "state"],
+        "device_class" : BinarySensorDeviceClass.LOCK,
+        "on_value": "None"
     }
 }
