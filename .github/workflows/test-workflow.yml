@@ -21,7 +21,7 @@ jobs:
         # Ottieni hash e messaggio dei commit tra i due branch
         git log --no-merges --pretty=format:"%H %s (%an)" 2025.5.3..2025.5.4 | \
         # Escludi i revert
-        grep -v "^.* Revert \"" | grep -v "^.* Update manifest.json version to" | grep -v '*.yaml*' | grep -v '*.json*' | grep -v '*.md*' | \
+        grep -v "^.* Revert \"" | grep -v "^.* Update manifest.json version to" | grep -v '\.yaml' | grep -v '\.json' | grep -v '\.md' | \
         # Estrai gli hash dei commit revertati (li salviamo in una lista da escludere)
         while read -r line; do
             hash=$(echo "$line" | cut -d' ' -f1)
