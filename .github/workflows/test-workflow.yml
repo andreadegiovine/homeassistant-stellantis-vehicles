@@ -1,0 +1,32 @@
+name: test-workflow.yml
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # serve per accedere a tutti i commit
+
+    - name: Generate release notes
+      id: generate_notes
+      run: |
+        echo "## ✍️ Commits diretti su develop (escludendo merge PR)" >> release.md
+        git log 2025.5.3..2025.5.4 --pretty=format:"- %s (%an)" --no-merges >> release.md
+
+        echo -e "\n## 🔀 Pull Request mergeate" >> release.md
+        git log 2025.5.3..2025.5.4 --merges --pretty=format:"%s" | \
+        grep -oE "#[0-9]+" | tr -d '#' | while read pr; do
+          title=$(gh pr view $pr --json title --jq .title || echo "PR #$pr")
+          echo "- $title (PR #$pr)" >> release.md
+        done
+
+    - name: Visualizza contenuto generato
+      run: cat release.md
