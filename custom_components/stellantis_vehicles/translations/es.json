@@ -170,6 +170,15 @@
       },
       "preconditioning": {
         "name": "Climatización"
+      },
+      "alarm": {
+        "name": "Alarma"
+      },
+      "privacy": {
+        "name": "Privacidad"
+      },
+      "remote_control": {
+        "name": "Control remoto"
       }
     },
     "button": {
@@ -216,6 +225,11 @@
     "text": {
       "abrp_token": {
         "name": "Token ABRP"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Inicio de carga de la batería"
       }
     }
   },
