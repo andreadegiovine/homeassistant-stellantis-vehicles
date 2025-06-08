@@ -43,7 +43,7 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
 
     async def async_set_value(self, value):
         self._attr_native_value = value
-        self._coordinator._sensors[self._key] = value
+        self._coordinator._sensors[self._sensor_key] = value
         await self._coordinator.send_charge_command(self.name, True)
         await self._coordinator.async_refresh()
 
