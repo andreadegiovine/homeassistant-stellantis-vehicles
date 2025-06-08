@@ -1,0 +1,159 @@
+name: Create new release
+
+on:
+  workflow_dispatch:
+    inputs:
+      pre_release:
+        type: boolean
+        description: Pre-release?
+        required: true
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all commits and tags
+
+      - name: Get tag name
+        id: tag-name
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Fetch last tag
+          last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
+          echo "Last tag: $last_tag"
+          
+          current_year=$(date +%Y)
+          current_month=$(date +%-m)
+          
+          branch_develop="develop"
+          branch_master="master"
+          beta_prefix="beta"
+
+          if ${{ github.event.inputs.pre_release }}; then
+          
+            branch="$branch_develop"
+          
+            echo "Pre-release flow from $branch"
+            
+            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+-$beta_prefix.[0-9]+$ ]]; then
+              echo "Current month last pre-release: $last_tag"
+              last_tag=${last_tag//"-$beta_prefix"/}
+              IFS='.' read -r release_major release_minor release_patch release_beta <<< "$last_tag"
+              new_tag_path="$release_patch"
+              new_tag_beta=$((release_beta + 1))
+            elif [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+$ ]]; then
+              echo "Current month last release: $last_tag"
+              IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
+              new_tag_path=$((release_patch + 1))
+              new_tag_beta=1
+            else
+              echo "Current month first pre-release"
+              IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
+              new_tag_path=1
+              new_tag_beta=1
+            fi
+          
+            new_tag_name="$current_year.$current_month.$new_tag_path-$beta_prefix.$new_tag_beta"
+          
+          else
+          
+            branch="$branch_master"
+          
+            echo "Release flow from $branch"
+            
+            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+-$beta_prefix.[0-9]+$ ]]; then
+              echo "Current month last pre-release: $last_tag"
+              last_tag=${last_tag//"-$beta_prefix"/}
+              IFS='.' read -r release_major release_minor release_patch release_beta <<< "$last_tag"
+              new_tag_path="$release_patch"
+            elif [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+$ ]]; then
+              echo "Current month last release: $last_tag"
+              IFS='.' read -r release_major release_minor release_patch <<< "$last_tag"
+              new_tag_path=$((release_patch + 1))
+            else
+              echo "Current month first release"
+              new_tag_path=1
+            fi
+            
+            new_tag_name="$current_year.$current_month.$new_tag_path"
+          
+          fi
+          
+          echo "New tag: $new_tag_name"
+          echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
+          echo "new_tag_branch=$branch" >> $GITHUB_OUTPUT
+          echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
+          echo "branch_develop=$branch_develop" >> $GITHUB_OUTPUT
+
+      - name: Update manifest.json
+        uses: jossef/action-set-json-field@v2.1
+        with:
+          file: custom_components/stellantis_vehicles/manifest.json
+          field: version
+          value: ${{ steps.tag-name.outputs.new_tag_name }}
+
+      - name: Commit manifest.json
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "Update manifest.json version to ${{ steps.tag-name.outputs.new_tag_name }}"
+          git tag ${{ steps.tag-name.outputs.new_tag_name }}
+
+      - name: Push manifest.json
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tags: true
+
+      - name: Get release notes
+        id: release-notes
+        run: |
+          notes=$(
+            git log --no-merges --pretty=format:"%H %s [%an]" origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} | \
+            grep -v "^.* Revert \"" | \
+            grep -v "^.* Update manifest.json version to" | \
+            grep -v '\.yaml' | \
+            grep -v '\.json' | \
+            grep -v '\.md' | \
+            while read -r line; do
+              hash=$(echo "$line" | cut -d' ' -f1)
+              msg=$(git log -1 --pretty=%s "$hash")
+              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
+                echo "- $(echo "$line" | cut -d' ' -f2-)"
+              fi
+            done
+          )
+          
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$notes" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Merge in master
+        if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
+        uses: devmasx/merge-branch@v1.4.0
+        with:
+          type: now
+          label_name: ${{ steps.tag-name.outputs.new_tag_name }}
+          from_branch: ${{ steps.tag-name.outputs.branch_develop }}
+          target_branch: ${{ steps.tag-name.outputs.branch_master }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ github.event.inputs.pre_release }}
+          name: ${{ steps.tag-name.outputs.new_tag_name }}
+          tag_name: ${{ steps.tag-name.outputs.new_tag_name }}
+          target_commitish: ${{ steps.tag-name.outputs.new_tag_branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: false
+          body: ${{ steps.release-notes.outputs.notes }}

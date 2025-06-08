@@ -11,12 +11,13 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.components.number import NumberEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.components.text import TextEntity
+from homeassistant.components.time import TimeEntity
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
-from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime )
+from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime, time_from_string )
 
 from .const import (
     DOMAIN,
@@ -104,13 +105,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def send_command(self, name, service, message):
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
+            self._commands_history.update({action_id: {"name": name, "updates": []}})
         except ConfigEntryAuthFailed as e:
             _LOGGER.error("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
-            raise
+            self._stellantis._entry.async_start_reauth(self._hass)
         except Exception as e:
             _LOGGER.error("Failed to send command %s: %s", name, str(e))
             raise
-        self._commands_history.update({action_id: {"name": name, "updates": []}})
 
     async def send_wakeup_command(self, button_name):
         await self.send_command(button_name, "/VehCharge/state", {"action": "state"})
@@ -128,12 +129,16 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def send_lights_command(self, button_name):
         await self.send_command(button_name, "/Lights", {"duration": "10", "action": "activate"})
 
-    async def send_charge_command(self, button_name):
-        current_hour = self._sensors["battery_charging_time"]
+    async def send_charge_command(self, button_name, update_only_time = False):
+        current_hour = self._sensors["time_battery_charging_start"]
         current_status = self._sensors["battery_charging"]
         charge_type = "immediate"
+        if update_only_time:
+            charge_type = "delayed"
         if current_status == "InProgress":
             charge_type = "delayed"
+            if update_only_time:
+                charge_type = "immediate"
         await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": charge_type})
 
     def get_programs(self):
@@ -365,10 +370,61 @@ class StellantisBaseEntity(CoordinatorEntity):
         if value and not isinstance(value, (float, int, str, bool, list)):
             value = None
 
-        if value and updated_at:
+        if value is not None and updated_at:
             self._attr_extra_state_attributes["updated_at"] = updated_at
 
         return value
+
+    def get_value(self, data_map):
+        key = self._key
+        if hasattr(self, '_sensor_key'):
+            key = self._sensor_key
+
+        value = self.get_value_from_map(data_map)
+        if value or (not key in self._coordinator._sensors):
+            self._coordinator._sensors[key] = value
+        
+        if value == None:
+            return None
+
+        if key == "fuel_consumption_total":
+            value = float(value)/100
+
+        if key in ["time_battery_charging_start", "battery_charging_end"]:
+            if key == "time_battery_charging_start":
+                value = date_from_pt_string(value).time()
+            if key == "battery_charging_end":
+                value = timestring_to_datetime(value, True)
+                charge_limit_on = "switch_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["switch_battery_charging_limit"]
+                charge_limit = None
+                if "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]:
+                    charge_limit = self._coordinator._sensors["number_battery_charging_limit"]
+                if charge_limit_on and charge_limit:
+                    current_battery = self._coordinator._sensors["battery"]
+                    now_timestamp = datetime.timestamp(get_datetime())
+                    value_timestamp = datetime.timestamp(value)
+                    diff = value_timestamp - now_timestamp
+                    limit_diff = (diff / (100 - int(float(current_battery)))) * (int(charge_limit) - int(float(current_battery)))
+                    value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
+            self._coordinator._sensors[key] = value
+
+        if key in ["battery_capacity", "battery_residual"]:
+            if int(value) < 1:
+                value = None
+            else:
+                value = (float(value) / 1000) + 10
+
+        if isinstance(value, str):
+            value = value.lower()
+
+        return value
+
+    @property
+    def available_command(self):
+        mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
+        engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
+        command_is_enabled = self.name not in self._coordinator._disabled_commands
+        return mqtt_is_connected and engine_is_off and command_is_enabled and not self._coordinator.pending_action
 
     @callback
     def _handle_coordinator_update(self):
@@ -432,7 +488,7 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
         restored_data = await self.async_get_last_state()
         if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
             value = restored_data.state
-            if self._key in ["battery_charging_time", "battery_charging_end"]:
+            if self._key == "battery_charging_end":
                 value = datetime.fromisoformat(value)
             self._attr_native_value = value
             self._coordinator._sensors[self._key] = value
@@ -455,7 +511,6 @@ class StellantisBaseSensor(StellantisRestoreSensor):
             if self._key == "battery_soh":
                 self._data_map[6] = "capacity"
 
-
         self._available = available
 
     @property
@@ -477,44 +532,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         return result
 
     def coordinator_update(self):
-        value = self.get_value_from_map(self._data_map)
-        if value or (not self._key in self._coordinator._sensors):
-            self._coordinator._sensors[self._key] = value
-
-        if value == None:
-            if self._attr_native_value == STATE_UNKNOWN:
-                self._attr_native_value = None
-            return
-
-        if self._key == "fuel_consumption_total":
-            value = float(value)/100
-
-        if self._key in ["battery_charging_time", "battery_charging_end"]:
-            value = timestring_to_datetime(value, self._key == "battery_charging_end")
-            if self._key == "battery_charging_end":
-                charge_limit_on = "switch_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["switch_battery_charging_limit"]
-                charge_limit = None
-                if "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]:
-                    charge_limit = self._coordinator._sensors["number_battery_charging_limit"]
-                if charge_limit_on and charge_limit:
-                    current_battery = self._coordinator._sensors["battery"]
-                    now_timestamp = datetime.timestamp(get_datetime())
-                    value_timestamp = datetime.timestamp(value)
-                    diff = value_timestamp - now_timestamp
-                    limit_diff = (diff / (100 - int(float(current_battery)))) * (int(charge_limit) - int(float(current_battery)))
-                    value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
-            self._coordinator._sensors[self._key] = value
-
-        if self._key in ["battery_capacity", "battery_residual"]:
-            if int(value) < 1:
-                value = None
-            else:
-                value = (float(value) / 1000) + 10
-
-        if isinstance(value, str):
-            value = value.lower()
-
-        self._attr_native_value = value
+        self._attr_native_value = self.get_value(self._data_map)
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
@@ -545,8 +563,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
-        engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
-        return engine_is_off and (self.name not in self._coordinator._disabled_commands) and not self._coordinator.pending_action
+        return self.available_command
 
     async def async_press(self):
         raise NotImplementedError
@@ -567,6 +584,8 @@ class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
                 value = False
             elif self._sensor_key.startswith("number_"):
                 value = float(value)
+            elif self._sensor_key.startswith("time_"):
+                value = time_from_string(value)
             self._coordinator._sensors[self._sensor_key] = value
         self.coordinator_update()
 
@@ -596,9 +615,6 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
         self._stellantis.update_stored_config(self._sensor_key, float(value))
         await self._coordinator.async_refresh()
 
-    def coordinator_update(self):
-        return True
-
 
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
     def __init__(self, coordinator, description):
@@ -625,9 +641,6 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
         self._stellantis.update_stored_config(self._sensor_key, False)
         await self._coordinator.async_refresh()
 
-    def coordinator_update(self):
-        return True
-
 
 class StellantisBaseText(StellantisRestoreEntity, TextEntity):
     def __init__(self, coordinator, description):
@@ -648,5 +661,14 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
         self._stellantis.update_stored_config(self._sensor_key, str(value))
         await self._coordinator.async_refresh()
 
-    def coordinator_update(self):
-        return True
+
+class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):
+    def __init__(self, coordinator, description):
+        super().__init__(coordinator, description)
+        self._sensor_key = f"time_{self._key}"
+        
+    @property
+    def native_value(self):
+        if self._sensor_key in self._coordinator._sensors:
+            return self._coordinator._sensors[self._sensor_key]
+        return None

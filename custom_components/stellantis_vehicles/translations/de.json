@@ -79,9 +79,6 @@
           "quick": "Schnell"
         }
       },
-      "battery_charging_time": {
-        "name": "Batterie Ladezeit"
-      },
       "battery_charging_end": {
         "name": "Batterie Ladezeit-Ende"
       },
@@ -171,7 +168,7 @@
       "engine": {
         "name": "Motor"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Vorklimatisierung"
       }
     },
@@ -191,7 +188,7 @@
       "charge_start_stop": {
         "name": "Ladung Starten/Stoppen"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Vorklimatisierung Starten/Stoppen"
       }
     },
@@ -221,5 +218,8 @@
         "name": "ABRP Token"
       }
     }
+  },
+  "common": {
+    "no_vehicles_found_message": "Für dieses Konto wurden keine Fahrzeuge gefunden"
   }
 }

@@ -79,9 +79,6 @@
           "quick": "Snabb"
         }
       },
-      "battery_charging_time": {
-        "name": "Batteri laddningstid"
-      },
       "battery_charging_end": {
         "name": "Batteriladdning klar"
       },
@@ -171,7 +168,7 @@
       "engine": {
         "name": "Motor"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Klimatanläggning"
       }
     },
@@ -191,7 +188,7 @@
       "charge_start_stop": {
         "name": "Ladda Start/Stop"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Klimatanläggning Start/Stop"
       }
     },

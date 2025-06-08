@@ -79,9 +79,6 @@
           "quick": "Snel"
         }
       },
-      "battery_charging_time": {
-        "name": "Battery laadtijd"
-      },
       "battery_charging_end": {
         "name": "Battery verwachte eindtijd"
       },
@@ -171,7 +168,7 @@
       "engine": {
         "name": "Motor"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Air conditioning"
       }
     },
@@ -191,7 +188,7 @@
       "charge_start_stop": {
         "name": "Laden Starten/Stoppen"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Air conditioning Starten/Stoppen"
       }
     },
@@ -221,5 +218,15 @@
         "name": "ABRP token"
       }
     }
+  },
+  "common": {
+    "access_token_error_title": "Access token error",
+    "access_token_error_message": "Voor meer achtergrond, zie de officiele documentatie in de [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) sectie",
+    "otp_error_title": "OTP error",
+    "otp_error_message": "Voor meer achtergrond, zie de officiele documentatie in de [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) sectie",
+    "no_vehicles_found_title": "Niet beschikbaar",
+    "no_vehicles_found_message": "Geen gekoppelde voertuigen beschikbaar op dit account",
+    "command_error_title": "Commando",
+    "command_error_message": "Het commando is niet succesvol uitgevoerd"
   }
 }

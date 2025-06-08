@@ -79,9 +79,6 @@
           "quick": "Rapide"
         }
       },
-      "battery_charging_time": {
-        "name": "Batterie temps de charge"
-      },
       "battery_charging_end": {
         "name": "Batterie fin de charge estimée"
       },
@@ -171,7 +168,7 @@
       "engine": {
         "name": "Moteur"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Air conditionné"
       }
     },
@@ -191,7 +188,7 @@
       "charge_start_stop": {
         "name": "Charger Marche/Arrêt"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Air conditionné Marche/Arrêt"
       }
     },

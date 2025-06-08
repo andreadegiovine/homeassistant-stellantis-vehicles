@@ -24,9 +24,6 @@
       "service_battery_voltage": {
         "name": "Akumulator 12V"
       },
-      "remote_signal_quality": {
-        "name": "Siła sygnału"
-      },
       "type": {
         "name": "Typ",
         "state": {
@@ -156,7 +153,7 @@
       "engine": {
         "name": "Silnik"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Klimatyzacja"
       }
     },
@@ -176,7 +173,7 @@
       "charge_start_stop": {
         "name": "Ładowanie Włącz/Wyłącz"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Klimatyzacja Włącz/Wyłącz"
       }
     },

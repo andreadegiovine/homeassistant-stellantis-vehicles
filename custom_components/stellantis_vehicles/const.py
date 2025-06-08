@@ -11,7 +11,9 @@ with open(os.path.dirname(os.path.abspath(__file__)) + "/configs.json", "r") as 
     MOBILE_APPS = json.load(f)
 
 MQTT_REFRESH_TOKEN_TTL = (60*24*3) # 3 days
-OTP_FILE_NAME = ".storage/" + DOMAIN + "_otp.pickle"
+OTP_FILENAME = "{#customer_id#}_otp.pickle"
+
+IMAGE_PATH = "stellantis-vehicles"
 
 OAUTH_BASE_URL = "{#oauth_url#}/am/oauth2"
 OAUTH_AUTHORIZE_URL = OAUTH_BASE_URL + "/authorize"
@@ -85,7 +87,8 @@ PLATFORMS = [
     "button",
     "number",
     "text",
-    "switch"
+    "switch",
+    "time"
 ]
 
 UPDATE_INTERVAL = 60 # seconds
@@ -151,13 +154,6 @@ SENSORS_DEFAULT = {
     "battery_charging_type" : {
         "icon" : "mdi:lightning-bolt",
         "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"],
-        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
-    },
-    "battery_charging_time" : {
-        "icon" : "mdi:battery-clock",
-        "device_class" : SensorDeviceClass.TIMESTAMP,
-        "data_map" : ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"],
-        "available" : [{"battery_plugged": True}, {"battery_charging": ["Stopped", "Finished", "Failure"]}],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
      "battery_charging_end" : {
@@ -265,10 +261,22 @@ BINARY_SENSORS_DEFAULT = {
         "device_class" : BinarySensorDeviceClass.POWER,
         "on_value": "StartUp"
     },
-    "air_conditioning" : {
+    "preconditioning" : {
         "icon" : "mdi:air-conditioner",
         "data_map" : ["preconditioning", "airConditioning", "status"],
         "device_class" : BinarySensorDeviceClass.POWER,
         "on_value": "Enabled"
+    },
+    "alarm" : {
+        "icon" : "mdi:alarm-light",
+        "data_map" : ["alarm", "status", "activation"],
+        "device_class" : BinarySensorDeviceClass.RUNNING,
+        "on_value": "Active"
+    },
+    "privacy" : {
+        "icon" : "mdi:alarm-light",
+        "data_map" : ["privacy", "state"],
+        "device_class" : BinarySensorDeviceClass.LOCK,
+        "on_value": "None"
     }
 }

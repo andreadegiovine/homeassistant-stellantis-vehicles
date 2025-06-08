@@ -56,9 +56,6 @@
           "quick": "Hurtig"
         }
       },
-      "battery_charging_time": {
-        "name": "Batteri ladetid"
-      },
       "battery_charging_end": {
         "name": "Batterilading ferdig"
       },
@@ -109,7 +106,7 @@
       "engine": {
         "name": "Motor"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Klimaanlegg"
       }
     },
@@ -129,7 +126,7 @@
       "charge_start_stop": {
         "name": "Lading Start/Stop"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Klimaanlegg Start/Stop"
       }
     },

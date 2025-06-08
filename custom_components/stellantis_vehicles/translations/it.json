@@ -79,9 +79,6 @@
           "quick": "Veloce"
         }
       },
-      "battery_charging_time": {
-        "name": "Orario ricarica batteria"
-      },
       "battery_charging_end": {
         "name": "Fine ricarica batteria"
       },
@@ -171,8 +168,17 @@
       "engine": {
         "name": "Motore"
       },
-      "air_conditioning": {
-        "name": "Aria condizionata"
+      "preconditioning": {
+        "name": "Precondizionamento"
+      },
+      "alarm": {
+        "name": "Allarme"
+      },
+      "privacy": {
+        "name": "Privacy"
+      },
+      "remote_control": {
+        "name": "Controllo remoto"
       }
     },
     "button": {
@@ -191,8 +197,8 @@
       "charge_start_stop": {
         "name": "Start/Stop ricarica"
       },
-      "air_conditioning": {
-        "name": "Start/Stop aria condizionata"
+      "preconditioning_start_stop": {
+        "name": "Start/Stop precondizionamento"
       }
     },
     "device_tracker": {
@@ -220,6 +226,21 @@
       "abrp_token": {
         "name": "Token ABRP"
       }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Inizio ricarica batteria"
+      }
     }
+  },
+  "common": {
+    "access_token_error_title": "Access token error",
+    "access_token_error_message": "CConsulta la documentazione ufficiale nella sezione [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "otp_error_title": "Errore OTP",
+    "otp_error_message": "Consulta la documentazione ufficiale nella sezione [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "no_vehicles_found_title": "Non disponibile",
+    "no_vehicles_found_message": "Nessun veicolo connesso disponibile in questo account",
+    "command_error_title": "Comando",
+    "command_error_message": "Il comando non è stato inviato correttamente"
   }
 }

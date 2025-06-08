@@ -79,9 +79,6 @@
           "quick": "Pika"
         }
       },
-      "battery_charging_time": {
-        "name": "Latausaika"
-      },
       "battery_charging_end": {
         "name": "Lataus päättyy"
       },
@@ -171,8 +168,17 @@
       "engine": {
         "name": "Auto käynnissä"
       },
-      "air_conditioning": {
+      "preconditioning": {
         "name": "Esi-ilmastointi"
+      },
+    "alarm": {
+        "name": "Hälytys"
+      },
+      "privacy": {
+        "name": "Yksityinen"
+      },
+      "remote_control": {
+        "name": "Etäohjaus"
       }
     },
     "button": {
@@ -191,7 +197,7 @@
       "charge_start_stop": {
         "name": "Lataus Start/Stop"
       },
-      "air_conditioning": {
+      "preconditioning_start_stop": {
         "name": "Esi-ilmastointi Start/Stop"
       }
     },
@@ -220,6 +226,21 @@
       "abrp_token": {
         "name": "ABRP token"
       }
+   },
+    "time": {
+      "battery_charging_start": {
+        "name": "Battery charging start"
+      }
     }
+  },
+  "common": {
+    "access_token_error_title": "Tunnistusvirhe",
+    "access_token_error_message": "Tarkista ohjeistus [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) osiosta",
+    "otp_error_title": "OTP virhe",
+    "otp_error_message": "Tarkista ohjeistus [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) osiosta",
+    "no_vehicles_found_title": "Ajoneuvo ei saatavissa",
+    "no_vehicles_found_message": "Tilissä ei ole yhdistettyjä ajoneuvoja",
+    "command_error_title": "Käsky",
+    "command_error_message": "Käskyn lähetyksessä virhe"
   }
 }

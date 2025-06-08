@@ -1,12 +1,13 @@
 import logging
 from datetime import UTC, datetime, timezone, timedelta
+import time
 # import json
 
 from homeassistant.util import dt
 
 _LOGGER = logging.getLogger(__name__)
 
-def get_datetime(date=None):
+def get_datetime(date = None):
     if date == None:
         date = datetime.now()
     if date.tzinfo != UTC:
@@ -38,6 +39,9 @@ def timestring_to_datetime(timestring, sum_to_now = False):
     except Exception as e:
         _LOGGER.error(str(e))
         return None
+
+def time_from_string(string):
+    return time.strptime(string, "%H:%M:%S")
 
 # def masked_configs(configs = {}):
 #     masked_params = ["access_token","customer_id","refresh_token","vehicle_id","vin","client_id","client_secret","basic_token"]
