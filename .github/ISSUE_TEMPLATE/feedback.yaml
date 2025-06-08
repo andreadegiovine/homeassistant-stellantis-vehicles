@@ -61,6 +61,20 @@ body:
       default: 0
     validations:
       required: true
+  - type: input
+    id: hass
+    attributes:
+      label: HomeAssistant version
+      placeholder: ex. 2025.5.1
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Integration version
+      placeholder: ex. 2025.6.3
+    validations:
+      required: true
   - type: textarea
     id: request
     attributes:
