@@ -9,11 +9,18 @@ Currently only PSA vehicles are compatibile (Peugeot, Citroen, DS, Opel and Vaux
 Currently Stellantis not provide B2C api credentials, this integration use the mobile apps api credentials and login flow.
 
 ## Features
-- Get vehicles status;
-- Send remote command;
-### Only EV
-- Set charging limit;
-- Sync data with **ABRP - A Better Routeplanner**;
+
+|                            | Electric / Hybrid | Thermic | E-remote control | Remote control / Connect Plus |
+|----------------------------|:-----------------:|:-------:|:----------------:|:-----------------------------:|
+| Get status                 |        ✔️         |   ✔️    |        ✔️        |              ✔️               |
+| Wake up                    |        ✔️         |   ✔️    |        ✔️        |              ✔️               |
+| ABRP sync                  |        ✔️         |   ✔️    |        ✔️        |              ✔️               |
+| Preconditioning start/stop |        ✔️         |   ✔️    |        ✔️        |              ✔️               |
+| Doors open/close           |        ✔️         |   ✔️    |                  |              ✔️               |
+| Flash lights               |        ✔️         |   ✔️    |                  |              ✔️               |
+| Honk the horn              |        ✔️         |   ✔️    |                  |              ✔️               |
+| Charging start/stop        |        ✔️         |         |        ✔️        |              ✔️               |
+| Charging limit             |        ✔️         |         |        ✔️        |              ✔️               |
 
 ## Installation
 <details><summary><b>Using HACS</b></summary>
