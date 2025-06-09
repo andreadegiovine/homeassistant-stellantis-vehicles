@@ -370,20 +370,43 @@ class StellantisBaseEntity(CoordinatorEntity):
         if value and not isinstance(value, (float, int, str, bool, list)):
             value = None
 
-        if value is not None and updated_at:
-            self._attr_extra_state_attributes["updated_at"] = updated_at
-
-        return value
+        return {
+            "value": value,
+            "updated_at": updated_at
+        }
 
     def get_value(self, data_map):
         key = self._key
         if hasattr(self, '_sensor_key'):
             key = self._sensor_key
 
-        value = self.get_value_from_map(data_map)
+        data = self.get_value_from_map(data_map)
+
+        current_value = self._coordinator._sensors.get(key)
+        current_updated_at = self._attr_extra_state_attributes.get("updated_at")
+
+        value = data.get("value", None)
+        updated_at = data.get("updated_at", None)
+
         if value or (not key in self._coordinator._sensors):
             self._coordinator._sensors[key] = value
-        
+
+        if current_value and current_updated_at and updated_at and updated_at == current_updated_at:
+            _LOGGER.debug(
+                "No update for '%s' - Current value: %s - New value: %s - Current updated_at: %s - New updated_at: %s",
+                key,
+                current_value,
+                value,
+                current_updated_at,
+                updated_at
+            )
+            if key == "time_battery_charging_start":
+                return time_from_string(str(current_value))
+            return current_value
+
+        if updated_at:
+            self._attr_extra_state_attributes["updated_at"] = updated_at
+
         if value == None:
             return None
 
