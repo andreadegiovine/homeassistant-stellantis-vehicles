@@ -175,7 +175,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         return default_programs
 
     async def send_air_conditioning_command(self, button_name):
-        current_status = self._sensors["air_conditioning"]
+        current_status = self._sensors["preconditioning"]
         new_status = "activate"
         if current_status == "Enabled":
             new_status = "deactivate"
