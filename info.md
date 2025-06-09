@@ -10,17 +10,17 @@ Currently Stellantis not provide B2C api credentials, this integration use the m
 
 ## Features
 
-|                            | Electric / Hybrid | Thermic | E-remote control | Remote control / Connect Plus |
-|----------------------------|:-----------------:|:-------:|:----------------:|:-----------------------------:|
-| Get status                 |        ✔️         |   ✔️    |        ✔️        |              ✔️               |
-| Wake up                    |        ✔️         |   ✔️    |        ✔️        |              ✔️               |
-| ABRP sync                  |        ✔️         |   ✔️    |        ✔️        |              ✔️               |
-| Preconditioning start/stop |        ✔️         |   ✔️    |        ✔️        |              ✔️               |
-| Doors open/close           |        ✔️         |   ✔️    |                  |              ✔️               |
-| Flash lights               |        ✔️         |   ✔️    |                  |              ✔️               |
-| Honk the horn              |        ✔️         |   ✔️    |                  |              ✔️               |
-| Charging start/stop        |        ✔️         |         |        ✔️        |              ✔️               |
-| Charging limit             |        ✔️         |         |        ✔️        |              ✔️               |
+|                            | Electric / Hybrid | Thermic | E-remote control | Remote control  | Connect Plus |
+|----------------------------|:-----------------:|:-------:|:----------------:|:---------------:|:------------:|
+| Get status                 |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Wake up                    |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| ABRP sync                  |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Preconditioning start/stop |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Doors open/close           |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Flash lights               |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Honk the horn              |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Charging start/stop        |        ✔️         |         |        ✔️        |                 |      ✔️      |
+| Charging limit             |        ✔️         |         |        ✔️        |                 |      ✔️      |
 
 ## Installation
 <details><summary><b>Using HACS</b></summary>
