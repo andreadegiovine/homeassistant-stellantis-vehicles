@@ -174,7 +174,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                             default_programs["program" + str(program["slot"])] = config
         return default_programs
 
-    async def send_air_conditioning_command(self, button_name):
+    async def send_preconditioning_command(self, button_name):
         current_status = self._sensors["preconditioning"]
         new_status = "activate"
         if current_status == "Enabled":
@@ -550,8 +550,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         self.coordinator_update()
 
     def coordinator_update(self):
-        value = self.get_value_from_map(self._data_map)
-        self._coordinator._sensors[self._key] = value
+        value = self.get_value(self._data_map)
         if value == None:
             return
         elif isinstance(value, list):

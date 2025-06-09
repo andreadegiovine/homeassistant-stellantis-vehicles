@@ -141,4 +141,4 @@ class StellantisAirConditioningButton(StellantisBaseButton):
         return super().available and doors_locked and (check_battery_level or check_battery_charging)
 
     async def async_press(self):
-        await self._coordinator.send_air_conditioning_command(self.name)
+        await self._coordinator.send_preconditioning_command(self.name)
