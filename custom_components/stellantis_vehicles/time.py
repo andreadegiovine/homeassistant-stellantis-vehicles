@@ -36,6 +36,7 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
     def __init__(self, coordinator, description):
         super().__init__(coordinator, description)
         self._value_map = ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"]
+        self._updated_at_map = ["energies", 0, "createdAt"]
 
     @property
     def available(self):
@@ -48,4 +49,6 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):
-        self._attr_native_value = self.get_value(self._value_map)
+        if self.value_was_updated():
+            self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
+            self._attr_native_value = self.get_value(self._value_map)

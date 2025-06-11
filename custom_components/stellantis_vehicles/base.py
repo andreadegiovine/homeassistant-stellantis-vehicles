@@ -351,15 +351,42 @@ class StellantisBaseEntity(CoordinatorEntity):
             "manufacturer": self._config[FIELD_MOBILE_APP]
         }
 
+    def update_maps_for_hybrid(self):
+        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
+            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
+                self._value_map[1] = 1
+                self._updated_at_map[1] = 1
+
+            if self._key == "battery_soh":
+                self._value_map[6] = "capacity"
+
+    def value_was_updated(self):
+        current_updated_at = None
+        if self._attr_extra_state_attributes.get("updated_at"):
+            current_updated_at = self._attr_extra_state_attributes.get("updated_at")
+        new_updated_at = self.get_updated_at_from_map(self._updated_at_map)
+        return current_updated_at != new_updated_at
+
+    def get_updated_at_from_map(self, updated_at_map):
+        vehicle_data = self._coordinator._data
+        value = None
+        for key in updated_at_map:
+            if not value and key in vehicle_data:
+                value = vehicle_data[key]
+            elif value and isinstance(key, int):
+                value = value[key]
+            elif value and key in value:
+                value = value[key]
+
+        if value and not isinstance(value, str):
+            value = None
+
+        return value
+
     def get_value_from_map(self, value_map):
         vehicle_data = self._coordinator._data
         value = None
-        updated_at = None
         for key in value_map:
-            # Get last available node date
-            if value and "createdAt" in value:
-                updated_at = value["createdAt"]
-
             if not value and key in vehicle_data:
                 value = vehicle_data[key]
             elif value and isinstance(key, int):
@@ -369,9 +396,6 @@ class StellantisBaseEntity(CoordinatorEntity):
 
         if value and not isinstance(value, (float, int, str, bool, list)):
             value = None
-
-        if value is not None and updated_at:
-            self._attr_extra_state_attributes["updated_at"] = updated_at
 
         return value
 
@@ -501,15 +525,13 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
 
 
 class StellantisBaseSensor(StellantisRestoreSensor):
-    def __init__(self, coordinator, description, value_map = [], available = None):
+    def __init__(self, coordinator, description, value_map = [], updated_at_map = [], available = None):
         super().__init__(coordinator, description)
 
         self._value_map = value_map
-        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
-            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
-                self._value_map[1] = 1
-            if self._key == "battery_soh":
-                self._value_map[6] = "capacity"
+        self._updated_at_map = updated_at_map
+
+        self.update_maps_for_hybrid()
 
         self._available = available
 
@@ -532,16 +554,19 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         return result
 
     def coordinator_update(self):
-        self._attr_native_value = self.get_value(self._value_map)
+        if self.value_was_updated():
+            self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
+            self._attr_native_value = self.get_value(self._value_map)
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator, description, value_map = [], on_value = None):
+    def __init__(self, coordinator, description, value_map = [], updated_at_map = [], on_value = None):
         super().__init__(coordinator, description)
 
         self._value_map = value_map
-        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID and self._value_map[0] == "energies" and self._value_map[1] == 0:
-            self._value_map[1] = 1
+        self._updated_at_map = updated_at_map
+
+        self.update_maps_for_hybrid()
 
         self._on_value = on_value
 
@@ -550,13 +575,15 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         self.coordinator_update()
 
     def coordinator_update(self):
-        value = self.get_value(self._value_map)
-        if value == None:
-            return
-        elif isinstance(value, list):
-            self._attr_is_on = self._on_value in value
-        else:
-            self._attr_is_on = value == self._on_value
+        if self.value_was_updated():
+            self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
+            value = self.get_value(self._value_map)
+            if value == None:
+                return
+            elif isinstance(value, list):
+                self._attr_is_on = self._on_value in value
+            else:
+                self._attr_is_on = value == self._on_value
 
 
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
