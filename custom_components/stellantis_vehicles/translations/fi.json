@@ -177,7 +177,7 @@
       "privacy": {
         "name": "Yksityinen"
       },
-      "remote_control": {
+      "remote_commands": {
         "name": "Etäohjaus"
       }
     },
