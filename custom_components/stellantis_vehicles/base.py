@@ -17,7 +17,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
-from .utils import ( date_from_pt_string, get_datetime, timestring_to_datetime, time_from_string )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, datetime_from_isoformat, time_from_string )
 
 from .const import (
     DOMAIN,
@@ -156,7 +156,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     if program:
                         occurence = program.get("occurence")
                         if occurence and occurence.get("day") and program.get("start"):
-                            date = date_from_pt_string(program["start"])
+                            date = time_from_pt_string(program["start"])
                             config = {
                                 "day": [
                                     int("Mon" in occurence["day"]),
@@ -416,16 +416,17 @@ class StellantisBaseEntity(CoordinatorEntity):
 
         if key in ["time_battery_charging_start", "battery_charging_end"]:
             if key == "time_battery_charging_start":
-                value = date_from_pt_string(value).time()
+                value = time_from_pt_string(value)
             if key == "battery_charging_end":
-                value = timestring_to_datetime(value, True)
+                new_updated_at = datetime_from_isoformat(self.get_updated_at_from_map(self._updated_at_map))
+                value = date_from_pt_string(value, new_updated_at)
                 charge_limit_on = "switch_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["switch_battery_charging_limit"]
                 charge_limit = None
                 if "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]:
                     charge_limit = self._coordinator._sensors["number_battery_charging_limit"]
                 if charge_limit_on and charge_limit:
                     current_battery = self._coordinator._sensors["battery"]
-                    now_timestamp = datetime.timestamp(get_datetime())
+                    now_timestamp = datetime.timestamp(new_updated_at)
                     value_timestamp = datetime.timestamp(value)
                     diff = value_timestamp - now_timestamp
                     limit_diff = (diff / (100 - int(float(current_battery)))) * (int(charge_limit) - int(float(current_battery)))

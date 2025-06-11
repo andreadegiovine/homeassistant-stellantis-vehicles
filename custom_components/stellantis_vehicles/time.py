@@ -2,7 +2,6 @@ import logging
 
 from homeassistant.components.time import TimeEntityDescription
 from .base import StellantisBaseTime
-from .utils import ( timestring_to_datetime )
 
 from .const import (
     DOMAIN,
