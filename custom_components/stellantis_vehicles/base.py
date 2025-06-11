@@ -351,11 +351,11 @@ class StellantisBaseEntity(CoordinatorEntity):
             "manufacturer": self._config[FIELD_MOBILE_APP]
         }
 
-    def get_value_from_map(self, data_map):
+    def get_value_from_map(self, value_map):
         vehicle_data = self._coordinator._data
         value = None
         updated_at = None
-        for key in data_map:
+        for key in value_map:
             # Get last available node date
             if value and "createdAt" in value:
                 updated_at = value["createdAt"]
@@ -375,12 +375,12 @@ class StellantisBaseEntity(CoordinatorEntity):
 
         return value
 
-    def get_value(self, data_map):
+    def get_value(self, value_map):
         key = self._key
         if hasattr(self, '_sensor_key'):
             key = self._sensor_key
 
-        value = self.get_value_from_map(data_map)
+        value = self.get_value_from_map(value_map)
         if value or (not key in self._coordinator._sensors):
             self._coordinator._sensors[key] = value
         
@@ -501,15 +501,15 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
 
 
 class StellantisBaseSensor(StellantisRestoreSensor):
-    def __init__(self, coordinator, description, data_map = [], available = None):
+    def __init__(self, coordinator, description, value_map = [], available = None):
         super().__init__(coordinator, description)
 
-        self._data_map = data_map
+        self._value_map = value_map
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
-            if self._data_map[0] == "energies" and self._data_map[1] == 0 and not self._key.startswith("fuel"):
-                self._data_map[1] = 1
+            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
+                self._value_map[1] = 1
             if self._key == "battery_soh":
-                self._data_map[6] = "capacity"
+                self._value_map[6] = "capacity"
 
         self._available = available
 
@@ -532,16 +532,16 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         return result
 
     def coordinator_update(self):
-        self._attr_native_value = self.get_value(self._data_map)
+        self._attr_native_value = self.get_value(self._value_map)
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator, description, data_map = [], on_value = None):
+    def __init__(self, coordinator, description, value_map = [], on_value = None):
         super().__init__(coordinator, description)
 
-        self._data_map = data_map
-        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID and self._data_map[0] == "energies" and self._data_map[1] == 0:
-            self._data_map[1] = 1
+        self._value_map = value_map
+        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID and self._value_map[0] == "energies" and self._value_map[1] == 0:
+            self._value_map[1] = 1
 
         self._on_value = on_value
 
@@ -550,7 +550,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         self.coordinator_update()
 
     def coordinator_update(self):
-        value = self.get_value(self._data_map)
+        value = self.get_value(self._value_map)
         if value == None:
             return
         elif isinstance(value, list):

@@ -35,7 +35,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 class StellantisBatteryChargingStart(StellantisBaseTime):
     def __init__(self, coordinator, description):
         super().__init__(coordinator, description)
-        self._data_map = ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"]
+        self._value_map = ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"]
 
     @property
     def available(self):
@@ -48,4 +48,4 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
         await self._coordinator.async_refresh()
 
     def coordinator_update(self):
-        self._attr_native_value = self.get_value(self._data_map)
+        self._attr_native_value = self.get_value(self._value_map)
