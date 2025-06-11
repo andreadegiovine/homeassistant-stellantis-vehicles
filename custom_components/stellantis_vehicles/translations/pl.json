@@ -62,9 +62,6 @@
           "quick": "Szybko"
         }
       },
-      "battery_charging_time": {
-        "name": "Godzina rozpoczęcia odroczonego ładowania"
-      },
       "battery_charging_end": {
         "name": "Zakończenie ładowania za"
       },
@@ -155,6 +152,12 @@
       },
       "preconditioning": {
         "name": "Klimatyzacja"
+      },
+      "privacy": {
+        "name": "Tryb prywatności"
+      },
+      "remote_commands": {
+        "name": "Zdalne zarządzanie"
       }
     },
     "button": {
@@ -180,6 +183,11 @@
     "device_tracker": {
       "vehicle": {
         "name": "Pojazd"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Godzina rozpoczęcia odroczonego ładowania"
       }
     },
     "number": {
