@@ -169,7 +169,16 @@
         "name": "Moteur"
       },
       "preconditioning": {
-        "name": "Air conditionné"
+        "name": "Préconditionnement"
+      },
+      "alarm": {
+        "name": "Alarme"
+      },
+      "privacy": {
+        "name": "Confidentialité"
+      },
+      "remote_control": {
+        "name": "Contrôle à distance"
       }
     },
     "button": {
@@ -189,7 +198,7 @@
         "name": "Charger Marche/Arrêt"
       },
       "preconditioning_start_stop": {
-        "name": "Air conditionné Marche/Arrêt"
+        "name": "Préconditionnement Marche/Arrêt"
       }
     },
     "device_tracker": {
@@ -217,6 +226,21 @@
       "abrp_token": {
         "name": "ABRP jeton"
       }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Batterie charge démarrée"
+      }
     }
+  },
+  "common": {
+    "access_token_error_title": "Erreur Access token",
+    "access_token_error_message": "Vérifier la documentation officielle dans la section [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "otp_error_title": "Erreur OTP",
+    "otp_error_message": "Vérifier la documentation officielle dans la section [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nkmaxnbtools)",
+    "no_vehicles_found_title": "Indisponible",
+    "no_vehicles_found_message": "Aucun véhicule connecté disponible sur ce compte",
+    "command_error_title": "Commande",
+    "command_error_message": "La commande n'a pas été envoyée correctement"
   }
 }
