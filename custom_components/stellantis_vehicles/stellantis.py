@@ -167,7 +167,10 @@ class StellantisBase:
     def do_async(self, async_func):
         return asyncio.run_coroutine_threadsafe(async_func, self._hass.loop).result()
 
-    async def hass_notify(self, translation_key, notification_id=DOMAIN):
+    async def hass_notify(self, translation_key):
+        if hasattr(self, '_entry') and not self.get_stored_config("switch_notifications"):
+            return
+
         """Create a persistent notification."""
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
         notification_title = "Stellantis Vehicles"
@@ -178,7 +181,7 @@ class StellantisBase:
             self._hass,
             notification_message,
             title=notification_title,
-            notification_id=notification_id
+            notification_id=str(uuid4())
         )
 
 
@@ -307,7 +310,6 @@ class StellantisVehicles(StellantisOauth):
         self._hass.config_entries._async_schedule_save()
 
     def get_stored_config(self, config):
-        data = self._entry.data
         if config in self._entry.data:
             return self._entry.data[config]
         return False

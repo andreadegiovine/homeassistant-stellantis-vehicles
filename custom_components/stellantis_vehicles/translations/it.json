@@ -220,6 +220,9 @@
       },
       "abrp_sync": {
         "name": "Sincronizza ABRP"
+      },
+      "notifications": {
+        "name": "Notifiche"
       }
     },
     "text": {
