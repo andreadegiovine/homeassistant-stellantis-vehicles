@@ -584,7 +584,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
             elif isinstance(value, list):
                 self._attr_is_on = self._on_value in value
             else:
-                self._attr_is_on = value == self._on_value
+                self._attr_is_on = str(value).lower() == str(self._on_value).lower()
 
 
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
