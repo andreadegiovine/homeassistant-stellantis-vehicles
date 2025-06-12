@@ -360,12 +360,17 @@ class StellantisBaseEntity(CoordinatorEntity):
             if self._key == "battery_soh":
                 self._value_map[6] = "capacity"
 
-    def value_was_updated(self):
+    def value_was_updated(self, compare_value = False):
         current_updated_at = None
         if self._attr_extra_state_attributes.get("updated_at"):
             current_updated_at = self._attr_extra_state_attributes.get("updated_at")
         new_updated_at = self.get_updated_at_from_map(self._updated_at_map)
-        return current_updated_at != new_updated_at
+        if compare_value:
+            current_value = self._coordinator._sensors.get(self._key)
+            new_value = self.get_value(self._value_map)
+            return current_updated_at != new_updated_at or current_value != new_value
+        else:
+            return current_updated_at != new_updated_at
 
     def get_updated_at_from_map(self, updated_at_map):
         vehicle_data = self._coordinator._data
@@ -576,7 +581,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         self.coordinator_update()
 
     def coordinator_update(self):
-        if self.value_was_updated():
+        if self.value_was_updated(True):
             self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
             value = self.get_value(self._value_map)
             if value == None:
