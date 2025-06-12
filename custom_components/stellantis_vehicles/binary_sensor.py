@@ -47,4 +47,4 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 class StellantisRemoteCommandsBinarySensor(StellantisBaseEntity, BinarySensorEntity):
     def coordinator_update(self):
-        self._attr_is_on = self._stellantis._mqtt.is_connected()
+        self._attr_is_on = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
