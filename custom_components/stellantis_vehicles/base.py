@@ -224,8 +224,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     if charge_limit_on and charge_limit and "battery" in self._sensors:
                         current_battery = self._sensors["battery"]
                         if int(float(current_battery)) >= int(charge_limit):
-                            button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_start_stop.name")
-                            await self.send_charge_command(button_name)
+                            button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_stop.name")
+                            await self.send_charge_command(button_name, False, "delayed")
                             self._manage_charge_limit_sent = True
                 elif self._sensors["battery_charging"] != "InProgress" and self._manage_charge_limit_sent:
                     self._manage_charge_limit_sent = False
