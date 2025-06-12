@@ -25,8 +25,8 @@
       }
     },
     "error": {
-      "get_access_token": "Tunnuksen hankinta epäonnistui",
-      "get_user_info": "Käyttäjätietojen hankinta epäonnistui",
+      "get_access_token": "Tunnuksen haku epäonnistui",
+      "get_user_info": "Käyttäjätietojen haku epäonnistui",
       "missing_user_info": "Käyttäjätiedot puuttuu",
       "get_otp_sms": "OTP-tekstiviestivirhe",
       "get_mqtt_access_token": "MQTT-todennusvirhe"
@@ -175,7 +175,7 @@
         "name": "Hälytys"
       },
       "privacy": {
-        "name": "Yksityinen"
+        "name": "Yksityisyys"
       },
       "remote_commands": {
         "name": "Etäohjaus"
@@ -185,11 +185,29 @@
       "wakeup": {
         "name": "Herätys"
       },
+      "doors_lock": {
+        "name": "Ovet lukkoon"
+      },
+      "doors_unlock": {
+        "name": "Ovien lukot auki"
+      },
       "horn": {
         "name": "Äänimerkki"
       },
       "lights": {
         "name": "Valot"
+      },
+      "charge_start": {
+        "name": "Käynnistä lataus"
+      },
+      "charge_stop": {
+        "name": "Lopeta lataus"
+      },
+      "preconditioning_start": {
+        "name": "Käynnistä esilämmitys"
+      },
+      "preconditioning_stop": {
+        "name": "Lopeta esilämmitys"
       }
     },
     "device_tracker": {
@@ -211,16 +229,19 @@
       },
       "abrp_sync": {
         "name": "ABRP synkronointi"
+      },
+      "notifications": {
+        "name": "Huomautukset"
       }
     },
     "text": {
       "abrp_token": {
         "name": "ABRP token"
       }
-   },
+    },
     "time": {
       "battery_charging_start": {
-        "name": "Battery charging start"
+        "name": "Lataus alkoi"
       }
     }
   },
