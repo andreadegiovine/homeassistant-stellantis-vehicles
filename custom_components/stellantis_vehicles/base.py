@@ -116,12 +116,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def send_wakeup_command(self, button_name):
         await self.send_command(button_name, "/VehCharge/state", {"action": "state"})
 
-    async def send_doors_command(self, button_name):
-        current_status = self._sensors["doors"]
-        new_status = "lock"
-        if current_status == "Locked":
-            new_status = "unlock"
-        await self.send_command(button_name, "/Doors", {"action": new_status})
+    async def send_doors_command(self, button_name, action):
+        await self.send_command(button_name, "/Doors", {"action": action})
 
     async def send_horn_command(self, button_name):
         await self.send_command(button_name, "/Horn", {"nb_horn": "2", "action": "activate"})
@@ -129,17 +125,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def send_lights_command(self, button_name):
         await self.send_command(button_name, "/Lights", {"duration": "10", "action": "activate"})
 
-    async def send_charge_command(self, button_name, update_only_time = False):
+    async def send_charge_command(self, button_name, update_only_time = False, action = "immediate"):
         current_hour = self._sensors["time_battery_charging_start"]
-        current_status = self._sensors["battery_charging"]
-        charge_type = "immediate"
         if update_only_time:
-            charge_type = "delayed"
-        if current_status == "InProgress":
-            charge_type = "delayed"
-            if update_only_time:
-                charge_type = "immediate"
-        await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": charge_type})
+            current_status = self._sensors["battery_charging"]
+            if current_status != "InProgress":
+                    action = "delayed"
+        await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": action})
 
     def get_programs(self):
         default_programs = {
@@ -174,12 +166,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                             default_programs["program" + str(program["slot"])] = config
         return default_programs
 
-    async def send_preconditioning_command(self, button_name):
-        current_status = self._sensors["preconditioning"]
-        new_status = "activate"
-        if current_status == "Enabled":
-            new_status = "deactivate"
-        await self.send_command(button_name, "/ThermalPrecond", {"asap": new_status, "programs": self.get_programs()})
+    async def send_preconditioning_command(self, button_name, action):
+        await self.send_command(button_name, "/ThermalPrecond", {"asap": action, "programs": self.get_programs()})
 
     async def send_abrp_data(self):
         tlm = {
@@ -602,6 +590,12 @@ class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
 
     def coordinator_update(self):
         return True
+
+
+class StellantisBaseActionButton(StellantisBaseButton):
+    def __init__(self, coordinator, description, action):
+        super().__init__(coordinator, description)
+        self._action = action
 
 
 class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):

@@ -176,20 +176,11 @@
       "wakeup": {
         "name": "Despertar"
       },
-      "doors": {
-        "name": "Puertas"
-      },
       "horn": {
         "name": "Bocina"
       },
       "lights": {
         "name": "Luces"
-      },
-      "charge_start_stop": {
-        "name": "Inicio/Parada de carga"
-      },
-      "preconditioning_start_stop": {
-        "name": "Inicio/Parada de climatización"
       }
     },
     "device_tracker": {

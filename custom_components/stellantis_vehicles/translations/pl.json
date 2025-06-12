@@ -164,20 +164,11 @@
       "wakeup": {
         "name": "Wybudzenie"
       },
-      "doors": {
-        "name": "Drzwi"
-      },
       "horn": {
         "name": "Klakson"
       },
       "lights": {
         "name": "Światła"
-      },
-      "charge_start_stop": {
-        "name": "Ładowanie Włącz/Wyłącz"
-      },
-      "preconditioning_start_stop": {
-        "name": "Ogrzewanie/chłodzenie wstępne - Włącz/Wyłącz"
       }
     },
     "device_tracker": {

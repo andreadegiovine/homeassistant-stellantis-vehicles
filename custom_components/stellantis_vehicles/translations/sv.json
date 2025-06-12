@@ -176,20 +176,11 @@
       "wakeup": {
         "name": "Väck"
       },
-      "doors": {
-        "name": "Dörrar"
-      },
       "horn": {
         "name": "Tuta"
       },
       "lights": {
         "name": "Ljus"
-      },
-      "charge_start_stop": {
-        "name": "Ladda Start/Stop"
-      },
-      "preconditioning_start_stop": {
-        "name": "Klimatanläggning Start/Stop"
       }
     },
     "device_tracker": {

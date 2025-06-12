@@ -166,20 +166,11 @@
       "wakeup": {
         "name": "Probudit"
       },
-      "doors": {
-        "name": "Dveře"
-      },
       "horn": {
         "name": "Klakson"
       },
       "lights": {
         "name": "Světlomety"
-      },
-      "charge_start_stop": {
-        "name": "Nabíjení Start/Stop"
-      },
-      "preconditioning_start_stop": {
-        "name": "Klimatizace Start/Stop"
       }
     },
     "device_tracker": {

@@ -185,20 +185,11 @@
       "wakeup": {
         "name": "Réveil"
       },
-      "doors": {
-        "name": "Portes"
-      },
       "horn": {
         "name": "Klaxon"
       },
       "lights": {
         "name": "Phares"
-      },
-      "charge_start_stop": {
-        "name": "Charger Marche/Arrêt"
-      },
-      "preconditioning_start_stop": {
-        "name": "Préconditionnement Marche/Arrêt"
       }
     },
     "device_tracker": {

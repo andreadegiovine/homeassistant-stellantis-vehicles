@@ -185,20 +185,11 @@
       "wakeup": {
         "name": "Herätys"
       },
-      "doors": {
-        "name": "Ovet"
-      },
       "horn": {
         "name": "Äänimerkki"
       },
       "lights": {
         "name": "Valot"
-      },
-      "charge_start_stop": {
-        "name": "Lataus Start/Stop"
-      },
-      "preconditioning_start_stop": {
-        "name": "Esi-ilmastointi Start/Stop"
       }
     },
     "device_tracker": {
