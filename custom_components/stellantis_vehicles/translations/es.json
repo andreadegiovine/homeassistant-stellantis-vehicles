@@ -170,17 +170,44 @@
       },
       "preconditioning": {
         "name": "Climatización"
+      },
+      "alarm": {
+        "name": "Alarma"
+      },
+      "privacy": {
+        "name": "Privacidad"
+      },
+      "remote_commands": {
+        "name": "Comandos remotos"
       }
     },
     "button": {
       "wakeup": {
         "name": "Despertar"
       },
+      "doors_lock": {
+        "name": "Cerrar puertas"
+      },
+      "doors_unlock": {
+        "name": "Abrir puertas"
+      },
       "horn": {
         "name": "Bocina"
       },
       "lights": {
         "name": "Luces"
+      },
+      "charge_start": {
+        "name": "Iniciar carga"
+      },
+      "charge_stop": {
+        "name": "Detener carga"
+      },
+      "preconditioning_start": {
+        "name": "Iniciar preacondicionamiento"
+      },
+      "preconditioning_stop": {
+        "name": "Detener preacondicionamiento"
       }
     },
     "device_tracker": {
@@ -202,12 +229,30 @@
       },
       "abrp_sync": {
         "name": "Sincronización ABRP"
+      },
+      "notifications": {
+        "name": "Notificaciones"
       }
     },
     "text": {
       "abrp_token": {
         "name": "Token ABRP"
       }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Inicio de carga de la batería"
+      }
     }
+  },
+  "common": {
+    "access_token_error_title": "Error de token de acceso",
+    "access_token_error_message": "Consulta la documentación oficial en la sección [Código OAuth2](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "otp_error_title": "Error OTP",
+    "otp_error_message": "Consulta la documentación oficial en la sección [Error OTP - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "no_vehicles_found_title": "No disponible",
+    "no_vehicles_found_message": "No hay vehículos conectados disponibles en esta cuenta",
+    "command_error_title": "Comando",
+    "command_error_message": "El comando no se envió correctamente"
   }
 }
