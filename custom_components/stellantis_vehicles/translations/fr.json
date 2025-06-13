@@ -185,11 +185,29 @@
       "wakeup": {
         "name": "Réveil"
       },
+      "doors_lock": {
+        "name": "Portes verrouiller"
+      },
+      "doors_unlock": {
+        "name": "Portes déverrouiller"
+      },
       "horn": {
         "name": "Klaxon"
       },
       "lights": {
         "name": "Phares"
+      },
+      "charge_start": {
+        "name": "Charge démarrer"
+      },
+      "charge_stop": {
+        "name": "Charge arrêter"
+      },
+      "preconditioning_start": {
+        "name": "Préconditionnement démarrer"
+      },
+      "preconditioning_stop": {
+        "name": "Préconditionnement arrêter"
       }
     },
     "device_tracker": {
@@ -211,6 +229,9 @@
       },
       "abrp_sync": {
         "name": "ABRP synchronisation"
+      },
+      "notifications": {
+        "name": "Notifications"
       }
     },
     "text": {
