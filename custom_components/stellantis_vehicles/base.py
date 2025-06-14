@@ -46,6 +46,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 #        self._total_trip = None
 
     async def _async_update_data(self):
+        """ Update vehicle data from Stellantis. """
         _LOGGER.debug("---------- START _async_update_data")
         try:
             # Update token
@@ -63,14 +64,17 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("---------- END _async_update_data")
 
     def get_translation(self, path, default = None):
+        """ Get translation from path. """
         return self._translations.get(path, default)
 
     @property
     def vehicle_type(self):
+        """ Vehicle type. """
         return self._vehicle["type"]
 
     @property
     def command_history(self):
+        """ Commands history. """
         history = {}
         if not self._commands_history:
             return history
@@ -88,12 +92,14 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     @property
     def pending_action(self):
+        """ Pending action. """
         if not self._commands_history:
             return False
         last_action_id = list(self._commands_history.keys())[-1]
         return not self._commands_history[last_action_id]["updates"]
 
     async def update_command_history(self, action_id, update = None):
+        """ Update command history. """
         if not action_id in self._commands_history:
             return
         if update:
@@ -103,6 +109,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self.async_update_listeners()
 
     async def send_command(self, name, service, message):
+        """ Send a command to the vehicle. """
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
             self._commands_history.update({action_id: {"name": name, "updates": []}})
@@ -114,18 +121,23 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             raise
 
     async def send_wakeup_command(self, button_name):
+        """ Send wakeup command to the vehicle. """
         await self.send_command(button_name, "/VehCharge/state", {"action": "state"})
 
     async def send_doors_command(self, button_name, action):
+        """ Send doors command to the vehicle. """
         await self.send_command(button_name, "/Doors", {"action": action})
 
     async def send_horn_command(self, button_name):
+        """ Send horn command to the vehicle. """
         await self.send_command(button_name, "/Horn", {"nb_horn": "2", "action": "activate"})
 
     async def send_lights_command(self, button_name):
+        """ Send lights command to the vehicle. """
         await self.send_command(button_name, "/Lights", {"duration": "10", "action": "activate"})
 
     async def send_charge_command(self, button_name, update_only_time = False, action = "immediate"):
+        """ Send charge command to the vehicle. """
         current_hour = self._sensors["time_battery_charging_start"]
         if update_only_time:
             current_status = self._sensors["battery_charging"]
@@ -134,6 +146,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": action})
 
     def get_programs(self):
+        """ Get current preconditioning programs. """
         default_programs = {
            "program1": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
            "program2": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
@@ -167,9 +180,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         return default_programs
 
     async def send_preconditioning_command(self, button_name, action):
+        """ Send preconditioning command to the vehicle. """
         await self.send_command(button_name, "/ThermalPrecond", {"asap": action, "programs": self.get_programs()})
 
     async def send_abrp_data(self):
+        """ Send vehicle data to ABRP. """
         tlm = {
             "utc": int(get_datetime().astimezone(UTC).timestamp()),
             "soc": None,
@@ -211,6 +226,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
 
     async def after_async_update_data(self):
+        """ Apply changes and do actions after vehicle data update. """
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             if not hasattr(self, "_manage_charge_limit_sent"):
                 self._manage_charge_limit_sent = False
@@ -244,6 +260,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             self._stellantis._refresh_interval = self._sensors["number_refresh_interval"]
 
     async def get_vehicle_last_trip(self):
+        """ Get last trip from Stellantis. """
         trips = await self._stellantis.get_vehicle_last_trip(self._vehicle)
         if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
             if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
@@ -330,6 +347,7 @@ class StellantisBaseEntity(CoordinatorEntity):
 
     @property
     def device_info(self):
+        """ Core device info. """
         return {
             "identifiers": {
                 (DOMAIN, self._vehicle["vin"], self._vehicle["type"])
@@ -340,6 +358,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         }
 
     def update_maps_for_hybrid(self):
+        """ Update value/updated_at map for hybrid vehicles. """
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
             if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
                 self._value_map[1] = 1
@@ -349,6 +368,7 @@ class StellantisBaseEntity(CoordinatorEntity):
                 self._value_map[6] = "capacity"
 
     def value_was_updated(self, compare_value = False):
+        """ Check if value was changed. """
         current_updated_at = None
         if self._attr_extra_state_attributes.get("updated_at"):
             current_updated_at = self._attr_extra_state_attributes.get("updated_at")
@@ -361,6 +381,7 @@ class StellantisBaseEntity(CoordinatorEntity):
             return current_updated_at != new_updated_at
 
     def get_updated_at_from_map(self, updated_at_map):
+        """ Get data updated_at from map. """
         vehicle_data = self._coordinator._data
         value = None
         for key in updated_at_map:
@@ -377,6 +398,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         return value
 
     def get_value_from_map(self, value_map):
+        """ Get data value from map. """
         vehicle_data = self._coordinator._data
         value = None
         for key in value_map:
@@ -393,6 +415,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         return value
 
     def get_value(self, value_map):
+        """ Get entity value and convert to HASS style. """
         key = self._key
         if hasattr(self, '_sensor_key'):
             key = self._sensor_key
@@ -439,6 +462,7 @@ class StellantisBaseEntity(CoordinatorEntity):
 
     @property
     def available_command(self):
+        """ Base availability property for mqtt commands. """
         mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
         engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
         command_is_enabled = self.name not in self._coordinator._disabled_commands
@@ -446,28 +470,33 @@ class StellantisBaseEntity(CoordinatorEntity):
 
     @callback
     def _handle_coordinator_update(self):
+        """ Coordinator handler. """
         if self._coordinator.data is False:
             return
         self.coordinator_update()
         self.async_write_ha_state()
 
     def coordinator_update(self):
+        """ Actions on coordinator update. """
         raise NotImplementedError
 
 
 class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def entity_picture(self):
+        """ Entity picture. """
         if "picture" in self._coordinator._vehicle:
             return str(self._coordinator._vehicle["picture"])
         return None
 
     @property
     def force_update(self):
+        """ Force update. """
         return False
 
     @property
     def battery_level(self):
+        """ Battery level. """
         if "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"]:
             return int(float(self._coordinator._sensors["battery"]))
         elif "service_battery_voltage" in self._coordinator._sensors and self._coordinator._sensors["service_battery_voltage"]:
@@ -476,32 +505,38 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
 
     @property
     def latitude(self):
+        """ Latitude. """
         if "lastPosition" in self._coordinator._data:
             return float(self._coordinator._data["lastPosition"]["geometry"]["coordinates"][1])
         return None
 
     @property
     def longitude(self):
+        """ Longitude. """
         if "lastPosition" in self._coordinator._data:
             return float(self._coordinator._data["lastPosition"]["geometry"]["coordinates"][0])
         return None
 
     @property
     def location_accuracy(self):
+        """ Location accuracy. """
         if "lastPosition" in self._coordinator._data:
             return 10
         return None
 
     @property
     def source_type(self):
+        """ Source type. """
         return SourceType.GPS
 
     def coordinator_update(self):
+        """ Coordinator update. """
         return True
 
 
 class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
     async def async_added_to_hass(self):
+        """ Restore entity data to HASS style on system restart. """
         await super().async_added_to_hass()
         restored_data = await self.async_get_last_state()
         if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
@@ -515,6 +550,7 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
         self.coordinator_update()
 
     def coordinator_update(self):
+        """ Coordinator update. """
         return True
 
 
@@ -531,6 +567,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
     @property
     def available(self):
+        """ Base availability rules. """
         result = True
         if not self._available:
             return result
@@ -548,6 +585,7 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         return result
 
     def coordinator_update(self):
+        """ Coordinator update. """
         if self.value_was_updated():
             self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
             self._attr_native_value = self.get_value(self._value_map)
@@ -569,6 +607,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         self.coordinator_update()
 
     def coordinator_update(self):
+        """ Coordinator update. """
         if self.value_was_updated(True):
             self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
             value = self.get_value(self._value_map)
@@ -583,12 +622,15 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
     @property
     def available(self):
+        """ Available. """
         return self.available_command
 
     async def async_press(self):
+        """ Button press. """
         raise NotImplementedError
 
     def coordinator_update(self):
+        """ Coordinator update. """
         return True
 
 
@@ -600,6 +642,7 @@ class StellantisBaseActionButton(StellantisBaseButton):
 
 class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
     async def async_added_to_hass(self):
+        """ Restore entity data to HASS style on system restart. """
         await super().async_added_to_hass()
         restored_data = await self.async_get_last_state()
         if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
@@ -616,6 +659,7 @@ class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
         self.coordinator_update()
 
     def coordinator_update(self):
+        """ Coordinator update. """
         return True
 
 
@@ -629,6 +673,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
 
     @property
     def native_value(self):
+        """ Native value. """
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors[self._sensor_key]
         if self._stellantis.get_stored_config(self._sensor_key):
@@ -636,6 +681,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
         return self._default_value
 
     async def async_set_native_value(self, value: float):
+        """ Set native value. """
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = float(value)
         self._stellantis.update_stored_config(self._sensor_key, float(value))
@@ -649,6 +695,7 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
 
     @property
     def is_on(self):
+        """ Is on. """
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors[self._sensor_key]
         if self._stellantis.get_stored_config(self._sensor_key):
@@ -656,12 +703,14 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
         return False
 
     async def async_turn_on(self, **kwargs):
+        """ Turn on. """
         self._attr_is_on = True
         self._coordinator._sensors[self._sensor_key] = True
         self._stellantis.update_stored_config(self._sensor_key, True)
         await self._coordinator.async_refresh()
 
     async def async_turn_off(self, **kwargs):
+        """ Turn off. """
         self._attr_is_on = False
         self._coordinator._sensors[self._sensor_key] = False
         self._stellantis.update_stored_config(self._sensor_key, False)
@@ -675,6 +724,7 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
 
     @property
     def native_value(self):
+        """ Native value. """
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors[self._sensor_key]
         if self._stellantis.get_stored_config(self._sensor_key):
@@ -682,6 +732,7 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
         return ""
 
     async def async_set_value(self, value: str):
+        """ Set value. """
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = str(value)
         self._stellantis.update_stored_config(self._sensor_key, str(value))
@@ -695,6 +746,7 @@ class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):
         
     @property
     def native_value(self):
+        """ Native value. """
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors[self._sensor_key]
         return None

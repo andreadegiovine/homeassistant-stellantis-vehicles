@@ -168,6 +168,7 @@ Thanks to all users who contribute to this integration by updating translations 
 Thanks to everyone for the issues, especially to:
 - [@chmtc94](https://github.com/chmtc94);
 - [@FrankTub](https://github.com/FrankTub);
+- [@Jordan87](https://github.com/Jordan87);
 
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
