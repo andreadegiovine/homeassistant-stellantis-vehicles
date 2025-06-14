@@ -133,6 +133,10 @@ jobs:
             done
           )
           
+          echo "Release notes:<<EOF"
+          echo "$notes"
+          echo "EOF"
+          
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$notes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
