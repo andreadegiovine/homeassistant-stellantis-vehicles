@@ -106,68 +106,79 @@ SENSORS_DEFAULT = {
         "icon" : "mdi:car-battery",
         "unit_of_measurement" : PERCENTAGE,
         "device_class": SensorDeviceClass.BATTERY,
-        "data_map" : ["battery", "voltage"]
+        "value_map" : ["battery", "voltage"],
+        "updated_at_map" : ["battery", "createdAt"]
     },
     "temperature" : {
         "icon" : "mdi:thermometer",
         "unit_of_measurement" : UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
-        "data_map" : ["environment", "air", "temp"]
+        "value_map" : ["environment", "air", "temp"],
+        "updated_at_map" : ["environment", "air", "createdAt"]
     },
     "mileage" : {
         "icon" : "mdi:road-variant",
         "unit_of_measurement" : UnitOfLength.KILOMETERS,
         "device_class": SensorDeviceClass.DISTANCE,
-        "data_map" : ["odometer", "mileage"]
+        "value_map" : ["odometer", "mileage"],
+        "updated_at_map" : ["odometer", "createdAt"]
     },
     "speed" : {
         "icon" : "mdi:speedometer",
         "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
         "device_class": SensorDeviceClass.SPEED,
-        "data_map" : ["kinetic", "speed"]
+        "value_map" : ["kinetic", "speed"],
+        "updated_at_map" : ["kinetic", "createdAt"]
     },
     "autonomy" : {
         "icon" : "mdi:map-marker-distance",
         "unit_of_measurement" : UnitOfLength.KILOMETERS,
         "device_class": SensorDeviceClass.DISTANCE,
-        "data_map" : ["energies", 0, "autonomy"]
+        "value_map" : ["energies", 0, "autonomy"],
+        "updated_at_map" : ["energies", 0, "createdAt"]
     },
     "battery" : {
         "unit_of_measurement" : PERCENTAGE,
         "device_class": SensorDeviceClass.BATTERY,
-        "data_map" : ["energies", 0, "level"],
+        "value_map" : ["energies", 0, "level"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_soh" : {
         "icon" : "mdi:battery-heart-variant",
         "unit_of_measurement" : PERCENTAGE,
-        "data_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
+        "value_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
+        "updated_at_map" : ["energies", 0, "extension", "electric", "battery", "health", "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_rate" : {
         "icon" : "mdi:ev-station",
         "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
         "device_class": SensorDeviceClass.SPEED,
-        "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingRate"],
+        "value_map" : ["energies", 0, "extension", "electric", "charging", "chargingRate"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_type" : {
         "icon" : "mdi:lightning-bolt",
-        "data_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"],
+        "value_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
      "battery_charging_end" : {
-         "icon" : "mdi:battery-check",
-         "device_class" : SensorDeviceClass.TIMESTAMP,
-         "data_map" : ["energies", 0, "extension", "electric", "charging", "remainingTime"],
-         "available" : [{"battery_charging": "InProgress"}],
-         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
+        "icon" : "mdi:battery-check",
+        "device_class" : SensorDeviceClass.TIMESTAMP,
+        "value_map" : ["energies", 0, "extension", "electric", "charging", "remainingTime"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
+        "available" : [{"battery_charging": "InProgress"}],
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
      "battery_capacity" : {
          "icon" : "mdi:battery-arrow-up-outline",
          "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
          "device_class" : SensorDeviceClass.ENERGY_STORAGE,
-         "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"],
+         "value_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"],
+         "updated_at_map" : ["energies", 0, "extension", "electric", "battery", "load", "createdAt"],
          "suggested_display_precision": 2,
          "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
@@ -175,55 +186,63 @@ SENSORS_DEFAULT = {
          "icon" : "mdi:battery-arrow-up",
          "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
          "device_class" : SensorDeviceClass.ENERGY_STORAGE,
-         "data_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"],
+         "value_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"],
+         "updated_at_map" : ["energies", 0, "extension", "electric", "battery", "load", "createdAt"],
          "suggested_display_precision": 2,
          "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
     "fuel" : {
         "unit_of_measurement" : PERCENTAGE,
         "icon": "mdi:gas-station",
-        "data_map" : ["energies", 0, "level"],
+        "value_map" : ["energies", 0, "level"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "fuel_autonomy" : {
         "icon" : "mdi:map-marker-distance",
         "unit_of_measurement" : UnitOfLength.KILOMETERS,
         "device_class": SensorDeviceClass.DISTANCE,
-        "data_map" : ["energies", 0, "autonomy"],
+        "value_map" : ["energies", 0, "autonomy"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "fuel_consumption_total" : {
         "unit_of_measurement" : UnitOfVolume.LITERS,
         "icon": "mdi:gas-station-outline",
-        "data_map" : ["energies", 0, "extension", "fuel", "consumptions", "total"],
+        "value_map" : ["energies", 0, "extension", "fuel", "consumptions", "total"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
          "suggested_display_precision": 2,
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "fuel_consumption_instant" : {
         "unit_of_measurement" : UnitOfVolume.LITERS+"/100"+UnitOfLength.KILOMETERS,
         "icon": "mdi:gas-station-outline",
-        "data_map" : ["energies", 0, "extension", "fuel", "consumptions", "instant"],
+        "value_map" : ["energies", 0, "extension", "fuel", "consumptions", "instant"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "coolant_temperature" : {
         "unit_of_measurement" : UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "icon": "mdi:coolant-temperature",
-        "data_map" : ["engines", 0, "extension", "thermic", "coolant", "temp"],
+        "value_map" : ["engines", 0, "extension", "thermic", "coolant", "temp"],
+        "updated_at_map" : ["engines", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "oil_temperature" : {
         "unit_of_measurement" : UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "icon": "mdi:oil-temperature",
-        "data_map" : ["engines", 0, "extension", "thermic", "oil", "temp"],
+        "value_map" : ["engines", 0, "extension", "thermic", "oil", "temp"],
+        "updated_at_map" : ["engines", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "air_temperature" : {
         "unit_of_measurement" : UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "icon": "mdi:thermometer-lines",
-        "data_map" : ["engines", 0, "extension", "thermic", "air", "temp"],
+        "value_map" : ["engines", 0, "extension", "thermic", "air", "temp"],
+        "updated_at_map" : ["engines", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     }
 }
@@ -231,51 +250,59 @@ SENSORS_DEFAULT = {
 BINARY_SENSORS_DEFAULT = {
     "moving" : {
         "icon" : "mdi:car-traction-control",
-        "data_map" : ["kinetic", "moving"],
+        "value_map" : ["kinetic", "moving"],
+        "updated_at_map" : ["kinetic", "createdAt"],
         "device_class" : BinarySensorDeviceClass.MOTION,
         "on_value": True
     },
     "doors" : {
         "icon" : "mdi:car-door-lock",
-        "data_map" : ["doorsState", "lockedStates"],
+        "value_map" : ["doorsState", "lockedStates"],
+        "updated_at_map" : ["doorsState", "createdAt"],
         "device_class" : BinarySensorDeviceClass.LOCK,
         "on_value": "Unlocked"
     },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",
-        "data_map" : ["energies", 0, "extension", "electric", "charging", "plugged"],
+        "value_map" : ["energies", 0, "extension", "electric", "charging", "plugged"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "device_class" : BinarySensorDeviceClass.PLUG,
         "on_value": True,
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging" : {
         "icon" : "mdi:battery-charging-medium",
-        "data_map" : ["energies", 0, "extension", "electric", "charging", "status"],
+        "value_map" : ["energies", 0, "extension", "electric", "charging", "status"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "device_class" : BinarySensorDeviceClass.BATTERY_CHARGING,
         "on_value": "InProgress",
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "engine" : {
         "icon" : "mdi:power",
-        "data_map" : ["ignition", "type"],
+        "value_map" : ["ignition", "type"],
+        "updated_at_map" : ["ignition", "createdAt"],
         "device_class" : BinarySensorDeviceClass.POWER,
         "on_value": "StartUp"
     },
     "preconditioning" : {
         "icon" : "mdi:air-conditioner",
-        "data_map" : ["preconditioning", "airConditioning", "status"],
+        "value_map" : ["preconditioning", "airConditioning", "status"],
+        "updated_at_map" : ["preconditioning", "airConditioning", "createdAt"],
         "device_class" : BinarySensorDeviceClass.POWER,
         "on_value": "Enabled"
     },
     "alarm" : {
         "icon" : "mdi:alarm-light",
-        "data_map" : ["alarm", "status", "activation"],
+        "value_map" : ["alarm", "status", "activation"],
+        "updated_at_map" : ["alarm", "status", "createdAt"],
         "device_class" : BinarySensorDeviceClass.RUNNING,
         "on_value": "Active"
     },
     "privacy" : {
         "icon" : "mdi:alarm-light",
-        "data_map" : ["privacy", "state"],
+        "value_map" : ["privacy", "state"],
+        "updated_at_map" : ["privacy", "createdAt"],
         "device_class" : BinarySensorDeviceClass.LOCK,
         "on_value": "None"
     }

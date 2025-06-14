@@ -29,7 +29,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
             default_value = SENSORS_DEFAULT.get(key, {})
             sensor_engine_limit = default_value.get("engine", [])
             if not sensor_engine_limit or coordinator.vehicle_type in sensor_engine_limit:
-                if default_value.get("data_map", None):
+                if default_value.get("value_map", None) and default_value.get("updated_at_map", None):
                     description = SensorEntityDescription(
                         name = key,
                         key = key,
@@ -39,7 +39,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                         device_class = default_value.get("device_class", None),
                         suggested_display_precision = default_value.get("suggested_display_precision", None)
                     )
-                    entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("data_map", None), default_value.get("available", None))])
+                    entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("value_map"), default_value.get("updated_at_map"), default_value.get("available", None))])
 
         description = SensorEntityDescription(
             name = "type",

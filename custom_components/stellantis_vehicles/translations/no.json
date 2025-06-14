@@ -114,20 +114,11 @@
       "wakeup": {
         "name": "Vekk"
       },
-      "doors": {
-        "name": "Dører"
-      },
       "horn": {
         "name": "Horn"
       },
       "lights": {
         "name": "Lys"
-      },
-      "charge_start_stop": {
-        "name": "Lading Start/Stop"
-      },
-      "preconditioning_start_stop": {
-        "name": "Klimaanlegg Start/Stop"
       }
     },
     "device_tracker": {

@@ -62,9 +62,6 @@
           "quick": "Szybko"
         }
       },
-      "battery_charging_time": {
-        "name": "Godzina rozpoczęcia odroczonego ładowania"
-      },
       "battery_charging_end": {
         "name": "Zakończenie ładowania za"
       },
@@ -154,32 +151,34 @@
         "name": "Silnik"
       },
       "preconditioning": {
-        "name": "Klimatyzacja"
+        "name": "Ogrzewanie/chłodzenie wstępne"
+      },
+      "privacy": {
+        "name": "Tryb prywatności"
+      },
+      "remote_commands": {
+        "name": "Zdalne zarządzanie"
       }
     },
     "button": {
       "wakeup": {
         "name": "Wybudzenie"
       },
-      "doors": {
-        "name": "Drzwi"
-      },
       "horn": {
         "name": "Klakson"
       },
       "lights": {
         "name": "Światła"
-      },
-      "charge_start_stop": {
-        "name": "Ładowanie Włącz/Wyłącz"
-      },
-      "preconditioning_start_stop": {
-        "name": "Klimatyzacja Włącz/Wyłącz"
       }
     },
     "device_tracker": {
       "vehicle": {
         "name": "Pojazd"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Godzina rozpoczęcia odroczonego ładowania"
       }
     },
     "number": {

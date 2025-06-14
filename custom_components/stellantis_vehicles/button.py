@@ -5,7 +5,7 @@ from homeassistant.components.button import ButtonEntityDescription
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
-from .base import StellantisBaseButton
+from .base import ( StellantisBaseButton, StellantisBaseActionButton )
 from .utils import get_datetime
 
 from .const import (
@@ -34,12 +34,20 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         entities.extend([StellantisWakeUpButton(coordinator, description)])
 
         description = ButtonEntityDescription(
-            name = "doors",
-            key = "doors",
-            translation_key = "doors",
+            name = "doors_lock",
+            key = "doors_lock",
+            translation_key = "doors_lock",
             icon = "mdi:car-door-lock"
         )
-        entities.extend([StellantisDoorButton(coordinator, description)])
+        entities.extend([StellantisDoorButton(coordinator, description, "lock")])
+
+        description = ButtonEntityDescription(
+            name = "doors_unlock",
+            key = "doors_unlock",
+            translation_key = "doors_unlock",
+            icon = "mdi:car-door-lock-open"
+        )
+        entities.extend([StellantisDoorButton(coordinator, description, "unlock")])
 
         description = ButtonEntityDescription(
             name = "horn",
@@ -58,21 +66,37 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         entities.extend([StellantisLightsButton(coordinator, description)])
 
         description = ButtonEntityDescription(
-            name = "preconditioning_start_stop",
-            key = "preconditioning_start_stop",
-            translation_key = "preconditioning_start_stop",
+            name = "preconditioning_start",
+            key = "preconditioning_start",
+            translation_key = "preconditioning_start",
             icon = "mdi:air-conditioner"
         )
-        entities.extend([StellantisAirConditioningButton(coordinator, description)])
+        entities.extend([StellantisPreconditioningButton(coordinator, description, "activate")])
+
+        description = ButtonEntityDescription(
+            name = "preconditioning_stop",
+            key = "preconditioning_stop",
+            translation_key = "preconditioning_stop",
+            icon = "mdi:air-conditioner"
+        )
+        entities.extend([StellantisPreconditioningButton(coordinator, description, "deactivate")])
 
         if coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             description = ButtonEntityDescription(
-                name = "charge_start_stop",
-                key = "charge_start_stop",
-                translation_key = "charge_start_stop",
-                icon = "mdi:play-pause"
+                name = "charge_start",
+                key = "charge_start",
+                translation_key = "charge_start",
+                icon = "mdi:play"
             )
-            entities.extend([StellantisChargingStartStopButton(coordinator, description)])
+            entities.extend([StellantisChargingStartStopButton(coordinator, description, "immediate")])
+
+            description = ButtonEntityDescription(
+                name = "charge_stop",
+                key = "charge_stop",
+                translation_key = "charge_stop",
+                icon = "mdi:pause"
+            )
+            entities.extend([StellantisChargingStartStopButton(coordinator, description, "delayed")])
 
     async_add_entities(entities)
 
@@ -104,9 +128,9 @@ class StellantisWakeUpButton(StellantisBaseButton):
     async def async_press(self):
         await self._coordinator.send_wakeup_command(self.name)
 
-class StellantisDoorButton(StellantisBaseButton):
+class StellantisDoorButton(StellantisBaseActionButton):
     async def async_press(self):
-        await self._coordinator.send_doors_command(self.name)
+        await self._coordinator.send_doors_command(self.name, self._action)
 
 class StellantisHornButton(StellantisBaseButton):
     async def async_press(self):
@@ -116,15 +140,15 @@ class StellantisLightsButton(StellantisBaseButton):
     async def async_press(self):
         await self._coordinator.send_lights_command(self.name)
 
-class StellantisChargingStartStopButton(StellantisBaseButton):
+class StellantisChargingStartStopButton(StellantisBaseActionButton):
     @property
     def available(self):
         return super().available and "battery_plugged" in self._coordinator._sensors and self._coordinator._sensors["battery_plugged"] and self._coordinator._sensors["battery_charging"] in ["InProgress", "Stopped"]
 
     async def async_press(self):
-        await self._coordinator.send_charge_command(self.name)
+        await self._coordinator.send_charge_command(self.name, False, self._action)
 
-class StellantisAirConditioningButton(StellantisBaseButton):
+class StellantisPreconditioningButton(StellantisBaseActionButton):
     @property
     def available(self):
         if not self._coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
@@ -141,4 +165,4 @@ class StellantisAirConditioningButton(StellantisBaseButton):
         return super().available and doors_locked and (check_battery_level or check_battery_charging)
 
     async def async_press(self):
-        await self._coordinator.send_air_conditioning_command(self.name)
+        await self._coordinator.send_preconditioning_command(self.name, self._action)

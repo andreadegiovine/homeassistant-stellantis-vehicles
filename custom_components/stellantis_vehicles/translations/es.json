@@ -177,16 +177,19 @@
       "privacy": {
         "name": "Privacidad"
       },
-      "remote_control": {
-        "name": "Control remoto"
+      "remote_commands": {
+        "name": "Comandos remotos"
       }
     },
     "button": {
       "wakeup": {
         "name": "Despertar"
       },
-      "doors": {
-        "name": "Puertas"
+      "doors_lock": {
+        "name": "Cerrar puertas"
+      },
+      "doors_unlock": {
+        "name": "Abrir puertas"
       },
       "horn": {
         "name": "Bocina"
@@ -194,11 +197,17 @@
       "lights": {
         "name": "Luces"
       },
-      "charge_start_stop": {
-        "name": "Inicio/Parada de carga"
+      "charge_start": {
+        "name": "Iniciar carga"
       },
-      "preconditioning_start_stop": {
-        "name": "Inicio/Parada de climatización"
+      "charge_stop": {
+        "name": "Detener carga"
+      },
+      "preconditioning_start": {
+        "name": "Iniciar preacondicionamiento"
+      },
+      "preconditioning_stop": {
+        "name": "Detener preacondicionamiento"
       }
     },
     "device_tracker": {
@@ -220,6 +229,9 @@
       },
       "abrp_sync": {
         "name": "Sincronización ABRP"
+      },
+      "notifications": {
+        "name": "Notificaciones"
       }
     },
     "text": {

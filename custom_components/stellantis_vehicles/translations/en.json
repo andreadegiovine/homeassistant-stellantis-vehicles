@@ -177,16 +177,19 @@
       "privacy": {
         "name": "Privacy"
       },
-      "remote_control": {
-        "name": "Remote control"
+      "remote_commands": {
+        "name": "Remote commands"
       }
     },
     "button": {
       "wakeup": {
         "name": "WakeUp"
       },
-      "doors": {
-        "name": "Doors"
+      "doors_lock": {
+        "name": "Doors lock"
+      },
+      "doors_unlock": {
+        "name": "Doors unlock"
       },
       "horn": {
         "name": "Horn"
@@ -194,11 +197,17 @@
       "lights": {
         "name": "Lights"
       },
-      "charge_start_stop": {
-        "name": "Charge Start/Stop"
+      "charge_start": {
+        "name": "Charge start"
       },
-      "preconditioning_start_stop": {
-        "name": "Preconditioning Start/Stop"
+      "charge_stop": {
+        "name": "Charge stop"
+      },
+      "preconditioning_start": {
+        "name": "Preconditioning start"
+      },
+      "preconditioning_stop": {
+        "name": "Preconditioning stop"
       }
     },
     "device_tracker": {
@@ -220,6 +229,9 @@
       },
       "abrp_sync": {
         "name": "ABRP sync"
+      },
+      "notifications": {
+        "name": "Notifications"
       }
     },
     "text": {

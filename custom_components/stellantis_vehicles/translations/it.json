@@ -177,16 +177,19 @@
       "privacy": {
         "name": "Privacy"
       },
-      "remote_control": {
-        "name": "Controllo remoto"
+      "remote_commands": {
+        "name": "Comandi remoti"
       }
     },
     "button": {
       "wakeup": {
         "name": "Svegliati"
       },
-      "doors": {
-        "name": "Portiere"
+      "doors_lock": {
+        "name": "Apri portiere"
+      },
+      "doors_unlock": {
+        "name": "Chiudi portiere"
       },
       "horn": {
         "name": "Clacson"
@@ -194,11 +197,17 @@
       "lights": {
         "name": "Luci"
       },
-      "charge_start_stop": {
-        "name": "Start/Stop ricarica"
+      "charge_start": {
+        "name": "Start ricarica"
       },
-      "preconditioning_start_stop": {
-        "name": "Start/Stop precondizionamento"
+      "charge_stop": {
+        "name": "Stop ricarica"
+      },
+      "preconditioning_start": {
+        "name": "Start precondizionamento"
+      },
+      "preconditioning_stop": {
+        "name": "Stop precondizionamento"
       }
     },
     "device_tracker": {
@@ -220,6 +229,9 @@
       },
       "abrp_sync": {
         "name": "Sincronizza ABRP"
+      },
+      "notifications": {
+        "name": "Notifiche"
       }
     },
     "text": {

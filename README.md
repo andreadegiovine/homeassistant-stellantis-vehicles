@@ -8,20 +8,6 @@ Currently only PSA vehicles are compatibile (Peugeot, Citroen, DS, Opel and Vaux
 
 Currently Stellantis not provide B2C api credentials, this integration use the mobile apps api credentials and login flow.
 
-## Features
-
-|                            | Electric / Hybrid | Thermic | E-remote control | Remote control  | Connect Plus |
-|----------------------------|:-----------------:|:-------:|:----------------:|:---------------:|:------------:|
-| Get status                 |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
-| Wake up                    |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
-| ABRP sync                  |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
-| Preconditioning start/stop |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
-| Doors open/close           |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
-| Flash lights               |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
-| Honk the horn              |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
-| Charging start/stop        |        ✔️         |         |        ✔️        |                 |      ✔️      |
-| Charging limit             |        ✔️         |         |        ✔️        |                 |      ✔️      |
-
 ## Installation
 <details><summary><b>Using HACS</b></summary>
 
@@ -52,6 +38,20 @@ As described on config flow, please get the right code from the mobile app redir
 Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome Python tool to fetch oauth code without using browser console: [stellantis-oauth-helper](https://github.com/benbox69/stellantis-oauth-helper)
 
 </details>
+
+## Features
+
+|                            | Electric / Hybrid | Thermic | E-remote control | Remote control  | Connect Plus |
+|----------------------------|:-----------------:|:-------:|:----------------:|:---------------:|:------------:|
+| Get status                 |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Wake up                    |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| ABRP sync                  |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Preconditioning start/stop |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Doors open/close           |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Flash lights               |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Honk the horn              |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Charging start/stop        |        ✔️         |         |        ✔️        |                 |      ✔️      |
+| Charging limit             |        ✔️         |         |        ✔️        |                 |      ✔️      |
 
 ## Screenshot
 ![Controls](./images/controls.png)
@@ -168,6 +168,7 @@ Thanks to all users who contribute to this integration by updating translations 
 Thanks to everyone for the issues, especially to:
 - [@chmtc94](https://github.com/chmtc94);
 - [@FrankTub](https://github.com/FrankTub);
+- [@Jordan87](https://github.com/Jordan87);
 
 ## Support the project
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)

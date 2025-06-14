@@ -176,20 +176,11 @@
       "wakeup": {
         "name": "Wakker worden"
       },
-      "doors": {
-        "name": "Deuren"
-      },
       "horn": {
         "name": "Toeter"
       },
       "lights": {
         "name": "Lichten"
-      },
-      "charge_start_stop": {
-        "name": "Laden Starten/Stoppen"
-      },
-      "preconditioning_start_stop": {
-        "name": "Air conditioning Starten/Stoppen"
       }
     },
     "device_tracker": {

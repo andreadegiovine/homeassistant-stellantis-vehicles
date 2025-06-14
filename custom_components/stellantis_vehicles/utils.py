@@ -1,7 +1,5 @@
 import logging
 from datetime import UTC, datetime, timezone, timedelta
-import time
-# import json
 
 from homeassistant.util import dt
 
@@ -14,7 +12,10 @@ def get_datetime(date = None):
         date = date.astimezone(UTC)
     return date.astimezone(dt.get_default_time_zone())
 
-def date_from_pt_string(pt_string):
+def datetime_from_isoformat(string):
+    return get_datetime(datetime.fromisoformat(string))
+
+def time_from_pt_string(pt_string):
     regex = 'PT'
     if pt_string.find("H") != -1:
         regex = regex + "%HH"
@@ -22,26 +23,21 @@ def date_from_pt_string(pt_string):
         regex = regex + "%MM"
     if pt_string.find("S") != -1:
         regex = regex + "%SS"
-    return datetime.strptime(pt_string, regex)
+    return datetime.strptime(pt_string, regex).time()
 
-def timestring_to_datetime(timestring, sum_to_now = False):
+def time_from_string(string):
+    return datetime.strptime(string, "%H:%M:%S").time()
+
+def date_from_pt_string(pt_string, start_date = None):
+    if not start_date:
+        start_date = get_datetime()
     try:
-        date = date_from_pt_string(timestring)
-        if sum_to_now:
-            return get_datetime() + timedelta(hours=date.hour, minutes=date.minute)
-        else:
-            today = get_datetime().replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
-            tomorrow = (today + timedelta(days=1)).replace(hour=date.hour, minute=date.minute, second=0, microsecond=0)
-            if today < get_datetime():
-                return tomorrow
-            else:
-                return today
+        time = time_from_pt_string(pt_string)
+        return start_date + timedelta(hours=time.hour, minutes=time.minute)
+
     except Exception as e:
         _LOGGER.error(str(e))
         return None
-
-def time_from_string(string):
-    return time.strptime(string, "%H:%M:%S")
 
 # def masked_configs(configs = {}):
 #     masked_params = ["access_token","customer_id","refresh_token","vehicle_id","vin","client_id","client_secret","basic_token"]
