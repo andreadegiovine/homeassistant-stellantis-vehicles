@@ -141,15 +141,26 @@ jobs:
           echo "$notes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Merge in master
+#      - name: Merge in master
+#        if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
+#        uses: devmasx/merge-branch@v1.4.0
+#        with:
+#          type: now
+#          label_name: ${{ steps.tag-name.outputs.new_tag_name }}
+#          from_branch: ${{ steps.tag-name.outputs.branch_develop }}
+#          target_branch: ${{ steps.tag-name.outputs.branch_master }}
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update master
         if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
-        uses: devmasx/merge-branch@v1.4.0
-        with:
-          type: now
-          label_name: ${{ steps.tag-name.outputs.new_tag_name }}
-          from_branch: ${{ steps.tag-name.outputs.branch_develop }}
-          target_branch: ${{ steps.tag-name.outputs.branch_master }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            git fetch
+            git checkout ${{ steps.tag-name.outputs.branch_develop }}
+            git pull
+            git checkout ${{ steps.tag-name.outputs.branch_master }}
+            git pull
+            git merge ${{ steps.tag-name.outputs.branch_develop }} --strategy-option theirs
+            git push
 
       - name: Create release
         uses: softprops/action-gh-release@v2
