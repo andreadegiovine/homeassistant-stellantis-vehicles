@@ -98,7 +98,8 @@
           "0": "Completato",
           "300": "Annullato",
           "500": "Errore",
-          "502": "Duplicato"
+          "502": "Duplicato",
+          "422": "Privacy attiva"
         }
       },
       "fuel": {

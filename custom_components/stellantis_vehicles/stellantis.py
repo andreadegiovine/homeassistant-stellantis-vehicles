@@ -578,7 +578,7 @@ class StellantisVehicles(StellantisOauth):
             charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
                 coordinator = self.do_async(self.async_get_coordinator_by_vin(data["vin"]))
-                if "return_code" not in data or data["return_code"] in ["0", "300", "500", "502"]:
+                if "return_code" not in data or data["return_code"] in ["0", "300", "500", "502", "422"]:
                     if "return_code" not in data:
                         result_code = data["process_code"]
                     else:
