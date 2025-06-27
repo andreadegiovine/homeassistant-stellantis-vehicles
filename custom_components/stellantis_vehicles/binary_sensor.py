@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 
 from homeassistant.components.binary_sensor import ( BinarySensorEntity, BinarySensorEntityDescription, BinarySensorDeviceClass )
 from .base import ( StellantisBaseBinarySensor, StellantisBaseEntity )
@@ -31,7 +32,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                         icon = default_value.get("icon", None),
                         device_class = default_value.get("device_class", None)
                     )
-                    entities.extend([StellantisBaseBinarySensor(coordinator, description, default_value.get("value_map"), default_value.get("updated_at_map"), default_value.get("on_value", None))])
+                    entities.extend([StellantisBaseBinarySensor(coordinator, description, deepcopy(default_value.get("value_map")), deepcopy(default_value.get("updated_at_map")), default_value.get("on_value", None))])
 
         description = BinarySensorEntityDescription(
             name = "remote_commands",

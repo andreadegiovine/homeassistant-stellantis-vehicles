@@ -423,7 +423,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         value = self.get_value_from_map(value_map)
         if value or (not key in self._coordinator._sensors):
             self._coordinator._sensors[key] = value
-        
+
         if value == None:
             return None
 
@@ -743,7 +743,7 @@ class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):
     def __init__(self, coordinator, description):
         super().__init__(coordinator, description)
         self._sensor_key = f"time_{self._key}"
-        
+
     @property
     def native_value(self):
         """ Native value. """

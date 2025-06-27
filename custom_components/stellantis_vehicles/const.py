@@ -224,7 +224,7 @@ SENSORS_DEFAULT = {
         "state_class": SensorStateClass.TOTAL_INCREASING,
         "value_map" : ["energies", 0, "extension", "fuel", "consumptions", "total"],
         "updated_at_map" : ["energies", 0, "createdAt"],
-         "suggested_display_precision": 2,
+        "suggested_display_precision": 2,
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "fuel_consumption_instant" : {

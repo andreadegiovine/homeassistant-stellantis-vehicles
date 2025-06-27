@@ -1,6 +1,7 @@
 import logging
 from time import strftime
 from time import gmtime
+from copy import deepcopy
 
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume )
@@ -40,7 +41,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
                         state_class = default_value.get("state_class", None),
                         suggested_display_precision = default_value.get("suggested_display_precision", None)
                     )
-                    entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("value_map"), default_value.get("updated_at_map"), default_value.get("available", None))])
+                    entities.extend([StellantisBaseSensor(coordinator, description, deepcopy(default_value.get("value_map")), deepcopy(default_value.get("updated_at_map")), default_value.get("available", None))])
 
         description = SensorEntityDescription(
             name = "type",
