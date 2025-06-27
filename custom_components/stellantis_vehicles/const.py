@@ -189,7 +189,7 @@ SENSORS_DEFAULT = {
         "value_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"],
         "updated_at_map" : ["energies", 0, "extension", "electric", "battery", "load", "createdAt"],
         "suggested_display_precision": 2,
-        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
+        "engine": [VEHICLE_TYPE_ELECTRIC]
      },
      "battery_residual" : {
         "icon" : "mdi:battery-arrow-up",
@@ -199,7 +199,7 @@ SENSORS_DEFAULT = {
         "value_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"],
         "updated_at_map" : ["energies", 0, "extension", "electric", "battery", "load", "createdAt"],
         "suggested_display_precision": 2,
-        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
+        "engine": [VEHICLE_TYPE_ELECTRIC]
      },
     "fuel" : {
         "icon": "mdi:gas-station",
