@@ -478,30 +478,31 @@ class StellantisVehicles(StellantisOauth):
                     await self._update_mqtt_config(mqtt_config, token_request)
             except ConfigEntryAuthFailed as e:
                 try:
-                    _LOGGER.debug("------------- 1st attempt to refresh MQTT token failed, trying again")
-                    token_request = await self._fetch_new_mqtt_token(mqtt_config)
+                    _LOGGER.debug("------------- Attempt to refresh MQTT token failed, trying to refresh only the access_token (using refresh_token)")
+                    token_request = await self._fetch_new_mqtt_token(mqtt_config, access_token_only=True)
                     _LOGGER.debug(token_request)
                     await self._update_mqtt_config(mqtt_config, token_request)
                 except ConfigEntryAuthFailed as ee:
-                    _LOGGER.error("------------- 2nd refresh MQTT token failed with: %s", ee)
-                    # If the second attempt fails, raise the exception
+                    _LOGGER.error("------------- Attempt to refresh MQTT access token only failed as well. Error: %s", ee)
+                    # If refreshing access_token only attempt fails as well, raise an exception
                     raise
             except Exception as e:
                 _LOGGER.error("Unexpected error during MQTT token refresh: %s", e)
                 raise
         _LOGGER.debug("---------- END refresh_mqtt_token")
 
-    async def _fetch_new_mqtt_token(self, mqtt_config):
+    async def _fetch_new_mqtt_token(self, mqtt_config, access_token_only=False):
         """Fetch a new MQTT token using either the refresh token or an OTP code."""
         # Prepare the request URL and headers for fetching a new MQTT token
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(GET_OTP_HEADERS)
         # Check if the refresh token is about to expire and use OTP if necessary
-        if "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval)):
+        refresh_token_almost_expired = "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval))
+        if refresh_token_almost_expired and not access_token_only:
             _LOGGER.debug("------------- mqtt refresh_token is almost expired, use OTP code to get a new one")
             # It seems there is a rate limit of 6 requests per 24h
-            otp_code = await self.get_otp_code()
             # Request new tokens (access_token and refresh_token) using the OTP code
+            otp_code = await self.get_otp_code()
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             return await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
