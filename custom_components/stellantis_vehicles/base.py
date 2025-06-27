@@ -2,6 +2,7 @@ import logging
 import re
 from datetime import datetime, timedelta, UTC
 import json
+from copy import deepcopy
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -561,8 +562,8 @@ class StellantisBaseSensor(StellantisRestoreSensor):
     def __init__(self, coordinator, description, value_map = [], updated_at_map = [], available = None):
         super().__init__(coordinator, description)
 
-        self._value_map = value_map
-        self._updated_at_map = updated_at_map
+        self._value_map = deepcopy(value_map)
+        self._updated_at_map = deepcopy(updated_at_map)
 
         self.update_maps_for_hybrid()
 
@@ -598,8 +599,8 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
     def __init__(self, coordinator, description, value_map = [], updated_at_map = [], on_value = None):
         super().__init__(coordinator, description)
 
-        self._value_map = value_map
-        self._updated_at_map = updated_at_map
+        self._value_map = deepcopy(value_map)
+        self._updated_at_map = deepcopy(updated_at_map)
 
         self.update_maps_for_hybrid()
 
