@@ -455,6 +455,9 @@ class StellantisBaseEntity(CoordinatorEntity):
             else:
                 value = (float(value) / 1000) + 10
 
+        if key in ["coolant_temperature", "oil_temperature", "air_temperature"]:
+            value = float(value) / 10
+
         if isinstance(value, str):
             value = value.lower()
 
