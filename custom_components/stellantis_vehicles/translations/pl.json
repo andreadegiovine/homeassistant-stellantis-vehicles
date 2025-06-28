@@ -167,6 +167,24 @@
       "horn": {
         "name": "Klakson"
       },
+      "doors_lock": {
+        "name": "Drzwi zamknij"
+      },
+      "doors_unlock": {
+        "name": "Drzwi otwórz"
+      },
+      "charge_start": {
+        "name": "Ładowanie baterii start"
+      },
+      "charge_stop": {
+        "name": "Ładowanie baterii stop"
+      },
+      "preconditioning_start": {
+        "name": "Ogrzewanie/chłodzenie wstępne start"
+      },
+      "preconditioning_stop": {
+        "name": "Ogrzewanie/chłodzenie wstępne stop"
+      },
       "lights": {
         "name": "Światła"
       }
