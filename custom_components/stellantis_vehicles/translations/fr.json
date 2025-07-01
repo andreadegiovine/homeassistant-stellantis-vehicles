@@ -12,7 +12,7 @@
         }
       },
       "oauth": {
-        "description": "Suivez ces étapes depuis un **navigateur pour ordinateur**:\n\n1. Allez sur la page d'authentification {oauth_link};\n2. Dans le navigateur, ouvrez les **DevTools** (F12) et allez sur l'onglet **Réseau** ;\n3. Identifiez-vous et cliquez sur le dernier bouton de confirmation;\n4. Sur l'onglet **Réseau** cherchez la requete ci-dessous et copiez le **{oauth_label}**;{oauth_devtools}",
+        "description": "Suivez ces étapes depuis un **navigateur sur votre ordinateur**:\n\n1. Allez sur la page d'authentification {oauth_link}\n2. Dans le navigateur, ouvrez les **DevTools** (F12) et allez sur l'onglet **Réseau**\n3. Identifiez-vous et cliquez sur le dernier bouton de confirmation\n4. Sur l'onglet **Réseau** cherchez la requête ci-dessous et copiez le **{oauth_label}**{oauth_devtools}",
         "data": {
           "oauth_code": "Code OAuth"
         }
@@ -25,11 +25,11 @@
       }
     },
     "error": {
-      "get_access_token": "Erreur récupération jeton d'accès",
-      "get_user_info": "Erreur récupération informations utilisateur",
+      "get_access_token": "Erreur lors de la récupération du jeton d'accès",
+      "get_user_info": "Erreur lors de la récupération des informations utilisateur",
       "missing_user_info": "Erreur informations utilisateur manquantes",
-      "get_otp_sms": "Erreur récupération code OTP SMS",
-      "get_mqtt_access_token": "Erreur récupération jeton accès mqtt"
+      "get_otp_sms": "Erreur lors de la récupération du code OTP SMS",
+      "get_mqtt_access_token": "Erreur lors de la récupération du jeton accès MQTT"
     },
     "abort": {
       "already_configured": "Compte déjà configuré",
@@ -60,19 +60,19 @@
         "name": "Vitesse"
       },
       "autonomy": {
-        "name": "Batterie autonomie"
+        "name": "Autonomie batterie"
       },
       "battery": {
-        "name": "Batterie niveau"
+        "name": "Niveau batterie"
       },
       "battery_soh": {
-        "name": "Batterie SOH"
+        "name": "SOH batterie"
       },
       "battery_charging_rate": {
-        "name": "Batterie vitesse de charge"
+        "name": "Vitesse de charge batterie"
       },
       "battery_charging_type": {
-        "name": "Batterie type de charge",
+        "name": "Type de charge batterie",
         "state": {
           "no": "Non",
           "slow": "Lente",
@@ -80,10 +80,10 @@
         }
       },
       "battery_charging_end": {
-        "name": "Batterie fin de charge estimée"
+        "name": "Fin de charge batterie estimée"
       },
       "battery_capacity": {
-        "name": "Batterie capacité"
+        "name": "Capacité batterie"
       },
       "battery_residual": {
         "name": "Batterie restante"
@@ -102,16 +102,16 @@
         }
       },
       "fuel": {
-        "name": "Carburant niveau"
+        "name": "Niveau carburant"
       },
       "fuel_autonomy": {
-        "name": "Carburant autonomie"
+        "name": "Autonomie carburant"
       },
       "fuel_consumption_total": {
-        "name": "Carburant consommation totale"
+        "name": "Consommation totale carburant"
       },
       "fuel_consumption_instant": {
-        "name": "Carburant consommation instantannée"
+        "name": "Consommation instantannée carburant"
       },
       "coolant_temperature": {
         "name": "Température liquide de refroidissement"
@@ -141,13 +141,13 @@
             "name": "Consommation électrique"
           },
           "electric_avg_consumption": {
-            "name": "Consommation moyenne électrique"
+            "name": "Consommation électrique moyenne"
           },
           "fuel_consumption": {
             "name": "Consommation carburant"
           },
           "fuel_avg_consumption": {
-            "name": "Consommation moyenne carburant"
+            "name": "Consommation carburant moyenne"
           }
         }
       }
@@ -169,7 +169,7 @@
         "name": "Moteur"
       },
       "preconditioning": {
-        "name": "Préconditionnement"
+        "name": "Pré-conditionnement"
       },
       "alarm": {
         "name": "Alarme"
@@ -186,10 +186,10 @@
         "name": "Réveil"
       },
       "doors_lock": {
-        "name": "Portes verrouiller"
+        "name": "Verrouiller portes"
       },
       "doors_unlock": {
-        "name": "Portes déverrouiller"
+        "name": "Déverrouiller portes"
       },
       "horn": {
         "name": "Klaxon"
@@ -198,16 +198,16 @@
         "name": "Phares"
       },
       "charge_start": {
-        "name": "Charge démarrer"
+        "name": "Démarrer recharge"
       },
       "charge_stop": {
-        "name": "Charge arrêter"
+        "name": "Arrêter recharge"
       },
       "preconditioning_start": {
-        "name": "Préconditionnement démarrer"
+        "name": "Démarrer pré-conditionnement"
       },
       "preconditioning_stop": {
-        "name": "Préconditionnement arrêter"
+        "name": "Arrêter pré-conditionnement"
       }
     },
     "device_tracker": {
@@ -217,18 +217,18 @@
     },
     "number": {
       "battery_charging_limit": {
-        "name": "Batterie limite de charge"
+        "name": "Limite de recharge batterie"
       },
       "refresh_interval": {
-        "name": "Intervalle de rafraichissement de données"
+        "name": "Intervalle de rafraichissement des données"
       }
     },
     "switch": {
       "battery_charging_limit": {
-        "name": "Batterie limiter la charge"
+        "name": "Limiter la recharge batterie"
       },
       "abrp_sync": {
-        "name": "ABRP synchronisation"
+        "name": "Synchronisation avec ABRP"
       },
       "notifications": {
         "name": "Notifications"
@@ -236,12 +236,12 @@
     },
     "text": {
       "abrp_token": {
-        "name": "ABRP jeton"
+        "name": "Jeton ABRP"
       }
     },
     "time": {
       "battery_charging_start": {
-        "name": "Batterie charge démarée"
+        "name": "Recharge batterie démarée"
       }
     }
   },

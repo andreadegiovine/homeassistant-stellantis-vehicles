@@ -98,7 +98,8 @@
           "0": "Complete",
           "300": "Canceled",
           "500": "Error",
-          "502": "Duplicate"
+          "502": "Duplicate",
+          "422": "Privacy enabled"
         }
       },
       "fuel": {
