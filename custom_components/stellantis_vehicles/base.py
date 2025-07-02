@@ -450,7 +450,10 @@ class StellantisBaseEntity(CoordinatorEntity):
                     diff = value_timestamp - now_timestamp
                     limit_diff = (diff / (100 - int(float(current_battery)))) * (int(charge_limit) - int(float(current_battery)))
                     value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
-            self._coordinator._sensors[key] = value
+            # Only update if it’s different
+            previous = self._coordinator._sensors.get(key)
+            if  not previous or abs((previous - value).total_seconds()) > 1:
+                self._coordinator._sensors[key] = value
 
         if key in ["battery_capacity", "battery_residual"]:
             if int(value) < 1:
