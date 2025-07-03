@@ -367,18 +367,20 @@ class StellantisBaseEntity(CoordinatorEntity):
             if self._key == "battery_soh":
                 self._value_map[6] = "capacity"
 
-    def value_was_updated(self, compare_value = False):
+    def value_was_updated(self, compare_value: bool = False):
         """ Check if value was changed. """
-        current_updated_at = None
-        if self._attr_extra_state_attributes.get("updated_at"):
-            current_updated_at = self._attr_extra_state_attributes.get("updated_at")
+        current_updated_at = self._attr_extra_state_attributes.get("updated_at")
         new_updated_at = self.get_updated_at_from_map(self._updated_at_map)
-        if compare_value:
-            current_value = self._coordinator._sensors.get(self._key)
-            new_value = self.get_value(self._value_map)
-            return current_updated_at != new_updated_at or current_value != new_value
-        else:
-            return current_updated_at != new_updated_at
+
+        if current_updated_at != new_updated_at:
+            return True
+
+        # Timestamp didn't change — compare values anyway
+        current_value = self._coordinator._sensors.get(self._key)
+        new_value = self.get_value(self._value_map)
+
+        return current_value != new_value if compare_value else (new_value is not None and current_value != new_value)
+
 
     def get_updated_at_from_map(self, updated_at_map):
         """ Get data updated_at from map. """
@@ -447,7 +449,10 @@ class StellantisBaseEntity(CoordinatorEntity):
                     diff = value_timestamp - now_timestamp
                     limit_diff = (diff / (100 - int(float(current_battery)))) * (int(charge_limit) - int(float(current_battery)))
                     value = get_datetime(datetime.fromtimestamp((now_timestamp + limit_diff)))
-            self._coordinator._sensors[key] = value
+            # Only update if it’s different
+            previous = self._coordinator._sensors.get(key)
+            if  not previous or abs((previous - value).total_seconds()) > 1:
+                self._coordinator._sensors[key] = value
 
         if key in ["battery_capacity", "battery_residual"]:
             if int(value) < 1:
