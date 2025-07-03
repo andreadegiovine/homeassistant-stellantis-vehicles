@@ -369,12 +369,10 @@ class StellantisBaseEntity(CoordinatorEntity):
 
     def value_was_updated(self):
         """ Check if value was changed. """
-        current_updated_at = self._attr_extra_state_attributes.get("updated_at", None)
-        new_updated_at = self.get_updated_at_from_map(self._updated_at_map)
         current_value = self._coordinator._sensors.get(self._key)
         self.get_value(self._value_map)
         new_value = self._coordinator._sensors.get(self._key)
-        return current_updated_at != new_updated_at or current_value != new_value
+        return current_value != new_value
 
     def get_updated_at_from_map(self, updated_at_map):
         """ Get data updated_at from map. """
@@ -429,6 +427,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         if key in ["time_battery_charging_start", "battery_charging_end"]:
             if key == "time_battery_charging_start":
                 value = time_from_pt_string(value)
+                self._coordinator._sensors[key] = value
             if key == "battery_charging_end":
                 new_updated_at = get_datetime()
                 value = date_from_pt_string(value, new_updated_at)
