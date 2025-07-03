@@ -436,12 +436,10 @@ class StellantisBaseEntity(CoordinatorEntity):
             if key == "battery_charging_end":
                 new_updated_at = datetime_from_isoformat(self.get_updated_at_from_map(self._updated_at_map))
                 value = date_from_pt_string(value, new_updated_at)
-                charge_limit_on = "switch_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["switch_battery_charging_limit"]
-                charge_limit = None
-                if "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]:
-                    charge_limit = self._coordinator._sensors["number_battery_charging_limit"]
+                charge_limit_on = self._coordinator._sensors.get("switch_battery_charging_limit", False)
+                charge_limit = self._coordinator._sensors.get("number_battery_charging_limit", None)
                 if charge_limit_on and charge_limit:
-                    current_battery = self._coordinator._sensors["battery"]
+                    current_battery = self._coordinator._sensors.get("battery")
                     now_timestamp = datetime.timestamp(new_updated_at)
                     value_timestamp = datetime.timestamp(value)
                     diff = value_timestamp - now_timestamp
