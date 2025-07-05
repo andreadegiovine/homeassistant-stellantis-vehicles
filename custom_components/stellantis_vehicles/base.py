@@ -139,9 +139,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     async def send_charge_command(self, button_name, update_only_time = False, action = "immediate"):
         """ Send charge command to the vehicle. """
-        current_hour = self._sensors["time_battery_charging_start"]
+        current_hour = self._sensors.get("time_battery_charging_start")
         if update_only_time:
-            current_status = self._sensors["battery_charging"]
+            current_status = self._sensors.get("battery_charging")
             if current_status != "InProgress":
                     action = "delayed"
         await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": action})
@@ -199,30 +199,30 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         }
 
         if "battery" in self._sensors:
-            tlm["soc"] = self._sensors["battery"]
+            tlm["soc"] = self._sensors.get("battery")
         if "kinetic" in self._data and "speed" in self._data["kinetic"]:
             tlm["speed"] = self._data["kinetic"]["speed"]
         if "lastPosition" in self._data:
             tlm["lat"] = float(self._data["lastPosition"]["geometry"]["coordinates"][1])
             tlm["lon"] = float(self._data["lastPosition"]["geometry"]["coordinates"][0])
         if "battery_charging" in self._sensors:
-            tlm["is_charging"] = self._sensors["battery_charging"] == "InProgress"
+            tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
         if "battery_charging_type" in self._sensors:
-            tlm["is_dcfc"] = tlm["is_charging"] and self._sensors["battery_charging_type"] == "Quick"
-        if "battery_soh" in self._sensors and self._sensors["battery_soh"]:
-            tlm["soh"] = float(self._sensors["battery_soh"])
+            tlm["is_dcfc"] = tlm["is_charging"] and self._sensors.get("battery_charging_type") == "Quick"
+        if "battery_soh" in self._sensors and self._sensors.get("battery_soh"):
+            tlm["soh"] = float(self._sensors.get("battery_soh"))
         if "lastPosition" in self._data and "properties" in self._data["lastPosition"] and "heading" in self._data["lastPosition"]["properties"]:
             tlm["heading"] = float(self._data["lastPosition"]["properties"]["heading"])
         if "lastPosition" in self._data and len(self._data["lastPosition"]["geometry"]["coordinates"]) == 3:
             tlm["elevation"] = float(self._data["lastPosition"]["geometry"]["coordinates"][2])
         if "temperature" in self._sensors:
-            tlm["ext_temp"] = self._sensors["temperature"]
+            tlm["ext_temp"] = self._sensors.get("temperature")
         if "mileage" in self._sensors:
-            tlm["odometer"] = self._sensors["mileage"]
+            tlm["odometer"] = self._sensors.get("mileage")
         if "autonomy" in self._sensors:
-            tlm["est_battery_range"] = self._sensors["autonomy"]
+            tlm["est_battery_range"] = self._sensors.get("autonomy")
 
-        params = {"tlm": json.dumps(tlm), "token": self._sensors["text_abrp_token"]}
+        params = {"tlm": json.dumps(tlm), "token": self._sensors.get("text_abrp_token")}
         await self._stellantis.send_abrp_data(params)
 
 
@@ -233,32 +233,30 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 self._manage_charge_limit_sent = False
 
             if "battery_charging" in self._sensors:
-                if self._sensors["battery_charging"] == "InProgress" and not self._manage_charge_limit_sent:
-                    charge_limit_on = "switch_battery_charging_limit" in self._sensors and self._sensors["switch_battery_charging_limit"]
-                    charge_limit = None
-                    if "number_battery_charging_limit" in self._sensors and self._sensors["number_battery_charging_limit"]:
-                        charge_limit = self._sensors["number_battery_charging_limit"]
+                if self._sensors.get("battery_charging") == "InProgress" and not self._manage_charge_limit_sent:
+                    charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
+                    charge_limit = self._sensors.get("number_battery_charging_limit", None)
                     if charge_limit_on and charge_limit and "battery" in self._sensors:
-                        current_battery = self._sensors["battery"]
+                        current_battery = self._sensors.get("battery")
                         if int(float(current_battery)) >= int(charge_limit):
                             button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_stop.name")
                             await self.send_charge_command(button_name, False, "delayed")
                             self._manage_charge_limit_sent = True
-                elif self._sensors["battery_charging"] != "InProgress" and self._manage_charge_limit_sent:
+                elif self._sensors.get("battery_charging") != "InProgress" and self._manage_charge_limit_sent:
                     self._manage_charge_limit_sent = False
 
-            if "switch_abrp_sync" in self._sensors and self._sensors["switch_abrp_sync"] and "text_abrp_token" in self._sensors and len(self._sensors["text_abrp_token"]) == 36:
+            if "switch_abrp_sync" in self._sensors and self._sensors.get("switch_abrp_sync") and "text_abrp_token" in self._sensors and len(self._sensors.get("text_abrp_token")) == 36:
                 await self.send_abrp_data()
 
         if "engine" in self._sensors and "ignition" in self._data and "type" in self._data["ignition"]:
-            current_engine_status = self._sensors["engine"]
+            current_engine_status = self._sensors.get("engine")
             new_engine_status = self._data["ignition"]["type"]
             if current_engine_status != "Stop" and new_engine_status == "Stop":
                 await self.get_vehicle_last_trip()
 
-        if "number_refresh_interval" in self._sensors and self._sensors["number_refresh_interval"] > 0 and self._sensors["number_refresh_interval"] != self._update_interval_seconds:
-            self.update_interval = timedelta(seconds=self._sensors["number_refresh_interval"])
-            self._stellantis._refresh_interval = self._sensors["number_refresh_interval"]
+        if "number_refresh_interval" in self._sensors and self._sensors.get("number_refresh_interval") > 0 and self._sensors.get("number_refresh_interval") != self._update_interval_seconds:
+            self.update_interval = timedelta(seconds=self._sensors.get("number_refresh_interval"))
+            self._stellantis._refresh_interval = self._sensors.get("number_refresh_interval")
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """
@@ -460,7 +458,7 @@ class StellantisBaseEntity(CoordinatorEntity):
     def available_command(self):
         """ Base availability property for mqtt commands. """
         mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
-        engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors["engine"] == "Stop"
+        engine_is_off = "engine" in self._coordinator._sensors and self._coordinator._sensors.get("engine") == "Stop"
         command_is_enabled = self.name not in self._coordinator._disabled_commands
         return mqtt_is_connected and engine_is_off and command_is_enabled and not self._coordinator.pending_action
 
@@ -493,10 +491,10 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def battery_level(self):
         """ Battery level. """
-        if "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"]:
-            return int(float(self._coordinator._sensors["battery"]))
-        elif "service_battery_voltage" in self._coordinator._sensors and self._coordinator._sensors["service_battery_voltage"]:
-            return int(float(self._coordinator._sensors["service_battery_voltage"]))
+        if self._coordinator._sensors.get("battery"):
+            return int(float(self._coordinator._sensors.get("battery")))
+        elif self._coordinator._sensors.get("service_battery_voltage"):
+            return int(float(self._coordinator._sensors.get("service_battery_voltage")))
         return None
 
     @property
@@ -575,9 +573,9 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                     break
                 if result and key in self._coordinator._sensors:
                     if isinstance(rule[key], list):
-                        result = self._coordinator._sensors[key] in rule[key]
+                        result = self._coordinator._sensors.get(key) in rule[key]
                     else:
-                        result = rule[key] == self._coordinator._sensors[key]
+                        result = rule[key] == self._coordinator._sensors.get(key)
         return result
 
     def coordinator_update(self):
@@ -671,7 +669,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
     def native_value(self):
         """ Native value. """
         if self._sensor_key in self._coordinator._sensors:
-            return self._coordinator._sensors[self._sensor_key]
+            return self._coordinator._sensors.get(self._sensor_key)
         if self._stellantis.get_stored_config(self._sensor_key):
             return self._stellantis.get_stored_config(self._sensor_key)
         return self._default_value
@@ -693,7 +691,7 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
     def is_on(self):
         """ Is on. """
         if self._sensor_key in self._coordinator._sensors:
-            return self._coordinator._sensors[self._sensor_key]
+            return self._coordinator._sensors.get(self._sensor_key)
         if self._stellantis.get_stored_config(self._sensor_key):
             return self._stellantis.get_stored_config(self._sensor_key)
         return False
@@ -722,7 +720,7 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
     def native_value(self):
         """ Native value. """
         if self._sensor_key in self._coordinator._sensors:
-            return self._coordinator._sensors[self._sensor_key]
+            return self._coordinator._sensors.get(self._sensor_key)
         if self._stellantis.get_stored_config(self._sensor_key):
             return self._stellantis.get_stored_config(self._sensor_key)
         return ""
@@ -744,5 +742,5 @@ class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):
     def native_value(self):
         """ Native value. """
         if self._sensor_key in self._coordinator._sensors:
-            return self._coordinator._sensors[self._sensor_key]
+            return self._coordinator._sensors.get(self._sensor_key)
         return None

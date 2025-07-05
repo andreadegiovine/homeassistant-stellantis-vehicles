@@ -143,7 +143,7 @@ class StellantisLightsButton(StellantisBaseButton):
 class StellantisChargingStartStopButton(StellantisBaseActionButton):
     @property
     def available(self):
-        return super().available and "battery_plugged" in self._coordinator._sensors and self._coordinator._sensors["battery_plugged"] and self._coordinator._sensors["battery_charging"] in ["InProgress", "Stopped"]
+        return super().available and self._coordinator._sensors.get("battery_plugged") and self._coordinator._sensors.get("battery_charging") in ["InProgress", "Stopped"]
 
     async def async_press(self):
         await self._coordinator.send_charge_command(self.name, False, self._action)
@@ -154,13 +154,13 @@ class StellantisPreconditioningButton(StellantisBaseActionButton):
         if not self._coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
 
-        doors_locked = "doors" in self._coordinator._sensors and (self._coordinator._sensors["doors"] == None or "Locked" in self._coordinator._sensors["doors"])
+        doors_locked = "doors" in self._coordinator._sensors and (self._coordinator._sensors.get("doors") == None or "Locked" in self._coordinator._sensors.get("doors"))
 
         min_charge = 50
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
             min_charge = 20
-        check_battery_level = "battery" in self._coordinator._sensors and self._coordinator._sensors["battery"] and int(float(self._coordinator._sensors["battery"])) >= min_charge
-        check_battery_charging = "battery_charging" in self._coordinator._sensors and self._coordinator._sensors["battery_charging"] == "InProgress"
+        check_battery_level = self._coordinator._sensors.get("battery") and int(float(self._coordinator._sensors.get("battery"))) >= min_charge
+        check_battery_charging = self._coordinator._sensors.get("battery_charging") == "InProgress"
 
         return super().available and doors_locked and (check_battery_level or check_battery_charging)
 

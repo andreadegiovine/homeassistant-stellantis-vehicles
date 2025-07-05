@@ -50,10 +50,10 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 class StellantisBatteryChargingLimitSwitch(StellantisBaseSwitch):
     @property
     def available(self):
-        return super().available and "number_battery_charging_limit" in self._coordinator._sensors and self._coordinator._sensors["number_battery_charging_limit"]
+        return super().available and self._coordinator._sensors.get("number_battery_charging_limit", False)
 
 
 class StellantisAbrpSyncSwitch(StellantisBaseSwitch):
     @property
     def available(self):
-        return super().available and "text_abrp_token" in self._coordinator._sensors and len(self._coordinator._sensors["text_abrp_token"]) == 36
+        return super().available and self._coordinator._sensors.get("text_abrp_token") and len(self._coordinator._sensors.get("text_abrp_token")) == 36
