@@ -198,28 +198,28 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             "is_parked": False
         }
 
-        if "battery" in self._sensors:
+        if self._sensors.get("battery"):
             tlm["soc"] = self._sensors.get("battery")
-        if "kinetic" in self._data and "speed" in self._data["kinetic"]:
-            tlm["speed"] = self._data["kinetic"]["speed"]
-        if "lastPosition" in self._data:
+        if self._sensors.get("speed"):
+            tlm["speed"] = self._sensors.get("speed")
+        if self._data.get("lastPosition"):
             tlm["lat"] = float(self._data["lastPosition"]["geometry"]["coordinates"][1])
             tlm["lon"] = float(self._data["lastPosition"]["geometry"]["coordinates"][0])
-        if "battery_charging" in self._sensors:
+        if self._sensors.get("battery_charging"):
             tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
-        if "battery_charging_type" in self._sensors:
+        if self._sensors.get("battery_charging_type"):
             tlm["is_dcfc"] = tlm["is_charging"] and self._sensors.get("battery_charging_type") == "Quick"
-        if "battery_soh" in self._sensors and self._sensors.get("battery_soh"):
+        if self._sensors.get("battery_soh"):
             tlm["soh"] = float(self._sensors.get("battery_soh"))
-        if "lastPosition" in self._data and "properties" in self._data["lastPosition"] and "heading" in self._data["lastPosition"]["properties"]:
-            tlm["heading"] = float(self._data["lastPosition"]["properties"]["heading"])
-        if "lastPosition" in self._data and len(self._data["lastPosition"]["geometry"]["coordinates"]) == 3:
-            tlm["elevation"] = float(self._data["lastPosition"]["geometry"]["coordinates"][2])
-        if "temperature" in self._sensors:
+        if self._data.get("lastPosition", {}).get("properties", {}).get("heading"):
+            tlm["heading"] = float(self._data.get("lastPosition").get("properties").get("heading"))
+        if len(self._data.get("lastPosition", {}).get("geometry", {}).get("coordinates", [])) == 3:
+            tlm["elevation"] = float(self._data.get("lastPosition").get("geometry").get("coordinates")[2])
+        if self._sensors.get("temperature"):
             tlm["ext_temp"] = self._sensors.get("temperature")
-        if "mileage" in self._sensors:
+        if self._sensors.get("mileage"):
             tlm["odometer"] = self._sensors.get("mileage")
-        if "autonomy" in self._sensors:
+        if self._sensors.get("autonomy"):
             tlm["est_battery_range"] = self._sensors.get("autonomy")
 
         params = {"tlm": json.dumps(tlm), "token": self._sensors.get("text_abrp_token")}
