@@ -98,7 +98,7 @@
           "0": "Suoritettu",
           "300": "Keskeytetty",
           "500": "Virhe",
-          "502": "Komento jo käynnissä"
+          "502": "Komento jo käynnissä",
           "422": "Yksityisyys käytössä"
         }
       },
