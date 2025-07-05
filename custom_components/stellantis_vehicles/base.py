@@ -363,6 +363,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
             if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
                 self._value_map[1] = 1
+                self._updated_at_map[1] = 1
 
             if self._key == "battery_soh":
                 self._value_map[6] = "capacity"
