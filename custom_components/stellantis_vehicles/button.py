@@ -156,9 +156,10 @@ class StellantisPreconditioningButton(StellantisBaseActionButton):
 
         doors_locked = "doors" in self._coordinator._sensors and (self._coordinator._sensors.get("doors") == None or "Locked" in self._coordinator._sensors.get("doors"))
 
-        min_charge = 50
-        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
-            min_charge = 20
+        min_charge = 1
+        # min_charge = 50
+        # if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
+        #     min_charge = 20
         check_battery_level = self._coordinator._sensors.get("battery") and int(float(self._coordinator._sensors.get("battery"))) >= min_charge
         check_battery_charging = self._coordinator._sensors.get("battery_charging") == "InProgress"
 
