@@ -39,7 +39,7 @@
   "entity": {
     "sensor": {
       "service_battery_voltage": {
-        "name": "Käynnistysakun jännite"
+        "name": "Käynnistysakku"
       },
       "type": {
         "name": "Tyyppi",
@@ -63,7 +63,7 @@
         "name": "Autolla pääsee"
       },
       "battery": {
-        "name": "Akku"
+        "name": "Ajoakku"
       },
       "battery_soh": {
         "name": "Ajoakun SOH"
@@ -98,7 +98,8 @@
           "0": "Suoritettu",
           "300": "Keskeytetty",
           "500": "Virhe",
-          "502": "Komento jo käynnissä"
+          "502": "Komento jo käynnissä",
+          "422": "Yksityisyys käytössä"
         }
       },
       "fuel": {
@@ -204,10 +205,10 @@
         "name": "Lopeta lataus"
       },
       "preconditioning_start": {
-        "name": "Käynnistä esilämmitys"
+        "name": "Käynnistä esi-ilmastointi"
       },
       "preconditioning_stop": {
-        "name": "Lopeta esilämmitys"
+        "name": "Lopeta esi-ilmastointi"
       }
     },
     "device_tracker": {
@@ -241,7 +242,7 @@
     },
     "time": {
       "battery_charging_start": {
-        "name": "Lataus alkoi"
+        "name": "Lataus alkaa"
       }
     }
   },

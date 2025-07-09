@@ -447,7 +447,14 @@ class StellantisBaseEntity(CoordinatorEntity):
                 value = (float(value) / 1000) + 10
 
         if key in ["coolant_temperature", "oil_temperature", "air_temperature"]:
-            value = float(value) / 10
+            value = float(value)
+
+            # Convert to Celsius if reported in Fahrenheit
+            country = self._coordinator._config.get("country_code", "").upper()
+            fahrenheit_countries = {"US", "BS", "BZ", "KY", "PW", "FM", "MH", "GU", "MP", "AS", "VI", "LR", "MM", "GB"}  # Adjust this list if needed
+
+            if country in fahrenheit_countries:
+                value = (value - 32) * 5.0 / 9.0
 
         if isinstance(value, str):
             value = value.lower()
