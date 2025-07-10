@@ -187,10 +187,10 @@
         "name": "Svegliati"
       },
       "doors_lock": {
-        "name": "Apri portiere"
+        "name": "Chiudi portiere"
       },
       "doors_unlock": {
-        "name": "Chiudi portiere"
+        "name": "Apri portiere"
       },
       "horn": {
         "name": "Clacson"
