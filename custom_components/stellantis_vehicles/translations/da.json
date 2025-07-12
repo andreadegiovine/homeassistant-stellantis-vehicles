@@ -1,0 +1,259 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "mobile_app": "Køretøjets app"
+        }
+      },
+      "country": {
+        "data": {
+          "country_code": "Landekode"
+        }
+      },
+      "oauth": {
+        "description": "Følg disse trin **desktop browser**:\n\n1. gå til {oauth_link} loginside;\n2. Åbn browserens **DevTools** (F12) og gå til **Network** fanen;\n3. Login på din konto, og tryk på sidste bekræftknap;\n4. Fra **Network** fanen find den overstående forespørgsel og kopier **{oauth_label}**;{oauth_devtools}",
+        "data": {
+          "oauth_code": "OAuth kode"
+        }
+      },
+      "otp": {
+        "data": {
+          "sms_code": "SMS kode fra Stellantis",
+          "pin_code": "Pinkode fra køretøjets app"
+        }
+      }
+    },
+    "error": {
+      "get_access_token": "Adgangstokenfejl",
+      "get_user_info": "Brugerinfo fejl",
+      "missing_user_info": "Manglende brugerinfo fejl",
+      "get_otp_sms": "OTP smsfejl",
+      "get_mqtt_access_token": "mqtt adgangstokenfejl"
+    },
+    "abort": {
+      "already_configured": "Konto er allerede konfigureret",
+      "reauth_successful": "Gengodkendelsen var vellykket"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Servicebatteri"
+      },
+      "type": {
+        "name": "Biltype",
+        "state": {
+          "electric": "Elektrisk",
+          "hybrid": "Hybrid",
+          "thermic": "Brændstof",
+          "hydrogen": "Brint"
+        }
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "mileage": {
+        "name": "Kilometertal"
+      },
+      "speed": {
+        "name": "Fart"
+      },
+      "autonomy": {
+        "name": "Autonomi"
+      },
+      "battery": {
+        "name": "Batteri"
+      },
+      "battery_soh": {
+        "name": "Batteri Sundhedstilstand"
+      },
+      "battery_charging_rate": {
+        "name": "Batteriets opladningshastighed"
+      },
+      "battery_charging_type": {
+        "name": "Opladningstype",
+        "state": {
+          "no": "Nej",
+          "slow": "Langsom",
+          "quick": "Hurtig"
+        }
+      },
+      "battery_charging_end": {
+        "name": "Forventet opladt om"
+      },
+      "battery_capacity": {
+        "name": "Batterikapacitet"
+      },
+      "battery_residual": {
+        "name": "Resterende kapacitet"
+      },
+      "command_status": {
+        "name": "Kommando status",
+        "state": {
+          "99": "Ikke kompatibel",
+          "900": "Accepteret",
+          "901": "Køretøjet er i dvaletilstand",
+          "903": "Videresendt",
+          "0": "Udført",
+          "300": "Annuleret",
+          "500": "Fejl",
+          "502": "Gentagelse",
+          "422": "Privatlivstilstand slået til"
+        }
+      },
+      "fuel": {
+        "name": "Brændstof"
+      },
+      "fuel_autonomy": {
+        "name": "Rækkevidde"
+      },
+      "fuel_consumption_total": {
+        "name": "Tutal brændstofforbrug"
+      },
+      "fuel_consumption_instant": {
+        "name": "Nuværende brændstofforbrug"
+      },
+      "coolant_temperature": {
+        "name": "Kølevæsketemperatur"
+      },
+      "oil_temperature": {
+        "name": "Olietemperatur"
+      },
+      "air_temperature": {
+        "name": "Lufttemperatur"
+      },
+      "last_trip": {
+        "name": "Sidste tur",
+        "state_attributes": {
+          "duration": {
+            "name": "Varighed"
+          },
+          "start_mileage": {
+            "name": "Start kilometertal"
+          },
+          "avg_speed": {
+            "name": "Gennemsnitlig hastighed"
+          },
+          "max_speed": {
+            "name": "Max hastighed"
+          },
+          "electric_consumption": {
+            "name": "Elforbrug"
+          },
+          "electric_avg_consumption": {
+            "name": "Gennemsnitlig elforbrug"
+          },
+          "fuel_consumption": {
+            "name": "Brændstofforbrug"
+          },
+          "fuel_avg_consumption": {
+            "name": "Gennemsnitlig brændstofforbrug"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Moving"
+      },
+      "doors": {
+        "name": "Døre"
+      },
+      "battery_plugged": {
+        "name": "Tilsluttet"
+      },
+      "battery_charging": {
+        "name": "Oplader"
+      },
+      "engine": {
+        "name": "Motor"
+      },
+      "preconditioning": {
+        "name": "Forvarmning/forkøling"
+      },
+      "alarm": {
+        "name": "Alarm"
+      },
+      "privacy": {
+        "name": "Privatlivstilstand"
+      },
+      "remote_commands": {
+        "name": "Fjernkommandoer"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Vække"
+      },
+      "doors_lock": {
+        "name": "Lås døre"
+      },
+      "doors_unlock": {
+        "name": "Oplås døre"
+      },
+      "horn": {
+        "name": "Horn"
+      },
+      "lights": {
+        "name": "Lys"
+      },
+      "charge_start": {
+        "name": "Start opladning"
+      },
+      "charge_stop": {
+        "name": "Stop opladning"
+      },
+      "preconditioning_start": {
+        "name": "Forvarmning/forkøling start"
+      },
+      "preconditioning_stop": {
+        "name": "Forvarmning/forkøling stop"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Køretøj"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Batteriopladningsgrænse"
+      },
+      "refresh_interval": {
+        "name": "Opdateringsinterval"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Batteriopladningsgrænse"
+      },
+      "abrp_sync": {
+        "name": "ABRP sync"
+      },
+      "notifications": {
+        "name": "Beskeder"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP token"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Start opladning kl"
+      }
+    }
+  },
+  "common": {
+    "access_token_error_title": "Adgangstokenfejl",
+    "access_token_error_message": "Læs dokumentationen i denne [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) sektion",
+    "otp_error_title": "OTP fejl",
+    "otp_error_message": "Læs dokumentationen i denne [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) sektion",
+    "no_vehicles_found_title": "Ikke tilgængelig",
+    "no_vehicles_found_message": "Ingen forbundne køretøjer tilgængelig på denne konto",
+    "command_error_title": "Kommando",
+    "command_error_message": "Kommandoen blev ikke sendt korrekt"
+  }
+}
