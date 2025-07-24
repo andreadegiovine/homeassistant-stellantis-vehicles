@@ -101,7 +101,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     async def update_command_history(self, action_id, update = None):
         """ Update command history. """
-        if not action_id in self._commands_history:
+        if action_id not in self._commands_history:
             return
         if update:
             self._commands_history[action_id]["updates"].append({"info": update, "date": get_datetime()})
@@ -419,7 +419,7 @@ class StellantisBaseEntity(CoordinatorEntity):
             if value and float(value) == 0 and self._coordinator._sensors.get('mileage') and float(self._coordinator._sensors.get('mileage')) > 0:
                 value = self._coordinator._sensors.get('mileage')
 
-        if value != None or (not key in self._coordinator._sensors):
+        if value != None or key not in self._coordinator._sensors:
             self._coordinator._sensors[key] = value
         
         if value == None:

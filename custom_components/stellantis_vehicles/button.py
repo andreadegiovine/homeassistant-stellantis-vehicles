@@ -154,7 +154,7 @@ class StellantisChargingStartStopButton(StellantisBaseActionButton):
 class StellantisPreconditioningButton(StellantisBaseActionButton):
     @property
     def available(self):
-        if not self._coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
+        if self._coordinator.vehicle_type not in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
 
         doors_locked = self._coordinator._sensors.get("doors") == None or "Locked" in self._coordinator._sensors.get("doors")

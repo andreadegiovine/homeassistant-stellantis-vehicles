@@ -652,6 +652,6 @@ class StellantisVehicles(StellantisOauth):
         abrp_request = await self.make_http_request("https://api.iternio.com/1/tlm/send", "POST", None, params)
         _LOGGER.debug(params)
         _LOGGER.debug(abrp_request)
-        if not "status" in abrp_request or abrp_request["status"] != "ok":
+        if "status" not in abrp_request or abrp_request["status"] != "ok":
             _LOGGER.error(abrp_request)
         _LOGGER.debug("---------- END send_abrp_data")
