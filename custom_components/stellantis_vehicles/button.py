@@ -143,7 +143,10 @@ class StellantisLightsButton(StellantisBaseButton):
 class StellantisChargingStartStopButton(StellantisBaseActionButton):
     @property
     def available(self):
-        return super().available and self._coordinator._sensors.get("battery_charging") in ["InProgress", "Stopped"] and self._coordinator._sensors.get("time_battery_charging_start")
+        charging_inprogress_stopped = self._coordinator._sensors.get("battery_charging") in ["InProgress", "Stopped"]
+        charging_finished = self._coordinator._sensors.get("battery_charging") == "Finished"
+        current_battery = self._coordinator._sensors.get("battery")
+        return super().available and self._coordinator._sensors.get("time_battery_charging_start") and (charging_inprogress_stopped or (charging_finished and current_battery and int(float(current_battery)) < 100))
 
     async def async_press(self):
         await self._coordinator.send_charge_command(self.name, False, self._action)
