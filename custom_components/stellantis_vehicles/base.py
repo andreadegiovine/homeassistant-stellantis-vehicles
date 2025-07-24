@@ -431,9 +431,9 @@ class StellantisBaseEntity(CoordinatorEntity):
                 new_updated_at = get_datetime()
                 value = date_from_pt_string(value, new_updated_at)
                 charge_limit_on = self._coordinator._sensors.get("switch_battery_charging_limit", False)
-                charge_limit = self._coordinator._sensors.get("number_battery_charging_limit", None)
-                if charge_limit_on and charge_limit:
-                    current_battery = self._coordinator._sensors.get("battery")
+                charge_limit = self._coordinator._sensors.get("number_battery_charging_limit")
+                current_battery = self._coordinator._sensors.get("battery")
+                if charge_limit_on and charge_limit and int(float(current_battery)) < 100:
                     now_timestamp = datetime.timestamp(new_updated_at)
                     value_timestamp = datetime.timestamp(value)
                     diff = value_timestamp - now_timestamp
