@@ -88,6 +88,8 @@ jobs:
           fi
           
           echo "New tag: $new_tag_name"
+          echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
+          echo "previous_tag_name=$last_tag" >> $GITHUB_OUTPUT
           echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
           echo "new_tag_branch=$branch" >> $GITHUB_OUTPUT
           echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
@@ -117,7 +119,7 @@ jobs:
       - name: Get release notes
         id: release-notes
         run: |
-          notes=$(
+          changes=$(
             git log --no-merges --pretty=format:"%H %s [%an]" origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} | \
             grep -v "^.* Revert \"" | \
             grep -v "^.* Update manifest.json version to" | \
@@ -132,6 +134,22 @@ jobs:
               fi
             done
           )
+
+          notes="## What's Changed
+          $changes"
+
+          if ! ${{ steps.tag-name.outputs.is_prerelease }}; then
+            notes="$notes
+            
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}
+
+            
+            ## Support the project
+            [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+            
+            [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)"
+          fi
           
           echo "$notes"
           
