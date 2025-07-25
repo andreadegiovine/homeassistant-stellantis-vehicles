@@ -416,7 +416,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         value = self.get_value_from_map(value_map)
 
         if key == "mileage":
-            if value and float(value) == 0 and self._coordinator._sensors.get('mileage') and float(self._coordinator._sensors.get('mileage')) > 0:
+            if (value == None or float(value) == 0) and self._coordinator._sensors.get('mileage') and float(self._coordinator._sensors.get('mileage')) > 0:
                 value = self._coordinator._sensors.get('mileage')
 
         if value != None or key not in self._coordinator._sensors:
