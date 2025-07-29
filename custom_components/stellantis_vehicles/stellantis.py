@@ -103,7 +103,9 @@ class StellantisBase:
             return self._config[key]
         return None
 
-    def replace_placeholders(self, string, vehicle = []):
+    def replace_placeholders(self, string, vehicle=None):
+        if vehicle is None:
+            vehicle = []
         for key in vehicle:
             string = string.replace("{#"+key+"#}", str(vehicle[key]))
         for key in self._config:
@@ -116,7 +118,9 @@ class StellantisBase:
             new_headers[key] = self.replace_placeholders(headers[key])
         return new_headers
 
-    def apply_query_params(self, url, params, vehicle = []):
+    def apply_query_params(self, url, params, vehicle=None):
+        if vehicle is None:
+            vehicle = []
         query_params = []
         for key in params:
             value = params[key]

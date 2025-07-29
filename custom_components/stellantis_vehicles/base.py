@@ -561,8 +561,13 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
 
 
 class StellantisBaseSensor(StellantisRestoreSensor):
-    def __init__(self, coordinator, description, value_map = [], updated_at_map = [], available = None) -> None:
+    def __init__(self, coordinator, description, value_map=None, updated_at_map=None, available=None) -> None:
         super().__init__(coordinator, description)
+
+        if value_map is None:
+            value_map = []
+        if updated_at_map is None:
+            updated_at_map = []
 
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
@@ -598,8 +603,13 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator, description, value_map = [], updated_at_map = [], on_value = None) -> None:
+    def __init__(self, coordinator, description, value_map=None, updated_at_map=None, on_value=None) -> None:
         super().__init__(coordinator, description)
+
+        if value_map is None:
+            value_map = []
+        if updated_at_map is None:
+            updated_at_map = []
 
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
