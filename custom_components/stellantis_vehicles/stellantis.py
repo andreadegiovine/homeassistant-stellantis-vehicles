@@ -155,7 +155,7 @@ class StellantisBase:
                     await self.close_session()
                     # Token expiration
                     raise ConfigEntryAuthFailed(error)
-                if error:
+                if error is not None:
                     await self.close_session()
                     # Generic error
                     raise Exception(error)
