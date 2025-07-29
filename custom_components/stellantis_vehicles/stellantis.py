@@ -616,7 +616,7 @@ class StellantisVehicles(StellantisOauth):
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
                 _LOGGER.debug("Update data from mqtt?!?")
         except KeyError:
-            _LOGGER.error("message error")
+            _LOGGER.error("MQTT message error")
         _LOGGER.debug("---------- END _on_mqtt_message")
 
     async def send_mqtt_message(self, service, message, vehicle, store=True):
