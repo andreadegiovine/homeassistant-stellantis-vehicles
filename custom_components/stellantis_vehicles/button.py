@@ -102,7 +102,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 
 class StellantisWakeUpButton(StellantisBaseButton):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self.is_scheduled = None
 
