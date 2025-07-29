@@ -269,14 +269,14 @@ class StellantisOauth(StellantisBase):
         otp_file_path = os.path.join(storage_path, OTP_FILENAME)
         otp_file_path = otp_file_path.replace("{#customer_id#}", self.get_config("customer_id"))
         # Check if OTP object is already loaded, if not load it
-        if not self.otp:
+        if self.otp is None:
             if not os.path.isfile(otp_file_path):
                 _LOGGER.error(f"Error: OTP file '{otp_file_path}' not found, please reauthenticate")
                 raise ConfigEntryAuthFailed(f"OTP file not found, please reauthenticate")
             self.otp = await self._hass.async_add_executor_job(load_otp, otp_file_path)
         # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
         otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
-        if not otp_code:
+        if otp_code is None:
             _LOGGER.error("Error: OTP code is empty, please reauthenticate")
             raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
         # Save updated OTP object to file
