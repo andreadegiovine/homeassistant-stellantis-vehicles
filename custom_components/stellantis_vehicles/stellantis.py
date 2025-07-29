@@ -532,7 +532,7 @@ class StellantisVehicles(StellantisOauth):
             self.save_config({"mqtt": mqtt_config})
             self.update_stored_config("mqtt", mqtt_config)
             # Update the MQTT client with the new access token
-            if self._mqtt:
+            if self._mqtt is not None:
                 self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
         else:
             # Log an error if the token refresh failed
