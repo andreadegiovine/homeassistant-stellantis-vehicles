@@ -542,7 +542,7 @@ class StellantisVehicles(StellantisOauth):
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
         await self.refresh_mqtt_token()
-        if not self._mqtt:
+        if self._mqtt is None:
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
             self._mqtt.tls_set_context(_SSL_CONTEXT)
