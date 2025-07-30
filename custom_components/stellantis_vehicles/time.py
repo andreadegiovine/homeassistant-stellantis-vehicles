@@ -32,7 +32,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 
 class StellantisBatteryChargingStart(StellantisBaseTime):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._value_map = ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"]
         self._updated_at_map = ["energies", 0, "createdAt"]
