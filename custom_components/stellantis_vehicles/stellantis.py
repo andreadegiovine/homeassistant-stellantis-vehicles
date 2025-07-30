@@ -109,8 +109,8 @@ class StellantisBase:
             vehicle = []
         for key in vehicle:
             string = string.replace("{#"+key+"#}", str(vehicle[key]))
-        for key in self._config:
-            string = string.replace("{#"+key+"#}", str(self._config[key]))
+        for key, value in self._config.items():
+            string = string.replace("{#" + key + "#}", str(value))
         return string
 
     def apply_headers_params(self, headers):
