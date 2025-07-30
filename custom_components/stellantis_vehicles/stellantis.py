@@ -103,7 +103,9 @@ class StellantisBase:
             return self._config[key]
         return None
 
-    def replace_placeholders(self, string, vehicle = []):
+    def replace_placeholders(self, string, vehicle=None):
+        if vehicle is None:
+            vehicle = []
         for key in vehicle:
             string = string.replace("{#"+key+"#}", str(vehicle[key]))
         for key in self._config:
@@ -116,7 +118,9 @@ class StellantisBase:
             new_headers[key] = self.replace_placeholders(headers[key])
         return new_headers
 
-    def apply_query_params(self, url, params, vehicle = []):
+    def apply_query_params(self, url, params, vehicle=None):
+        if vehicle is None:
+            vehicle = []
         query_params = []
         for key in params:
             value = params[key]
@@ -155,7 +159,7 @@ class StellantisBase:
                     await self.close_session()
                     # Token expiration
                     raise ConfigEntryAuthFailed(error)
-                if error:
+                if error is not None:
                     await self.close_session()
                     # Generic error
                     raise Exception(error)
@@ -172,10 +176,10 @@ class StellantisBase:
         return asyncio.run_coroutine_threadsafe(async_func, self._hass.loop).result()
 
     async def hass_notify(self, translation_key):
+        """Create a persistent notification."""
         if hasattr(self, '_entry') and not self.get_stored_config("switch_notifications"):
             return
 
-        """Create a persistent notification."""
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
         notification_title = "Stellantis Vehicles"
         if translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None):
@@ -269,14 +273,14 @@ class StellantisOauth(StellantisBase):
         otp_file_path = os.path.join(storage_path, OTP_FILENAME)
         otp_file_path = otp_file_path.replace("{#customer_id#}", self.get_config("customer_id"))
         # Check if OTP object is already loaded, if not load it
-        if not self.otp:
+        if self.otp is None:
             if not os.path.isfile(otp_file_path):
                 _LOGGER.error(f"Error: OTP file '{otp_file_path}' not found, please reauthenticate")
                 raise ConfigEntryAuthFailed(f"OTP file not found, please reauthenticate")
             self.otp = await self._hass.async_add_executor_job(load_otp, otp_file_path)
         # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
         otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
-        if not otp_code:
+        if otp_code is None:
             _LOGGER.error("Error: OTP code is empty, please reauthenticate")
             raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
         # Save updated OTP object to file
@@ -532,7 +536,7 @@ class StellantisVehicles(StellantisOauth):
             self.save_config({"mqtt": mqtt_config})
             self.update_stored_config("mqtt", mqtt_config)
             # Update the MQTT client with the new access token
-            if self._mqtt:
+            if self._mqtt is not None:
                 self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
         else:
             # Log an error if the token refresh failed
@@ -542,7 +546,7 @@ class StellantisVehicles(StellantisOauth):
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
         await self.refresh_mqtt_token()
-        if not self._mqtt:
+        if self._mqtt is None:
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
             self._mqtt.tls_set_context(_SSL_CONTEXT)
@@ -612,7 +616,7 @@ class StellantisVehicles(StellantisOauth):
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
                 _LOGGER.debug("Update data from mqtt?!?")
         except KeyError:
-            _LOGGER.error("message error")
+            _LOGGER.error("MQTT message error")
         _LOGGER.debug("---------- END _on_mqtt_message")
 
     async def send_mqtt_message(self, service, message, vehicle, store=True):
