@@ -1,5 +1,6 @@
 import logging
 
+from homeassistant.core import HomeAssistant
 from homeassistant.components.text import TextEntityDescription
 from .base import StellantisBaseText
 
@@ -11,7 +12,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
