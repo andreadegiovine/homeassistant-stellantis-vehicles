@@ -2,8 +2,7 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.const import ( PERCENTAGE, UnitOfTime )
-from homeassistant.components.number import NumberEntityDescription
-from homeassistant.components.number.const import NumberMode
+from homeassistant.components.number import NumberMode, NumberEntityDescription
 from .base import StellantisBaseNumber
 
 from .const import (
