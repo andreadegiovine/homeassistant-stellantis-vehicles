@@ -1,5 +1,6 @@
 import logging
 
+from homeassistant.core import HomeAssistant
 from homeassistant.components.time import TimeEntityDescription
 from .base import StellantisBaseTime
 
@@ -11,7 +12,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
@@ -32,7 +33,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 
 class StellantisBatteryChargingStart(StellantisBaseTime):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._value_map = ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"]
         self._updated_at_map = ["energies", 0, "createdAt"]

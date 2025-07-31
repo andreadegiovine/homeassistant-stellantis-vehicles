@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 
+from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntityDescription
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -16,7 +17,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
 

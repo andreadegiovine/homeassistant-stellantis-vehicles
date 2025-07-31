@@ -13,7 +13,7 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.components.text import TextEntity
 from homeassistant.components.time import TimeEntity
-from homeassistant.core import callback
+from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -31,7 +31,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, config, vehicle, stellantis, translations) -> None:
+    def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations) -> None:
         super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass

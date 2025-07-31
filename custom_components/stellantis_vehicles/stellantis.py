@@ -12,6 +12,7 @@ import asyncio
 from datetime import ( datetime, timedelta, UTC )
 import ssl
 
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
@@ -62,7 +63,7 @@ def _create_ssl_context() -> ssl.SSLContext:
 _SSL_CONTEXT = _create_ssl_context()
 
 class StellantisBase:
-    def __init__(self, hass) -> None:
+    def __init__(self, hass:HomeAssistant) -> None:
         self._hass = hass
         self._config = {}
         self._session = None
@@ -108,8 +109,8 @@ class StellantisBase:
             vehicle = []
         for key in vehicle:
             string = string.replace("{#"+key+"#}", str(vehicle[key]))
-        for key in self._config:
-            string = string.replace("{#"+key+"#}", str(self._config[key]))
+        for key, value in self._config.items():
+            string = string.replace("{#" + key + "#}", str(value))
         return string
 
     def apply_headers_params(self, headers):
@@ -290,7 +291,7 @@ class StellantisOauth(StellantisBase):
 
 
 class StellantisVehicles(StellantisOauth):
-    def __init__(self, hass) -> None:
+    def __init__(self, hass:HomeAssistant) -> None:
         super().__init__(hass)
 
         self._refresh_interval = UPDATE_INTERVAL
