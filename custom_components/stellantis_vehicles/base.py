@@ -378,15 +378,20 @@ class StellantisBaseEntity(CoordinatorEntity):
         vehicle_data = self._coordinator._data
         value = None
         for key in updated_at_map:
-            if not value and key in vehicle_data:
-                value = vehicle_data[key]
-            elif value and isinstance(key, int):
-                value = value[key]
-            elif value and key in value:
-                value = value[key]
+            if value is None: # first key in the map
+                if key in vehicle_data:
+                    value = vehicle_data[key]
+            else: # following keys in the map (value has been set with result of previous key)
+                if isinstance(key, int) or key in value: 
+                    value = value[key]
+                else: # value not an array and key not found in value
+                    value = None
+            if value is None: # Stop iteration immediately if None value encountered at this stage
+                break
 
-        if value and not isinstance(value, str):
-            value = None
+        # Two following lines may be useless...
+        # if value and not isinstance(value, str):
+        #     value = None
 
         return value
 
@@ -395,15 +400,20 @@ class StellantisBaseEntity(CoordinatorEntity):
         vehicle_data = self._coordinator._data
         value = None
         for key in value_map:
-            if not value and key in vehicle_data:
-                value = vehicle_data[key]
-            elif value and isinstance(key, int):
-                value = value[key]
-            elif value and key in value:
-                value = value[key]
+            if value is None: # first key in the map
+                if key in vehicle_data:
+                    value = vehicle_data[key]
+            else: # following keys in the map (value has been set with result of previous key)
+                if isinstance(key, int) or key in value: 
+                    value = value[key]
+                else: # value not an array and key not found in value
+                    value = None
+            if value is None: # Stop iteration immediately if None value encountered at this stage
+                break
 
-        if value and not isinstance(value, (float, int, str, bool, list)):
-            value = None
+        # Two following lines may be useless...
+        # if value and not isinstance(value, (float, int, str, bool, list)):
+        #     value = None
 
         return value
 
