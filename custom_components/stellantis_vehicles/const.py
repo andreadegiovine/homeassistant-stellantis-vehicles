@@ -81,13 +81,13 @@ FIELD_SMS_CODE = "sms_code"
 FIELD_PIN_CODE = "pin_code"
 
 PLATFORMS = [
-    "device_tracker",
-    "sensor",
     "binary_sensor",
     "button",
+    "device_tracker",
     "number",
-    "text",
+    "sensor",
     "switch",
+    "text",
     "time"
 ]
 

@@ -124,7 +124,7 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                 attributes["max_speed"] = str(last_trip["kinetic"]["maxSpeed"]) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
         if "energyConsumptions" in last_trip:
             for consuption in last_trip["energyConsumptions"]:
-                if not "type" in consuption:
+                if "type" not in consuption:
                     continue
                 consumption_unit_of_measurement = ""
                 avg_consumption_unit_of_measurement = ""
@@ -157,9 +157,9 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
 #             _LOGGER.error(inde)
 #             inde = inde + 1
 #             for engine in trip["engine"]:
-#                 if not engine + "_distance" in results:
+#                 if engine + "_distance" not in results:
 #                     results[engine + "_distance"] = 0
-#                 if not engine + "_consumption" in results:
+#                 if engine + "_consumption" not in results:
 #                     results[engine + "_consumption"] = 0
 #                 results[engine + "_distance"] = results[engine + "_distance"] + trip["engine"][engine]["distance"]
 #                 results[engine + "_consumption"] = results[engine + "_consumption"] + trip["engine"][engine]["consumption"]

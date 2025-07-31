@@ -125,7 +125,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_user_info", e)
             return await self.async_step_oauth()
 
-        if not user_info_request or not "customer" in user_info_request[0]:
+        if not user_info_request or "customer" not in user_info_request[0]:
             self.errors[FIELD_OAUTH_CODE] = self.get_error_message("missing_user_info")
             return await self.async_step_oauth()
 

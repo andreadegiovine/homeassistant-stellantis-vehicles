@@ -102,7 +102,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 
 class StellantisWakeUpButton(StellantisBaseButton):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self.is_scheduled = None
 
@@ -143,7 +143,10 @@ class StellantisLightsButton(StellantisBaseButton):
 class StellantisChargingStartStopButton(StellantisBaseActionButton):
     @property
     def available(self):
-        return super().available and self._coordinator._sensors.get("battery_plugged") and self._coordinator._sensors.get("battery_charging") in ["InProgress", "Stopped"]
+        charging_inprogress_stopped = self._coordinator._sensors.get("battery_charging") in ["InProgress", "Stopped"]
+        charging_finished = self._coordinator._sensors.get("battery_charging") == "Finished"
+        current_battery = self._coordinator._sensors.get("battery")
+        return super().available and self._coordinator._sensors.get("time_battery_charging_start") and (charging_inprogress_stopped or (charging_finished and current_battery and int(float(current_battery)) < 100))
 
     async def async_press(self):
         await self._coordinator.send_charge_command(self.name, False, self._action)
@@ -151,12 +154,13 @@ class StellantisChargingStartStopButton(StellantisBaseActionButton):
 class StellantisPreconditioningButton(StellantisBaseActionButton):
     @property
     def available(self):
-        if not self._coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
+        if self._coordinator.vehicle_type not in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
 
-        doors_locked = "doors" in self._coordinator._sensors and (self._coordinator._sensors.get("doors") == None or "Locked" in self._coordinator._sensors.get("doors"))
+        doors_locked = self._coordinator._sensors.get("doors") == None or "Locked" in self._coordinator._sensors.get("doors")
 
         min_charge = 1
+        # Waiting the min value from https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/226
         # min_charge = 50
         # if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
         #     min_charge = 20

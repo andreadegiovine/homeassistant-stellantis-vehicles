@@ -31,7 +31,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, config, vehicle, stellantis, translations):
+    def __init__(self, hass, config, vehicle, stellantis, translations) -> None:
         super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
@@ -101,7 +101,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     async def update_command_history(self, action_id, update = None):
         """ Update command history. """
-        if not action_id in self._commands_history:
+        if action_id not in self._commands_history:
             return
         if update:
             self._commands_history[action_id]["updates"].append({"info": update, "date": get_datetime()})
@@ -310,7 +310,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 #         self._total_trip = {"totals": total_trips, "trips": result}
 
 class StellantisBaseEntity(CoordinatorEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator)
 
         self._coordinator = coordinator
@@ -424,9 +424,14 @@ class StellantisBaseEntity(CoordinatorEntity):
             key = self._sensor_key
 
         value = self.get_value_from_map(value_map)
-        if value != None or (not key in self._coordinator._sensors):
+
+        if key == "mileage":
+            if (not value or float(value) == 0) and self._coordinator._sensors.get('mileage') and float(self._coordinator._sensors.get('mileage')) > 0:
+                value = self._coordinator._sensors.get('mileage')
+
+        if value != None or key not in self._coordinator._sensors:
             self._coordinator._sensors[key] = value
-        
+
         if value == None:
             return None
 
@@ -441,9 +446,9 @@ class StellantisBaseEntity(CoordinatorEntity):
                 new_updated_at = get_datetime()
                 value = date_from_pt_string(value, new_updated_at)
                 charge_limit_on = self._coordinator._sensors.get("switch_battery_charging_limit", False)
-                charge_limit = self._coordinator._sensors.get("number_battery_charging_limit", None)
-                if charge_limit_on and charge_limit:
-                    current_battery = self._coordinator._sensors.get("battery")
+                charge_limit = self._coordinator._sensors.get("number_battery_charging_limit")
+                current_battery = self._coordinator._sensors.get("battery")
+                if charge_limit_on and charge_limit and int(float(current_battery)) < 100:
                     now_timestamp = datetime.timestamp(new_updated_at)
                     value_timestamp = datetime.timestamp(value)
                     diff = value_timestamp - now_timestamp
@@ -566,8 +571,13 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
 
 
 class StellantisBaseSensor(StellantisRestoreSensor):
-    def __init__(self, coordinator, description, value_map = [], updated_at_map = [], available = None):
+    def __init__(self, coordinator, description, value_map=None, updated_at_map=None, available=None) -> None:
         super().__init__(coordinator, description)
+
+        if value_map is None:
+            value_map = []
+        if updated_at_map is None:
+            updated_at_map = []
 
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
@@ -603,8 +613,13 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator, description, value_map = [], updated_at_map = [], on_value = None):
+    def __init__(self, coordinator, description, value_map=None, updated_at_map=None, on_value=None) -> None:
         super().__init__(coordinator, description)
+
+        if value_map is None:
+            value_map = []
+        if updated_at_map is None:
+            updated_at_map = []
 
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
@@ -646,7 +661,7 @@ class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
 
 
 class StellantisBaseActionButton(StellantisBaseButton):
-    def __init__(self, coordinator, description, action):
+    def __init__(self, coordinator, description, action) -> None:
         super().__init__(coordinator, description)
         self._action = action
 
@@ -675,7 +690,7 @@ class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
 
 
 class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
-    def __init__(self, coordinator, description, default_value = None):
+    def __init__(self, coordinator, description, default_value = None) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = f"number_{self._key}"
         self._default_value = None
@@ -700,7 +715,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
 
 
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = f"switch_{self._key}"
 
@@ -729,7 +744,7 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
 
 
 class StellantisBaseText(StellantisRestoreEntity, TextEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = f"text_{self._key}"
 
@@ -751,10 +766,10 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
 
 
 class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = f"time_{self._key}"
-        
+
     @property
     def native_value(self):
         """ Native value. """
