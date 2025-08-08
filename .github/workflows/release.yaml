@@ -129,7 +129,8 @@ jobs:
             while read -r line; do
               hash=$(echo "$line" | cut -d' ' -f1)
               msg=$(git log -1 --pretty=%s "$hash")
-              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
+              escaped_msg=$(echo "$msg" | sed 's/[[\]/\\&/g; s/\./\\./g; s/\*/\\*/g; s/\^/\\^/g; s/\$/\\$/g')
+              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$escaped_msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
                 echo "- $(echo "$line" | cut -d' ' -f2-)"
               fi
             done
@@ -142,13 +143,13 @@ jobs:
             notes="$notes
             
             
-            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}
-
-            
-            ## Support the project
-            [![\"Buy Me A Coffee\"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
-            
-            [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)"
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}
+          
+          
+          ## Support the project
+          [![\"Buy Me A Coffee\"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+          
+          [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)"
           fi
           
           echo "$notes"
