@@ -423,6 +423,11 @@ class StellantisVehicles(StellantisOauth):
 
     async def get_vehicle_status(self, vehicle):
         _LOGGER.debug("---------- START get_vehicle_status")
+        # Ensure that the MQTT client is connected
+        if self._mqtt is None or self._mqtt.is_connected() is False:
+            _LOGGER.debug("------------ MQTT client is not connected, try to connect it")
+            await self.connect_mqtt()
+        # Fetch the vehicle status using the API
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_headers_params(CAR_API_HEADERS)
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
@@ -546,7 +551,6 @@ class StellantisVehicles(StellantisOauth):
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
-        await self.refresh_mqtt_token()
         if self._mqtt is None:
             self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
@@ -556,9 +560,13 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.on_message = self._on_mqtt_message
         if self._mqtt.is_connected():
             self._mqtt.disconnect()
+        await self.refresh_mqtt_token()
         self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
-        self._mqtt.connect(MQTT_SERVER, 8885, 60)
-        self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
+        try:
+            self._mqtt.connect(MQTT_SERVER, 8885, 60)
+            self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
+        except Exception as e:
+            _LOGGER.error(f"connect_mqtt: {str(e)}")
         _LOGGER.debug("---------- END connect_mqtt")
         return self._mqtt.is_connected()
 
@@ -576,8 +584,10 @@ class StellantisVehicles(StellantisOauth):
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
         _LOGGER.debug(f"mqtt disconnected with result code {result_code} -> {mqtt.error_string(result_code)}")
-        if result_code == 1:
+        if result_code == 11: # MQTT_ERR_AUTH
             self.do_async(self.refresh_mqtt_token(force=True))
+        else:
+            self.do_async(self.refresh_mqtt_token(force=False))
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
     def _on_mqtt_message(self, client, userdata, msg):
