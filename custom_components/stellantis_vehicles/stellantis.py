@@ -649,7 +649,10 @@ class StellantisVehicles(StellantisOauth):
             })
             _LOGGER.debug(topic)
             _LOGGER.debug(data)
-            self._mqtt.publish(topic, data)
+            message_info = self._mqtt.publish(topic, data)
+            if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
+                _LOGGER.error("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
+                action_id = None
             if store:
                 self._mqtt_last_request = [service, message]
             _LOGGER.debug("---------- END send_mqtt_message")
