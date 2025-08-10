@@ -113,7 +113,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Send a command to the vehicle. """
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
-            self._commands_history.update({action_id: {"name": name, "updates": []}})
+            if action_id is not None:
+                self._commands_history.update({action_id: {"name": name, "updates": []}})
         except ConfigEntryAuthFailed as e:
             _LOGGER.error("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
             self._stellantis._entry.async_start_reauth(self._hass)
