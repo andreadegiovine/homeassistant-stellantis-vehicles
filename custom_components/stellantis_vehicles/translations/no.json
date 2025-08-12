@@ -108,6 +108,9 @@
       },
       "preconditioning": {
         "name": "Klimaanlegg"
+      },
+      "daylight": {
+        "name": "Dagslys"
       }
     },
     "button": {

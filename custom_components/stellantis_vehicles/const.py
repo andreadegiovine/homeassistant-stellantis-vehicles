@@ -322,5 +322,12 @@ BINARY_SENSORS_DEFAULT = {
         "updated_at_map" : ["privacy", "createdAt"],
         "device_class" : BinarySensorDeviceClass.LOCK,
         "on_value": "None"
+    },
+    "daylight" : {
+        "icon" : "mdi:weather-sunny",
+        "device_class": BinarySensorDeviceClass.LIGHT,
+        "value_map" : ["environment", "luminosity", "day"],
+        "updated_at_map" : ["environment", "luminosity", "createdAt"],
+        "on_value": True
     }
 }
