@@ -227,8 +227,9 @@ class StellantisOauth(StellantisBase):
             self.otp.smsCode = sms_code
             self.otp.codepin = pin_code
             if self.otp.activation_start():
-                if self.otp.activation_finalyze() != 0:
-                    raise Exception("OTP error")
+                finalyze = self.otp.activation_finalyze()
+                if finalyze != 0:
+                    raise Exception(finalyze)
         except Exception as e:
             _LOGGER.error(str(e))
             raise Exception(str(e))

@@ -29,7 +29,10 @@
       "get_user_info": "Errore informazioni utente",
       "missing_user_info": "Informazioni utente mancanti",
       "get_otp_sms": "Errore sms OTP",
-      "get_mqtt_access_token": "Errore access token mqtt"
+      "get_mqtt_access_token": "Errore access token mqtt",
+      "get_mqtt_access_token_nok_access": "Codice SMS o codice pin errato (NOK:ACCESS)",
+      "get_mqtt_access_token_nok_maxnbtools": "Limite di associazioni / SMS ricevuti, ripristina il tuo account Stellantis e riprova (NOK:MAXNBTOOLS)",
+      "get_mqtt_access_token_nok_nok_blocked": "Limite di pin errati, inizia il processo nuovamente (NOK:NOK_BLOCKED)"
     },
     "abort": {
       "already_configured": "Account già configurato",
