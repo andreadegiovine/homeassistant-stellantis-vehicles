@@ -139,7 +139,7 @@ class StellantisBase:
                 if method != "DELETE" and (await resp.text()):
                     result = await resp.json()
                 if not str(resp.status).startswith("20"):
-                    _LOGGER.error(f"{method} request error {str(resp.status)}: {resp.url}")
+                    _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
                     _LOGGER.debug(headers)
                     _LOGGER.debug(params)
                     _LOGGER.debug(json)
@@ -167,7 +167,8 @@ class StellantisBase:
                 _LOGGER.debug("---------- END make_http_request")
                 return result
         except ConfigEntryAuthFailed as e:
-            _LOGGER.error("Authentication failed during HTTP request: %s", e)
+            # Logged only as a warning, the exception could be handled by the calling function
+            _LOGGER.warning("Authentication failed during HTTP request: %s", e)
             raise
         except Exception as e:
             _LOGGER.error("Unexpected error during HTTP request: %s", e)
