@@ -155,7 +155,7 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : PERCENTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
         "value_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
-        "updated_at_map" : ["energies", 0, "extension", "electric", "battery", "health", "createdAt"],
+        "updated_at_map" : ["energies", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_rate" : {
