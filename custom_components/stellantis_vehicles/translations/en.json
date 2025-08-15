@@ -183,6 +183,9 @@
       },
       "remote_commands": {
         "name": "Remote commands"
+      },
+      "daylight": {
+        "name": "Daylight"
       }
     },
     "button": {
