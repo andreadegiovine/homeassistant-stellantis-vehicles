@@ -150,8 +150,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.hass.async_add_executor_job(self.stellantis.new_otp, user_input[FIELD_SMS_CODE], user_input[FIELD_PIN_CODE])
             otp_token_request = await self.stellantis.get_mqtt_access_token()
         except Exception as e:
-            e = str(e).lower().replace(":", "_")
-            message = self.get_error_message("get_mqtt_access_token_" + e)
+            message = self.get_error_message("get_mqtt_access_token_" + str(e).lower().replace(":", "_"), e)
             if not message:
                 message = self.get_error_message("get_mqtt_access_token", e)
             self.errors[FIELD_OAUTH_CODE] = message
