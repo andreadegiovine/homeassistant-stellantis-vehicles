@@ -139,23 +139,23 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : UnitOfLength.KILOMETERS,
         "device_class": SensorDeviceClass.DISTANCE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "autonomy"],
-        "updated_at_map" : ["energies", 0, "createdAt"]
+        "value_map" : ["energies", {"type":"Electric"}, "autonomy"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "createdAt"]
     },
     "battery" : {
         "unit_of_measurement" : PERCENTAGE,
         "device_class": SensorDeviceClass.BATTERY,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "level"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "level"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_soh" : {
         "icon" : "mdi:battery-heart-variant",
         "unit_of_measurement" : PERCENTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "extension", "electric", "battery", "health", "resistance"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "battery", "health", "resistance"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_rate" : {
@@ -163,21 +163,21 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
         "device_class": SensorDeviceClass.SPEED,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "extension", "electric", "charging", "chargingRate"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "charging", "chargingRate"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_type" : {
         "icon" : "mdi:lightning-bolt",
-        "value_map" : ["energies", 0, "extension", "electric", "charging", "chargingMode"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "charging", "chargingMode"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "createdAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
      "battery_charging_end" : {
         "icon" : "mdi:battery-check",
         "device_class" : SensorDeviceClass.TIMESTAMP,
-        "value_map" : ["energies", 0, "extension", "electric", "charging", "remainingTime"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "charging", "remainingTime"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "createdAt"],
         "available" : [{"battery_charging": "InProgress"}],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
@@ -186,8 +186,8 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
         "device_class" : SensorDeviceClass.ENERGY_STORAGE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "extension", "electric", "battery", "load", "capacity"],
-        "updated_at_map" : ["energies", 0, "extension", "electric", "battery", "load", "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "battery", "load", "capacity"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "extension", "electric", "battery", "load", "createdAt"],
         "suggested_display_precision": 2,
         "engine": [VEHICLE_TYPE_ELECTRIC]
      },
@@ -196,8 +196,8 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
         "device_class" : SensorDeviceClass.ENERGY_STORAGE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "extension", "electric", "battery", "load", "residual"],
-        "updated_at_map" : ["energies", 0, "extension", "electric", "battery", "load", "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "battery", "load", "residual"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "extension", "electric", "battery", "load", "createdAt"],
         "suggested_display_precision": 2,
         "engine": [VEHICLE_TYPE_ELECTRIC]
      },
@@ -205,8 +205,8 @@ SENSORS_DEFAULT = {
         "icon": "mdi:gas-station",
         "unit_of_measurement" : PERCENTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "level"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Fuel"}, "level"],
+        "updated_at_map" : ["energies", {"type":"Fuel"}, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "fuel_autonomy" : {
@@ -214,16 +214,16 @@ SENSORS_DEFAULT = {
         "unit_of_measurement" : UnitOfLength.KILOMETERS,
         "device_class": SensorDeviceClass.DISTANCE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "autonomy"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Fuel"}, "autonomy"],
+        "updated_at_map" : ["energies", {"type":"Fuel"}, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "fuel_consumption_total" : {
         "icon": "mdi:gas-station-outline",
         "unit_of_measurement" : UnitOfVolume.LITERS,
         "state_class": SensorStateClass.TOTAL_INCREASING,
-        "value_map" : ["energies", 0, "extension", "fuel", "consumptions", "total"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Fuel"}, "extension", "fuel", "consumptions", "total"],
+        "updated_at_map" : ["energies", {"type":"Fuel"}, "createdAt"],
          "suggested_display_precision": 2,
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
@@ -231,8 +231,8 @@ SENSORS_DEFAULT = {
         "icon": "mdi:gas-station-outline",
         "unit_of_measurement" : UnitOfVolume.LITERS+"/100"+UnitOfLength.KILOMETERS,
         "state_class": SensorStateClass.MEASUREMENT,
-        "value_map" : ["energies", 0, "extension", "fuel", "consumptions", "instant"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Fuel"}, "extension", "fuel", "consumptions", "instant"],
+        "updated_at_map" : ["energies", {"type":"Fuel"}, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
     },
     "coolant_temperature" : {
@@ -281,16 +281,16 @@ BINARY_SENSORS_DEFAULT = {
     },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",
-        "value_map" : ["energies", 0, "extension", "electric", "charging", "plugged"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "charging", "plugged"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "createdAt"],
         "device_class" : BinarySensorDeviceClass.PLUG,
         "on_value": True,
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging" : {
         "icon" : "mdi:battery-charging-medium",
-        "value_map" : ["energies", 0, "extension", "electric", "charging", "status"],
-        "updated_at_map" : ["energies", 0, "createdAt"],
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "charging", "status"],
+        "updated_at_map" : ["energies", {"type":"Electric"}, "createdAt"],
         "device_class" : BinarySensorDeviceClass.BATTERY_CHARGING,
         "on_value": "InProgress",
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
