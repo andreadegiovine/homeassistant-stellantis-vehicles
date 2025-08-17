@@ -388,7 +388,7 @@ class StellantisBaseEntity(CoordinatorEntity):
                     value = vehicle_data[key]
             else: # following keys in the map (value has been set with result of previous key)
                 if isinstance(key, dict) and isinstance(value, list): # key is a dict and value a list
-                    # Use dictionnary in map as key_field, ke_value to look for in value list
+                    # Use dictionnary in map as key_field, key_value to look for in value list
                     key_field, key_value = next(iter(key.items()))
                     # Select value in list with key_field matching to key_value 
                     value = next((item for item in value if item.get(key_field) == key_value), None)
