@@ -360,9 +360,9 @@ class StellantisBaseEntity(CoordinatorEntity):
     def update_maps_for_hybrid(self):
         """ Update value/updated_at map for hybrid vehicles. """
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
-            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
-                self._value_map[1] = 1
-                self._updated_at_map[1] = 1
+#            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
+#                self._value_map[1] = 1
+#                self._updated_at_map[1] = 1
 
             if self._key == "battery_soh":
                 self._value_map[6] = "capacity"
@@ -376,25 +376,7 @@ class StellantisBaseEntity(CoordinatorEntity):
 
     def get_updated_at_from_map(self, updated_at_map):
         """ Get data updated_at from map. """
-        vehicle_data = self._coordinator._data
-        value = None
-        for key in updated_at_map:
-            if value is None: # first key in the map
-                if key in vehicle_data:
-                    value = vehicle_data[key]
-            else: # following keys in the map (value has been set with result of previous key)
-                if isinstance(key, int) or key in value: 
-                    value = value[key]
-                else: # value not an array and key not found in value
-                    value = None
-            if value is None: # Stop iteration immediately if None value encountered at this stage
-                break
-
-        # Two following lines may be useless...
-        # if value and not isinstance(value, str):
-        #     value = None
-
-        return value
+        return self.get_value_from_map(updated_at_map)
 
     def get_value_from_map(self, value_map):
         """ Get data value from map. """
@@ -405,16 +387,20 @@ class StellantisBaseEntity(CoordinatorEntity):
                 if key in vehicle_data:
                     value = vehicle_data[key]
             else: # following keys in the map (value has been set with result of previous key)
-                if isinstance(key, int) or key in value: 
+                if isinstance(key, dict):
+                    if isinstance(value, list): # key is a dict and value a list
+                        # Use dictionnary in map as key_field, key_value to look for in value list
+                        key_field, key_value = next(iter(key.items()))
+                        # Select value in list with key_field matching to key_value 
+                        value = next((item for item in value if item.get(key_field) == key_value), None)
+                    else: # set value to None if key is dictionnary and value not a list
+                        value = None
+                elif isinstance(key, int) or key in value:
                     value = value[key]
                 else: # value not an array and key not found in value
                     value = None
             if value is None: # Stop iteration immediately if None value encountered at this stage
                 break
-
-        # Two following lines may be useless...
-        # if value and not isinstance(value, (float, int, str, bool, list)):
-        #     value = None
 
         return value
 
