@@ -139,7 +139,7 @@ class StellantisBase:
                 if method != "DELETE" and (await resp.text()):
                     result = await resp.json()
                 if not str(resp.status).startswith("20"):
-                    _LOGGER.error(f"{method} request error {str(resp.status)}: {resp.url}")
+                    _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
                     _LOGGER.debug(headers)
                     _LOGGER.debug(params)
                     _LOGGER.debug(json)
@@ -167,7 +167,8 @@ class StellantisBase:
                 _LOGGER.debug("---------- END make_http_request")
                 return result
         except ConfigEntryAuthFailed as e:
-            _LOGGER.error("Authentication failed during HTTP request: %s", e)
+            # Logged only as a warning, the exception could be handled by the calling function
+            _LOGGER.warning("Authentication failed during HTTP request: %s", e)
             raise
         except Exception as e:
             _LOGGER.error("Unexpected error during HTTP request: %s", e)
@@ -489,12 +490,13 @@ class StellantisVehicles(StellantisOauth):
                     await self._update_mqtt_config(mqtt_config, token_request)
             except ConfigEntryAuthFailed as e:
                 try:
-                    _LOGGER.debug("------------- Attempt to refresh MQTT token failed, trying to refresh only the access_token (using refresh_token)")
+                    _LOGGER.warning(f"------------- Attempt to refresh MQTT access_token/refresh_token failed. This is NOT an error as long as the following attempt to refresh only the access_token (using current refresh_token) succeeds.")
                     token_request = await self._fetch_new_mqtt_token(mqtt_config, access_token_only=True)
                     _LOGGER.debug(token_request)
                     await self._update_mqtt_config(mqtt_config, token_request)
+                    _LOGGER.warning(f"------------- Attempt to refresh MQTT access_token only (using current refresh_token) succeeded. This is NOT an error! It means that the MQTT refresh_token is still valid and will be renewed in the next scheduled interval.")
                 except ConfigEntryAuthFailed as ee:
-                    _LOGGER.error("------------- Attempt to refresh MQTT access token only failed as well. Error: %s", ee)
+                    _LOGGER.error("------------- Attempt to refresh MQTT access_token only failed as well; refresh_token is expired or invalid. Please reauthenticate. Error: %s", ee)
                     # If refreshing access_token only attempt fails as well, raise an exception
                     raise
             except Exception as e:
