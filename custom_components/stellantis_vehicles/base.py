@@ -76,20 +76,22 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     @property
     def command_history(self):
         """ Commands history. """
-        history = {}
         if not self._commands_history:
-            return history
-        reorder_actions = list(reversed(self._commands_history.keys()))
-        for action_id in reorder_actions:
+            return {}
+        history_items = []
+        for action_id in self._commands_history:
             action_name = self._commands_history[action_id]["name"]
             action_updates = self._commands_history[action_id]["updates"]
-            reorder_updates = reversed(action_updates)
-            for update in reorder_updates:
+            for update in action_updates:
                 status = update["info"]
                 translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{status}"
                 status = self.get_translation(translation_path, status)
-                history.update({update["date"].strftime("%d/%m/%y %H:%M:%S:%f")[:-4]: str(action_name) + ": " + status})
-        return history
+                history_items.append((update["date"], f"{action_name}: {status}"))
+        history_items.sort(key=lambda x: x[0], reverse=True)
+        return {
+            item[0].strftime("%d/%m/%y %H:%M:%S:%f")[:-4]: item[1]
+            for item in history_items
+        }
 
     @property
     def pending_action(self):
