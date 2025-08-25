@@ -366,7 +366,7 @@ class StellantisVehicles(StellantisOauth):
         image = await self._hass.async_add_executor_job(urlopen, url)
         with Image.open(image) as im:
             im = ImageOps.pad(im, (400, 400))
-        im.save(image_path)
+        await self._hass.async_add_executor_job(im.save, image_path)
         return image_url
 
     async def refresh_token(self):
