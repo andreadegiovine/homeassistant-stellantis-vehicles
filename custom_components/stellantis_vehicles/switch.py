@@ -37,13 +37,13 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             )
             entities.extend([StellantisAbrpSyncSwitch(coordinator, description)])
 
-            description = SwitchEntityDescription(
-                name = "notifications",
-                key = "notifications",
-                translation_key = "notifications",
-                icon = "mdi:message-alert"
-            )
-            entities.extend([StellantisBaseSwitch(coordinator, description)])
+        description = SwitchEntityDescription(
+            name = "notifications",
+            key = "notifications",
+            translation_key = "notifications",
+            icon = "mdi:message-alert"
+        )
+        entities.extend([StellantisBaseSwitch(coordinator, description)])
 
     async_add_entities(entities)
 
