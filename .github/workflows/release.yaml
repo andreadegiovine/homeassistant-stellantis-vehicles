@@ -30,6 +30,9 @@ jobs:
           last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
           echo "Last tag: $last_tag"
           
+          last_release=$(git describe --match "*" --exclude "*-beta*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
+          echo "Last release: $last_release"
+          
           current_year=$(date +%Y)
           current_month=$(date +%-m)
           
@@ -89,7 +92,7 @@ jobs:
           
           echo "New tag: $new_tag_name"
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
-          echo "previous_tag_name=$last_tag" >> $GITHUB_OUTPUT
+          echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
           echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
           echo "new_tag_branch=$branch" >> $GITHUB_OUTPUT
           echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
