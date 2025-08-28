@@ -237,6 +237,9 @@
       "abrp_sync": {
         "name": "Sincronizza ABRP"
       },
+      "battery_values_correction": {
+        "name": "Correzione valori batteria"
+      },
       "notifications": {
         "name": "Notifiche"
       }

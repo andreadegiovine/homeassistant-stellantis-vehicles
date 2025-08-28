@@ -237,6 +237,9 @@
       "abrp_sync": {
         "name": "ABRP sync"
       },
+      "battery_values_correction": {
+        "name": "Battery values correction"
+      },
       "notifications": {
         "name": "Notifications"
       }
