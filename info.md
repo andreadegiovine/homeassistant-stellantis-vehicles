@@ -123,6 +123,11 @@ Get a token from [ABRP](https://abetterrouteplanner.com/):
 
 Use the generated token in **abrp_token sensor** and enable **abrp_sync switch** to send updates.
 
+## Battery capacity / residual sensors:
+Thanks to the community ([#272](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272)), it seems that for some vehicles **Stellantis provides incorrect values**. The **switch.battery_values_correction** entity (in your language) applies a correction if active.
+
+\* currently only to the battery_residual sensor
+
 ## Errors
 Before any issue request, please check the integration log and look for solution below.
 
@@ -164,6 +169,7 @@ Thanks to all users who contribute to this integration by updating translations 
 ### Special thanks:
 - [@MoellerDi](https://github.com/MoellerDi) for the great work and big support;
 - [@benbox69](https://github.com/benbox69) for the python oauth2 helper tool;
+- [@khenderick](https://github.com/khenderick) for the great work and big support;
 
 Thanks to everyone for the issues, especially to:
 - [@chmtc94](https://github.com/chmtc94);
