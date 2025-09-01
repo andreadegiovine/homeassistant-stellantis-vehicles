@@ -29,7 +29,10 @@
       "get_user_info": "Get user info error",
       "missing_user_info": "Missing user info error",
       "get_otp_sms": "Get OTP sms error",
-      "get_mqtt_access_token": "Get mqtt access token error"
+      "get_mqtt_access_token": "Get mqtt access token error",
+      "get_mqtt_access_token_nok_access": "Incorrecte SMS code of Pin code",
+      "get_mqtt_access_token_nok_maxnbtools": "Limiet bereikt van aantal gelinkte apparaten / smsjes ontvangen, reset je Stellantis account (zie README.md) en probeer het opnieuw",
+      "get_mqtt_access_token_nok_nok_blocked": "Limiet bereikt van aantal keer verkeerde pin code, herstart het configuratieproces door je pin code opnieuw in te stellen in de stellantis app"
     },
     "abort": {
       "already_configured": "Account is al geconfigureerd",
@@ -72,7 +75,7 @@
         "name": "Batterij laad snelheid"
       },
       "battery_charging_type": {
-        "name": "Battery laad type",
+        "name": "Batterij laad type",
         "state": {
           "no": "Nee",
           "slow": "Traag",
@@ -80,7 +83,7 @@
         }
       },
       "battery_charging_end": {
-        "name": "Battery verwachte eindtijd"
+        "name": "Batterij verwachte eindtijd"
       },
       "battery_capacity": {
         "name": "Batterij maximum capaciteit"
@@ -98,7 +101,8 @@
           "0": "Afgerond",
           "300": "Geannuleerd",
           "500": "Error",
-          "502": "Dubbel"
+          "502": "Dubbel",
+          "422": "Privacy ingeschakeld"
         }
       },
       "fuel": {
@@ -169,18 +173,48 @@
         "name": "Motor"
       },
       "preconditioning": {
-        "name": "Air conditioning"
+        "name": "Voorconditioneren"
+      },
+      "alarm": {
+        "name": "Alarm"
+      },
+      "privacy": {
+        "name": "Privacy"
+      },
+      "remote_commands": {
+        "name": "Remote commands"
+      },
+      "daylight": {
+        "name": "Daglicht"
       }
     },
     "button": {
       "wakeup": {
         "name": "Wakker worden"
       },
+      "doors_lock": {
+        "name": "Deuren vergrendelen"
+      },
+      "doors_unlock": {
+        "name": "Deuren ontgrendelen"
+      },
       "horn": {
         "name": "Toeter"
       },
       "lights": {
         "name": "Lichten"
+      },
+      "charge_start": {
+        "name": "Start laden"
+      },
+      "charge_stop": {
+        "name": "Stop laden"
+      },
+      "preconditioning_start": {
+        "name": "Start voorconditioneren"
+      },
+      "preconditioning_stop": {
+        "name": "Stop voorconditioneren"
       }
     },
     "device_tracker": {
@@ -202,11 +236,22 @@
       },
       "abrp_sync": {
         "name": "ABRP sync"
+      },
+      "battery_values_correction": {
+        "name": "Batterij correctie"
+      },
+      "notifications": {
+        "name": "Meldingen"
       }
     },
     "text": {
       "abrp_token": {
         "name": "ABRP token"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Batterij start moment"
       }
     }
   },
