@@ -29,7 +29,10 @@
       "get_user_info": "Error al obtener la información del usuario",
       "missing_user_info": "Falta la información del usuario",
       "get_otp_sms": "Error al obtener el SMS con el código OTP",
-      "get_mqtt_access_token": "Error al obtener el token de acceso MQTT"
+      "get_mqtt_access_token": "Error al obtener el token de acceso MQTT",
+      "get_mqtt_access_token_nok_access": "Código SMS o PIN no válido",
+      "get_mqtt_access_token_nok_maxnbtools": "Límite de dispositivos/SMS alcanzado, reinicia tu cuenta Stellantis e inténtalo de nuevo",
+      "get_mqtt_access_token_nok_nok_blocked": "Límite de intentos de PIN incorrectos, reinicia el proceso de configuración"
     },
     "abort": {
       "already_configured": "La cuenta ya está configurada",
@@ -98,7 +101,8 @@
           "0": "Completo",
           "300": "Cancelado",
           "500": "Error",
-          "502": "Duplicado"
+          "502": "Duplicado",
+          "422": "Privacidad activada"
         }
       },
       "fuel": {
@@ -179,6 +183,9 @@
       },
       "remote_commands": {
         "name": "Comandos remotos"
+      },
+      "daylight": {
+        "name": "Luz diurna"
       }
     },
     "button": {
@@ -229,6 +236,9 @@
       },
       "abrp_sync": {
         "name": "Sincronización ABRP"
+      },
+      "battery_values_correction": {
+        "name": "Corrección de valores de batería"
       },
       "notifications": {
         "name": "Notificaciones"
