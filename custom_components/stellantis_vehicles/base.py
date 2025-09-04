@@ -453,8 +453,7 @@ class StellantisBaseEntity(CoordinatorEntity):
             # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272
             correction_on = self._coordinator._sensors.get("switch_battery_values_correction", False)
             if value and correction_on:
-                if key == "battery_residual":
-                    value = value * 1.343
+                value = value * 1.343
 
         if key in ["coolant_temperature", "oil_temperature", "air_temperature"]:
             value = float(value)
