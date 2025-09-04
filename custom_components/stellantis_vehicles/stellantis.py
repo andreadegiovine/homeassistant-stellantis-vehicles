@@ -11,6 +11,7 @@ from uuid import uuid4
 import asyncio
 from datetime import ( datetime, timedelta, UTC )
 import ssl
+import socket
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import translation
@@ -53,6 +54,42 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+# Some Stellantis MQTT servers drop packets with a TCP payload greater than 1456 bytes
+# which causes the TLS handshake to fail and later a "Connnection reset by peer" error.
+# As a workaround, we modify the MQTT client to reduce the MSS before connecting the TCP socket
+class MqttClientMod(mqtt.Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def _create_socket_connection(self) -> socket.socket:
+        if self._get_proxy():
+            return super()._create_socket_connection()  # SOCKS will reduce MSS by itself
+        
+        addr_infos = socket.getaddrinfo(self._host, self._port, 0, socket.SOCK_STREAM)
+        addr_cnt = len(addr_infos)
+        if addr_cnt == 0:
+            raise socket.error(f"getaddrinfo returned an empty list")
+
+        for af, socktype, proto, canonname, sa in addr_infos:
+            sock = None
+            try:
+                sock = socket.socket(af, socktype, proto)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1460 - 4)
+                sock.settimeout(self._connect_timeout)
+                sock.bind((self._bind_address, self._bind_port))
+                _LOGGER.debug(f"Connecting to MQTT {sa}")
+                sock.connect(sa)
+                return sock
+
+            except socket.error:
+                if sock is not None:
+                    sock.close()
+                addr_cnt -= 1
+                if addr_cnt == 0:
+                    raise
+
 
 def _create_ssl_context() -> ssl.SSLContext:
     """Create a SSL context for the MQTT connection."""
@@ -555,7 +592,7 @@ class StellantisVehicles(StellantisOauth):
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
         if self._mqtt is None:
-            self._mqtt = mqtt.Client(clean_session=True, protocol=mqtt.MQTTv311)
+            self._mqtt = MqttClientMod(clean_session=True, protocol=mqtt.MQTTv311)
             self._mqtt.enable_logger(logger=_LOGGER)
             self._mqtt.tls_set_context(_SSL_CONTEXT)
             self._mqtt.on_connect = self._on_mqtt_connect
