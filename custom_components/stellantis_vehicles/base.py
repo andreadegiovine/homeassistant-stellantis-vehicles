@@ -20,7 +20,6 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, datetime_from_isoformat, time_from_string )
 
-
 from .const import (
     DOMAIN,
     FIELD_MOBILE_APP,
