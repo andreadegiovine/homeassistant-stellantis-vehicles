@@ -33,6 +33,9 @@ MQTT_RESP_TOPIC = "psa/RemoteServices/to/cid/"
 MQTT_EVENT_TOPIC = "psa/RemoteServices/events/MPHRTServices/"
 MQTT_REQ_TOPIC = "psa/RemoteServices/from/cid/"
 
+KWH_CORRECTION = 1.343
+MS_TO_KMH_CONVERSION = 3.6
+
 CLIENT_ID_QUERY_PARAMS = {
     "client_id": "{#client_id#}",
     "locale": "{#locale#}"

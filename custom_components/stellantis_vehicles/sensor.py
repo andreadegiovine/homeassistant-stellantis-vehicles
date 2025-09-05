@@ -12,7 +12,9 @@ from .const import (
     DOMAIN,
     FIELD_COUNTRY_CODE,
     SENSORS_DEFAULT,
-    VEHICLE_TYPE_ELECTRIC
+    VEHICLE_TYPE_ELECTRIC,
+    MS_TO_KMH_CONVERSION,
+    KWH_CORRECTION
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -120,10 +122,10 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
             attributes["start_mileage"] = str(last_trip["startMileage"]) + " " + UnitOfLength.KILOMETERS
         if "kinetic" in last_trip:
             if "avgSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["avgSpeed"]) > 0:
-                avg_speed_kmh = float(last_trip["kinetic"]["avgSpeed"]) * 3.6
+                avg_speed_kmh = float(last_trip["kinetic"]["avgSpeed"]) * MS_TO_KMH_CONVERSION
                 attributes["avg_speed"] = str(round(avg_speed_kmh, 2)) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
             if "maxSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["maxSpeed"]) > 0:
-                max_speed_kmh = float(last_trip["kinetic"]["maxSpeed"]) * 3.6
+                max_speed_kmh = float(last_trip["kinetic"]["maxSpeed"]) * MS_TO_KMH_CONVERSION
                 attributes["max_speed"] = str(round(max_speed_kmh, 2)) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
         if "energyConsumptions" in last_trip:
             for consuption in last_trip["energyConsumptions"]:
@@ -137,7 +139,7 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                     divide = 1000
                     correction_on = self._coordinator._sensors.get("switch_battery_values_correction", False)
                     if correction_on:
-                        divide = 0.74626
+                        divide = divide / KWH_CORRECTION
                 else:
                     consumption_unit_of_measurement = UnitOfVolume.LITERS
                     avg_consumption_unit_of_measurement = UnitOfVolume.LITERS+"/100"+UnitOfLength.KILOMETERS

@@ -25,7 +25,8 @@ from .const import (
     FIELD_MOBILE_APP,
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
-    UPDATE_INTERVAL
+    UPDATE_INTERVAL,
+    KWH_CORRECTION
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -453,7 +454,7 @@ class StellantisBaseEntity(CoordinatorEntity):
             # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272
             correction_on = self._coordinator._sensors.get("switch_battery_values_correction", False)
             if value and correction_on:
-                value = value * 1.343
+                value = value * KWH_CORRECTION
 
         if key in ["coolant_temperature", "oil_temperature", "air_temperature"]:
             value = float(value)
