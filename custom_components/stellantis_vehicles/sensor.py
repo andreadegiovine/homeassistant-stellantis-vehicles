@@ -120,9 +120,11 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
             attributes["start_mileage"] = str(last_trip["startMileage"]) + " " + UnitOfLength.KILOMETERS
         if "kinetic" in last_trip:
             if "avgSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["avgSpeed"]) > 0:
-                attributes["avg_speed"] = str(last_trip["kinetic"]["avgSpeed"]) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
+                avg_speed_kmh = float(last_trip["kinetic"]["avgSpeed"]) * 3.6
+                attributes["avg_speed"] = str(round(avg_speed_kmh, 2)) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
             if "maxSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["maxSpeed"]) > 0:
-                attributes["max_speed"] = str(last_trip["kinetic"]["maxSpeed"]) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
+                max_speed_kmh = float(last_trip["kinetic"]["maxSpeed"]) * 3.6
+                attributes["max_speed"] = str(round(max_speed_kmh, 2)) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
         if "energyConsumptions" in last_trip:
             for consuption in last_trip["energyConsumptions"]:
                 if "type" not in consuption:
