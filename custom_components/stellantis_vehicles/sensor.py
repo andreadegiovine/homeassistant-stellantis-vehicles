@@ -137,7 +137,7 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                     divide = 1000
                     correction_on = self._coordinator._sensors.get("switch_battery_values_correction", False)
                     if correction_on:
-                        divide = 0.74626
+                        divide = 746.26
                 else:
                     consumption_unit_of_measurement = UnitOfVolume.LITERS
                     avg_consumption_unit_of_measurement = UnitOfVolume.LITERS+"/100"+UnitOfLength.KILOMETERS
