@@ -125,7 +125,7 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                 avg_speed_kmh = float(last_trip["kinetic"]["avgSpeed"]) * MS_TO_KMH_CONVERSION
                 attributes["avg_speed"] = str(round(avg_speed_kmh, 2)) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
             if "maxSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["maxSpeed"]) > 0:
-                max_speed_kmh = float(last_trip["kinetic"]["maxSpeed"]) * MS_TO_KMH_CONVERSION
+                max_speed_kmh = float(last_trip["kinetic"]["maxSpeed"])
                 attributes["max_speed"] = str(round(max_speed_kmh, 2)) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
         if "energyConsumptions" in last_trip:
             for consuption in last_trip["energyConsumptions"]:
