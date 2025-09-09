@@ -29,7 +29,10 @@
       "get_user_info": "Fehler beim Abrufen der Benutzerinformationen",
       "missing_user_info": "Fehler: Fehlende Benutzerinformationen",
       "get_otp_sms": "SMS-Fehler beim OTP-Code",
-      "get_mqtt_access_token": "Fehler beim Abrufen des MQTT-Zugriffstokens"
+      "get_mqtt_access_token": "Fehler beim Abrufen des MQTT-Zugriffstokens",
+      "get_mqtt_access_token_nok_access": "Ungültiger SMS-Code oder PIN-Code",
+      "get_mqtt_access_token_nok_maxnbtools": "Begrenzung der verbundenen Geräte/empfangenen SMS, setzen Sie Ihr Stellantis-Konto zurück und versuchen Sie es erneut",
+      "get_mqtt_access_token_nok_nok_blocked": "Grenze für falsche PIN-Eingaben erreicht, Konfigurationsvorgang neu starten"
     },
     "abort": {
       "already_configured": "Der Account ist bereits konfiguriert",
@@ -66,7 +69,7 @@
         "name": "Batterie"
       },
       "battery_soh": {
-        "name": "Batterie SOH"
+        "name": "Batterie SOH (Gesundheitszustand der Batterie)"
       },
       "battery_charging_rate": {
         "name": "Batterie Laderate"
@@ -91,21 +94,22 @@
       "command_status": {
         "name": "Befehlsstatus",
         "state": {
+          "0": "Abgeschlossen",
           "99": "Nicht kompatibel",
+          "300": "Abgebrochen",
+          "422": "Alarmanlage aktiviert",
+          "500": "Fehler",
+          "502": "Doppelt",
           "900": "Akzeptiert",
           "901": "Fahrzeug schläft",
-          "903": "Weitergeleitet",
-          "0": "Abgeschlossen",
-          "300": "Abgebrochen",
-          "500": "Fehler",
-          "502": "Doppelt"
+          "903": "Weitergeleitet"
         }
       },
       "fuel": {
-        "name": "Kraftstoff"
+        "name": "Füllstand im Tank"
       },
       "fuel_autonomy": {
-        "name": "Kraftstoffweite"
+        "name": "Mit dem Tank kommst du noch so weit"
       },
       "fuel_consumption_total": {
         "name": "Kraftstoffverbrauch insgesamt"
@@ -170,17 +174,47 @@
       },
       "preconditioning": {
         "name": "Vorklimatisierung"
+      },
+      "alarm": {
+        "name": "Alarm"
+      },
+      "privacy": {
+        "name": "Alarmanlage"
+      },
+      "remote_commands": {
+        "name": "Fahrzeug aus der Entfernung bedienen"
+      },
+      "daylight": {
+        "name": "Tagesfahrlicht"
       }
     },
     "button": {
       "wakeup": {
         "name": "Aufwecken"
       },
+      "doors_lock": {
+        "name": "Türen verriegeln"
+      },
+      "doors_unlock": {
+        "name": "Türen entriegeln"
+      },
       "horn": {
         "name": "Hupe"
       },
       "lights": {
-        "name": "Lichter"
+        "name": "Standlicht"
+      },
+      "charge_start": {
+        "name": "Fahrzeug laden Starten"
+      },
+      "charge_stop": {
+        "name": "Fahrzeug laden Stopen"
+      },
+      "preconditioning_start": {
+        "name": "Vorbehandlung starten"
+      },
+      "preconditioning_stop": {
+        "name": "Vorbehandlung stoppen"
       }
     },
     "device_tracker": {
@@ -202,15 +236,33 @@
       },
       "abrp_sync": {
         "name": "ABRP Sync"
+      },
+      "battery_values_correction": {
+        "name": "Korrektur der Batteriewerte"
+      },
+      "notifications": {
+        "name": "Benachrichtigung"
       }
     },
     "text": {
       "abrp_token": {
         "name": "ABRP Token"
       }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Start des Batterieladevorgangs"
+      }
     }
   },
   "common": {
-    "no_vehicles_found_message": "Für dieses Konto wurden keine Fahrzeuge gefunden"
+    "access_token_error_title": "Zugriffstoken-Fehler",
+    "access_token_error_message": "Lesen Sie die offizielle Dokumentation im [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) Abschnitt",
+    "otp_error_title": "OTP Fehler",
+    "otp_error_message": "Lesen Sie die offizielle Dokumentation im [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) Abschnitt",
+    "no_vehicles_found_title": "Nicht verfügbar",
+    "no_vehicles_found_message": "Für dieses Konto wurden keine Fahrzeuge gefunden",
+    "command_error_title": "Befehl",
+    "command_error_message": "Der Befehl wurde nicht korrekt gesendet."
   }
 }
