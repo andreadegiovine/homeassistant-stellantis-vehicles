@@ -88,8 +88,8 @@ PLATFORMS = [
     "button",
     "device_tracker",
     "number",
-    "sensor",
     "switch",
+    "sensor",
     "text",
     "time"
 ]
