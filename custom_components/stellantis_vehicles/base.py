@@ -15,8 +15,9 @@ from homeassistant.components.text import TextEntity
 from homeassistant.components.time import TimeEntity
 from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
+from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF, UnitOfLength, UnitOfSpeed)
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.util.unit_conversion import DistanceConverter, SpeedConverter
 
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, datetime_from_isoformat, time_from_string )
 
@@ -552,6 +553,40 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
         restored_data = await self.async_get_last_state()
         if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
             value = restored_data.state
+
+            # --- BEGIN unit-safe restore ---
+            # Home Assistant stores 'state' in user/display units.
+            # Our entities use *native* units. If they differ, convert
+            # the restored value back to native to avoid double conversion.
+            try:
+                restored_unit = restored_data.attributes.get("unit_of_measurement")
+                native_unit = getattr(self, "_attr_native_unit_of_measurement", None)
+                if restored_unit and native_unit:
+                    # Only attempt conversion for numeric states
+                    value_num = float(value)
+
+                    # Distance (km/mi/m)
+                    length_units = {UnitOfLength.KILOMETERS, UnitOfLength.MILES, UnitOfLength.METERS}
+                    if native_unit in length_units and restored_unit in length_units:
+                        if restored_unit != native_unit:
+                            value = DistanceConverter.convert(value_num, restored_unit, native_unit)
+                        else:
+                            value = value_num
+
+                    # Speed (km/h <-> mi/h)
+                    speed_units = {UnitOfSpeed.KILOMETERS_PER_HOUR, UnitOfSpeed.MILES_PER_HOUR}
+                    if native_unit in speed_units and restored_unit in speed_units:
+                        if restored_unit != native_unit:
+                            value = SpeedConverter.convert(value_num, restored_unit, native_unit)
+                        else:
+                            value = value_num
+            except (ValueError, TypeError):
+                # Non-numeric state: leave 'value' as-is
+                pass
+            except Exception as e:
+                _LOGGER.debug("Unit conversion skipped during restore for %s: %s", self._key, e)
+            # --- END unit-safe restore ---
+            
             if self._key == "battery_charging_end":
                 value = datetime.fromisoformat(value)
             self._attr_native_value = value
