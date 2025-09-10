@@ -15,9 +15,8 @@ from homeassistant.components.text import TextEntity
 from homeassistant.components.time import TimeEntity
 from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF, UnitOfLength, UnitOfSpeed)
+from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.util.unit_conversion import DistanceConverter, SpeedConverter
 
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, datetime_from_isoformat, time_from_string )
 
@@ -548,55 +547,42 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
 
 class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
     async def async_added_to_hass(self):
-        """ Restore entity data to HASS style on system restart. """
+        """Restore entity data on system restart."""
         await super().async_added_to_hass()
-        restored_data = await self.async_get_last_state()
-        if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
-            value = restored_data.state
 
-            # --- BEGIN unit-safe restore ---
-            # Home Assistant stores 'state' in user/display units.
-            # Our entities use *native* units. If they differ, convert
-            # the restored value back to native to avoid double conversion.
-            try:
-                restored_unit = restored_data.attributes.get("unit_of_measurement")
-                native_unit = getattr(self, "_attr_native_unit_of_measurement", None)
-                if restored_unit and native_unit:
-                    # Only attempt conversion for numeric states
-                    value_num = float(value)
+        # Preferred path: restore native sensor data (avoids unit conversion issues)
+        sensor_data = await self.async_get_last_sensor_data()
+        restored_state = None
+        value = None
 
-                    # Distance (km/mi/m)
-                    length_units = {UnitOfLength.KILOMETERS, UnitOfLength.MILES, UnitOfLength.METERS}
-                    if native_unit in length_units and restored_unit in length_units:
-                        if restored_unit != native_unit:
-                            value = DistanceConverter.convert(value_num, restored_unit, native_unit)
-                        else:
-                            value = value_num
+        if sensor_data is not None and sensor_data.native_value is not None:
+            value = sensor_data.native_value
+            # If a native unit was stored, ensure our entity reflects it
+            if getattr(sensor_data, "native_unit_of_measurement", None):
+                self._attr_native_unit_of_measurement = sensor_data.native_unit_of_measurement
+        else:
+            # Fallback for older stored states (or first run)
+            restored_state = await self.async_get_last_state()
+            if restored_state and restored_state.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
+                value = restored_state.state
+                if self._key == "battery_charging_end":
+                    value = datetime.fromisoformat(value)
 
-                    # Speed (km/h <-> mi/h)
-                    speed_units = {UnitOfSpeed.KILOMETERS_PER_HOUR, UnitOfSpeed.MILES_PER_HOUR}
-                    if native_unit in speed_units and restored_unit in speed_units:
-                        if restored_unit != native_unit:
-                            value = SpeedConverter.convert(value_num, restored_unit, native_unit)
-                        else:
-                            value = value_num
-            except (ValueError, TypeError):
-                # Non-numeric state: leave 'value' as-is
-                pass
-            except Exception as e:
-                _LOGGER.debug("Unit conversion skipped during restore for %s: %s", self._key, e)
-            # --- END unit-safe restore ---
-            
-            if self._key == "battery_charging_end":
-                value = datetime.fromisoformat(value)
+        if value is not None:
             self._attr_native_value = value
             self._coordinator._sensors[self._key] = value
-            for key in restored_data.attributes:
-                self._attr_extra_state_attributes[key] = restored_data.attributes[key]
+
+        # Restore attributes from the last state record (if present)
+        if restored_state is None:
+            restored_state = await self.async_get_last_state()
+        if restored_state:
+            for key, attr_val in restored_state.attributes.items():
+                self._attr_extra_state_attributes[key] = attr_val
+
         self.coordinator_update()
 
     def coordinator_update(self):
-        """ Coordinator update. """
+        """Coordinator update."""
         return True
 
 
