@@ -20,7 +20,7 @@
       "otp": {
         "data": {
           "sms_code": "Tekstiviesti Stellantikselta",
-          "pin_code": "Stellantis-sovelluksen pin-koodi"
+          "pin_code": "Stellantis-sovelluksen PIN-koodi"
         }
       }
     },
@@ -29,7 +29,10 @@
       "get_user_info": "Käyttäjätietojen haku epäonnistui",
       "missing_user_info": "Käyttäjätiedot puuttuu",
       "get_otp_sms": "OTP-tekstiviestivirhe",
-      "get_mqtt_access_token": "MQTT-todennusvirhe"
+      "get_mqtt_access_token": "MQTT-todennusvirhe",
+      "get_mqtt_access_token_nok_access": "Virheellinen SMS- tai PIN-koodi",
+      "get_mqtt_access_token_nok_maxnbtools": "Liitettyjen laitteiden raja saavutettu. Nollaa Stellantis-tilisi ja yritä uudelleen.",
+      "get_mqtt_access_token_nok_nok_blocked": "PIN-koodi syötetty väärin liian monta kertaa. Aloita konfigurointiprosessi uudelleen."
     },
     "abort": {
       "already_configured": "Tili on jo käytössä",
@@ -180,6 +183,9 @@
       },
       "remote_commands": {
         "name": "Etäohjaus"
+      },
+      "daylight": {
+        "name": "Päivänvalo"
       }
     },
     "button": {
@@ -230,6 +236,9 @@
       },
       "abrp_sync": {
         "name": "ABRP-synkronointi"
+      },
+      "battery_values_correction": {
+        "name": "Akun varaustason arvojen kompensointi"
       },
       "notifications": {
         "name": "Huomautukset"
