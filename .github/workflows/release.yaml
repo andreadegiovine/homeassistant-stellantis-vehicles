@@ -30,6 +30,9 @@ jobs:
           last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
           echo "Last tag: $last_tag"
           
+          last_release=$(git describe --match "*" --exclude "*-beta*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
+          echo "Last release: $last_release"
+          
           current_year=$(date +%Y)
           current_month=$(date +%-m)
           
@@ -89,7 +92,7 @@ jobs:
           
           echo "New tag: $new_tag_name"
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
-          echo "previous_tag_name=$last_tag" >> $GITHUB_OUTPUT
+          echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
           echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
           echo "new_tag_branch=$branch" >> $GITHUB_OUTPUT
           echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
@@ -129,7 +132,8 @@ jobs:
             while read -r line; do
               hash=$(echo "$line" | cut -d' ' -f1)
               msg=$(git log -1 --pretty=%s "$hash")
-              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
+              escaped_msg=$(echo "$msg" | sed 's/[[\]/\\&/g; s/\./\\./g; s/\*/\\*/g; s/\^/\\^/g; s/\$/\\$/g')
+              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$escaped_msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
                 echo "- $(echo "$line" | cut -d' ' -f2-)"
               fi
             done
@@ -142,13 +146,13 @@ jobs:
             notes="$notes
             
             
-            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}
-
-            
-            ## Support the project
-            [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
-            
-            [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)"
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}
+          
+          
+          ## Support the project
+          [![\"Buy Me A Coffee\"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+          
+          [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)"
           fi
           
           echo "$notes"

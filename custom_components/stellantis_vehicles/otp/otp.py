@@ -211,7 +211,7 @@ class Otp:
         xml = self.request(params)
         if xml["err"] != "OK":
             logger.error("Error during activation: %s", xml)
-            return Otp.NOK
+            return xml["err"]
         self.data.synchro(xml, self.generate_kma(self.codepin))
 
         if self.mode == Otp.OTP_MODE:

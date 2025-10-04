@@ -13,9 +13,9 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.components.text import TextEntity
 from homeassistant.components.time import TimeEntity
-from homeassistant.core import callback
+from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF )
+from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, datetime_from_isoformat, time_from_string )
@@ -25,13 +25,14 @@ from .const import (
     FIELD_MOBILE_APP,
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
-    UPDATE_INTERVAL
+    UPDATE_INTERVAL,
+    KWH_CORRECTION
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, config, vehicle, stellantis, translations):
+    def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations) -> None:
         super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
@@ -76,20 +77,22 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     @property
     def command_history(self):
         """ Commands history. """
-        history = {}
         if not self._commands_history:
-            return history
-        reorder_actions = list(reversed(self._commands_history.keys()))
-        for action_id in reorder_actions:
+            return {}
+        history_items = []
+        for action_id in self._commands_history:
             action_name = self._commands_history[action_id]["name"]
             action_updates = self._commands_history[action_id]["updates"]
-            reorder_updates = reversed(action_updates)
-            for update in reorder_updates:
+            for update in action_updates:
                 status = update["info"]
                 translation_path = f"component.stellantis_vehicles.entity.sensor.command_status.state.{status}"
                 status = self.get_translation(translation_path, status)
-                history.update({update["date"].strftime("%d/%m/%y %H:%M:%S:%f")[:-4]: str(action_name) + ": " + status})
-        return history
+                history_items.append((update["date"], f"{action_name}: {status}"))
+        history_items.sort(key=lambda x: x[0], reverse=True)
+        return {
+            item[0].strftime("%d/%m/%y %H:%M:%S:%f")[:-4]: item[1]
+            for item in history_items
+        }
 
     @property
     def pending_action(self):
@@ -113,7 +116,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Send a command to the vehicle. """
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
-            self._commands_history.update({action_id: {"name": name, "updates": []}})
+            if action_id is not None:
+                self._commands_history.update({action_id: {"name": name, "updates": []}})
         except ConfigEntryAuthFailed as e:
             _LOGGER.error("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
             self._stellantis._entry.async_start_reauth(self._hass)
@@ -310,7 +314,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 #         self._total_trip = {"totals": total_trips, "trips": result}
 
 class StellantisBaseEntity(CoordinatorEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator)
 
         self._coordinator = coordinator
@@ -359,9 +363,9 @@ class StellantisBaseEntity(CoordinatorEntity):
     def update_maps_for_hybrid(self):
         """ Update value/updated_at map for hybrid vehicles. """
         if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
-            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
-                self._value_map[1] = 1
-                self._updated_at_map[1] = 1
+#            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
+#                self._value_map[1] = 1
+#                self._updated_at_map[1] = 1
 
             if self._key == "battery_soh":
                 self._value_map[6] = "capacity"
@@ -375,35 +379,31 @@ class StellantisBaseEntity(CoordinatorEntity):
 
     def get_updated_at_from_map(self, updated_at_map):
         """ Get data updated_at from map. """
-        vehicle_data = self._coordinator._data
-        value = None
-        for key in updated_at_map:
-            if not value and key in vehicle_data:
-                value = vehicle_data[key]
-            elif value and isinstance(key, int):
-                value = value[key]
-            elif value and key in value:
-                value = value[key]
-
-        if value and not isinstance(value, str):
-            value = None
-
-        return value
+        return self.get_value_from_map(updated_at_map)
 
     def get_value_from_map(self, value_map):
         """ Get data value from map. """
         vehicle_data = self._coordinator._data
         value = None
         for key in value_map:
-            if not value and key in vehicle_data:
-                value = vehicle_data[key]
-            elif value and isinstance(key, int):
-                value = value[key]
-            elif value and key in value:
-                value = value[key]
-
-        if value and not isinstance(value, (float, int, str, bool, list)):
-            value = None
+            if value is None: # first key in the map
+                if key in vehicle_data:
+                    value = vehicle_data[key]
+            else: # following keys in the map (value has been set with result of previous key)
+                if isinstance(key, dict):
+                    if isinstance(value, list): # key is a dict and value a list
+                        # Use dictionnary in map as key_field, key_value to look for in value list
+                        key_field, key_value = next(iter(key.items()))
+                        # Select value in list with key_field matching to key_value 
+                        value = next((item for item in value if item.get(key_field) == key_value), None)
+                    else: # set value to None if key is dictionnary and value not a list
+                        value = None
+                elif isinstance(key, int) or key in value:
+                    value = value[key]
+                else: # value not an array and key not found in value
+                    value = None
+            if value is None: # Stop iteration immediately if None value encountered at this stage
+                break
 
         return value
 
@@ -421,7 +421,7 @@ class StellantisBaseEntity(CoordinatorEntity):
 
         if value != None or key not in self._coordinator._sensors:
             self._coordinator._sensors[key] = value
-        
+
         if value == None:
             return None
 
@@ -449,7 +449,12 @@ class StellantisBaseEntity(CoordinatorEntity):
             if int(value) < 1:
                 value = None
             else:
-                value = (float(value) / 1000) + 10
+                value = float(value) / 1000
+
+            # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272
+            correction_on = self._coordinator._sensors.get("switch_battery_values_correction", False)
+            if value and correction_on:
+                value = value * KWH_CORRECTION
 
         if key in ["coolant_temperature", "oil_temperature", "air_temperature"]:
             value = float(value)
@@ -542,27 +547,53 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
 
 class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
     async def async_added_to_hass(self):
-        """ Restore entity data to HASS style on system restart. """
+        """Restore entity data on system restart."""
         await super().async_added_to_hass()
-        restored_data = await self.async_get_last_state()
-        if restored_data and restored_data.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
-            value = restored_data.state
-            if self._key == "battery_charging_end":
-                value = datetime.fromisoformat(value)
+
+        # Preferred path: restore native sensor data (avoids unit conversion issues)
+        sensor_data = await self.async_get_last_sensor_data()
+        restored_state = None
+        value = None
+
+        if sensor_data is not None and sensor_data.native_value is not None:
+            value = sensor_data.native_value
+            # If a native unit was stored, ensure our entity reflects it
+            if getattr(sensor_data, "native_unit_of_measurement", None):
+                self._attr_native_unit_of_measurement = sensor_data.native_unit_of_measurement
+        else:
+            # Fallback for older stored states (or first run)
+            restored_state = await self.async_get_last_state()
+            if restored_state and restored_state.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
+                value = restored_state.state
+                if self._key == "battery_charging_end":
+                    value = datetime.fromisoformat(value)
+
+        if value is not None:
             self._attr_native_value = value
             self._coordinator._sensors[self._key] = value
-            for key in restored_data.attributes:
-                self._attr_extra_state_attributes[key] = restored_data.attributes[key]
+
+        # Restore attributes from the last state record (if present)
+        if restored_state is None:
+            restored_state = await self.async_get_last_state()
+        if restored_state:
+            for key, attr_val in restored_state.attributes.items():
+                self._attr_extra_state_attributes[key] = attr_val
+
         self.coordinator_update()
 
     def coordinator_update(self):
-        """ Coordinator update. """
+        """Coordinator update."""
         return True
 
 
 class StellantisBaseSensor(StellantisRestoreSensor):
-    def __init__(self, coordinator, description, value_map = [], updated_at_map = [], available = None):
+    def __init__(self, coordinator, description, value_map=None, updated_at_map=None, available=None) -> None:
         super().__init__(coordinator, description)
+
+        if value_map is None:
+            value_map = []
+        if updated_at_map is None:
+            updated_at_map = []
 
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
@@ -598,8 +629,13 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
 
 class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
-    def __init__(self, coordinator, description, value_map = [], updated_at_map = [], on_value = None):
+    def __init__(self, coordinator, description, value_map=None, updated_at_map=None, on_value=None) -> None:
         super().__init__(coordinator, description)
+
+        if value_map is None:
+            value_map = []
+        if updated_at_map is None:
+            updated_at_map = []
 
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
@@ -641,7 +677,7 @@ class StellantisBaseButton(StellantisBaseEntity, ButtonEntity):
 
 
 class StellantisBaseActionButton(StellantisBaseButton):
-    def __init__(self, coordinator, description, action):
+    def __init__(self, coordinator, description, action) -> None:
         super().__init__(coordinator, description)
         self._action = action
 
@@ -670,7 +706,7 @@ class StellantisRestoreEntity(StellantisBaseEntity, RestoreEntity):
 
 
 class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
-    def __init__(self, coordinator, description, default_value = None):
+    def __init__(self, coordinator, description, default_value = None) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = f"number_{self._key}"
         self._default_value = None
@@ -695,7 +731,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
 
 
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = f"switch_{self._key}"
 
@@ -724,7 +760,7 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
 
 
 class StellantisBaseText(StellantisRestoreEntity, TextEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = f"text_{self._key}"
 
@@ -746,10 +782,10 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
 
 
 class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = f"time_{self._key}"
-        
+
     @property
     def native_value(self):
         """ Native value. """

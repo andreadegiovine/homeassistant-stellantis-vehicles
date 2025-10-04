@@ -2,6 +2,7 @@ import logging
 from time import strftime
 from time import gmtime
 
+from homeassistant.core import HomeAssistant
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume )
 from homeassistant.components.sensor.const import SensorDeviceClass
@@ -11,12 +12,14 @@ from .const import (
     DOMAIN,
     FIELD_COUNTRY_CODE,
     SENSORS_DEFAULT,
-    VEHICLE_TYPE_ELECTRIC
+    VEHICLE_TYPE_ELECTRIC,
+    MS_TO_KMH_CONVERSION,
+    KWH_CORRECTION
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
@@ -119,9 +122,11 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
             attributes["start_mileage"] = str(last_trip["startMileage"]) + " " + UnitOfLength.KILOMETERS
         if "kinetic" in last_trip:
             if "avgSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["avgSpeed"]) > 0:
-                attributes["avg_speed"] = str(last_trip["kinetic"]["avgSpeed"]) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
+                avg_speed_kmh = float(last_trip["kinetic"]["avgSpeed"]) * MS_TO_KMH_CONVERSION
+                attributes["avg_speed"] = str(round(avg_speed_kmh, 2)) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
             if "maxSpeed" in last_trip["kinetic"] and float(last_trip["kinetic"]["maxSpeed"]) > 0:
-                attributes["max_speed"] = str(last_trip["kinetic"]["maxSpeed"]) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
+                max_speed_kmh = float(last_trip["kinetic"]["maxSpeed"])
+                attributes["max_speed"] = str(round(max_speed_kmh, 2)) + " " + UnitOfSpeed.KILOMETERS_PER_HOUR
         if "energyConsumptions" in last_trip:
             for consuption in last_trip["energyConsumptions"]:
                 if "type" not in consuption:
@@ -132,6 +137,9 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                     consumption_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
                     avg_consumption_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR+"/100"+UnitOfLength.KILOMETERS
                     divide = 1000
+                    correction_on = self._coordinator._sensors.get("switch_battery_values_correction", False)
+                    if correction_on:
+                        divide = divide / KWH_CORRECTION
                 else:
                     consumption_unit_of_measurement = UnitOfVolume.LITERS
                     avg_consumption_unit_of_measurement = UnitOfVolume.LITERS+"/100"+UnitOfLength.KILOMETERS

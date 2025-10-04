@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 
+from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntityDescription
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -16,7 +17,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
@@ -102,7 +103,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 
 class StellantisWakeUpButton(StellantisBaseButton):
-    def __init__(self, coordinator, description):
+    def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self.is_scheduled = None
 
@@ -143,6 +144,10 @@ class StellantisLightsButton(StellantisBaseButton):
 class StellantisChargingStartStopButton(StellantisBaseActionButton):
     @property
     def available(self):
+        if self._coordinator._sensors.get("battery_charging") == "InProgress" and self._key == "charge_start":
+            return False
+        if self._coordinator._sensors.get("battery_charging") in ["Finished", "Stopped"] and self._key == "charge_stop":
+            return False
         charging_inprogress_stopped = self._coordinator._sensors.get("battery_charging") in ["InProgress", "Stopped"]
         charging_finished = self._coordinator._sensors.get("battery_charging") == "Finished"
         current_battery = self._coordinator._sensors.get("battery")

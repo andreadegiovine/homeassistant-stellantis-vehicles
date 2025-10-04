@@ -1,5 +1,6 @@
 import logging
 
+from homeassistant.core import HomeAssistant
 from homeassistant.components.switch import SwitchEntityDescription
 from .base import StellantisBaseSwitch
 
@@ -11,7 +12,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
@@ -37,12 +38,20 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
             entities.extend([StellantisAbrpSyncSwitch(coordinator, description)])
 
             description = SwitchEntityDescription(
-                name = "notifications",
-                key = "notifications",
-                translation_key = "notifications",
-                icon = "mdi:message-alert"
+                name = "battery_values_correction",
+                key = "battery_values_correction",
+                translation_key = "battery_values_correction",
+                icon = "mdi:auto-fix"
             )
             entities.extend([StellantisBaseSwitch(coordinator, description)])
+
+        description = SwitchEntityDescription(
+            name = "notifications",
+            key = "notifications",
+            translation_key = "notifications",
+            icon = "mdi:message-alert"
+        )
+        entities.extend([StellantisBaseSwitch(coordinator, description)])
 
     async_add_entities(entities)
 

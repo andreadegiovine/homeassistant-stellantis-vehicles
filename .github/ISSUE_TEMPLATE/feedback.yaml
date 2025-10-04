@@ -1,6 +1,27 @@
 name: Feedback
 description: File a bug report.
 body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Frequent answers
+        
+        - **How to connect my Stellantis account to this integration?**
+        Using a desktop browser (like Chrome) or Python utility, please follow all the steps in the "[OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)" section. 
+        *Before opening a new issue, please try all the steps again.*
+        
+        - **How do I resolve the OTP error during authentication?**
+        There are several OTP related errors, to resolve them follow the steps indicated in the  "[Errors](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#errors)"  section.
+        *Before opening a new issue, please try all the steps again.*
+        
+        - **How do I fix the "HTTP Error 404: Not Found" error?**
+        The problem isn't related to the integration but rather to the Stellantis servers, which aren't returning the vehicles linked to your account. Try completing all the connection procedures indicated in the official app. If that doesn't work, try creating a new Stellantis account, linking the vehicles, and using it for the integration.
+        
+        - **Limited charging does not work and sensors are not updated**
+        As described in the "[WakeUp](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#wakeup)" section, not all vehicles receive automatic updates from the Stellantis servers, so you need to use the WakeUp command.
+
+        - **Is your request not included in this list?**
+        Before opening a new issue, please use the search from "[Issues](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues?q=is%3Aissue)"  page.
   - type: dropdown
     id: mark
     attributes:

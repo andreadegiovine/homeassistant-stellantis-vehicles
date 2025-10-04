@@ -29,7 +29,10 @@
       "get_user_info": "Get user info error",
       "missing_user_info": "Missing user info error",
       "get_otp_sms": "Get OTP sms error",
-      "get_mqtt_access_token": "Get mqtt access token error"
+      "get_mqtt_access_token": "Get mqtt access token error",
+      "get_mqtt_access_token_nok_access": "Invalid SMS code or Pin code",
+      "get_mqtt_access_token_nok_maxnbtools": "Limit of associated devices / SMS received, reset your Stellantis account and try again",
+      "get_mqtt_access_token_nok_nok_blocked": "Limit of wrong PIN used, restart the configuration process"
     },
     "abort": {
       "already_configured": "Account is already configured",
@@ -180,6 +183,9 @@
       },
       "remote_commands": {
         "name": "Remote commands"
+      },
+      "daylight": {
+        "name": "Daylight"
       }
     },
     "button": {
@@ -230,6 +236,9 @@
       },
       "abrp_sync": {
         "name": "ABRP sync"
+      },
+      "battery_values_correction": {
+        "name": "Battery values correction"
       },
       "notifications": {
         "name": "Notifications"
