@@ -159,7 +159,7 @@ class Otp:
                 "Connection": "Keep-Alive",
                 "Host": "otp.mpsa.com",
                 "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 8.0.0; Android SDK built for x86_64 "
-                              "Build/OSR1.180418.004) "
+                              "Build/OSR1.180418.004)"
             },
             params=param,
             proxies=self.proxies,
