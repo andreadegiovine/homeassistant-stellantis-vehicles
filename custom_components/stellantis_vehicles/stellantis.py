@@ -613,21 +613,27 @@ class StellantisVehicles(StellantisOauth):
     def _on_mqtt_connect(self, client, userdata, result_code, _):
         _LOGGER.debug("---------- START _on_mqtt_connect")
         _LOGGER.debug("Code %s", result_code)
-        topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
-        for vehicle in self._vehicles:
-            topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
-        for topic in topics:
-            client.subscribe(topic)
-            _LOGGER.debug("Topic %s", topic)
+        try:
+            topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
+            for vehicle in self._vehicles:
+                topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
+            for topic in topics:
+                client.subscribe(topic)
+                _LOGGER.debug("Topic %s", topic)
+        except Exception as e:
+            _LOGGER.error("Unexpected error in _on_mqtt_connect: %s", e)
         _LOGGER.debug("---------- END _on_mqtt_connect")
 
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
         _LOGGER.debug(f"mqtt disconnected with result code {result_code} -> {mqtt.error_string(result_code)}")
-        if result_code == 11: # MQTT_ERR_AUTH
-            self.do_async(self.refresh_mqtt_token(force=True))
-        else:
-            self.do_async(self.refresh_mqtt_token(force=False))
+        try:
+            if result_code == 11: # MQTT_ERR_AUTH
+                self.do_async(self.refresh_mqtt_token(force=True))
+            else:
+                self.do_async(self.refresh_mqtt_token(force=False))
+        except:
+            pass  # refresh_mqtt_token already logs the exception, and raising would halt the Paho reconnect loop
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
     def _on_mqtt_message(self, client, userdata, msg):
@@ -668,6 +674,8 @@ class StellantisVehicles(StellantisOauth):
                 _LOGGER.debug("Update data from mqtt?!?")
         except KeyError:
             _LOGGER.error("MQTT message error")
+        except Exception as e:
+            _LOGGER.error("Unexpected error in _on_mqtt_message: %s", e)
         _LOGGER.debug("---------- END _on_mqtt_message")
 
     async def send_mqtt_message(self, service, message, vehicle, store=True):
