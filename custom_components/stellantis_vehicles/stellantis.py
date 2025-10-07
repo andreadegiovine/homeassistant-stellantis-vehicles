@@ -12,6 +12,7 @@ import asyncio
 from datetime import ( datetime, timedelta, UTC )
 import ssl
 import socket
+import random
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import translation
@@ -72,6 +73,11 @@ class MqttClientMod(mqtt.Client):
         if addr_cnt == 0:
             raise socket.error(f"getaddrinfo returned an empty list")
 
+        # DNS returns multiple redundant MQTT IPs, but they are not rotated until the DNS cache expires
+        # we randomize the order to reconnect more quickly in case one of them has issues and the connection fails after TCP socket open (SSL handshake, broker overloaded)
+        random.shuffle(addr_infos)
+
+        # attempt to connect, raise only if none of them are connectable
         for af, socktype, proto, canonname, sa in addr_infos:
             sock = None
             try:
@@ -79,7 +85,7 @@ class MqttClientMod(mqtt.Client):
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1460 - 4)
                 sock.settimeout(self._connect_timeout)
                 sock.bind((self._bind_address, self._bind_port))
-                _LOGGER.debug(f"Connecting to MQTT {sa}")
+                _LOGGER.debug(f"Connecting to MQTT socket: {sa}")
                 sock.connect(sa)
                 return sock
 
