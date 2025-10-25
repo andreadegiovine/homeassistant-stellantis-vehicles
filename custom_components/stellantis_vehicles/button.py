@@ -1,13 +1,9 @@
 import logging
-from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntityDescription
-from homeassistant.helpers.event import async_track_point_in_time
-from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .base import ( StellantisBaseButton, StellantisBaseActionButton )
-from .utils import get_datetime
 
 from .const import (
     DOMAIN,
@@ -103,29 +99,6 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 
 
 class StellantisWakeUpButton(StellantisBaseButton):
-    def __init__(self, coordinator, description) -> None:
-        super().__init__(coordinator, description)
-        self.is_scheduled = None
-
-    async def async_added_to_hass(self):
-        await super().async_added_to_hass()
-        await self.scheduled_press()
-
-    async def scheduled_press(self, now=None):
-        if self.is_scheduled is not None:
-            self.is_scheduled()
-            self.is_scheduled = None
-            try:
-                await self.async_press()
-            except ConfigEntryAuthFailed as e:
-                _LOGGER.error("Authentication failed during scheduled press: %s", str(e))
-                # Optionally, add recovery logic here
-            except Exception as e:
-                _LOGGER.error("Unexpected error during scheduled press: %s", str(e))
-                raise
-        next_run = get_datetime() + timedelta(hours=12)
-        self.is_scheduled = async_track_point_in_time(self._coordinator._hass, self.scheduled_press, next_run)
-
     async def async_press(self):
         await self._coordinator.send_wakeup_command(self.name)
 
@@ -164,7 +137,7 @@ class StellantisPreconditioningButton(StellantisBaseActionButton):
 
         doors_locked = self._coordinator._sensors.get("doors") == None or "Locked" in self._coordinator._sensors.get("doors")
 
-        min_charge = 1
+        min_charge = 20
         # Waiting the min value from https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/226
         # min_charge = 50
         # if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
