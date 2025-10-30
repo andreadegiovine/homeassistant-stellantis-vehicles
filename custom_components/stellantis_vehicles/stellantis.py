@@ -43,6 +43,9 @@ from .const import (
     GET_OTP_HEADERS,
     GET_MQTT_TOKEN_URL,
     MQTT_SERVER,
+    MQTT_PORT,
+    MQTT_KEEP_ALIVE_S,
+    MQTT_QOS,
     MQTT_RESP_TOPIC,
     MQTT_EVENT_TOPIC,
     MQTT_REQ_TOPIC,
@@ -604,12 +607,13 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.on_connect = self._on_mqtt_connect
             self._mqtt.on_disconnect = self._on_mqtt_disconnect
             self._mqtt.on_message = self._on_mqtt_message
+            self._mqtt.on_subscribe = self._on_mqtt_subscribe
         if self._mqtt.is_connected():
             self._mqtt.disconnect()
         await self.refresh_mqtt_token()
         self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
         try:
-            self._mqtt.connect(MQTT_SERVER, 8885, 60)
+            self._mqtt.connect(MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S)
             self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
         except Exception as e:
             _LOGGER.error(f"connect_mqtt: {str(e)}")
@@ -624,7 +628,7 @@ class StellantisVehicles(StellantisOauth):
             for vehicle in self._vehicles:
                 topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
             for topic in topics:
-                client.subscribe(topic)
+                client.subscribe(topic, qos=MQTT_QOS)
                 _LOGGER.debug("Topic %s", topic)
         except Exception as e:
             _LOGGER.error("Unexpected error in _on_mqtt_connect: %s", e)
@@ -642,10 +646,19 @@ class StellantisVehicles(StellantisOauth):
             pass  # refresh_mqtt_token already logs the exception, and raising would halt the Paho reconnect loop
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
+    def _on_mqtt_subscribe(self, client, userdata, mid, granted_qos):
+        _LOGGER.debug("---------- START _on_mqtt_subscribe")
+        for i, qos in enumerate(granted_qos):
+            if qos == 0x80:
+                _LOGGER.debug("Subscription failed")
+            else:
+                _LOGGER.debug("Subscription completed (QoS: %s)", qos)
+        _LOGGER.debug("---------- END _on_mqtt_subscribe")
+
     def _on_mqtt_message(self, client, userdata, msg):
         _LOGGER.debug("---------- START _on_mqtt_message")
         try:
-            _LOGGER.debug("MQTT msg received: %s %s", msg.topic, msg.payload)
+            _LOGGER.debug("MQTT msg received: %s %s %s", msg.topic, msg.payload, msg.qos)
             data = json.loads(msg.payload)
             charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
@@ -703,7 +716,7 @@ class StellantisVehicles(StellantisOauth):
             })
             _LOGGER.debug(topic)
             _LOGGER.debug(data)
-            message_info = self._mqtt.publish(topic, data)
+            message_info = self._mqtt.publish(topic, data, qos=MQTT_QOS, retain=False)
             if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
                 _LOGGER.error("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
                 action_id = None
