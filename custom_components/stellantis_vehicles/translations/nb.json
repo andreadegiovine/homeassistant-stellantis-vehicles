@@ -1,0 +1,268 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "mobile_app": "Kjøretøyets mobilapp"
+        }
+      },
+      "country": {
+        "data": {
+          "country_code": "Landskode"
+        }
+      },
+      "oauth": {
+        "description": "Følg disse trinnene fra en **nettleser på datamaskin**:\n\n1. Gå til {oauth_link} innloggingsside;\n2. Åpne **DevTools** (F12) og gå til fanen **Network**;\n3. Logg inn på kontoen din og klikk på siste bekreftelsesknapp;\n4. Finn forespørselen i **Network**-fanen og kopier **{oauth_label}**;{oauth_devtools}",
+        "data": {
+          "oauth_code": "OAuth-kode"
+        }
+      },
+      "otp": {
+        "data": {
+          "sms_code": "SMS-kode fra Stellantis",
+          "pin_code": "PIN-kode fra kjøretøyets mobilapp"
+        }
+      }
+    },
+    "error": {
+      "get_access_token": "Feil ved henting av tilgangstoken",
+      "get_user_info": "Feil ved henting av brukerinfo",
+      "missing_user_info": "Manglende brukerinfo",
+      "get_otp_sms": "Feil ved henting av OTP-SMS",
+      "get_mqtt_access_token": "Feil ved henting av MQTT-tilgangstoken",
+      "get_mqtt_access_token_nok_access": "Ugyldig SMS-kode eller PIN-kode",
+      "get_mqtt_access_token_nok_maxnbtools": "Begrensning på tilknyttede enheter / mottatte SMS. Tilbakestill Stellantis-kontoen din og prøv igjen",
+      "get_mqtt_access_token_nok_nok_blocked": "For mange feil PIN-forsøk. Start konfigurasjonsprosessen på nytt"
+    },
+    "abort": {
+      "already_configured": "Kontoen er allerede konfigurert",
+      "reauth_successful": "Reautentisering var vellykket"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Servicebatteri"
+      },
+      "type": {
+        "name": "Type",
+        "state": {
+          "electric": "Elektrisk",
+          "hybrid": "Hybrid",
+          "thermic": "Bensin/Diesel",
+          "hydrogen": "Hydrogen"
+        }
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "mileage": {
+        "name": "Kjørelengde"
+      },
+      "speed": {
+        "name": "Hastighet"
+      },
+      "autonomy": {
+        "name": "Rekkevidde"
+      },
+      "battery": {
+        "name": "Batteri"
+      },
+      "battery_soh": {
+        "name": "Batteri SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Ladehastighet"
+      },
+      "battery_charging_type": {
+        "name": "Ladetype",
+        "state": {
+          "no": "Ingen",
+          "slow": "Langsom",
+          "quick": "Rask"
+        }
+      },
+      "battery_charging_end": {
+        "name": "Ladeslutt"
+      },
+      "battery_capacity": {
+        "name": "Batterikapasitet"
+      },
+      "battery_residual": {
+        "name": "Gjenværende batteri"
+      },
+      "command_status": {
+        "name": "Kommando-status",
+        "state": {
+          "99": "Ikke kompatibel",
+          "900": "Godkjent",
+          "901": "Kjøretøy i dvalemodus",
+          "903": "Videresendt",
+          "0": "Fullført",
+          "300": "Avbrutt",
+          "500": "Feil",
+          "502": "Duplikat",
+          "422": "Personvern aktivert"
+        }
+      },
+      "fuel": {
+        "name": "Drivstoff"
+      },
+      "fuel_autonomy": {
+        "name": "Drivstoffrekkevidde"
+      },
+      "fuel_consumption_total": {
+        "name": "Totalt drivstofforbruk"
+      },
+      "fuel_consumption_instant": {
+        "name": "Øyeblikkelig drivstofforbruk"
+      },
+      "coolant_temperature": {
+        "name": "Kjølevæsketemperatur"
+      },
+      "oil_temperature": {
+        "name": "Oljetemperatur"
+      },
+      "air_temperature": {
+        "name": "Lufttemperatur"
+      },
+      "last_trip": {
+        "name": "Siste tur",
+        "state_attributes": {
+          "duration": {
+            "name": "Varighet"
+          },
+          "start_mileage": {
+            "name": "Startkilometerstand"
+          },
+          "avg_speed": {
+            "name": "Gjennomsnittshastighet"
+          },
+          "max_speed": {
+            "name": "Maks hastighet"
+          },
+          "electric_consumption": {
+            "name": "Elektrisk forbruk"
+          },
+          "electric_avg_consumption": {
+            "name": "Gjennomsnittlig elektrisk forbruk"
+          },
+          "fuel_consumption": {
+            "name": "Drivstofforbruk"
+          },
+          "fuel_avg_consumption": {
+            "name": "Gjennomsnittlig drivstofforbruk"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Beveger seg"
+      },
+      "doors": {
+        "name": "Dører"
+      },
+      "battery_plugged": {
+        "name": "Batteri tilkoblet"
+      },
+      "battery_charging": {
+        "name": "Lader"
+      },
+      "engine": {
+        "name": "Motor"
+      },
+      "preconditioning": {
+        "name": "Forvarming/forhåndskjøling"
+      },
+      "alarm": {
+        "name": "Alarm"
+      },
+      "privacy": {
+        "name": "Personvern"
+      },
+      "remote_commands": {
+        "name": "Fjernkommandoer"
+      },
+      "daylight": {
+        "name": "Dagslys"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Vekk opp"
+      },
+      "doors_lock": {
+        "name": "Lås dører"
+      },
+      "doors_unlock": {
+        "name": "Lås opp dører"
+      },
+      "horn": {
+        "name": "Horn"
+      },
+      "lights": {
+        "name": "Lys"
+      },
+      "charge_start": {
+        "name": "Lading start"
+      },
+      "charge_stop": {
+        "name": "Lading stopp"
+      },
+      "preconditioning_start": {
+        "name": "Forvarming start"
+      },
+      "preconditioning_stop": {
+        "name": "Forvarming stopp"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Kjøretøy"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Ladegrense"
+      },
+      "refresh_interval": {
+        "name": "Oppdateringsintervall"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Ladegrense"
+      },
+      "abrp_sync": {
+        "name": "ABRP-synkronisering"
+      },
+      "battery_values_correction": {
+        "name": "Korrigering av batteriverdier"
+      },
+      "notifications": {
+        "name": "Varsler"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP-token"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Starttid for lading"
+      }
+    }
+  },
+  "common": {
+    "access_token_error_title": "Feil med tilgangstoken",
+    "access_token_error_message": "Se den offisielle dokumentasjonen i avsnittet [OAuth2-kode](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "otp_error_title": "OTP-feil",
+    "otp_error_message": "Se den offisielle dokumentasjonen i avsnittet [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "no_vehicles_found_title": "Ikke tilgjengelig",
+    "no_vehicles_found_message": "Ingen tilknyttede kjøretøy tilgjengelig på denne kontoen",
+    "command_error_title": "Kommando",
+    "command_error_message": "Kommandoen ble ikke sendt riktig"
+  }
+}
