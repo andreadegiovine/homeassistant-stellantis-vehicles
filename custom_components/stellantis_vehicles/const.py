@@ -29,9 +29,12 @@ CAR_API_GET_VEHICLE_STATUS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/status"
 CAR_API_GET_VEHICLE_TRIPS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/trips"
 
 MQTT_SERVER = "mwa.mpsa.com"
+MQTT_PORT = 8885
+MQTT_KEEP_ALIVE_S = 120
 MQTT_RESP_TOPIC = "psa/RemoteServices/to/cid/"
 MQTT_EVENT_TOPIC = "psa/RemoteServices/events/MPHRTServices/"
 MQTT_REQ_TOPIC = "psa/RemoteServices/from/cid/"
+MQTT_QOS = 0
 
 KWH_CORRECTION = 1.343
 MS_TO_KMH_CONVERSION = 3.6
