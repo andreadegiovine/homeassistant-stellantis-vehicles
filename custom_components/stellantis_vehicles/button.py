@@ -101,6 +101,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 class StellantisWakeUpButton(StellantisBaseButton):
     async def async_press(self):
         await self._coordinator.send_wakeup_command(self.name)
+        await self._coordinator.async_refresh()
 
 class StellantisDoorButton(StellantisBaseActionButton):
     async def async_press(self):
