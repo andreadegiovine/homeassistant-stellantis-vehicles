@@ -685,6 +685,9 @@ class StellantisVehicles(StellantisOauth):
                             _LOGGER.error("Last request might have been send twice without success")
                 elif data["return_code"] != "0":
                     _LOGGER.error('%s : %s', data["return_code"], data.get("reason", "?"))
+                else:
+                    _LOGGER.debug("Fetch updates from server. Result code: %s", data["return_code"])
+                    self.do_async(coordinator.async_refresh())
             elif msg.topic.startswith(MQTT_EVENT_TOPIC):
 #                 charge_info = data["charging_state"]
 #                 programs = data["precond_state"].get("programs", None)
