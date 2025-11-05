@@ -672,6 +672,9 @@ class StellantisVehicles(StellantisOauth):
                         self.do_async(self.hass_notify("command_error"))
                     if result_code != "901": # Not store "Vehicle as sleep" event
                         self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
+                        if result_code == "0":
+                            _LOGGER.debug("Fetch updates from server. Result code: %s", data["return_code"])
+                            self.do_async(coordinator.async_refresh()) 
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
                         self.do_async(coordinator.update_command_history(data["correlation_id"], "99"))
@@ -685,9 +688,6 @@ class StellantisVehicles(StellantisOauth):
                             _LOGGER.error("Last request might have been send twice without success")
                 elif data["return_code"] != "0":
                     _LOGGER.error('%s : %s', data["return_code"], data.get("reason", "?"))
-                else:
-                    _LOGGER.debug("Fetch updates from server. Result code: %s", data["return_code"])
-                    self.do_async(coordinator.async_refresh())
             elif msg.topic.startswith(MQTT_EVENT_TOPIC):
 #                 charge_info = data["charging_state"]
 #                 programs = data["precond_state"].get("programs", None)
