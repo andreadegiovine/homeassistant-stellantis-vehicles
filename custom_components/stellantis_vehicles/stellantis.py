@@ -220,8 +220,12 @@ class StellantisBase:
             _LOGGER.error("Unexpected error during HTTP request: %s", e)
             raise
 
-    def do_async(self, async_func):
-        return asyncio.run_coroutine_threadsafe(async_func, self._hass.loop).result()
+    def do_async(self, async_func, delay=0):
+        async def delayed_execution():
+            if delay > 0:
+                await asyncio.sleep(delay)
+            return await async_func
+        return asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop).result()
 
     async def hass_notify(self, translation_key):
         """Create a persistent notification."""
@@ -674,7 +678,7 @@ class StellantisVehicles(StellantisOauth):
                         self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                         if result_code == "0":
                             _LOGGER.debug("Fetch updates from server. Result code: %s", data["return_code"])
-                            self.do_async(coordinator.async_refresh()) 
+                            self.do_async(coordinator.async_refresh(), 5) 
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
                         self.do_async(coordinator.update_command_history(data["correlation_id"], "99"))
