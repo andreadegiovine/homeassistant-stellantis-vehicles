@@ -678,7 +678,7 @@ class StellantisVehicles(StellantisOauth):
                         self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                         if result_code == "0":
                             _LOGGER.debug("Fetch updates from server. Result code: %s", data["return_code"])
-                            self.do_async(coordinator.async_refresh(), 5) 
+                            self.do_async(coordinator.async_refresh(), 10)
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
                         self.do_async(coordinator.update_command_history(data["correlation_id"], "99"))
