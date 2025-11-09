@@ -1,0 +1,268 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "mobile_app": "Aplicativo móvel para veículo"
+        }
+      },
+      "country": {
+        "data": {
+          "country_code": "Seu código do país"
+        }
+      },
+      "oauth": {
+        "description": "Siga estas etapas a partir do **navegador de desktop**:\n\n1. vá para a página de login {oauth_link};\n2. abra o **DevTools** e vá para a aba **Rede** (F12);\n3. faça login na sua conta e clique no último botão de confirmação;\n4. na aba **Rede** encontre a solicitação acima e copie o **{oauth_label}**;{oauth_devtools}",
+        "data": {
+          "oauth_code": "Código OAuth"
+        }
+      },
+      "otp": {
+        "data": {
+          "sms_code": "Código SMS da Stellantis",
+          "pin_code": "Código PIN do aplicativo móvel do veículo"
+        }
+      }
+    },
+    "error": {
+      "get_access_token": "Erro ao obter o token de acesso",
+      "get_user_info": "Erro ao obter informações do usuário",
+      "missing_user_info": "Erro, informações do usuário ausentes",
+      "get_otp_sms": "Erro ao obter SMS OTP",
+      "get_mqtt_access_token": "Erro ao obter o token de acesso MQTT",
+      "get_mqtt_access_token_nok_access": "Código SMS ou código PIN inválido",
+      "get_mqtt_access_token_nok_maxnbtools": "Limite de dispositivos associados / SMS recebidos, redefina sua conta Stellantis e tente novamente",
+      "get_mqtt_access_token_nok_nok_blocked": "Limite de PIN incorreto usado, reinicie o processo de configuração"
+    },
+    "abort": {
+      "already_configured": "A conta já está configurada",
+      "reauth_successful": "A reautenticação foi bem-sucedida"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Bateria de serviço"
+      },
+      "type": {
+        "name": "Tipo",
+        "state": {
+          "electric": "Elétrico",
+          "hybrid": "Híbrido",
+          "thermic": "Térmico",
+          "hydrogen": "Hidrogênio"
+        }
+      },
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "mileage": {
+        "name": "Quilometragem"
+      },
+      "speed": {
+        "name": "Velocidade"
+      },
+      "autonomy": {
+        "name": "Autonomia"
+      },
+      "battery": {
+        "name": "Bateria"
+      },
+      "battery_soh": {
+        "name": "Bateria SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Taxa de carregamento da bateria"
+      },
+      "battery_charging_type": {
+        "name": "Tipo de carregamento da bateria",
+        "state": {
+          "no": "Não",
+          "slow": "Lento",
+          "quick": "Rápido"
+        }
+      },
+      "battery_charging_end": {
+        "name": "Fim do carregamento da bateria"
+      },
+      "battery_capacity": {
+        "name": "Capacidade da bateria"
+      },
+      "battery_residual": {
+        "name": "Bateria residual"
+      },
+      "command_status": {
+        "name": "Status do comando",
+        "state": {
+          "99": "Incompatível",
+          "900": "Aceito",
+          "901": "Veículo em repouso",
+          "903": "Encaminhado",
+          "0": "Completo",
+          "300": "Cancelado",
+          "500": "Erro",
+          "502": "Duplicado",
+          "422": "Privacidade ativada"
+        }
+      },
+      "fuel": {
+        "name": "Combustível"
+      },
+      "fuel_autonomy": {
+        "name": "Autonomia do combustível"
+      },
+      "fuel_consumption_total": {
+        "name": "Consumo total de combustível"
+      },
+      "fuel_consumption_instant": {
+        "name": "Consumo instantâneo de combustível"
+      },
+      "coolant_temperature": {
+        "name": "Temperatura do líquido de arrefecimento"
+      },
+      "oil_temperature": {
+        "name": "Temperatura do óleo"
+      },
+      "air_temperature": {
+        "name": "Temperatura do ar"
+      },
+      "last_trip": {
+        "name": "Última viagem",
+        "state_attributes": {
+          "duration": {
+            "name": "Duração"
+          },
+          "start_mileage": {
+            "name": "Quilometragem inicial"
+          },
+          "avg_speed": {
+            "name": "Velocidade média"
+          },
+          "max_speed": {
+            "name": "Velocidade máxima"
+          },
+          "electric_consumption": {
+            "name": "Consumo elétrico"
+          },
+          "electric_avg_consumption": {
+            "name": "Consumo elétrico médio"
+          },
+          "fuel_consumption": {
+            "name": "Consumo de combustível"
+          },
+          "fuel_avg_consumption": {
+            "name": "Consumo de combustível médio"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Em movimento"
+      },
+      "doors": {
+        "name": "Portas"
+      },
+      "battery_plugged": {
+        "name": "Bateria conectada"
+      },
+      "battery_charging": {
+        "name": "Bateria carregando"
+      },
+      "engine": {
+        "name": "Motor"
+      },
+      "preconditioning": {
+        "name": "Pré-condicionamento"
+      },
+      "alarm": {
+        "name": "Alarme"
+      },
+      "privacy": {
+        "name": "Privacidade"
+      },
+      "remote_commands": {
+        "name": "Comandos remotos"
+      },
+      "daylight": {
+        "name": "Luz do dia"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "Acordar"
+      },
+      "doors_lock": {
+        "name": "Trancar portas"
+      },
+      "doors_unlock": {
+        "name": "Destrancar portas"
+      },
+      "horn": {
+        "name": "Buzina"
+      },
+      "lights": {
+        "name": "Luzes"
+      },
+      "charge_start": {
+        "name": "Iniciar carregamento"
+      },
+      "charge_stop": {
+        "name": "Parar carregamento"
+      },
+      "preconditioning_start": {
+        "name": "Iniciar pré-condicionamento"
+      },
+      "preconditioning_stop": {
+        "name": "Parar pré-condicionamento"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Veículo"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Limite de carregamento da bateria"
+      },
+      "refresh_interval": {
+        "name": "Intervalo de atualização de dados"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Limite de carregamento da bateria"
+      },
+      "abrp_sync": {
+        "name": "Sincronização ABRP"
+      },
+      "battery_values_correction": {
+        "name": "Correção dos valores da bateria"
+      },
+      "notifications": {
+        "name": "Notificações"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP token"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Iniciar carregamento da bateria"
+      }
+    }
+  },
+  "common": {
+    "access_token_error_title": "Erro de token de acesso",
+    "access_token_error_message": "Verifique a documentação oficial na seção [Código OAuth2](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "otp_error_title": "Erro de OTP",
+    "otp_error_message": "Verifique a documentação oficial na seção [Erro de OTP - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "no_vehicles_found_title": "Indisponível",
+    "no_vehicles_found_message": "Nenhum veículo conectado disponível nesta conta",
+    "command_error_title": "Comando",
+    "command_error_message": "O comando não foi enviado corretamente"
+  }
+}
