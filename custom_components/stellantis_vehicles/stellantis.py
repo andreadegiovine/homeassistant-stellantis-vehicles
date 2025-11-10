@@ -502,7 +502,7 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(vehicle_trips_request)
-        if int(vehicle_trips_request["total"]) > 60 and not page_token:
+        if "total" in vehicle_trips_request and int(vehicle_trips_request["total"]) > 60 and not page_token:
             last_page_url = vehicle_trips_request["_links"]["last"]["href"]
             page_token = last_page_url.split("pageToken=")[1]
             _LOGGER.debug("---------- END get_vehicle_last_trip")
