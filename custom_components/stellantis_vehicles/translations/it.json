@@ -32,7 +32,8 @@
       "get_mqtt_access_token": "Errore access token mqtt",
       "get_mqtt_access_token_nok_access": "Codice SMS o codice pin errato",
       "get_mqtt_access_token_nok_maxnbtools": "Limite di associazioni / SMS ricevuti, ripristina il tuo account Stellantis e riprova",
-      "get_mqtt_access_token_nok_nok_blocked": "Limite di pin errati, inizia nuovamente la configurazione"
+      "get_mqtt_access_token_nok_nok_blocked": "Limite di pin errati, inizia nuovamente la configurazione",
+      "get_mqtt_access_token_rate_limit": "Limite di di richieste access token mqtt raggiunto (6 al giorno)"
     },
     "abort": {
       "already_configured": "Account già configurato",
@@ -94,7 +95,8 @@
       "command_status": {
         "name": "Stato comandi",
         "state": {
-          "99": "Non compatibile",
+          "rate_limit": "Limite raggiunto (6 ogni 20 minuti)",
+          "not_compatible": "Non compatibile",
           "900": "Accettato",
           "901": "Il veicolo dorme",
           "903": "Inoltrato",

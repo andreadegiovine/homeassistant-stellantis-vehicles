@@ -91,7 +91,7 @@
       "command_status": {
         "name": "Kommando",
         "state": {
-          "99": "Ej kompatibel",
+          "not_compatible": "Ej kompatibel",
           "900": "Accepterad",
           "901": "Fordonet i viloläge",
           "903": "Skickat till fordonet",

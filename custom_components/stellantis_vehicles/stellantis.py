@@ -22,7 +22,7 @@ from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import get_datetime
+from .utils import ( get_datetime, rate_limit )
 
 from .const import (
     DOMAIN,
@@ -315,6 +315,7 @@ class StellantisOauth(StellantisBase):
         _LOGGER.debug("---------- END get_mqtt_access_token")
         return token_request
 
+    @rate_limit(6, 86400) # 6 per 1 day
     async def get_otp_code(self):
         _LOGGER.debug("---------- START get_otp_code")
         # Check if storage path exists, if not create it
@@ -419,6 +420,7 @@ class StellantisVehicles(StellantisOauth):
         await self._hass.async_add_executor_job(im.save, image_path)
         return image_url
 
+    @rate_limit(6, 1800) # 6 per 30 min
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
         # to prevent concurrent updates
@@ -681,7 +683,7 @@ class StellantisVehicles(StellantisOauth):
                             self.do_async(coordinator.async_refresh(), 10)
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
-                        self.do_async(coordinator.update_command_history(data["correlation_id"], "99"))
+                        self.do_async(coordinator.update_command_history(data["correlation_id"], "not_compatible"))
                     else:
                         if self._mqtt_last_request:
                             _LOGGER.debug("last request is send again, token was expired")

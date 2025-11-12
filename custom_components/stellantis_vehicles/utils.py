@@ -1,5 +1,8 @@
 import logging
+import asyncio
 from datetime import UTC, datetime, timezone, timedelta
+from asyncio import Semaphore
+from functools import wraps
 
 from homeassistant.util import dt
 
@@ -55,3 +58,28 @@ def date_from_pt_string(pt_string, start_date = None):
 #     for mask in masks:
 #         result = result.replace(mask, masks[mask])
 #     return result
+
+class RateLimitException(Exception):
+    pass
+
+def rate_limit(limit: int, every: int):
+    def limit_decorator(func):
+        semaphore = Semaphore(limit)
+        
+        async def release_after_delay():
+            await asyncio.sleep(every)
+            semaphore.release()
+        
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            if semaphore._value <= 0:
+                _LOGGER.debug(f"Rate limit exceeded {func.__name__}: max {limit} per {every}s")
+                raise RateLimitException("rate_limit")
+
+            await semaphore.acquire()
+            asyncio.create_task(release_after_delay())
+            return await func(*args, **kwargs)
+        
+        return async_wrapper
+    
+    return limit_decorator

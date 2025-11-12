@@ -95,7 +95,7 @@
         "name": "Befehlsstatus",
         "state": {
           "0": "Abgeschlossen",
-          "99": "Nicht kompatibel",
+          "not_compatible": "Nicht kompatibel",
           "300": "Abgebrochen",
           "422": "Alarmanlage aktiviert",
           "500": "Fehler",
@@ -179,7 +179,7 @@
         "name": "Alarm"
       },
       "privacy": {
-        "name": "Privatsphäre-Modus"
+        "name": "Alarmanlage"
       },
       "remote_commands": {
         "name": "Fahrzeug aus der Entfernung bedienen"
@@ -205,16 +205,16 @@
         "name": "Standlicht"
       },
       "charge_start": {
-        "name": "Fahrzeug laden starten"
+        "name": "Fahrzeug laden Starten"
       },
       "charge_stop": {
-        "name": "Fahrzeug laden beenden"
+        "name": "Fahrzeug laden Stopen"
       },
       "preconditioning_start": {
         "name": "Vorbehandlung starten"
       },
       "preconditioning_stop": {
-        "name": "Vorbehandlung beenden"
+        "name": "Vorbehandlung stoppen"
       }
     },
     "device_tracker": {

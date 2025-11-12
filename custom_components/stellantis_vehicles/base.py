@@ -18,7 +18,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, datetime_from_isoformat, time_from_string )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, datetime_from_isoformat, time_from_string, rate_limit )
 
 from .const import (
     DOMAIN,
@@ -108,9 +108,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             return
         if update:
             self._commands_history[action_id]["updates"].append({"info": update, "date": get_datetime()})
-            if update == "99":
+            if update == "not_compatible":
                 self._disabled_commands.append(self._commands_history[action_id]["name"])
         self.async_update_listeners()
+
+    def update_command_history_rate_limit(self, name):
+        current_datetime = get_datetime()
+        self._commands_history.update({current_datetime.time(): {"name": name, "updates": [{"info": "rate_limit", "date": current_datetime}]}})
+        self.async_update_listeners()
+
 
     async def send_command(self, name, service, message):
         """ Send a command to the vehicle. """
@@ -125,6 +131,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Failed to send command %s: %s", name, str(e))
             raise
 
+    @rate_limit(6, 120) # 6 per 20 min
     async def send_wakeup_command(self, button_name):
         """ Send wakeup command to the vehicle. """
         await self.send_command(button_name, "/VehCharge/state", {"action": "state"})

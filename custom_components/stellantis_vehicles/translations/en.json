@@ -32,7 +32,8 @@
       "get_mqtt_access_token": "Get mqtt access token error",
       "get_mqtt_access_token_nok_access": "Invalid SMS code or Pin code",
       "get_mqtt_access_token_nok_maxnbtools": "Limit of associated devices / SMS received, reset your Stellantis account and try again",
-      "get_mqtt_access_token_nok_nok_blocked": "Limit of wrong PIN used, restart the configuration process"
+      "get_mqtt_access_token_nok_nok_blocked": "Limit of wrong PIN used, restart the configuration process",
+      "get_mqtt_access_token_rate_limit": "Rate limit of mqtt access token request exceeded (6 per day)"
     },
     "abort": {
       "already_configured": "Account is already configured",
@@ -94,7 +95,8 @@
       "command_status": {
         "name": "Command status",
         "state": {
-          "99": "Not compatible",
+          "rate_limit": "Rate limit exceeded (6 per 20 minutes)",
+          "not_compatible": "Not compatible",
           "900": "Accepted",
           "901": "Vehicle as sleep",
           "903": "Forwarded",

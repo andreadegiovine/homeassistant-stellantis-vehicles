@@ -91,7 +91,7 @@
       "command_status": {
         "name": "Kommando status",
         "state": {
-          "99": "Ikke kompatibel",
+          "not_compatible": "Ikke kompatibel",
           "900": "Accepteret",
           "901": "Køretøjet er i dvaletilstand",
           "903": "Videresendt",

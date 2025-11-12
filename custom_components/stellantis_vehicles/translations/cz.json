@@ -82,7 +82,7 @@
       "command_status": {
         "name": "Stav příkazu",
         "state": {
-          "99": "Nekompatibilní",
+          "not_compatible": "Nekompatibilní",
           "900": "Přijato",
           "901": "Vozidlo spí",
           "903": "Předáno",

@@ -94,7 +94,7 @@
       "command_status": {
         "name": "Command status",
         "state": {
-          "99": "Niet compatibel",
+          "not_compatible": "Niet compatibel",
           "900": "Geaccepteerd",
           "901": "Voertuig in slaapmodus",
           "903": "Doorgestuurd",

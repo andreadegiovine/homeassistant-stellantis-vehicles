@@ -94,7 +94,7 @@
       "command_status": {
         "name": "Käskyn tila",
         "state": {
-          "99": "Ei yhteensopiva",
+          "not_compatible": "Ei yhteensopiva",
           "900": "Hyväksytty",
           "901": "Lepotilassa",
           "903": "Yhdistetty autoon",

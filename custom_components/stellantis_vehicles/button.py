@@ -4,6 +4,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntityDescription
 
 from .base import ( StellantisBaseButton, StellantisBaseActionButton )
+from .utils import RateLimitException
 
 from .const import (
     DOMAIN,
@@ -100,7 +101,11 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 
 class StellantisWakeUpButton(StellantisBaseButton):
     async def async_press(self):
-        await self._coordinator.send_wakeup_command(self.name)
+        try:
+            await self._coordinator.send_wakeup_command(self.name)
+        except RateLimitException:
+            self._coordinator.update_command_history_rate_limit(self.name)
+
 
 class StellantisDoorButton(StellantisBaseActionButton):
     async def async_press(self):

@@ -91,7 +91,7 @@
       "command_status": {
         "name": "Statut de la commande",
         "state": {
-          "99": "Non compatible",
+          "not_compatible": "Non compatible",
           "900": "Acceptée",
           "901": "Véhicule en veille",
           "903": "Transmise",

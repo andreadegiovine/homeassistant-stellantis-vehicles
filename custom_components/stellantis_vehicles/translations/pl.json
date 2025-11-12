@@ -74,7 +74,7 @@
       "command_status": {
         "name": "Status polecenia",
         "state": {
-          "99": "Nie kompatybilne",
+          "not_compatible": "Nie kompatybilne",
           "900": "Zaakceptowano",
           "901": "Pojazd w uśpieniu",
           "903": "Przekazano",

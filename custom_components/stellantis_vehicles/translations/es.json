@@ -94,7 +94,7 @@
       "command_status": {
         "name": "Estado del comando",
         "state": {
-          "99": "No compatible",
+          "not_compatible": "No compatible",
           "900": "Aceptado",
           "901": "Vehículo en reposo",
           "903": "Reenviado",
