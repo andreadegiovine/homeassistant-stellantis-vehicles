@@ -53,13 +53,14 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
         )
         entities.extend([StellantisTypeSensor(coordinator, description)])
 
-        description = SensorEntityDescription(
-            name = "command_status",
-            key = "command_status",
-            translation_key = "command_status",
-            icon = "mdi:format-list-bulleted-type"
-        )
-        entities.extend([StellantisCommandStatusSensor(coordinator, description)])
+        if stellantis.remote_commands:
+            description = SensorEntityDescription(
+                name = "command_status",
+                key = "command_status",
+                translation_key = "command_status",
+                icon = "mdi:format-list-bulleted-type"
+            )
+            entities.extend([StellantisCommandStatusSensor(coordinator, description)])
 
         description = SensorEntityDescription(
             name = "last_trip",

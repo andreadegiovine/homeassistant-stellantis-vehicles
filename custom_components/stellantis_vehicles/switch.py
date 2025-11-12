@@ -21,13 +21,14 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
     for vehicle in vehicles:
         coordinator = await stellantis.async_get_coordinator(vehicle)
         if coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
-            description = SwitchEntityDescription(
-                name = "battery_charging_limit",
-                key = "battery_charging_limit",
-                translation_key = "battery_charging_limit",
-                icon = "mdi:battery-charging-60"
-            )
-            entities.extend([StellantisBatteryChargingLimitSwitch(coordinator, description)])
+            if stellantis.remote_commands:
+                description = SwitchEntityDescription(
+                    name = "battery_charging_limit",
+                    key = "battery_charging_limit",
+                    translation_key = "battery_charging_limit",
+                    icon = "mdi:battery-charging-60"
+                )
+                entities.extend([StellantisBatteryChargingLimitSwitch(coordinator, description)])
 
             description = SwitchEntityDescription(
                 name = "abrp_sync",

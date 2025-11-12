@@ -28,6 +28,7 @@ from .const import (
     DOMAIN,
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
+    FIELD_REMOTE_COMMANDS,
     MOBILE_APPS,
     OAUTH_AUTHORIZE_URL,
     OAUTH_TOKEN_URL,
@@ -149,6 +150,10 @@ class StellantisBase:
         if key in self._config:
             return self._config[key]
         return None
+
+    @property
+    def remote_commands(self):
+        return self.get_config(FIELD_REMOTE_COMMANDS) in [None, True]
 
     def replace_placeholders(self, string, vehicle=None):
         if vehicle is None:
@@ -478,7 +483,7 @@ class StellantisVehicles(StellantisOauth):
     async def get_vehicle_status(self, vehicle):
         _LOGGER.debug("---------- START get_vehicle_status")
         # Ensure that the MQTT client is connected
-        if self._mqtt is None or self._mqtt.is_connected() is False:
+        if self.remote_commands and (self._mqtt is None or self._mqtt.is_connected() is False):
             _LOGGER.debug("------------ MQTT client is not connected, try to connect it")
             await self.connect_mqtt()
         # Fetch the vehicle status using the API

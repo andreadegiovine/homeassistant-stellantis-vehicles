@@ -1,8 +1,10 @@
 # HomeAssistant - Stellantis Vehicles
 ## Requisite
 - **Vehicle native mobile app** installed and active;
-- **Remote service** compatible vehicle;
 - **Use a pc for installation**;
+
+For remote commands:
+- **Remote service** actived (E-remote or Connect Plus);
 
 Currently only PSA vehicles are compatibile (Peugeot, Citroen, DS, Opel and Vauxhall).
 

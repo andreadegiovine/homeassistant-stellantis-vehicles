@@ -16,6 +16,10 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
+
+    if not stellantis.remote_commands:
+        return
+
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()

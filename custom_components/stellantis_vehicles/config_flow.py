@@ -1,6 +1,7 @@
 import logging
 import voluptuous as vol
 from datetime import timedelta
+from uuid import uuid4
 
 from homeassistant import config_entries
 from homeassistant.helpers.selector import selector
@@ -14,6 +15,7 @@ from .const import (
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
     FIELD_OAUTH_CODE,
+    FIELD_REMOTE_COMMANDS,
     FIELD_SMS_CODE,
     FIELD_PIN_CODE,
     MQTT_REFRESH_TOKEN_TTL
@@ -31,7 +33,8 @@ def COUNTRY_SCHEMA(mobile_app):
     })
 
 OAUTH_SCHEMA = vol.Schema({
-    vol.Required(FIELD_OAUTH_CODE): str
+    vol.Required(FIELD_OAUTH_CODE): str,
+    vol.Required(FIELD_REMOTE_COMMANDS, default=False): bool
 })
 
 OTP_SCHEMA = vol.Schema({
@@ -117,23 +120,27 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "expires_in": (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat()
         })
 
-        self.stellantis.save_config({"access_token": self.data["access_token"]})
+        if self.data[FIELD_REMOTE_COMMANDS]:
+            self.stellantis.save_config({"access_token": self.data["access_token"]})
 
-        try:
-            user_info_request = await self.stellantis.get_user_info()
-        except Exception as e:
-            self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_user_info", e)
-            return await self.async_step_oauth()
+            try:
+                user_info_request = await self.stellantis.get_user_info()
+            except Exception as e:
+                self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_user_info", e)
+                return await self.async_step_oauth()
 
-        if not user_info_request or "customer" not in user_info_request[0]:
-            self.errors[FIELD_OAUTH_CODE] = self.get_error_message("missing_user_info")
-            return await self.async_step_oauth()
+            if not user_info_request or "customer" not in user_info_request[0]:
+                self.errors[FIELD_OAUTH_CODE] = self.get_error_message("missing_user_info")
+                return await self.async_step_oauth()
 
-        self.data.update({"customer_id": user_info_request[0]["customer"]})
+            self.data.update({"customer_id": user_info_request[0]["customer"]})
 
-        self.stellantis.save_config({"customer_id": self.data["customer_id"]})
+            self.stellantis.save_config({"customer_id": self.data["customer_id"]})
 
-        return await self.async_step_otp()
+            return await self.async_step_otp()
+        else:
+            self.data.update({"customer_id": "MN-" + str(uuid4()).replace("-", "")[:16]})
+            return await self.async_step_final()
 
 
     async def async_step_otp(self, user_input=None):

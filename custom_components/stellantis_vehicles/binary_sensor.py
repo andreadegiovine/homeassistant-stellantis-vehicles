@@ -6,7 +6,8 @@ from .base import ( StellantisBaseBinarySensor, StellantisBaseEntity )
 
 from .const import (
     DOMAIN,
-    BINARY_SENSORS_DEFAULT
+    BINARY_SENSORS_DEFAULT,
+    FIELD_REMOTE_COMMANDS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,14 +35,15 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                     )
                     entities.extend([StellantisBaseBinarySensor(coordinator, description, default_value.get("value_map"), default_value.get("updated_at_map"), default_value.get("on_value", None))])
 
-        description = BinarySensorEntityDescription(
-            name = "remote_commands",
-            key = "remote_commands",
-            translation_key = "remote_commands",
-            icon = "mdi:broadcast",
-            device_class = BinarySensorDeviceClass.CONNECTIVITY
-        )
-        entities.extend([StellantisRemoteCommandsBinarySensor(coordinator, description)])
+        if stellantis.remote_commands:
+            description = BinarySensorEntityDescription(
+                name = "remote_commands",
+                key = "remote_commands",
+                translation_key = "remote_commands",
+                icon = "mdi:broadcast",
+                device_class = BinarySensorDeviceClass.CONNECTIVITY
+            )
+            entities.extend([StellantisRemoteCommandsBinarySensor(coordinator, description)])
 
     async_add_entities(entities)
 

@@ -83,6 +83,7 @@ CAR_API_HEADERS = {
 FIELD_MOBILE_APP = "mobile_app"
 FIELD_COUNTRY_CODE = "country_code"
 FIELD_OAUTH_CODE = "oauth_code"
+FIELD_REMOTE_COMMANDS = "remote_commands"
 FIELD_SMS_CODE = "sms_code"
 FIELD_PIN_CODE = "pin_code"
 

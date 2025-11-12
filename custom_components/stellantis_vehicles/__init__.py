@@ -13,7 +13,8 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     IMAGE_PATH,
-    OTP_FILENAME
+    OTP_FILENAME,
+    FIELD_REMOTE_COMMANDS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,7 +59,8 @@ async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     if unload_ok := await hass.config_entries.async_unload_platforms(config, PLATFORMS):
         hass.data[DOMAIN].pop(config.entry_id)
 
-    stellantis._mqtt.disconnect()
+    if stellantis.remote_commands:
+        stellantis._mqtt.disconnect()
 
     return unload_ok
 

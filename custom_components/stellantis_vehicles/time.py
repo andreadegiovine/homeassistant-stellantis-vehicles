@@ -20,7 +20,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 
     for vehicle in vehicles:
         coordinator = await stellantis.async_get_coordinator(vehicle)
-        if coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
+        if coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID] and stellantis.remote_commands:
             description = TimeEntityDescription(
                 name = "battery_charging_start",
                 key = "battery_charging_start",
