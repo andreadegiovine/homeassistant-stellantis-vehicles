@@ -426,6 +426,25 @@ class StellantisVehicles(StellantisOauth):
         return image_url
 
     @rate_limit(6, 1800) # 6 per 30 min
+    async def refresh_token_request(self):
+        _LOGGER.debug("---------- START refresh_token_request")
+        url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
+        headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
+        token_request = await self.make_http_request(url, 'POST', headers)
+        _LOGGER.debug(url)
+        _LOGGER.debug(headers)
+        _LOGGER.debug(token_request)
+        new_config = {
+            "access_token": token_request["access_token"],
+            "refresh_token": token_request["refresh_token"],
+            "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+        }
+        self.save_config(new_config)
+        self.update_stored_config("access_token", new_config["access_token"])
+        self.update_stored_config("refresh_token", new_config["refresh_token"])
+        self.update_stored_config("expires_in", new_config["expires_in"])
+        _LOGGER.debug("---------- END refresh_token_request")
+
     async def refresh_token(self):
         _LOGGER.debug("---------- START refresh_token")
         # to prevent concurrent updates
@@ -433,21 +452,7 @@ class StellantisVehicles(StellantisOauth):
             token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
             _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
             if token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval)):
-                url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
-                headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
-                token_request = await self.make_http_request(url, 'POST', headers)
-                _LOGGER.debug(url)
-                _LOGGER.debug(headers)
-                _LOGGER.debug(token_request)
-                new_config = {
-                    "access_token": token_request["access_token"],
-                    "refresh_token": token_request["refresh_token"],
-                    "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
-                }
-                self.save_config(new_config)
-                self.update_stored_config("access_token", new_config["access_token"])
-                self.update_stored_config("refresh_token", new_config["refresh_token"])
-                self.update_stored_config("expires_in", new_config["expires_in"])
+                self.refresh_token_request()
         _LOGGER.debug("---------- END refresh_token")
 
     async def get_user_vehicles(self):
