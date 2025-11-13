@@ -103,7 +103,7 @@ jobs:
         with:
           file: custom_components/stellantis_vehicles/manifest.json
           field: version
-          value: ${{ replace(steps.tag-name.outputs.new_tag_name, 'v', '') }}
+          value: ${{ startsWith(steps.tag-name.outputs.new_tag_name, 'v') && substring(steps.tag-name.outputs.new_tag_name, 1) || steps.tag-name.outputs.new_tag_name }}
 
       - name: Commit manifest.json
         run: |
