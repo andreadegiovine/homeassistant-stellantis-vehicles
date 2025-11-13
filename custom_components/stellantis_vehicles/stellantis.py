@@ -452,7 +452,7 @@ class StellantisVehicles(StellantisOauth):
             token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
             _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
             if token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval)):
-                self.refresh_token_request()
+                await self.refresh_token_request()
         _LOGGER.debug("---------- END refresh_token")
 
     async def get_user_vehicles(self):
