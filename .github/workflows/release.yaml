@@ -94,6 +94,7 @@ jobs:
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
           echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
           echo "new_tag_name=v$new_tag_name" >> $GITHUB_OUTPUT
+          echo "manifest_version=$new_tag_name" >> $GITHUB_OUTPUT
           echo "new_tag_branch=$branch" >> $GITHUB_OUTPUT
           echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
           echo "branch_develop=$branch_develop" >> $GITHUB_OUTPUT
@@ -103,7 +104,7 @@ jobs:
         with:
           file: custom_components/stellantis_vehicles/manifest.json
           field: version
-          value: ${{ startsWith(steps.tag-name.outputs.new_tag_name, 'v') && substring(steps.tag-name.outputs.new_tag_name, 1) || steps.tag-name.outputs.new_tag_name }}
+          value: ${{ steps.tag-name.outputs.manifest_version }}
 
       - name: Commit manifest.json
         run: |
