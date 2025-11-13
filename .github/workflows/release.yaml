@@ -27,7 +27,7 @@ jobs:
           git fetch --tags
           
           # Fetch last tag
-          last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
+          last_tag=$(git describe --match "*" --abbrev=0 --tags $(git rev-list --tags --max-count=1) | sed 's/^v//')
           echo "Last tag: $last_tag"
           
           last_release=$(git describe --match "*" --exclude "*-beta*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
@@ -93,7 +93,7 @@ jobs:
           echo "New tag: $new_tag_name"
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
           echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
-          echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
+          echo "new_tag_name=v$new_tag_name" >> $GITHUB_OUTPUT
           echo "new_tag_branch=$branch" >> $GITHUB_OUTPUT
           echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
           echo "branch_develop=$branch_develop" >> $GITHUB_OUTPUT
@@ -103,7 +103,7 @@ jobs:
         with:
           file: custom_components/stellantis_vehicles/manifest.json
           field: version
-          value: ${{ steps.tag-name.outputs.new_tag_name }}
+          value: ${{ replace(steps.tag-name.outputs.new_tag_name, 'v', '') }}
 
       - name: Commit manifest.json
         run: |
@@ -160,16 +160,6 @@ jobs:
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$notes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-#      - name: Merge in master
-#        if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
-#        uses: devmasx/merge-branch@v1.4.0
-#        with:
-#          type: now
-#          label_name: ${{ steps.tag-name.outputs.new_tag_name }}
-#          from_branch: ${{ steps.tag-name.outputs.branch_develop }}
-#          target_branch: ${{ steps.tag-name.outputs.branch_master }}
-#          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update master
         if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
