@@ -39,6 +39,9 @@ MQTT_QOS = 0
 KWH_CORRECTION = 1.343
 MS_TO_KMH_CONVERSION = 3.6
 
+ABRP_URL = "https://api.iternio.com/1/tlm/send"
+ABRP_API_KEY = "1e28ad14-df16-49f0-97da-364c9154b44a"
+
 CLIENT_ID_QUERY_PARAMS = {
     "client_id": "{#client_id#}",
     "locale": "{#locale#}"

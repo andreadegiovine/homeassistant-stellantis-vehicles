@@ -55,7 +55,9 @@ from .const import (
     UPDATE_INTERVAL,
     IMAGE_PATH,
     MQTT_REFRESH_TOKEN_TTL,
-    OTP_FILENAME
+    OTP_FILENAME,
+    ABRP_URL,
+    ABRP_API_KEY
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -752,8 +754,8 @@ class StellantisVehicles(StellantisOauth):
 
     async def send_abrp_data(self, params):
         _LOGGER.debug("---------- START send_abrp_data")
-        params["api_key"] = "1e28ad14-df16-49f0-97da-364c9154b44a"
-        abrp_request = await self.make_http_request("https://api.iternio.com/1/tlm/send", "POST", None, params)
+        params["api_key"] = ABRP_API_KEY
+        abrp_request = await self.make_http_request(ABRP_URL, "POST", None, params)
         _LOGGER.debug(params)
         _LOGGER.debug(abrp_request)
         if "status" not in abrp_request or abrp_request["status"] != "ok":
