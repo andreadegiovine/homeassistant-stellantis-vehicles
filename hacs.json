@@ -1,6 +1,6 @@
 {
     "name": "Stellantis Vehicles",
-    "content_in_root": false,
     "render_readme": true,
-    "homeassistant": "2025.11.0"
+    "zip_release": true,
+    "filename": "stellantis_vehicles.zip"
 }
