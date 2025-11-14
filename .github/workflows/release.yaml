@@ -183,3 +183,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           generate_release_notes: false
           body: ${{ steps.release-notes.outputs.notes }}
+
+      - name: "Create zip"
+        run: |
+          cd "${{ github.workspace }}/custom_components/stellantis_vehicles"
+          zip "${{ github.workspace }}/stellantis_vehicles.zip" -r ./
+
+      - name: "Add zip to release"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ steps.tag-name.outputs.new_tag_name }} "${{ github.workspace }}/stellantis_vehicles.zip"
