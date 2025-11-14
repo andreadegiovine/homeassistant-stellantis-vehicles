@@ -1,16 +1,16 @@
 # HomeAssistant - Stellantis Vehicles
 - [Requirements](#requirements)
+- [Features](#features)
 - [Installation](#installation)
 - [OAuth2 Code](#oauth2-code)
-- [Features](#features)
 - [Screenshot](#screenshot)
 - [Commands](#commands)
 - [Battery capacity / residual sensors](#battery-capacity--residual-sensors)
-- [ABRP - A Better Routeplanner](#abrp---a-better-routeplanner)
 - [Errors](#errors)
+- [ABRP - A Better Routeplanner](#abrp---a-better-routeplanner)
 - [Support the project](#support-the-project)
 
-> Currently only <ins>PSA vehicles</ins> are compatibile (Peugeot, Citroen, DS, Opel and Vauxhall).
+> Currently only <ins>PSA vehicles</ins> are compatibile.
 
 | Peugeot                              | Citroën                              | DS                         | Opel                           | Vauxhall                               |
 |--------------------------------------|--------------------------------------|----------------------------|--------------------------------|----------------------------------------|
@@ -26,6 +26,19 @@ Send remote commands:
 - **Remote service** actived (E-remote or Connect Plus);
 
 > Currently Stellantis not provide B2C api credentials, this integration use the mobile apps api credentials and login flow.
+
+## Features
+|                            | Electric / Hybrid | Thermic | E-remote control | Remote control  | Connect Plus |
+|----------------------------|:-----------------:|:-------:|:----------------:|:---------------:|:------------:|
+| Get status                 |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Wake up                    |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| ABRP sync                  |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Preconditioning start/stop |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
+| Doors open/close           |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Flash lights               |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Honk the horn              |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
+| Charging start/stop        |        ✔️         |         |        ✔️        |                 |      ✔️      |
+| Charging limit             |        ✔️         |         |        ✔️        |                 |      ✔️      |
 
 ## Installation
 <details><summary><b>Using HACS</b></summary>
@@ -57,20 +70,6 @@ As described on config flow, please get the right code from the mobile app redir
 Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome Python tool to fetch oauth code without using browser console: [stellantis-oauth-helper](https://github.com/benbox69/stellantis-oauth-helper)
 
 </details>
-
-## Features
-
-|                            | Electric / Hybrid | Thermic | E-remote control | Remote control  | Connect Plus |
-|----------------------------|:-----------------:|:-------:|:----------------:|:---------------:|:------------:|
-| Get status                 |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
-| Wake up                    |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
-| ABRP sync                  |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
-| Preconditioning start/stop |        ✔️         |   ✔️    |        ✔️        |                 |      ✔️      |
-| Doors open/close           |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
-| Flash lights               |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
-| Honk the horn              |        ✔️         |   ✔️    |                  |       ✔️        |      ✔️      |
-| Charging start/stop        |        ✔️         |         |        ✔️        |                 |      ✔️      |
-| Charging limit             |        ✔️         |         |        ✔️        |                 |      ✔️      |
 
 ## Screenshot
 ![Controls](./images/controls.png)
@@ -125,27 +124,14 @@ For some vehicles no updates are received a few minutes after the engine is turn
 
 ### Air conditioning Start/Stop
 As described in the Stellantis apps, the command is enabled when:
-1. the vehicle engine is off;
-2. the vehicle doors are locked;
-3. the battery level is at least 50% (20% for hybrids) or in charging.
-
-### Air conditioning Start/Stop - Charge Start/Stop - Doors
-These commands depend on the relative binary sensor, before send the opposite command please wait until the relative sensor state change.
+1. The vehicle engine is off;
+2. The vehicle doors are locked;
+3. The battery level is at least ~~50% (20% for hybrids)~~ 20% or in charging ([#226](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/226));
 
 ## Battery capacity / residual sensors
 Thanks to the community ([#272](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272)), it seems that for some vehicles **Stellantis provides incorrect values**. The **switch.battery_values_correction** entity (in your language) applies a correction if active.
 
-\* currently only to the battery_residual sensor
-
-## ABRP - A Better Routeplanner
-Get a token from [ABRP](https://abetterrouteplanner.com/):
-1. login to your account;
-2. navigate to vehicle settings;
-3. navigate to real time data;
-4. navigate to edit connections;
-5. generate a token using "Generic" method;
-
-Use the generated token in **abrp_token sensor** and enable **abrp_sync switch** to send updates.
+\*currently only to the battery_residual sensor
 
 ## Errors
 <ins>Before any issue request, please check the integration log and look for solution below</ins>.
@@ -158,6 +144,16 @@ It seems that this error is due to reaching the limit of associated devices / SM
 
 ### OTP error - NOK:NOK_BLOCKED
 It seems that this error is due to reaching the limit of wrong PIN used. Re-authenticate the integration.
+
+## ABRP - A Better Routeplanner
+Get a token from [ABRP](https://abetterrouteplanner.com/):
+1. Login to your account;
+2. Navigate to vehicle settings;
+3. Navigate to real time data;
+4. Navigate to edit connections;
+5. Generate a token using "Generic" method;
+
+Use the generated token in **abrp_token sensor** and enable **abrp_sync switch** to send updates.
 
 ## Contributors & Translations
 Start from the "**develop**" branch and submit PRs in that branch.
