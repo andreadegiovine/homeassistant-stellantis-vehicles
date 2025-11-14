@@ -1,14 +1,27 @@
 # HomeAssistant - Stellantis Vehicles
-## Requisite
-- **Vehicle native mobile app** installed and active;
-- **Use a pc for installation**;
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [OAuth2 Code](#oauth2-code)
+- [Features](#features)
+- [Screenshot](#screenshot)
+- [Commands](#commands)
+- [ABRP - A Better Routeplanner](#abrp---a-better-routeplanner)
+- [Battery capacity / residual sensors](#battery-capacity--residual-sensors)
+- [Errors](#errors)
+- [Support the project](#support-the-project)
 
-For remote commands:
+## Requirements
+Get status:
+- **Vehicle native mobile app** installed and active;
+- **Use a pc for autentication**;
+
+Send remote commands:
+- Get status requirements;
 - **Remote service** actived (E-remote or Connect Plus);
 
-Currently only PSA vehicles are compatibile (Peugeot, Citroen, DS, Opel and Vauxhall).
+> Currently only <ins>PSA vehicles</ins> are compatibile (Peugeot, Citroen, DS, Opel and Vauxhall).
 
-Currently Stellantis not provide B2C api credentials, this integration use the mobile apps api credentials and login flow.
+> Currently Stellantis not provide B2C api credentials, this integration use the mobile apps api credentials and login flow.
 
 ## Installation
 <details><summary><b>Using HACS</b></summary>
@@ -104,7 +117,7 @@ For some vehicles no updates are received a few minutes after the engine is turn
 ```
 \* the entity names above are in english, please use your language entity names.
 
-**Some users report that performing too many wakeups drains the service battery, making some features unavailable (such as keyless entry).**
+<ins>**Some users report that performing too many wakeups drains the service battery, making some features unavailable (such as keyless entry)**</ins>.
 
 ### Air conditioning Start/Stop
 As described in the Stellantis apps, the command is enabled when:
@@ -125,34 +138,24 @@ Get a token from [ABRP](https://abetterrouteplanner.com/):
 
 Use the generated token in **abrp_token sensor** and enable **abrp_sync switch** to send updates.
 
-## Battery capacity / residual sensors:
+## Battery capacity / residual sensors
 Thanks to the community ([#272](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272)), it seems that for some vehicles **Stellantis provides incorrect values**. The **switch.battery_values_correction** entity (in your language) applies a correction if active.
 
 \* currently only to the battery_residual sensor
 
 ## Errors
-Before any issue request, please check the integration log and look for solution below.
+<ins>Before any issue request, please check the integration log and look for solution below</ins>.
 
 ### OTP error - NOK:MAXNBTOOLS
 It seems that this error is due to reaching the limit of associated devices / SMS received. Restore your Stellantis account and try again:
 [Follow this procedure from Peugeot community](https://peugeot.my-customerportal.com/peugeot/s/article/AP-I-have-problems-with-the-pin-safety-code-or-I-want-to-change-it-What-can-I-do?language=en_GB).
 
-**<u>This operation removes the devices connected to your vehicle, no vehicle data will be lost.</u>**
+<ins>**This operation removes the devices connected to your vehicle, no vehicle data will be lost**</ins>.
 
 ### OTP error - NOK:NOK_BLOCKED
 It seems that this error is due to reaching the limit of wrong PIN used. Re-authenticate the integration.
 
-## Translations
-<details><summary><b>Pull request</b></summary>
-
-Fork this repo and create/update your language file under `custom_components/stellantis_vehicles/translations/` starting from `en.json`.
-</details>
-<details><summary><b>Manually</b></summary>
-
-Copy the content of file `custom_components/stellantis_vehicles/translations/en.json` to a new file, edit all labels ("key": **"Label"**) and open a issue request including the new/updated json language file.
-</details>
-
-## Contributors
+## Contributors & Translations
 Start from the "**develop**" branch and submit PRs in that branch.
 
 Commit messages are included as release notes, please keep them short and understandable.
