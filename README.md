@@ -5,8 +5,8 @@
 - [Features](#features)
 - [Screenshot](#screenshot)
 - [Commands](#commands)
-- [ABRP - A Better Routeplanner](#abrp---a-better-routeplanner)
 - [Battery capacity / residual sensors](#battery-capacity--residual-sensors)
+- [ABRP - A Better Routeplanner](#abrp---a-better-routeplanner)
 - [Errors](#errors)
 - [Support the project](#support-the-project)
 
@@ -128,6 +128,11 @@ As described in the Stellantis apps, the command is enabled when:
 ### Air conditioning Start/Stop - Charge Start/Stop - Doors
 These commands depend on the relative binary sensor, before send the opposite command please wait until the relative sensor state change.
 
+## Battery capacity / residual sensors
+Thanks to the community ([#272](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272)), it seems that for some vehicles **Stellantis provides incorrect values**. The **switch.battery_values_correction** entity (in your language) applies a correction if active.
+
+\* currently only to the battery_residual sensor
+
 ## ABRP - A Better Routeplanner
 Get a token from [ABRP](https://abetterrouteplanner.com/):
 1. login to your account;
@@ -137,11 +142,6 @@ Get a token from [ABRP](https://abetterrouteplanner.com/):
 5. generate a token using "Generic" method;
 
 Use the generated token in **abrp_token sensor** and enable **abrp_sync switch** to send updates.
-
-## Battery capacity / residual sensors
-Thanks to the community ([#272](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272)), it seems that for some vehicles **Stellantis provides incorrect values**. The **switch.battery_values_correction** entity (in your language) applies a correction if active.
-
-\* currently only to the battery_residual sensor
 
 ## Errors
 <ins>Before any issue request, please check the integration log and look for solution below</ins>.
