@@ -93,8 +93,7 @@ jobs:
           echo "New tag: $new_tag_name"
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
           echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
-          echo "new_tag_name=v$new_tag_name" >> $GITHUB_OUTPUT
-          echo "manifest_version=$new_tag_name" >> $GITHUB_OUTPUT
+          echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
           echo "new_tag_branch=$branch" >> $GITHUB_OUTPUT
           echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
           echo "branch_develop=$branch_develop" >> $GITHUB_OUTPUT
@@ -104,7 +103,7 @@ jobs:
         with:
           file: custom_components/stellantis_vehicles/manifest.json
           field: version
-          value: ${{ steps.tag-name.outputs.manifest_version }}
+          value: ${{ steps.tag-name.outputs.new_tag_name }}
 
       - name: Commit manifest.json
         run: |
@@ -165,13 +164,13 @@ jobs:
       - name: Update master
         if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
         run: |
-            git fetch
-            git checkout ${{ steps.tag-name.outputs.branch_develop }}
-            git pull
-            git checkout ${{ steps.tag-name.outputs.branch_master }}
-            git pull
-            git merge ${{ steps.tag-name.outputs.branch_develop }} --strategy-option theirs
-            git push
+          git fetch
+          git checkout ${{ steps.tag-name.outputs.branch_develop }}
+          git pull
+          git checkout ${{ steps.tag-name.outputs.branch_master }}
+          git pull
+          git merge ${{ steps.tag-name.outputs.branch_develop }} --strategy-option theirs
+          git push
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -186,6 +185,9 @@ jobs:
 
       - name: "Create zip"
         run: |
+          git fetch
+          git checkout ${{ steps.tag-name.outputs.branch_develop }}
+          git pull
           cd "${{ github.workspace }}/custom_components/stellantis_vehicles"
           zip "${{ github.workspace }}/stellantis_vehicles.zip" -r ./
 
