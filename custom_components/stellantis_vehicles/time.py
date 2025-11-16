@@ -35,8 +35,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 class StellantisBatteryChargingStart(StellantisBaseTime):
     def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
-        self._value_map = ["energies", 0, "extension", "electric", "charging", "nextDelayedTime"]
-        self._updated_at_map = ["energies", 0, "createdAt"]
+        self._value_map = ["energies", {"type":"Electric"}, "extension", "electric", "charging", "nextDelayedTime"]
+        self._updated_at_map = ["energies", {"type":"Electric"}, "createdAt"]
 
     @property
     def available(self):
