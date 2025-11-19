@@ -59,7 +59,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Authentication failed while updating data for vehicle '%s': %s", self._vehicle['vin'], str(e))
             raise
         except Exception as e:
-            _LOGGER.error(str(e))
+            _LOGGER.warning(str(e))
         _LOGGER.debug(self._config)
         _LOGGER.debug(self._data)
         await self.after_async_update_data()
@@ -125,7 +125,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if action_id is not None:
                 self._commands_history.update({action_id: {"name": name, "updates": []}})
         except ConfigEntryAuthFailed as e:
-            _LOGGER.error("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
+            _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
             self._stellantis._entry.async_start_reauth(self._hass)
         except Exception as e:
             _LOGGER.error("Failed to send command %s: %s", name, str(e))

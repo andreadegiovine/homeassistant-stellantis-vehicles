@@ -39,7 +39,7 @@ def date_from_pt_string(pt_string, start_date = None):
         return start_date + timedelta(hours=time.hour, minutes=time.minute)
 
     except Exception as e:
-        _LOGGER.error(str(e))
+        _LOGGER.warning(str(e))
         return None
 
 # def masked_configs(configs = {}):

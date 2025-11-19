@@ -206,7 +206,7 @@ class StellantisBase:
                         error = result["message"] + " - " + str(result["code"])
 
                 if str(resp.status).startswith("50") or (str(resp.status) == "404" and str(result["code"]) == "40400"):
-                    _LOGGER.error(error) # "Not Found: We didn't find the status for this vehicle. - 40400"
+                    _LOGGER.warning(error) # "Not Found: We didn't find the status for this vehicle. - 40400"
                     result = {} # Clear result on error to avoid returning error details in the result
                     return result
                 elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
@@ -478,12 +478,12 @@ class StellantisVehicles(StellantisOauth):
                             picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
                             vehicle_data["picture"] = picture
                         except Exception as e:
-                            _LOGGER.error(str(e))
+                            _LOGGER.warning(str(e))
                         self._vehicles.append(vehicle_data)
                 else:
-                    _LOGGER.error("No vehicles found in vehicles_request['_embedded']")
+                    _LOGGER.warning("No vehicles found in vehicles_request['_embedded']")
             else:
-                _LOGGER.error("No _embedded found in vehicles_request")
+                _LOGGER.warning("No _embedded found in vehicles_request")
         _LOGGER.debug("---------- END get_user_vehicles")
         return self._vehicles
 
@@ -558,9 +558,9 @@ class StellantisVehicles(StellantisOauth):
                     token_request = await self._fetch_new_mqtt_token(mqtt_config, access_token_only=True)
                     _LOGGER.debug(token_request)
                     await self._update_mqtt_config(mqtt_config, token_request)
-                    _LOGGER.warning(f"------------- Attempt to refresh MQTT access_token only (using current refresh_token) succeeded. This is NOT an error! It means that the MQTT refresh_token is still valid and will be renewed in the next scheduled interval.")
+                    _LOGGER.warning(f"Attempt to refresh MQTT access_token only (using current refresh_token) succeeded. This is NOT an error! It means that the MQTT refresh_token is still valid and will be renewed in the next scheduled interval.")
                 except ConfigEntryAuthFailed as ee:
-                    _LOGGER.error("------------- Attempt to refresh MQTT access_token only failed as well; refresh_token is expired or invalid. Please reauthenticate. Error: %s", ee)
+                    _LOGGER.error("Attempt to refresh MQTT access_token only failed as well; refresh_token is expired or invalid. Please reauthenticate. Error: %s", ee)
                     # If refreshing access_token only attempt fails as well, raise an exception
                     raise
             except Exception as e:
@@ -613,7 +613,7 @@ class StellantisVehicles(StellantisOauth):
                 self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
         else:
             # Log an error if the token refresh failed
-            _LOGGER.error("------------- refreshing mqtt access_token failed (no access_token in response)")
+            _LOGGER.warning("Refreshing mqtt access_token failed (no access_token in response)")
             _LOGGER.debug(token_request)
 
     async def connect_mqtt(self):
@@ -634,7 +634,7 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.connect(MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S)
             self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
         except Exception as e:
-            _LOGGER.error(f"connect_mqtt: {str(e)}")
+            _LOGGER.warning(f"connect_mqtt: {str(e)}")
         _LOGGER.debug("---------- END connect_mqtt")
         return self._mqtt.is_connected()
 
@@ -649,7 +649,7 @@ class StellantisVehicles(StellantisOauth):
                 client.subscribe(topic, qos=MQTT_QOS)
                 _LOGGER.debug("Topic %s", topic)
         except Exception as e:
-            _LOGGER.error("Unexpected error in _on_mqtt_connect: %s", e)
+            _LOGGER.warning("Unexpected error in _on_mqtt_connect: %s", e)
         _LOGGER.debug("---------- END _on_mqtt_connect")
 
     def _on_mqtt_disconnect(self, client, userdata, result_code):
@@ -703,9 +703,9 @@ class StellantisVehicles(StellantisOauth):
                             self._mqtt_last_request = None
                             self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, store=False))
                         else:
-                            _LOGGER.error("Last request might have been send twice without success")
+                            _LOGGER.warning("Last request might have been send twice without success")
                 elif data["return_code"] != "0":
-                    _LOGGER.error('%s : %s', data["return_code"], data.get("reason", "?"))
+                    _LOGGER.warning('%s : %s', data["return_code"], data.get("reason", "?"))
             elif msg.topic.startswith(MQTT_EVENT_TOPIC):
 #                 charge_info = data["charging_state"]
 #                 programs = data["precond_state"].get("programs", None)
@@ -713,9 +713,9 @@ class StellantisVehicles(StellantisOauth):
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
                 _LOGGER.debug("Update data from mqtt?!?")
         except KeyError:
-            _LOGGER.error("MQTT message error")
+            _LOGGER.warning("MQTT message error")
         except Exception as e:
-            _LOGGER.error("Unexpected error in _on_mqtt_message: %s", e)
+            _LOGGER.warning("Unexpected error in _on_mqtt_message: %s", e)
         _LOGGER.debug("---------- END _on_mqtt_message")
 
     async def send_mqtt_message(self, service, message, vehicle, store=True):
@@ -739,7 +739,7 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug(data)
             message_info = self._mqtt.publish(topic, data, qos=MQTT_QOS, retain=False)
             if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
-                _LOGGER.error("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
+                _LOGGER.warning("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
                 action_id = None
             if store:
                 self._mqtt_last_request = [service, message]
@@ -759,5 +759,5 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug(params)
         _LOGGER.debug(abrp_request)
         if "status" not in abrp_request or abrp_request["status"] != "ok":
-            _LOGGER.error(abrp_request)
+            _LOGGER.warning(abrp_request)
         _LOGGER.debug("---------- END send_abrp_data")
