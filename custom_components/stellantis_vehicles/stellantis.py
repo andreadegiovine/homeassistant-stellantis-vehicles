@@ -205,7 +205,7 @@ class StellantisBase:
                     elif "message" in result and "code" in result:
                         error = result["message"] + " - " + str(result["code"])
 
-                if str(resp.status) == "404" and str(result["code"]) == "40400":
+                if str(resp.status).startswith("50") or (str(resp.status) == "404" and str(result["code"]) == "40400"):
                     _LOGGER.error(error) # "Not Found: We didn't find the status for this vehicle. - 40400"
                     result = {} # Clear result on error to avoid returning error details in the result
                     return result
