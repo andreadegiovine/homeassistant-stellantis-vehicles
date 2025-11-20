@@ -131,7 +131,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Failed to send command %s: %s", name, str(e))
             raise
 
-    @rate_limit(6, 120) # 6 per 20 min
+    @rate_limit(6, 1200) # 6 per 20 min
     async def send_wakeup_command(self, button_name):
         """ Send wakeup command to the vehicle. """
         await self.send_command(button_name, "/VehCharge/state", {"action": "state"})
