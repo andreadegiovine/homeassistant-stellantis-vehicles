@@ -29,7 +29,6 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     hass.data[DOMAIN][config.entry_id] = stellantis
 
     try:
-        await stellantis.refresh_token()
         vehicles = await stellantis.get_user_vehicles()
     except ConfigEntryAuthFailed as e:
         await stellantis.close_session()

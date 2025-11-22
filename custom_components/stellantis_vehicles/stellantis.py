@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
+from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
@@ -208,6 +209,7 @@ class StellantisBase:
                 if str(resp.status).startswith("50") or (str(resp.status) == "404" and str(result["code"]) == "40400"):
                     _LOGGER.warning(error) # "Not Found: We didn't find the status for this vehicle. - 40400"
                     result = {} # Clear result on error to avoid returning error details in the result
+                    _LOGGER.debug("---------- END make_http_request")
                     return result
                 elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
                     await self.close_session()
@@ -358,14 +360,15 @@ class StellantisVehicles(StellantisOauth):
         self._entry = None
         self._coordinator_dict  = {}
         self._vehicles = []
-        self._callback_id = None
         self._mqtt = None
         self._mqtt_last_request = None
-        self._lock_refresh_token = asyncio.Lock()
         self._lock_refresh_mqtt_token = asyncio.Lock()
+
+        self._oauth_token_scheduled = None
 
     def set_entry(self, entry):
         self._entry = entry
+        self.scheduled_oauth_token_refresh()
 
     def update_stored_config(self, config, value):
         data = self._entry.data
@@ -427,6 +430,27 @@ class StellantisVehicles(StellantisOauth):
         await self._hass.async_add_executor_job(im.save, image_path)
         return image_url
 
+    def update_refresh_interval(self, value):
+        self._refresh_interval = value
+        self._oauth_token_scheduled = None
+        self.scheduled_oauth_token_refresh()
+
+    def scheduled_oauth_token_refresh(self, now=None):
+        _LOGGER.debug("---------- START scheduled_oauth_token_refresh")
+        def get_next_run():
+            expires_in = self.get_config("expires_in")
+            return datetime.fromisoformat(expires_in) - timedelta(seconds=self._refresh_interval)
+        if self._oauth_token_scheduled is not None:
+            self._oauth_token_scheduled()
+            self._oauth_token_scheduled = None
+            self.do_async(self.refresh_token_request())
+        elif get_datetime() > get_next_run():
+            self.do_async(self.refresh_token_request())
+        next_run = get_next_run()
+        _LOGGER.debug(f"Next refresh: {next_run}")
+        self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
+        _LOGGER.debug("---------- END scheduled_oauth_token_refresh")
+
     @rate_limit(6, 1800) # 6 per 30 min
     async def refresh_token_request(self):
         _LOGGER.debug("---------- START refresh_token_request")
@@ -446,16 +470,6 @@ class StellantisVehicles(StellantisOauth):
         self.update_stored_config("refresh_token", new_config["refresh_token"])
         self.update_stored_config("expires_in", new_config["expires_in"])
         _LOGGER.debug("---------- END refresh_token_request")
-
-    async def refresh_token(self):
-        _LOGGER.debug("---------- START refresh_token")
-        # to prevent concurrent updates
-        async with self._lock_refresh_token:
-            token_expiry = datetime.fromisoformat(self.get_config("expires_in"))
-            _LOGGER.debug(f"------------- access_token valid until: {token_expiry}")
-            if token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval)):
-                await self.refresh_token_request()
-        _LOGGER.debug("---------- END refresh_token")
 
     async def get_user_vehicles(self):
         _LOGGER.debug("---------- START get_user_vehicles")
