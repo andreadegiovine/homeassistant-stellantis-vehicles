@@ -590,15 +590,13 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.warning("Refreshing mqtt access_token failed (no access_token in response)")
             _LOGGER.debug("---------- END refresh_mqtt_token_request")
             return
-        new_config = {
-            "access_token": token_request["access_token"],
-            "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
-        }
+        mqtt_config["access_token"] = token_request["access_token"]
+        mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
         if "refresh_token" in token_request:
-            new_config["refresh_token"] = token_request["refresh_token"]
-            new_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
-        self.save_config({"mqtt": new_config})
-        self.update_stored_config("mqtt", new_config)
+            mqtt_config["refresh_token"] = token_request["refresh_token"]
+            mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
+        self.save_config({"mqtt": mqtt_config})
+        self.update_stored_config("mqtt", mqtt_config)
         _LOGGER.debug("---------- END refresh_mqtt_token_request")
 
     async def connect_mqtt(self):
