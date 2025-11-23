@@ -23,6 +23,9 @@
           "sms_code": "SMS code from Stellantis",
           "pin_code": "Pin code from vehicle mobile app"
         }
+      },
+      "reauth_confirm": {
+        "description": "You need to re-authenticate to use this integration"
       }
     },
     "error": {

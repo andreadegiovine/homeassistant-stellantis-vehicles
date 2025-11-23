@@ -23,6 +23,9 @@
           "sms_code": "Codice SMS ricevuto da Stellantis",
           "pin_code": "Codice pin dell'app mobile del veicolo"
         }
+      },
+      "reauth_confirm": {
+        "description": "Devi effettuare nuovamente l'autenticazione per utilizzare quest'integrazione"
       }
     },
     "error": {
