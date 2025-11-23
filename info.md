@@ -184,12 +184,12 @@ Thanks to everyone for the issues, especially to:
 ## Support the project
 **The latest heroes who believe in this project. Want to join the Club?** 👇
 
-| 🏆 5 beers | 🥈 3 beers                    | 🥉 1 beer                     |
-|------------|-------------------------------|-------------------------------|
-| wech71     | Gerhard                       | Max                           |
-| Juraj      | Simon Hunt                    | Dave                          |
-|            | HJ                            | Hans                          |
-|            | <sub>*and other heroes*</sub> | <sub>*and other heroes*</sub> |
+| 🏆 5 beers           | 🥈 3 beers                    | 🥉 1 beer                     |
+|----------------------|-------------------------------|-------------------------------|
+| Philipp B. / tamcore | Gerhard                       | Max                           |
+| wech71               | Simon Hunt                    | Dave                          |
+| Juraj                | HJ                            | Hans                          |
+|                      | <sub>*and other heroes*</sub> | <sub>*and other heroes*</sub> |
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
 
