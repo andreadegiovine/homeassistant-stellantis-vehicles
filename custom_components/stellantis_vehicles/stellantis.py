@@ -596,7 +596,7 @@ class StellantisVehicles(StellantisOauth):
         }
         if "refresh_token" in token_request:
             new_config["refresh_token"] = token_request["refresh_token"]
-            mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
+            new_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
         self.save_config({"mqtt": new_config})
         self.update_stored_config("mqtt", new_config)
         _LOGGER.debug("---------- END refresh_mqtt_token_request")
