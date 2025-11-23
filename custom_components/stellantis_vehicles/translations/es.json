@@ -3,7 +3,8 @@
     "step": {
       "user": {
         "data": {
-          "mobile_app": "Aplicación móvil del vehículo"
+          "mobile_app": "Aplicación móvil del vehículo",
+          "remote_commands": "Configurar comandos remotos (se requiere E-remote o Connect Plus)"
         }
       },
       "country": {
@@ -22,6 +23,9 @@
           "sms_code": "Código SMS de Stellantis",
           "pin_code": "Código PIN de la aplicación móvil del vehículo"
         }
+      },
+      "reauth_confirm": {
+        "description": "Necesitas volver a autenticarte para usar esta integración"
       }
     },
     "error": {
@@ -32,7 +36,8 @@
       "get_mqtt_access_token": "Error al obtener el token de acceso MQTT",
       "get_mqtt_access_token_nok_access": "Código SMS o PIN no válido",
       "get_mqtt_access_token_nok_maxnbtools": "Límite de dispositivos/SMS alcanzado, reinicia tu cuenta Stellantis e inténtalo de nuevo",
-      "get_mqtt_access_token_nok_nok_blocked": "Límite de intentos de PIN incorrectos, reinicia el proceso de configuración"
+      "get_mqtt_access_token_nok_nok_blocked": "Límite de intentos de PIN incorrectos, reinicia el proceso de configuración",
+      "get_mqtt_access_token_rate_limit": "Se ha superado el límite de solicitudes de token MQTT (6 por día)"
     },
     "abort": {
       "already_configured": "La cuenta ya está configurada",
@@ -94,11 +99,12 @@
       "command_status": {
         "name": "Estado del comando",
         "state": {
+          "rate_limit": "Límite de tasa superado (6 cada 20 minutos)",
           "not_compatible": "No compatible",
           "900": "Aceptado",
           "901": "Vehículo en reposo",
           "903": "Reenviado",
-          "0": "Completo",
+          "0": "Completado",
           "300": "Cancelado",
           "500": "Error",
           "502": "Duplicado",
