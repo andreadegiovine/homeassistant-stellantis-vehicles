@@ -720,10 +720,12 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
     @property
     def native_value(self):
         """ Native value. """
+        if self._stellantis.get_stored_config(self._sensor_key):
+            value = self._stellantis.get_stored_config(self._sensor_key)
+            self._coordinator._sensors[self._sensor_key] = float(value)
+            return value
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors.get(self._sensor_key)
-        if self._stellantis.get_stored_config(self._sensor_key):
-            return self._stellantis.get_stored_config(self._sensor_key)
         return self._default_value
 
     async def async_set_native_value(self, value: float):
@@ -742,10 +744,12 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
     @property
     def is_on(self):
         """ Is on. """
+        if self._stellantis.get_stored_config(self._sensor_key):
+            value = self._stellantis.get_stored_config(self._sensor_key)
+            self._coordinator._sensors[self._sensor_key] = bool(value)
+            return value
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors.get(self._sensor_key)
-        if self._stellantis.get_stored_config(self._sensor_key):
-            return self._stellantis.get_stored_config(self._sensor_key)
         return False
 
     async def async_turn_on(self, **kwargs):
@@ -771,10 +775,12 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
     @property
     def native_value(self):
         """ Native value. """
+        if self._stellantis.get_stored_config(self._sensor_key):
+            value = self._stellantis.get_stored_config(self._sensor_key)
+            self._coordinator._sensors[self._sensor_key] = str(value)
+            return value
         if self._sensor_key in self._coordinator._sensors:
             return self._coordinator._sensors.get(self._sensor_key)
-        if self._stellantis.get_stored_config(self._sensor_key):
-            return self._stellantis.get_stored_config(self._sensor_key)
         return ""
 
     async def async_set_value(self, value: str):
