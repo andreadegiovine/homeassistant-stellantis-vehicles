@@ -355,15 +355,14 @@ class StellantisVehicles(StellantisOauth):
     def __init__(self, hass:HomeAssistant) -> None:
         super().__init__(hass)
 
-        self._refresh_interval = UPDATE_INTERVAL
         self._entry = None
         self._coordinator_dict  = {}
         self._vehicles = []
         self._mqtt = None
         self._mqtt_last_request = None
-        self._lock_refresh_mqtt_token = asyncio.Lock()
 
         self._oauth_token_scheduled = None
+        self._mqtt_token_scheduled = None
 
     def set_entry(self, entry):
         self._entry = entry
@@ -428,16 +427,16 @@ class StellantisVehicles(StellantisOauth):
         await self._hass.async_add_executor_job(im.save, image_path)
         return image_url
 
-    async def update_refresh_interval(self, value):
-        self._refresh_interval = value
-        self._oauth_token_scheduled = None
+    async def scheduled_tokens_refresh(self):
         await self.scheduled_oauth_token_refresh()
+        if self.remote_commands:
+            await self.scheduled_mqtt_token_refresh()
 
     async def scheduled_oauth_token_refresh(self, now=None):
         _LOGGER.debug("---------- START scheduled_oauth_token_refresh")
         def get_next_run():
             expires_in = self.get_config("expires_in")
-            return datetime.fromisoformat(expires_in) - timedelta(seconds=self._refresh_interval)
+            return datetime.fromisoformat(expires_in)
         if self._oauth_token_scheduled is not None:
             self._oauth_token_scheduled()
             self._oauth_token_scheduled = None
@@ -445,6 +444,7 @@ class StellantisVehicles(StellantisOauth):
         elif get_datetime() > get_next_run():
             await self.refresh_token_request()
         next_run = get_next_run()
+        _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
         _LOGGER.debug("---------- END scheduled_oauth_token_refresh")
@@ -550,83 +550,56 @@ class StellantisVehicles(StellantisOauth):
 #         _LOGGER.debug("---------- END get_vehicle_trips")
 #         return vehicle_trips_request
 
-    async def refresh_mqtt_token(self, force=False):
-        _LOGGER.debug("---------- START refresh_mqtt_token")
-        # Ensure that the MQTT token refresh process is thread-safe
-        async with self._lock_refresh_mqtt_token:
-            try:
-                mqtt_config = self.get_config("mqtt")
-                token_expiry = datetime.fromisoformat(mqtt_config["expires_in"])
-                _LOGGER.debug(f"------------- mqtt access_token valid until: {token_expiry}")
-                # Check if the token is expired or if a forced refresh is required
-                if (token_expiry < (get_datetime() + timedelta(seconds=self._refresh_interval))) or force:
-                    # Fetch a new MQTT token and update the configuration
-                    token_request = await self._fetch_new_mqtt_token(mqtt_config)
-                    _LOGGER.debug(token_request)
-                    await self._update_mqtt_config(mqtt_config, token_request)
-            except ConfigEntryAuthFailed as e:
-                try:
-                    _LOGGER.warning(f"------------- Attempt to refresh MQTT access_token/refresh_token failed. This is NOT an error as long as the following attempt to refresh only the access_token (using current refresh_token) succeeds.")
-                    token_request = await self._fetch_new_mqtt_token(mqtt_config, access_token_only=True)
-                    _LOGGER.debug(token_request)
-                    await self._update_mqtt_config(mqtt_config, token_request)
-                    _LOGGER.warning(f"Attempt to refresh MQTT access_token only (using current refresh_token) succeeded. This is NOT an error! It means that the MQTT refresh_token is still valid and will be renewed in the next scheduled interval.")
-                except ConfigEntryAuthFailed as ee:
-                    _LOGGER.error("Attempt to refresh MQTT access_token only failed as well; refresh_token is expired or invalid. Please reauthenticate. Error: %s", ee)
-                    # If refreshing access_token only attempt fails as well, raise an exception
-                    raise
-            except Exception as e:
-                _LOGGER.error("Unexpected error during MQTT token refresh: %s", e)
-                raise
-        _LOGGER.debug("---------- END refresh_mqtt_token")
+    async def scheduled_mqtt_token_refresh(self, now=None, force=False):
+        _LOGGER.debug("---------- START scheduled_mqtt_token_refresh")
+        def get_next_run():
+            mqtt_config = self.get_config("mqtt")
+            expires_in = mqtt_config["expires_in"]
+            return datetime.fromisoformat(expires_in)
+        if self._mqtt_token_scheduled is not None or force:
+            self._mqtt_token_scheduled()
+            self._mqtt_token_scheduled = None
+            await self.refresh_mqtt_token_request()
+        elif get_datetime() > get_next_run():
+            await self.refresh_mqtt_token_request()
+        next_run = get_next_run()
+        _LOGGER.debug(f"Current time: {get_datetime()}")
+        _LOGGER.debug(f"Next refresh: {next_run}")
+        self._mqtt_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_mqtt_token_refresh, next_run)
+        _LOGGER.debug("---------- END scheduled_mqtt_token_refresh")
 
-    async def _fetch_new_mqtt_token(self, mqtt_config, access_token_only=False):
-        """Fetch a new MQTT token using either the refresh token or an OTP code."""
-        # Prepare the request URL and headers for fetching a new MQTT token
+    async def refresh_mqtt_token_request(self, access_token_only=False):
+        _LOGGER.debug("---------- START refresh_mqtt_token_request")
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_headers_params(GET_OTP_HEADERS)
-        # Check if the refresh token is about to expire and use OTP if necessary
-        refresh_token_almost_expired = "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < (get_datetime() + timedelta(seconds=self._refresh_interval))
+        mqtt_config = self.get_config("mqtt")
+        refresh_token_almost_expired = "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < get_datetime()
         if refresh_token_almost_expired and not access_token_only:
-            _LOGGER.debug("------------- mqtt refresh_token is almost expired, use OTP code to get a new one")
-            # It seems there is a rate limit of 6 requests per 24h
-            # Request new tokens (access_token and refresh_token) using the OTP code
             otp_code = await self.get_otp_code()
-            _LOGGER.debug(url)
-            _LOGGER.debug(headers)
-            return await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+            try:
+                token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+            except ConfigEntryAuthFailed:
+                _LOGGER.warning("Attempt to refresh MQTT access_token/refresh_token failed. This is NOT an error as long as the following attempt to refresh only the access_token (using current refresh_token) succeeds.")
+                return await self.refresh_mqtt_token_request(True)
         else:
-            # Request a new access token using the refresh token
-            _LOGGER.debug(url)
-            _LOGGER.debug(headers)
-            return await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
-
-    async def _update_mqtt_config(self, mqtt_config, token_request):
-        """Update the MQTT configuration with the new token details."""
-        if "access_token" in token_request:
-            _LOGGER.debug("------------- refreshing mqtt access_token:")
-            _LOGGER.debug(f"-------------- old access_token: {mqtt_config['access_token']}")
-            _LOGGER.debug(f"-------------- new access_token: {token_request['access_token']}")
-            # Update the access token and its expiration time
-            mqtt_config["access_token"] = token_request["access_token"]
-            mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
-            # Update the refresh token if provided in the response
-            if "refresh_token" in token_request:
-                _LOGGER.debug("------------- refreshing mqtt refresh_token:")
-                _LOGGER.debug(f"-------------- old refresh_token: {mqtt_config['refresh_token']}")
-                _LOGGER.debug(f"-------------- new refresh_token: {token_request['refresh_token']}")
-                mqtt_config["refresh_token"] = token_request["refresh_token"]
-                mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
-            # Save the updated MQTT configuration
-            self.save_config({"mqtt": mqtt_config})
-            self.update_stored_config("mqtt", mqtt_config)
-            # Update the MQTT client with the new access token
-            if self._mqtt is not None:
-                self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", mqtt_config["access_token"])
-        else:
-            # Log an error if the token refresh failed
+            token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
+        _LOGGER.debug(url)
+        _LOGGER.debug(headers)
+        _LOGGER.debug(token_request)
+        if not "access_token" in token_request:
             _LOGGER.warning("Refreshing mqtt access_token failed (no access_token in response)")
-            _LOGGER.debug(token_request)
+            _LOGGER.debug("---------- END refresh_mqtt_token_request")
+            return
+        new_config = {
+            "access_token": token_request["access_token"],
+            "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+        }
+        if "refresh_token" in token_request:
+            new_config["refresh_token"] = token_request["refresh_token"]
+            mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
+        self.save_config({"mqtt": new_config})
+        self.update_stored_config("mqtt", new_config)
+        _LOGGER.debug("---------- END refresh_mqtt_token_request")
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
@@ -640,38 +613,35 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.on_subscribe = self._on_mqtt_subscribe
         if self._mqtt.is_connected():
             self._mqtt.disconnect()
-        await self.refresh_mqtt_token()
         self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
         try:
             self._mqtt.connect(MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S)
             self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
         except Exception as e:
-            _LOGGER.warning(f"connect_mqtt: {str(e)}")
+            _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END connect_mqtt")
         return self._mqtt.is_connected()
 
     def _on_mqtt_connect(self, client, userdata, result_code, _):
         _LOGGER.debug("---------- START _on_mqtt_connect")
-        _LOGGER.debug("Code %s", result_code)
+        _LOGGER.debug(f"Code: {result_code}")
         try:
             topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
             for vehicle in self._vehicles:
                 topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
             for topic in topics:
                 client.subscribe(topic, qos=MQTT_QOS)
-                _LOGGER.debug("Topic %s", topic)
+                _LOGGER.debug(f"Topic: {topic}")
         except Exception as e:
-            _LOGGER.warning("Unexpected error in _on_mqtt_connect: %s", e)
+            _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END _on_mqtt_connect")
 
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
-        _LOGGER.debug(f"mqtt disconnected with result code {result_code} -> {mqtt.error_string(result_code)}")
+        _LOGGER.debug(f"Code: {result_code} -> {mqtt.error_string(result_code)}")
         try:
             if result_code == 11: # MQTT_ERR_AUTH
-                self.do_async(self.refresh_mqtt_token(force=True))
-            else:
-                self.do_async(self.refresh_mqtt_token(force=False))
+                self.do_async(self.scheduled_mqtt_token_refresh(force=True))
         except:
             pass  # refresh_mqtt_token already logs the exception, and raising would halt the Paho reconnect loop
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
@@ -680,15 +650,15 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- START _on_mqtt_subscribe")
         for i, qos in enumerate(granted_qos):
             if qos == 0x80:
-                _LOGGER.debug("Subscription failed")
+                _LOGGER.debug("Failed")
             else:
-                _LOGGER.debug("Subscription completed (QoS: %s)", qos)
+                _LOGGER.debug(f"Completed (QoS: {qos})")
         _LOGGER.debug("---------- END _on_mqtt_subscribe")
 
     def _on_mqtt_message(self, client, userdata, msg):
         _LOGGER.debug("---------- START _on_mqtt_message")
         try:
-            _LOGGER.debug("MQTT msg received: %s %s %s", msg.topic, msg.payload, msg.qos)
+            _LOGGER.debug("Message: %s %s %s", msg.topic, msg.payload, msg.qos)
             data = json.loads(msg.payload)
             charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
@@ -703,7 +673,7 @@ class StellantisVehicles(StellantisOauth):
                     if result_code != "901": # Not store "Vehicle as sleep" event
                         self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                         if result_code == "0":
-                            _LOGGER.debug("Fetch updates from server. Result code: %s", data["return_code"])
+                            _LOGGER.debug("Fetch updates after code: %s", data["return_code"])
                             self.do_async(coordinator.async_refresh(), 10)
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
@@ -727,14 +697,14 @@ class StellantisVehicles(StellantisOauth):
         except KeyError:
             _LOGGER.warning("MQTT message error")
         except Exception as e:
-            _LOGGER.warning("Unexpected error in _on_mqtt_message: %s", e)
+            _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END _on_mqtt_message")
 
     async def send_mqtt_message(self, service, message, vehicle, store=True):
         _LOGGER.debug("---------- START send_mqtt_message")
         # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
         try:
-            await self.refresh_mqtt_token(force=(store == False))
+            await self.scheduled_mqtt_token_refresh(force=(store == False))
             customer_id = self.get_config("customer_id")
             topic = MQTT_REQ_TOPIC + customer_id + service
             date = datetime.utcnow()

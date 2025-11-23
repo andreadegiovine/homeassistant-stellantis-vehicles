@@ -24,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     stellantis = StellantisVehicles(hass)
     stellantis.save_config(config.data)
     stellantis.set_entry(config)
-    await stellantis.scheduled_oauth_token_refresh()
+    await stellantis.scheduled_tokens_refresh()
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config.entry_id] = stellantis
