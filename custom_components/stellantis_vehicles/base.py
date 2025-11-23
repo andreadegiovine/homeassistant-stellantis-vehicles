@@ -264,7 +264,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
         if "number_refresh_interval" in self._sensors and self._sensors.get("number_refresh_interval") > 0 and self._sensors.get("number_refresh_interval") != self._update_interval_seconds:
             self.update_interval = timedelta(seconds=self._sensors.get("number_refresh_interval"))
-            self._stellantis.update_refresh_interval(self._sensors.get("number_refresh_interval"))
+            await self._stellantis.update_refresh_interval(self._sensors.get("number_refresh_interval"))
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """

@@ -9,7 +9,7 @@ import paho.mqtt.client as mqtt
 import json
 from uuid import uuid4
 import asyncio
-from datetime import ( datetime, timedelta, UTC )
+from datetime import ( datetime, timedelta )
 import ssl
 import socket
 import random
@@ -19,7 +19,6 @@ from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
 from homeassistant.helpers.event import async_track_point_in_time
-from homeassistant.util import dt
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
@@ -368,7 +367,6 @@ class StellantisVehicles(StellantisOauth):
 
     def set_entry(self, entry):
         self._entry = entry
-        self.scheduled_oauth_token_refresh()
 
     def update_stored_config(self, config, value):
         data = self._entry.data
@@ -430,12 +428,12 @@ class StellantisVehicles(StellantisOauth):
         await self._hass.async_add_executor_job(im.save, image_path)
         return image_url
 
-    def update_refresh_interval(self, value):
+    async def update_refresh_interval(self, value):
         self._refresh_interval = value
         self._oauth_token_scheduled = None
-        self.scheduled_oauth_token_refresh()
+        await self.scheduled_oauth_token_refresh()
 
-    def scheduled_oauth_token_refresh(self, now=None):
+    async def scheduled_oauth_token_refresh(self, now=None):
         _LOGGER.debug("---------- START scheduled_oauth_token_refresh")
         def get_next_run():
             expires_in = self.get_config("expires_in")
@@ -443,9 +441,9 @@ class StellantisVehicles(StellantisOauth):
         if self._oauth_token_scheduled is not None:
             self._oauth_token_scheduled()
             self._oauth_token_scheduled = None
-            self.do_async(self.refresh_token_request())
+            await self.refresh_token_request()
         elif get_datetime() > get_next_run():
-            self.do_async(self.refresh_token_request())
+            await self.refresh_token_request()
         next_run = get_next_run()
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
