@@ -124,13 +124,11 @@ jobs:
           echo "Reading supporter files..."
           declare -A supporters_map
 
-          # Trova tutti i file *.txt nella cartella buymeacoffee
           for file in "$supporters_dir"/*.txt; do
-            beers=$(basename "$file" .txt)  # esempio: '3' da 3.txt
+            beers=$(basename "$file" .txt)
             supporters_map[$beers]="$file"
           done
 
-          # Ordina per numero di birre discendente
           sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | sort -nr)
 
           tmp_section="new_support_section.txt"
@@ -138,37 +136,40 @@ jobs:
           echo "**The latest heroes who believe in this project. Want to join the Club?** 👇" >> "$tmp_section"
           echo "" >> "$tmp_section"
 
-          # Genera lista supporter
+          index=0
+
           for beer in $sorted_beers; do
             file=${supporters_map[$beer]}
-
-            echo "" >> "$tmp_section"
-
-            # Emoji in base al numero
-            if [ "$beer" -ge 5 ]; then
-              title="🏆 ${beer} beers"
-            elif [ "$beer" -ge 3 ]; then
-              title="🥈 ${beer} beers"
-            else
-              title="🥉 ${beer} beers"
-            fi
-
-            echo "$title" >> "$tmp_section"
-
-            # Leggi i supporter
             mapfile -t lines < "$file"
 
-            # Primi 3 supporter
-            for s in "${lines[@]:0:3}"; do
-              echo "$s" >> "$tmp_section"
+            # Emojis
+            if [ $index -eq 0 ]; then
+              emoji="🏆"
+            elif [ $index -eq 1 ]; then
+              emoji="🥈"
+            elif [ $index -eq 2 ]; then
+              emoji="🥉"
+            else
+              emoji="⭐"   # Emoji per tutte le altre sezioni
+            fi
+
+            echo "### ${emoji} ${beer} beers" >> "$tmp_section"
+
+            # Supporter (ognuno termina con <br>)
+            count=${#lines[@]}
+            limit=$(( count < 3 ? count : 3 ))
+
+            for ((i=0; i<limit; i++)); do
+              echo "${lines[$i]}<br>" >> "$tmp_section"
             done
 
-            # Se più di 3 supporter, aggiungi nota
-            if [ "${#lines[@]}" -gt 3 ]; then
+            # Se più di 3 supporter → nota finale
+            if [ "$count" -gt 3 ]; then
               echo "<sub>*and other heroes*</sub>" >> "$tmp_section"
             fi
 
             echo "" >> "$tmp_section"
+            index=$((index+1))
           done
 
           # Aggiungi link finali
