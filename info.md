@@ -190,7 +190,6 @@ wech71<br>
 Juraj<br>
 
 ### 🥈 3 beers
-Test<br>
 Pekka<br>
 Gerhard<br>
 Simon Hunt<br>
