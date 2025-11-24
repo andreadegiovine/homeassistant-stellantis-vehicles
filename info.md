@@ -182,14 +182,28 @@ Thanks to everyone for the issues, especially to:
 - [@Jordan87](https://github.com/Jordan87);
 
 ## Support the project
-**The latest heroes who believe in this project. Want to join the Club?** 👇
+**The latest heroes who believe in my projects. Want to join the Club?** 👇
 
-| 🏆 5 beers           | 🥈 3 beers                    | 🥉 1 beer                     |
-|----------------------|-------------------------------|-------------------------------|
-| Philipp B. / tamcore | Pekka                         | @bgoncal2                     |
-| wech71               | Gerhard                       | Max                           |
-| Juraj                | Simon Hunt                    | Dave                          |
-|                      | <sub>*and other heroes*</sub> | <sub>*and other heroes*</sub> |
+### 🏆 5 beers
+Me
+Philipp B. / tamcore  
+wech71  
+Juraj  
+
+### 🥈 3 beers
+Pekka  
+Gerhard  
+Simon Hunt  
+<sub>*and other heroes*</sub>
+
+### 🥉 2 beers
+Grosi001  
+
+### ⭐ 1 beers
+@bgoncal2  
+Max  
+Dave  
+<sub>*and other heroes*</sub>
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
 
