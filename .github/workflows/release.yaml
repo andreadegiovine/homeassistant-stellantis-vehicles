@@ -174,7 +174,7 @@ jobs:
           echo "Updating README.md..."
 
           # Estrai tutto fino a "## Support the project"
-          sed -n '1,/^## Support the project/p' README.md > README_tmp.md
+          sed -n '1,/^## Support the project/p' README.md > README.tmp
           
           # Aggiungi la nuova sezione di supporto
           cat "$tmp_section" >> README.tmp
@@ -182,6 +182,7 @@ jobs:
           mv -f README.tmp README.md
           
           rm -rf supporters_repo
+          rm "$tmp_section"
 
       - name: Copy README.md to info.md
         run: cp -f README.md info.md
