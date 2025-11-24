@@ -178,7 +178,9 @@ jobs:
           [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
           EOF
 
-          echo '$tmp_section'
+          echo "===== GENERATED SUPPORT SECTION ====="
+          cat "$tmp_section"
+          echo "====================================="
 
       - name: Commit info.md & manifest.json
         run: |
