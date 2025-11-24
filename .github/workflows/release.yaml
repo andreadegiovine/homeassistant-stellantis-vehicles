@@ -173,18 +173,11 @@ jobs:
           
           echo "Updating README.md..."
 
-          replacement="$(sed 's/\\/\\\\/g' < "$tmp_section")"
-
-          awk -v replacement="$replacement" '
-            BEGIN { printed=0 }
-            /^## Support the project/ {
-              print $0
-              print replacement
-              printed=1
-              next
-            }
-            !printed { print }
-          ' README.md > README.tmp
+          # Estrai tutto fino a "## Support the project"
+          sed -n '1,/^## Support the project/p' README.md > README_tmp.md
+          
+          # Aggiungi la nuova sezione di supporto
+          cat "$tmp_section" >> README.tmp
 
           mv -f README.tmp README.md
           
