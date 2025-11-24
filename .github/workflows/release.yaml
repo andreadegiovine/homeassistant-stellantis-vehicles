@@ -179,24 +179,15 @@ jobs:
           replacement="$(sed 's/\\/\\\\/g' < "$tmp_section")"
 
           awk -v replacement="$replacement" '
+            BEGIN { printed=0 }
             /^## Support the project/ {
-              print $0  # stampa il titolo
-              skip=1
-              printed=0
-              next
-            }
-          
-            /^## / && skip {
-              skip=0
-            }
-          
-            skip && !printed {
               print replacement
               printed=1
               next
             }
-          
-            !skip
+            !printed {
+              print
+            }
           ' README.md > README.tmp
 
           mv -f README.tmp README.md
