@@ -182,6 +182,7 @@ Thanks to everyone for the issues, especially to:
 - [@Jordan87](https://github.com/Jordan87);
 
 ## Support the project
+## Support the project
 **The latest heroes who believe in this project. Want to join the Club?** 👇
 
 ### 🏆 5 beers
@@ -190,7 +191,6 @@ wech71<br>
 Juraj<br>
 
 ### 🥈 3 beers
-Test<br>
 Pekka<br>
 Gerhard<br>
 Simon Hunt<br>
@@ -203,6 +203,82 @@ Grosi001<br>
 @bgoncal2<br>
 Max<br>
 Dave<br>
+<sub>*and other heroes*</sub>
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
+**The latest heroes who believe in my projects. Want to join the Club?** 👇
+
+### 🏆 5 beers
+Philipp B. / tamcore  
+wech71  
+Juraj  
+
+### 🥈 3 beers
+Pekka  
+Gerhard  
+Simon Hunt  
+<sub>*and other heroes*</sub>
+
+### 🥉 2 beers
+Grosi001  
+
+### ⭐ 1 beers
+@bgoncal2  
+Max  
+Dave  
+<sub>*and other heroes*</sub>
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
+## Support the project
+**The latest heroes who believe in my projects. Want to join the Club?** 👇
+
+### 🏆 5 beers
+Philipp B. / tamcore  
+wech71  
+Juraj  
+
+### 🥈 3 beers
+Pekka  
+Gerhard  
+Simon Hunt  
+<sub>*and other heroes*</sub>
+
+### 🥉 2 beers
+Grosi001  
+
+### ⭐ 1 beers
+@bgoncal2  
+Max  
+Dave  
+<sub>*and other heroes*</sub>
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
+**The latest heroes who believe in my projects. Want to join the Club?** 👇
+
+### 🏆 5 beers
+Philipp B. / tamcore  
+wech71  
+Juraj  
+
+### 🥈 3 beers
+Pekka  
+Gerhard  
+Simon Hunt  
+<sub>*and other heroes*</sub>
+
+### 🥉 2 beers
+Grosi001  
+
+### ⭐ 1 beers
+@bgoncal2  
+Max  
+Dave  
 <sub>*and other heroes*</sub>
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
