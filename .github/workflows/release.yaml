@@ -112,6 +112,74 @@ jobs:
       - name: Copy README.md to info.md
         run: cp -f README.md info.md
 
+      - name: Update Support section in README.md
+        run: |
+          set -e
+
+          echo "Cloning supporters repo..."
+          git clone https://github.com/andreadegiovine/supporters.git supporters_repo
+
+          supporters_dir="supporters_repo/buymeacoffee"
+
+          echo "Reading supporter files..."
+          declare -A supporters_map
+
+          # Trova tutti i file *.txt nella cartella buymeacoffee
+          for file in "$supporters_dir"/*.txt; do
+            beers=$(basename "$file" .txt)  # esempio: '3' da 3.txt
+            supporters_map[$beers]="$file"
+          done
+
+          # Ordina per numero di birre discendente
+          sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | sort -nr)
+
+          tmp_section="new_support_section.txt"
+          echo "## Support the project" > "$tmp_section"
+          echo "**The latest heroes who believe in this project. Want to join the Club?** 👇" >> "$tmp_section"
+          echo "" >> "$tmp_section"
+
+          # Genera lista supporter
+          for beer in $sorted_beers; do
+            file=${supporters_map[$beer]}
+
+            echo "" >> "$tmp_section"
+
+            # Emoji in base al numero
+            if [ "$beer" -ge 5 ]; then
+              title="🏆 ${beer} beers"
+            elif [ "$beer" -ge 3 ]; then
+              title="🥈 ${beer} beers"
+            else
+              title="🥉 ${beer} beers"
+            fi
+
+            echo "$title" >> "$tmp_section"
+
+            # Leggi i supporter
+            mapfile -t lines < "$file"
+
+            # Primi 3 supporter
+            for s in "${lines[@]:0:3}"; do
+              echo "$s" >> "$tmp_section"
+            done
+
+            # Se più di 3 supporter, aggiungi nota
+            if [ "${#lines[@]}" -gt 3 ]; then
+              echo "<sub>*and other heroes*</sub>" >> "$tmp_section"
+            fi
+
+            echo "" >> "$tmp_section"
+          done
+
+          # Aggiungi link finali
+          cat << 'EOF' >> "$tmp_section"
+          [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
+          
+          [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
+          EOF
+
+          echo '$tmp_section'
+
       - name: Commit info.md & manifest.json
         run: |
           git config --local user.email "action@github.com"
