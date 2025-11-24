@@ -186,9 +186,9 @@ Thanks to everyone for the issues, especially to:
 
 | 🏆 5 beers           | 🥈 3 beers                    | 🥉 1 beer                     |
 |----------------------|-------------------------------|-------------------------------|
-| Philipp B. / tamcore | Gerhard                       | Max                           |
-| wech71               | Simon Hunt                    | Dave                          |
-| Juraj                | HJ                            | Hans                          |
+| Philipp B. / tamcore | Pekka                         | @bgoncal2                     |
+| wech71               | Gerhard                       | Max                           |
+| Juraj                | Simon Hunt                    | Dave                          |
 |                      | <sub>*and other heroes*</sub> | <sub>*and other heroes*</sub> |
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)

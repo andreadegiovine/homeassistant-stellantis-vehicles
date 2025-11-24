@@ -110,7 +110,7 @@ jobs:
           value: ${{ steps.tag-name.outputs.new_tag_name }}
 
       - name: Copy README.md to info.md
-        run: cp -f README.md custom_components/${{ steps.tag-name.outputs.integration_slug }}/info.md
+        run: cp -f README.md info.md
 
       - name: Commit info.md & manifest.json
         run: |
