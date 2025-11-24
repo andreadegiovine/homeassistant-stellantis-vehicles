@@ -36,7 +36,7 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
     def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._value_map = ["energies", {"type":"Electric"}, "extension", "electric", "charging", "nextDelayedTime"]
-        self._updated_at_map = ["energies", {"type":"Electric"}, "createdAt"]
+        self._updated_at_map = ["energy", {"type":"Electric"}, "updatedAt"]
 
     @property
     def available(self):
