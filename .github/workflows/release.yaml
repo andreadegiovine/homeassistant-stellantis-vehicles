@@ -132,8 +132,7 @@ jobs:
           sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | sort -nr)
 
           tmp_section="new_support_section.txt"
-          echo "## Support the project" > "$tmp_section"
-          echo "**The latest heroes who believe in this project. Want to join the Club?** 👇" >> "$tmp_section"
+          echo "**The latest heroes who believe in my projects. Want to join the Club?** 👇" >> "$tmp_section"
           echo "" >> "$tmp_section"
 
           index=0
@@ -141,8 +140,7 @@ jobs:
           for beer in $sorted_beers; do
             file=${supporters_map[$beer]}
             mapfile -t lines < "$file"
-
-            # Emojis
+          
             if [ $index -eq 0 ]; then
               emoji="🏆"
             elif [ $index -eq 1 ]; then
@@ -150,20 +148,18 @@ jobs:
             elif [ $index -eq 2 ]; then
               emoji="🥉"
             else
-              emoji="⭐"   # Emoji per tutte le altre sezioni
+              emoji="⭐"
             fi
 
             echo "### ${emoji} ${beer} beers" >> "$tmp_section"
-
-            # Supporter (ognuno termina con <br>)
+          
             count=${#lines[@]}
             limit=$(( count < 3 ? count : 3 ))
 
             for ((i=0; i<limit; i++)); do
-              echo "${lines[$i]}<br>" >> "$tmp_section"
+              echo "${lines[$i]}  " >> "$tmp_section"
             done
-
-            # Se più di 3 supporter → nota finale
+          
             if [ "$count" -gt 3 ]; then
               echo "<sub>*and other heroes*</sub>" >> "$tmp_section"
             fi
@@ -171,17 +167,31 @@ jobs:
             echo "" >> "$tmp_section"
             index=$((index+1))
           done
-
-          # Aggiungi link finali
+          
           cat << 'EOF' >> "$tmp_section"
           [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
           
           [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
           EOF
+          
+          echo "Updating README.md..."
 
-          echo "===== GENERATED SUPPORT SECTION ====="
-          cat "$tmp_section"
-          echo "====================================="
+          replacement="$(sed 's/\\/\\\\/g' < "$tmp_section")"
+
+          awk -v replacement="$replacement" '
+            /## Support the project/ {
+              print $0
+              print replacement
+              skip=1
+              next
+            }
+            /^## / && skip {
+              skip=0
+            }
+            !skip
+          ' README.md > README.tmp
+
+          mv -f README.tmp README.md
 
       - name: Commit info.md & manifest.json
         run: |
