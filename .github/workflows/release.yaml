@@ -132,7 +132,6 @@ jobs:
           sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | sort -nr)
 
           tmp_section="new_support_section.txt"
-          echo "## Support the project" >> "$tmp_section"
           echo "**The latest heroes who believe in my projects. Want to join the Club?** 👇" >> "$tmp_section"
           echo "" >> "$tmp_section"
 
@@ -181,13 +180,22 @@ jobs:
 
           awk -v replacement="$replacement" '
             /^## Support the project/ {
-              print replacement
+              print $0  # stampa il titolo
               skip=1
+              printed=0
               next
             }
+          
             /^## / && skip {
               skip=0
             }
+          
+            skip && !printed {
+              print replacement
+              printed=1
+              next
+            }
+          
             !skip
           ' README.md > README.tmp
 
