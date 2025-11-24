@@ -23,6 +23,9 @@ jobs:
       - name: Get tag name
         id: tag-name
         run: |
+          # Integration slug
+          integration_slug="stellantis_vehicles"
+          
           # Fetch all tags
           git fetch --tags
           
@@ -91,6 +94,7 @@ jobs:
           fi
           
           echo "New tag: $new_tag_name"
+          echo "integration_slug=$integration_slug" >> $GITHUB_OUTPUT
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
           echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
           echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
@@ -101,16 +105,19 @@ jobs:
       - name: Update manifest.json
         uses: jossef/action-set-json-field@v2.1
         with:
-          file: custom_components/stellantis_vehicles/manifest.json
+          file: custom_components/${{ steps.tag-name.outputs.integration_slug }}/manifest.json
           field: version
           value: ${{ steps.tag-name.outputs.new_tag_name }}
 
-      - name: Commit manifest.json
+      - name: Copy README.md to info.md
+        run: cp -f README.md custom_components/${{ steps.tag-name.outputs.integration_slug }}/info.md
+
+      - name: Commit info.md & manifest.json
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -A
-          git commit -m "Update manifest.json version to ${{ steps.tag-name.outputs.new_tag_name }}"
+          git commit -m "Update info.md & manifest.json - ${{ steps.tag-name.outputs.new_tag_name }}"
           git tag ${{ steps.tag-name.outputs.new_tag_name }}
 
       - name: Push manifest.json
@@ -202,11 +209,11 @@ jobs:
           git fetch
           git checkout ${{ steps.tag-name.outputs.branch_develop }}
           git pull
-          cd "${{ github.workspace }}/custom_components/stellantis_vehicles"
-          zip "${{ github.workspace }}/stellantis_vehicles.zip" -r ./
+          cd "${{ github.workspace }}/custom_components/${{ steps.tag-name.outputs.integration_slug }}"
+          zip "${{ github.workspace }}/${{ steps.tag-name.outputs.integration_slug }}.zip" -r ./
 
       - name: "Add zip to release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ steps.tag-name.outputs.new_tag_name }} "${{ github.workspace }}/stellantis_vehicles.zip"
+          gh release upload ${{ steps.tag-name.outputs.new_tag_name }} "${{ github.workspace }}/${{ steps.tag-name.outputs.integration_slug }}.zip"
