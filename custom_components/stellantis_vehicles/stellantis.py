@@ -678,12 +678,13 @@ class StellantisVehicles(StellantisOauth):
                         self.do_async(coordinator.update_command_history(data["correlation_id"], "not_compatible"))
                     else:
                         if self._mqtt_last_request:
-                            _LOGGER.debug("last request is send again, token was expired")
+                            _LOGGER.debug("The mqtt token seems invalid, refresh the token and try sending the request again")
                             last_request = self._mqtt_last_request
                             self._mqtt_last_request = None
-                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, store=False))
+                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, False, data["correlation_id"]))
                         else:
-                            _LOGGER.warning("Last request might have been send twice without success")
+                            _LOGGER.warning("Last request was sent twice without success")
+                            self.do_async(coordinator.update_command_history(data["correlation_id"], "failed"))
                 elif data["return_code"] != "0":
                     _LOGGER.warning('%s : %s', data["return_code"], data.get("reason", "?"))
             elif msg.topic.startswith(MQTT_EVENT_TOPIC):
@@ -692,13 +693,11 @@ class StellantisVehicles(StellantisOauth):
 #                 if programs:
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
                 _LOGGER.debug("Update data from mqtt?!?")
-        except KeyError:
-            _LOGGER.warning("MQTT message error")
-        except Exception as e:
+        except (KeyError, Exception) as e:
             _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END _on_mqtt_message")
 
-    async def send_mqtt_message(self, service, message, vehicle, store=True):
+    async def send_mqtt_message(self, service, message, vehicle, store=True, action_id=None):
         _LOGGER.debug("---------- START send_mqtt_message")
         # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
         try:
@@ -706,7 +705,8 @@ class StellantisVehicles(StellantisOauth):
             customer_id = self.get_config("customer_id")
             topic = MQTT_REQ_TOPIC + customer_id + service
             date = datetime.utcnow()
-            action_id = str(uuid4()).replace("-", "") + date.strftime("%Y%m%d%H%M%S%f")[:-3]
+            if action_id is None:
+                action_id = str(uuid4()).replace("-", "") + date.strftime("%Y%m%d%H%M%S%f")[:-3]
             data = json.dumps({
                 "access_token": self.get_config("mqtt")["access_token"],
                 "customer_id": customer_id,

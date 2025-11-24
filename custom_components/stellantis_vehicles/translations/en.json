@@ -101,6 +101,7 @@
         "state": {
           "rate_limit": "Rate limit exceeded (6 per 20 minutes)",
           "not_compatible": "Not compatible",
+          "failed": "Failed",
           "900": "Accepted",
           "901": "Vehicle as sleep",
           "903": "Forwarded",

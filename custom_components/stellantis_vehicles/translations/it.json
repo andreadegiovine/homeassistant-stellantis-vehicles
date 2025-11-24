@@ -101,6 +101,7 @@
         "state": {
           "rate_limit": "Limite raggiunto (6 ogni 20 minuti)",
           "not_compatible": "Non compatibile",
+          "failed": "Fallito",
           "900": "Accettato",
           "901": "Il veicolo dorme",
           "903": "Inoltrato",
