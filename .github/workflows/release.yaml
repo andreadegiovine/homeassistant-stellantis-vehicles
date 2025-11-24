@@ -102,15 +102,12 @@ jobs:
           echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
           echo "branch_develop=$branch_develop" >> $GITHUB_OUTPUT
 
-      - name: Update manifest.json
-        uses: jossef/action-set-json-field@v2.1
-        with:
-          file: custom_components/${{ steps.tag-name.outputs.integration_slug }}/manifest.json
-          field: version
-          value: ${{ steps.tag-name.outputs.new_tag_name }}
-
-      - name: Copy README.md to info.md
-        run: cp -f README.md info.md
+#      - name: Update manifest.json
+#        uses: jossef/action-set-json-field@v2.1
+#        with:
+#          file: custom_components/${{ steps.tag-name.outputs.integration_slug }}/manifest.json
+#          field: version
+#          value: ${{ steps.tag-name.outputs.new_tag_name }}
 
       - name: Update Support section in README.md
         run: |
@@ -181,121 +178,123 @@ jobs:
           awk -v replacement="$replacement" '
             BEGIN { printed=0 }
             /^## Support the project/ {
+              print $0
               print replacement
               printed=1
               next
             }
-            !printed {
-              print
-            }
+            !printed { print }
           ' README.md > README.tmp
 
           mv -f README.tmp README.md
           
           rm -rf supporters_repo
 
-      - name: Commit info.md & manifest.json
+      - name: Copy README.md to info.md
+        run: cp -f README.md info.md
+
+      - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -A
-          git commit -m "Update info.md & manifest.json - ${{ steps.tag-name.outputs.new_tag_name }}"
+          git commit -m "Update changes - ${{ steps.tag-name.outputs.new_tag_name }}"
           git tag ${{ steps.tag-name.outputs.new_tag_name }}
 
-      - name: Push manifest.json
+      - name: Push changes
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tags: true
 
-      - name: Get support section
-        id: support
-        shell: bash
-        run: |
-          awk '
-            /## Support the project/ {capture=1; next}
-            /^## / && capture {capture=0}
-            capture
-          ' README.md > support_section.txt
-      
-          echo "section<<EOF" >> $GITHUB_OUTPUT
-          cat support_section.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Get release notes
-        id: release-notes
-        run: |
-          changes=$(
-            git log --no-merges --pretty=format:"%H %s [%an]" origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} | \
-            grep -v "^.* Revert \"" | \
-            grep -v "^.* Update manifest.json version to" | \
-            grep -v '\.yaml' | \
-            grep -v '\.json' | \
-            grep -v '\.md' | \
-            while read -r line; do
-              hash=$(echo "$line" | cut -d' ' -f1)
-              msg=$(git log -1 --pretty=%s "$hash")
-              escaped_msg=$(echo "$msg" | sed 's/[[\]/\\&/g; s/\./\\./g; s/\*/\\*/g; s/\^/\\^/g; s/\$/\\$/g')
-              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$escaped_msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
-                echo "- $(echo "$line" | cut -d' ' -f2-)"
-              fi
-            done
-          )
-
-          {
-            echo "## What's Changed"
-            if [ -n "$changes" ]; then
-              echo "$changes"
-              echo
-              echo
-            fi
-            if ! ${{ steps.tag-name.outputs.is_prerelease }}; then
-              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}"
-              echo
-              echo
-              echo "## Support the project"
-              echo "${{ steps.support.outputs.section }}"
-            fi
-          } > notes.txt
-
-          {
-            echo "notes<<EOF"
-            cat notes.txt
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
-
-      - name: Update master
-        if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
-        run: |
-          git fetch
-          git checkout ${{ steps.tag-name.outputs.branch_develop }}
-          git pull
-          git checkout ${{ steps.tag-name.outputs.branch_master }}
-          git pull
-          git merge ${{ steps.tag-name.outputs.branch_develop }} --strategy-option theirs
-          git push
-
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          prerelease: ${{ github.event.inputs.pre_release }}
-          name: ${{ steps.tag-name.outputs.new_tag_name }}
-          tag_name: ${{ steps.tag-name.outputs.new_tag_name }}
-          target_commitish: ${{ steps.tag-name.outputs.new_tag_branch }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          generate_release_notes: false
-          body: ${{ steps.release-notes.outputs.notes }}
-
-      - name: "Create zip"
-        run: |
-          git fetch
-          git checkout ${{ steps.tag-name.outputs.branch_develop }}
-          git pull
-          cd "${{ github.workspace }}/custom_components/${{ steps.tag-name.outputs.integration_slug }}"
-          zip "${{ github.workspace }}/${{ steps.tag-name.outputs.integration_slug }}.zip" -r ./
-
-      - name: "Add zip to release"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${{ steps.tag-name.outputs.new_tag_name }} "${{ github.workspace }}/${{ steps.tag-name.outputs.integration_slug }}.zip"
+#      - name: Get support section
+#        id: support
+#        shell: bash
+#        run: |
+#          awk '
+#            /## Support the project/ {capture=1; next}
+#            /^## / && capture {capture=0}
+#            capture
+#          ' README.md > support_section.txt
+#
+#          echo "section<<EOF" >> $GITHUB_OUTPUT
+#          cat support_section.txt >> $GITHUB_OUTPUT
+#          echo "EOF" >> $GITHUB_OUTPUT
+#
+#      - name: Get release notes
+#        id: release-notes
+#        run: |
+#          changes=$(
+#            git log --no-merges --pretty=format:"%H %s [%an]" origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} | \
+#            grep -v "^.* Revert \"" | \
+#            grep -v "^.* Update manifest.json version to" | \
+#            grep -v '\.yaml' | \
+#            grep -v '\.json' | \
+#            grep -v '\.md' | \
+#            while read -r line; do
+#              hash=$(echo "$line" | cut -d' ' -f1)
+#              msg=$(git log -1 --pretty=%s "$hash")
+#              escaped_msg=$(echo "$msg" | sed 's/[[\]/\\&/g; s/\./\\./g; s/\*/\\*/g; s/\^/\\^/g; s/\$/\\$/g')
+#              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$escaped_msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
+#                echo "- $(echo "$line" | cut -d' ' -f2-)"
+#              fi
+#            done
+#          )
+#
+#          {
+#            echo "## What's Changed"
+#            if [ -n "$changes" ]; then
+#              echo "$changes"
+#              echo
+#              echo
+#            fi
+#            if ! ${{ steps.tag-name.outputs.is_prerelease }}; then
+#              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}"
+#              echo
+#              echo
+#              echo "## Support the project"
+#              echo "${{ steps.support.outputs.section }}"
+#            fi
+#          } > notes.txt
+#
+#          {
+#            echo "notes<<EOF"
+#            cat notes.txt
+#            echo "EOF"
+#          } >> $GITHUB_OUTPUT
+#
+#      - name: Update master
+#        if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
+#        run: |
+#          git fetch
+#          git checkout ${{ steps.tag-name.outputs.branch_develop }}
+#          git pull
+#          git checkout ${{ steps.tag-name.outputs.branch_master }}
+#          git pull
+#          git merge ${{ steps.tag-name.outputs.branch_develop }} --strategy-option theirs
+#          git push
+#
+#      - name: Create release
+#        uses: softprops/action-gh-release@v2
+#        with:
+#          prerelease: ${{ github.event.inputs.pre_release }}
+#          name: ${{ steps.tag-name.outputs.new_tag_name }}
+#          tag_name: ${{ steps.tag-name.outputs.new_tag_name }}
+#          target_commitish: ${{ steps.tag-name.outputs.new_tag_branch }}
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          generate_release_notes: false
+#          body: ${{ steps.release-notes.outputs.notes }}
+#
+#      - name: "Create zip"
+#        run: |
+#          git fetch
+#          git checkout ${{ steps.tag-name.outputs.branch_develop }}
+#          git pull
+#          cd "${{ github.workspace }}/custom_components/${{ steps.tag-name.outputs.integration_slug }}"
+#          zip "${{ github.workspace }}/${{ steps.tag-name.outputs.integration_slug }}.zip" -r ./
+#
+#      - name: "Add zip to release"
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          gh release upload ${{ steps.tag-name.outputs.new_tag_name }} "${{ github.workspace }}/${{ steps.tag-name.outputs.integration_slug }}.zip"
