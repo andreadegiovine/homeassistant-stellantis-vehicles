@@ -182,7 +182,7 @@ Thanks to everyone for the issues, especially to:
 - [@Jordan87](https://github.com/Jordan87);
 
 ## Support the project
-**The latest heroes who believe in my projects** 👇
+**The latest heroes who believe in this project** 👇
 
 **🏆 5 beers**  
 Philipp B. / tamcore  
