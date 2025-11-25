@@ -31,7 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     try:
         vehicles = await stellantis.get_user_vehicles()
-    except ConfigEntryAuthFailed as e:
+    except ConfigEntryAuthFailed:
         await stellantis.close_session()
         raise
     except Exception:
@@ -87,19 +87,19 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
             os.remove(otp_file_path)
 
         # Remove storage folder if empty
-        if (os.path.exists(storage_path) and os.path.isdir(storage_path) and not os.listdir(storage_path)):
+        if os.path.exists(storage_path) and os.path.isdir(storage_path) and not os.listdir(storage_path):
             _LOGGER.debug(f"Deleting empty Stellantis storage folder: {storage_path}")
             shutil.rmtree(storage_path)
 
         # Remove Stellantis image folder of this entry
         entry_image_path = os.path.join(hass_config_path, "www", IMAGE_PATH, config.unique_id)
-        if (os.path.exists(entry_image_path) and os.path.isdir(entry_image_path)):
+        if os.path.exists(entry_image_path) and os.path.isdir(entry_image_path):
             _LOGGER.debug(f"Deleting Stellantis entry image folder: {entry_image_path}")
             shutil.rmtree(entry_image_path)
 
         # Remove Stellantis image folder if empty
         image_path = os.path.join(hass_config_path, "www", IMAGE_PATH)
-        if (os.path.exists(image_path) and os.path.isdir(image_path) and not os.listdir(image_path)):
+        if os.path.exists(image_path) and os.path.isdir(image_path) and not os.listdir(image_path):
             _LOGGER.debug(f"Deleting Stellantis image folder: {image_path}")
             shutil.rmtree(image_path)
 

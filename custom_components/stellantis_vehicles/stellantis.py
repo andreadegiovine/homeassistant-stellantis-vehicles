@@ -53,7 +53,6 @@ from .const import (
     MQTT_REQ_TOPIC,
     GET_USER_INFO_URL,
     CAR_API_GET_VEHICLE_TRIPS_URL,
-    UPDATE_INTERVAL,
     IMAGE_PATH,
     MQTT_REFRESH_TOKEN_TTL,
     OTP_FILENAME,
@@ -596,7 +595,7 @@ class StellantisVehicles(StellantisOauth):
         if not "access_token" in token_request:
             _LOGGER.warning("Refreshing mqtt access_token failed (no access_token in response)")
             _LOGGER.debug("---------- END refresh_mqtt_token_request")
-            return
+            return None
         mqtt_config["access_token"] = token_request["access_token"]
         mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
         if "refresh_token" in token_request:
@@ -665,7 +664,6 @@ class StellantisVehicles(StellantisOauth):
         try:
             _LOGGER.debug("Message: %s %s %s", msg.topic, msg.payload, msg.qos)
             data = json.loads(msg.payload)
-            charge_info = None
             if msg.topic.startswith(MQTT_RESP_TOPIC):
                 coordinator = self.do_async(self.async_get_coordinator_by_vin(data["vin"]))
                 if "return_code" not in data or data["return_code"] in ["0", "300", "500", "502", "422"]:
@@ -711,7 +709,7 @@ class StellantisVehicles(StellantisOauth):
             await self.scheduled_mqtt_token_refresh(force=(store == False))
             customer_id = self.get_config("customer_id")
             topic = MQTT_REQ_TOPIC + customer_id + service
-            date = datetime.utcnow()
+            date = get_datetime()
             if action_id is None:
                 action_id = str(uuid4()).replace("-", "") + date.strftime("%Y%m%d%H%M%S%f")[:-3]
             data = json.dumps({

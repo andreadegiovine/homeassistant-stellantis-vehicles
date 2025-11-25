@@ -18,7 +18,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, datetime_from_isoformat, time_from_string, rate_limit )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit )
 
 from .const import (
     DOMAIN,
@@ -46,6 +46,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._disabled_commands = []
         self._last_trip = None
 #        self._total_trip = None
+        self._manage_charge_limit_sent = False
 
     async def _async_update_data(self):
         """ Update vehicle data from Stellantis. """
@@ -237,9 +238,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def after_async_update_data(self):
         """ Apply changes and do actions after vehicle data update. """
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
-            if not hasattr(self, "_manage_charge_limit_sent"):
-                self._manage_charge_limit_sent = False
-
             if "battery_charging" in self._sensors:
                 if self._sensors.get("battery_charging") == "InProgress" and not self._manage_charge_limit_sent:
                     charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
@@ -323,7 +321,7 @@ class StellantisBaseEntity(CoordinatorEntity):
     def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator)
 
-        self._coordinator = coordinator
+        self._coordinator: StellantisVehicleCoordinator = coordinator
         self._hass = self._coordinator._hass
         self._config = self._coordinator._config
         self._vehicle = self._coordinator._vehicle
@@ -425,10 +423,10 @@ class StellantisBaseEntity(CoordinatorEntity):
             if (not value or float(value) == 0) and self._coordinator._sensors.get('mileage') and float(self._coordinator._sensors.get('mileage')) > 0:
                 value = self._coordinator._sensors.get('mileage')
 
-        if value != None or key not in self._coordinator._sensors:
+        if value is not None or key not in self._coordinator._sensors:
             self._coordinator._sensors[key] = value
 
-        if value == None:
+        if value is None:
             return None
 
         if key == "fuel_consumption_total":
@@ -659,7 +657,7 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
         if self.value_was_updated():
             self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
             value = self.get_value(self._value_map)
-            if value == None:
+            if value is None:
                 return
             elif isinstance(value, list):
                 self._attr_is_on = self._on_value in value

@@ -10,7 +10,6 @@ from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 
 from .const import (
     DOMAIN,
-    FIELD_COUNTRY_CODE,
     SENSORS_DEFAULT,
     VEHICLE_TYPE_ELECTRIC,
     MS_TO_KMH_CONVERSION,
@@ -132,8 +131,6 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
             for consuption in last_trip["energyConsumptions"]:
                 if "type" not in consuption:
                     continue
-                consumption_unit_of_measurement = ""
-                avg_consumption_unit_of_measurement = ""
                 if consuption["type"] == VEHICLE_TYPE_ELECTRIC:
                     consumption_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
                     avg_consumption_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR+"/100"+UnitOfLength.KILOMETERS

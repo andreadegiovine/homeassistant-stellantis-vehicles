@@ -144,7 +144,7 @@ class StellantisPreconditioningButton(StellantisBaseActionButton):
         if self._coordinator.vehicle_type not in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
 
-        doors_locked = self._coordinator._sensors.get("doors") == None or "Locked" in self._coordinator._sensors.get("doors")
+        doors_locked = self._coordinator._sensors.get("doors") is None or "Locked" in self._coordinator._sensors.get("doors")
 
         min_charge = 20
         # Waiting the min value from https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/226

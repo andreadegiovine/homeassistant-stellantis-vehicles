@@ -6,8 +6,7 @@ from .base import ( StellantisBaseBinarySensor, StellantisBaseEntity )
 
 from .const import (
     DOMAIN,
-    BINARY_SENSORS_DEFAULT,
-    FIELD_REMOTE_COMMANDS
+    BINARY_SENSORS_DEFAULT
 )
 
 _LOGGER = logging.getLogger(__name__)
