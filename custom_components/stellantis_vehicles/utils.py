@@ -1,15 +1,17 @@
 import logging
 import asyncio
-from datetime import UTC, datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from asyncio import Semaphore
 from functools import wraps
 
 from homeassistant.util import dt
 
+from .exceptions import RateLimitException
+
 _LOGGER = logging.getLogger(__name__)
 
 def get_datetime(date = None):
-    if date == None:
+    if date is None:
         date = datetime.now()
     if date.tzinfo != UTC:
         date = date.astimezone(UTC)
@@ -58,9 +60,6 @@ def date_from_pt_string(pt_string, start_date = None):
 #     for mask in masks:
 #         result = result.replace(mask, masks[mask])
 #     return result
-
-class RateLimitException(Exception):
-    pass
 
 def rate_limit(limit: int, every: int):
     def limit_decorator(func):

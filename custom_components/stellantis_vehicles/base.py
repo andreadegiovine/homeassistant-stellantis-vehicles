@@ -54,11 +54,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             # Vehicle status
             self._data = await self._stellantis.get_vehicle_status(self._vehicle)
-        except ConfigEntryAuthFailed as e:
-            _LOGGER.error("Authentication failed while updating data for vehicle '%s': %s", self._vehicle['vin'], str(e))
+        except ConfigEntryAuthFailed:
+            _LOGGER.debug("---------- END _async_update_data")
             raise
-        except Exception as e:
-            _LOGGER.warning(str(e))
+        except Exception:
+            pass
         await self.after_async_update_data()
         _LOGGER.debug("---------- END _async_update_data")
 
@@ -267,10 +267,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """
-        trips = await self._stellantis.get_vehicle_last_trip(self._vehicle)
-        if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
-            if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
-                self._last_trip = trips["_embedded"]["trips"][-1]
+        try:
+            trips = await self._stellantis.get_vehicle_last_trip(self._vehicle)
+            if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
+                if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
+                    self._last_trip = trips["_embedded"]["trips"][-1]
+        except Exception:
+            pass
 
 #     def parse_trips_page_data(self, data):
 #         result = []

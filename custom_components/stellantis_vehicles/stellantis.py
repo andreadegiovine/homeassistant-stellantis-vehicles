@@ -23,6 +23,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from .utils import ( get_datetime, rate_limit )
+from .exceptions import InternalServerError
 
 from .const import (
     DOMAIN,
@@ -205,27 +206,25 @@ class StellantisBase:
                     elif "message" in result and "code" in result:
                         error = result["message"] + " - " + str(result["code"])
 
-                if str(resp.status).startswith("50") or (str(resp.status) == "404" and str(result["code"]) == "40400"):
-                    _LOGGER.warning(error) # "Not Found: We didn't find the status for this vehicle. - 40400"
-                    result = {} # Clear result on error to avoid returning error details in the result
-                    _LOGGER.debug("---------- END make_http_request")
-                    return result
+                if str(resp.status) == "404" and str(result["code"]) == "40400":
+                    # Not Found: We didn't find the status for this vehicle. - 40400
+                    _LOGGER.warning(error)
+                    result = {}
+                elif str(resp.status).startswith("50"):
+                    # Internal error
+                    raise InternalServerError(error)
                 elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
-                    await self.close_session()
                     # Token expiration
                     raise ConfigEntryAuthFailed(error)
                 if error is not None:
-                    await self.close_session()
                     # Generic error
                     raise Exception(error)
                 _LOGGER.debug("---------- END make_http_request")
                 return result
-        except ConfigEntryAuthFailed as e:
-            # Logged only as a warning, the exception could be handled by the calling function
-            _LOGGER.warning("Authentication failed during HTTP request: %s", e)
-            raise
         except Exception as e:
-            _LOGGER.error("Unexpected error during HTTP request: %s", e)
+            await self.close_session()
+            _LOGGER.warning(f"Error: {e}")
+            _LOGGER.debug("---------- END make_http_request")
             raise
 
     def do_async(self, async_func, delay=0):
@@ -315,11 +314,11 @@ class StellantisOauth(StellantisBase):
             _LOGGER.debug(headers)
             _LOGGER.debug(token_request)
         except ConfigException as e:
-            _LOGGER.error(str(e))
+            _LOGGER.debug("---------- END get_mqtt_access_token")
             raise ConfigEntryAuthFailed(str(e))
-        except Exception as e:
-            _LOGGER.error(str(e))
-            raise Exception(str(e))
+        except Exception:
+            _LOGGER.debug("---------- END get_mqtt_access_token")
+            raise
         _LOGGER.debug("---------- END get_mqtt_access_token")
         return token_request
 
@@ -338,12 +337,14 @@ class StellantisOauth(StellantisBase):
         if self.otp is None:
             if not os.path.isfile(otp_file_path):
                 _LOGGER.error(f"Error: OTP file '{otp_file_path}' not found, please reauthenticate")
+                _LOGGER.debug("---------- END get_otp_code")
                 raise ConfigEntryAuthFailed(f"OTP file not found, please reauthenticate")
             self.otp = await self._hass.async_add_executor_job(load_otp, otp_file_path)
         # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
         otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
         if otp_code is None:
             _LOGGER.error("Error: OTP code is empty, please reauthenticate")
+            _LOGGER.debug("---------- END get_otp_code")
             raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
         # Save updated OTP object to file
         await self._hass.async_add_executor_job(save_otp, self.otp, otp_file_path)
@@ -437,13 +438,16 @@ class StellantisVehicles(StellantisOauth):
         def get_next_run():
             expires_in = self.get_config("expires_in")
             return datetime.fromisoformat(expires_in)
-        if self._oauth_token_scheduled is not None:
-            self._oauth_token_scheduled()
-            self._oauth_token_scheduled = None
-            await self.refresh_token_request()
-        elif get_datetime() > get_next_run():
-            await self.refresh_token_request()
-        next_run = get_next_run()
+        try:
+            if self._oauth_token_scheduled is not None:
+                self._oauth_token_scheduled()
+                self._oauth_token_scheduled = None
+                await self.refresh_token_request()
+            elif get_datetime() > get_next_run():
+                await self.refresh_token_request()
+            next_run = get_next_run()
+        except InternalServerError:
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
@@ -556,13 +560,16 @@ class StellantisVehicles(StellantisOauth):
             mqtt_config = self.get_config("mqtt")
             expires_in = mqtt_config["expires_in"]
             return datetime.fromisoformat(expires_in)
-        if self._mqtt_token_scheduled is not None or force:
-            self._mqtt_token_scheduled()
-            self._mqtt_token_scheduled = None
-            await self.refresh_mqtt_token_request()
-        elif get_datetime() > get_next_run():
-            await self.refresh_mqtt_token_request()
-        next_run = get_next_run()
+        try:
+            if self._mqtt_token_scheduled is not None or force:
+                self._mqtt_token_scheduled()
+                self._mqtt_token_scheduled = None
+                await self.refresh_mqtt_token_request()
+            elif get_datetime() > get_next_run():
+                await self.refresh_mqtt_token_request()
+            next_run = get_next_run()
+        except InternalServerError:
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._mqtt_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_mqtt_token_refresh, next_run)
@@ -727,17 +734,22 @@ class StellantisVehicles(StellantisOauth):
             return action_id
         except ConfigEntryAuthFailed as e:
             _LOGGER.error("Failed to send MQTT message for vehicle '%s' due to authentication error: %s", vehicle["vin"], e)
+            _LOGGER.debug("---------- END send_mqtt_message")
             raise
         except Exception as e:
             _LOGGER.error("Unexpected error during MQTT message sending: %s", e)
+            _LOGGER.debug("---------- END send_mqtt_message")
             raise
 
     async def send_abrp_data(self, params):
         _LOGGER.debug("---------- START send_abrp_data")
         params["api_key"] = ABRP_API_KEY
-        abrp_request = await self.make_http_request(ABRP_URL, "POST", None, params)
         _LOGGER.debug(params)
-        _LOGGER.debug(abrp_request)
-        if "status" not in abrp_request or abrp_request["status"] != "ok":
-            _LOGGER.warning(abrp_request)
+        try:
+            abrp_request = await self.make_http_request(ABRP_URL, "POST", None, params)
+            _LOGGER.debug(abrp_request)
+            if "status" not in abrp_request or abrp_request["status"] != "ok":
+                _LOGGER.warning(abrp_request)
+        except Exception:
+            pass
         _LOGGER.debug("---------- END send_abrp_data")
