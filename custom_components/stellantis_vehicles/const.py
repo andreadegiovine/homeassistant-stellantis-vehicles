@@ -169,7 +169,7 @@ SENSORS_DEFAULT = {
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
     "battery_charging_rate" : {
-        "icon" : "mdi:ev-station",
+        "icon" : "mdi:flash",
         "unit_of_measurement" : UnitOfSpeed.KILOMETERS_PER_HOUR,
         "device_class": SensorDeviceClass.SPEED,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -192,7 +192,7 @@ SENSORS_DEFAULT = {
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
      },
      "battery_capacity" : {
-        "icon" : "mdi:battery-arrow-up-outline",
+        "icon" : "mdi:battery-arrow-up",
         "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
         "device_class" : SensorDeviceClass.ENERGY_STORAGE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -202,7 +202,7 @@ SENSORS_DEFAULT = {
         "engine": [VEHICLE_TYPE_ELECTRIC]
      },
      "battery_residual" : {
-        "icon" : "mdi:battery-arrow-up",
+        "icon" : "mdi:battery-arrow-up-outline",
         "unit_of_measurement" : UnitOfEnergy.KILO_WATT_HOUR,
         "device_class" : SensorDeviceClass.ENERGY_STORAGE,
         "state_class": SensorStateClass.MEASUREMENT,

@@ -161,6 +161,9 @@
             "name": "Fuel average consumption"
           }
         }
+      },
+      "last_charge": {
+        "name": "Last charge"
       }
     },
     "binary_sensor": {

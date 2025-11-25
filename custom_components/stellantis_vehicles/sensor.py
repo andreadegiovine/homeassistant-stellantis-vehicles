@@ -1,17 +1,21 @@
 import logging
 from time import strftime
 from time import gmtime
+from copy import deepcopy
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume )
-from homeassistant.components.sensor.const import SensorDeviceClass
-from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
+from homeassistant.components.sensor.const import ( SensorDeviceClass )
+
+from .base import ( StellantisBaseSensor, StellantisRestoreSensor, StellantisRestoreEntity )
+from .utils import get_datetime
 
 from .const import (
     DOMAIN,
     SENSORS_DEFAULT,
     VEHICLE_TYPE_ELECTRIC,
+    VEHICLE_TYPE_HYBRID,
     MS_TO_KMH_CONVERSION,
     KWH_CORRECTION
 )
@@ -43,6 +47,16 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                         suggested_display_precision = default_value.get("suggested_display_precision", None)
                     )
                     entities.extend([StellantisBaseSensor(coordinator, description, default_value.get("value_map"), default_value.get("updated_at_map"), default_value.get("available", None))])
+
+        if coordinator.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
+            description = SensorEntityDescription(
+                name = "last_charge",
+                key = "last_charge",
+                translation_key = "last_charge",
+                icon = "mdi:ev-station",
+                device_class = SensorDeviceClass.DATE
+            )
+            entities.extend([StellantisLastChargeSensor(coordinator, description)])
 
         description = SensorEntityDescription(
             name = "type",
@@ -173,3 +187,63 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
 #
 #         self._attr_native_value = str(included) + "/" + str(totals)
 #         self._attr_extra_state_attributes = results
+
+class StellantisLastChargeSensor(StellantisRestoreEntity):
+    def __init__(self, coordinator, description) -> None:
+        super().__init__(coordinator, description)
+        self._sensor_key = self._key
+
+    def format_duration(self, delta) -> str:
+        total_seconds = int(delta.total_seconds())
+        days = total_seconds // 86400
+        remaining = total_seconds % 86400
+        hours = remaining // 3600
+        remaining = remaining % 3600
+        minutes = remaining // 60
+        seconds = remaining % 60
+        parts = []
+        if days > 0:
+            parts.append(f"{days}g")
+        if hours > 0:
+            parts.append(f"{hours}h")
+        if minutes > 0:
+            parts.append(f"{minutes}m")
+        if seconds > 0 or not parts:
+            parts.append(f"{seconds}s")
+        return " ".join(parts)
+
+    def coordinator_update(self):
+        is_charging = self._coordinator._sensors.get("battery_charging") == "InProgress"
+
+        attributes = deepcopy(self._attr_extra_state_attributes)
+        current_is_charging = "is_charging" in attributes and attributes["is_charging"]
+
+        if is_charging and not current_is_charging:
+            self._attr_native_value = get_datetime()
+            attributes["is_charging"] = True
+            attributes["charging_start_percent"] = self._coordinator._sensors.get("battery")
+            if self._coordinator._sensors.get("battery_residual"):
+                attributes["charging_start_residual"] = self._coordinator._sensors.get("battery_residual")
+            try:
+                del attributes['charging_end_at']
+                del attributes['charging_end_percent']
+                del attributes['charging_end_residual']
+                del attributes['charging_duration']
+                del attributes['charging_percent']
+                del attributes['recharged_energy']
+            except KeyError:
+                pass
+        elif current_is_charging and not is_charging:
+            attributes["is_charging"] = False
+            attributes["charging_end_at"] = get_datetime()
+            attributes["charging_end_percent"] = self._coordinator._sensors.get("battery")
+            if self._coordinator._sensors.get("battery_residual"):
+                attributes["charging_end_residual"] = self._coordinator._sensors.get("battery_residual")
+
+            attributes["charging_duration"] = self.format_duration(get_datetime(attributes["charging_end_at"]) - get_datetime(self._attr_native_value))
+            attributes["charging_percent"] = float(attributes["charging_end_percent"]) - float(attributes["charging_start_percent"])
+            if "charging_start_residual" in attributes and "charging_end_residual" in attributes:
+                attributes["recharged_energy"] = float(attributes["charging_end_residual"]) - float(attributes["charging_start_residual"])
+
+
+        self._attr_extra_state_attributes = attributes
