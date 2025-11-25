@@ -34,14 +34,9 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     except ConfigEntryAuthFailed as e:
         await stellantis.close_session()
         raise
-    except Exception as e:
-        _LOGGER.warning(str(e))
+    except Exception:
         await stellantis.close_session()
         vehicles = {}
-
-    for vehicle in vehicles:
-        coordinator = await stellantis.async_get_coordinator(vehicle)
-        await coordinator.async_config_entry_first_refresh()
 
     if vehicles:
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
@@ -49,6 +44,10 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         _LOGGER.warning("No vehicles found for this account")
         await stellantis.hass_notify("no_vehicles_found")
         await stellantis.close_session()
+
+    for vehicle in vehicles:
+        coordinator = await stellantis.async_get_coordinator(vehicle)
+        await coordinator.async_config_entry_first_refresh()
 
     return True
 
