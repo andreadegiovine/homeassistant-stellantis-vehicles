@@ -163,7 +163,51 @@
         }
       },
       "last_charge": {
-        "name": "Ultima ricarica"
+        "name": "Ultima ricarica",
+        "state_attributes": {
+          "in_progress": {
+            "name": "In corso",
+            "state": {
+              "true": "Si"
+            }
+          },
+          "initial_percentage": {
+            "name": "Percentuale iniziale"
+          },
+          "initial_energy": {
+            "name": "Energia iniziale"
+          },
+          "initial_autonomy": {
+            "name": "Autonomia iniziale"
+          },
+          "final_time": {
+            "name": "Orario di fine"
+          },
+          "final_percentage": {
+            "name": "Percentuale finale"
+          },
+          "final_energy": {
+            "name": "Energia finale"
+          },
+          "final_autonomy": {
+            "name": "Autonomia finale"
+          },
+          "duration": {
+            "name": "Durata"
+          },
+          "recharged_percent": {
+            "name": "Percentuale ricaricata"
+          },
+          "recharged_energy": {
+            "name": "Energia ricaricata"
+          },
+          "recharged_autonomy": {
+            "name": "Autonomia ricaricata"
+          },
+          "avg_power": {
+            "name": "Potenza media"
+          }
+        }
       }
     },
     "binary_sensor": {

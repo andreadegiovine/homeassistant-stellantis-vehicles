@@ -1,14 +1,13 @@
 import logging
-from time import strftime
-from time import gmtime
+from time import ( strftime, gmtime )
 from copy import deepcopy
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.sensor import SensorEntityDescription
-from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume )
+from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume, UnitOfPower, PERCENTAGE )
 from homeassistant.components.sensor.const import ( SensorDeviceClass )
 
-from .base import ( StellantisBaseSensor, StellantisRestoreSensor, StellantisRestoreEntity )
+from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 from .utils import get_datetime
 
 from .const import (
@@ -54,7 +53,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 key = "last_charge",
                 translation_key = "last_charge",
                 icon = "mdi:ev-station",
-                device_class = SensorDeviceClass.DATE
+                device_class = SensorDeviceClass.TIMESTAMP
             )
             entities.extend([StellantisLastChargeSensor(coordinator, description)])
 
@@ -188,62 +187,89 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
 #         self._attr_native_value = str(included) + "/" + str(totals)
 #         self._attr_extra_state_attributes = results
 
-class StellantisLastChargeSensor(StellantisRestoreEntity):
+class StellantisLastChargeSensor(StellantisRestoreSensor):
     def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = self._key
-
-    def format_duration(self, delta) -> str:
-        total_seconds = int(delta.total_seconds())
-        days = total_seconds // 86400
-        remaining = total_seconds % 86400
-        hours = remaining // 3600
-        remaining = remaining % 3600
-        minutes = remaining // 60
-        seconds = remaining % 60
-        parts = []
-        if days > 0:
-            parts.append(f"{days}g")
-        if hours > 0:
-            parts.append(f"{hours}h")
-        if minutes > 0:
-            parts.append(f"{minutes}m")
-        if seconds > 0 or not parts:
-            parts.append(f"{seconds}s")
-        return " ".join(parts)
+        self._wait_next_update = False
 
     def coordinator_update(self):
-        is_charging = self._coordinator._sensors.get("battery_charging") == "InProgress"
+        in_progress = self._coordinator._sensors.get("battery_charging") == "InProgress"
+
+        unit_of_measurement = {
+            "initial_percentage": PERCENTAGE,
+            "final_percentage": PERCENTAGE,
+            "recharged_percent": PERCENTAGE,
+            "initial_energy": UnitOfEnergy.KILO_WATT_HOUR,
+            "final_energy": UnitOfEnergy.KILO_WATT_HOUR,
+            "recharged_energy": UnitOfEnergy.KILO_WATT_HOUR,
+            "avg_power": UnitOfPower.KILO_WATT,
+            "initial_autonomy": UnitOfLength.KILOMETERS,
+            "final_autonomy": UnitOfLength.KILOMETERS,
+            "recharged_autonomy": UnitOfLength.KILOMETERS
+        }
 
         attributes = deepcopy(self._attr_extra_state_attributes)
-        current_is_charging = "is_charging" in attributes and attributes["is_charging"]
 
-        if is_charging and not current_is_charging:
+        for attribute in attributes:
+            if attribute in unit_of_measurement:
+                attributes[attribute] = attributes[attribute].replace(f" {unit_of_measurement[attribute]}", "")
+        
+        prev_in_progress = "in_progress" in attributes and attributes["in_progress"]
+
+        divide = 1000
+        correction_on = self._coordinator._sensors.get("switch_battery_values_correction", False)
+        if correction_on:
+            divide = divide / KWH_CORRECTION
+
+        if in_progress and not prev_in_progress:
             self._attr_native_value = get_datetime()
-            attributes["is_charging"] = True
-            attributes["charging_start_percent"] = self._coordinator._sensors.get("battery")
+            attributes["in_progress"] = True
+            attributes["initial_percentage"] = round(self._coordinator._sensors.get("battery"))
             if self._coordinator._sensors.get("battery_residual"):
-                attributes["charging_start_residual"] = self._coordinator._sensors.get("battery_residual")
+                attributes["initial_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
+            if self._coordinator._sensors.get("autonomy"):
+                attributes["initial_autonomy"] = self._coordinator._sensors.get("autonomy")
             try:
-                del attributes['charging_end_at']
-                del attributes['charging_end_percent']
-                del attributes['charging_end_residual']
-                del attributes['charging_duration']
-                del attributes['charging_percent']
-                del attributes['recharged_energy']
+                del attributes["final_time"]
+                del attributes["final_percentage"]
+                del attributes["final_energy"]
+                del attributes["final_autonomy"]
+                del attributes["duration"]
+                del attributes["recharged_percent"]
+                del attributes["recharged_energy"]
+                del attributes["recharged_autonomy"]
+                del attributes["avg_power"]
             except KeyError:
                 pass
-        elif current_is_charging and not is_charging:
-            attributes["is_charging"] = False
-            attributes["charging_end_at"] = get_datetime()
-            attributes["charging_end_percent"] = self._coordinator._sensors.get("battery")
-            if self._coordinator._sensors.get("battery_residual"):
-                attributes["charging_end_residual"] = self._coordinator._sensors.get("battery_residual")
+        elif prev_in_progress and not in_progress:
+            if self._wait_next_update:
+                del attributes["in_progress"]
+                attributes["final_time"] = get_datetime()
+                attributes["final_percentage"] = round(self._coordinator._sensors.get("battery"))
+                if self._coordinator._sensors.get("battery_residual"):
+                    attributes["final_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
+                if self._coordinator._sensors.get("autonomy"):
+                    attributes["final_autonomy"] = self._coordinator._sensors.get("autonomy")
 
-            attributes["charging_duration"] = self.format_duration(get_datetime(attributes["charging_end_at"]) - get_datetime(self._attr_native_value))
-            attributes["charging_percent"] = float(attributes["charging_end_percent"]) - float(attributes["charging_start_percent"])
-            if "charging_start_residual" in attributes and "charging_end_residual" in attributes:
-                attributes["recharged_energy"] = float(attributes["charging_end_residual"]) - float(attributes["charging_start_residual"])
+                duration = get_datetime(attributes["final_time"]) - self._attr_native_value
+                _LOGGER.error(duration)
+                attributes["duration"] = strftime("%H:%M:%S", gmtime(duration.total_seconds()))
+                
+                attributes["recharged_percent"] = round(float(attributes["final_percentage"]) - float(attributes["initial_percentage"]))
+                if "initial_energy" in attributes and "final_energy" in attributes:
+                    recharged_energy = float(attributes["final_energy"]) - float(attributes["initial_energy"])
+                    attributes["recharged_energy"] = round(recharged_energy, 2)
+                    attributes["avg_power"] = round(recharged_energy / ((duration.total_seconds() / 60) / 60), 2)
+                if "initial_autonomy" in attributes and "final_autonomy" in attributes:
+                    attributes["recharged_autonomy"] = round(float(attributes["final_autonomy"]) - float(attributes["initial_autonomy"]))
 
+                self._wait_next_update = False
 
+            self._wait_next_update = True
+
+        for attribute in attributes:
+            if attribute in unit_of_measurement:
+                attributes[attribute] = f"{attributes[attribute]} {unit_of_measurement[attribute]}"
+            
         self._attr_extra_state_attributes = attributes

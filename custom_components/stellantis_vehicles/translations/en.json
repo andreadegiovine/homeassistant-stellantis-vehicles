@@ -163,7 +163,51 @@
         }
       },
       "last_charge": {
-        "name": "Last charge"
+        "name": "Last charge",
+        "state_attributes": {
+          "in_progress": {
+            "name": "In progress",
+            "state": {
+              "true": "Yes"
+            }
+          },
+          "initial_percentage": {
+            "name": "Initial percentage"
+          },
+          "initial_energy": {
+            "name": "Initial energy"
+          },
+          "initial_autonomy": {
+            "name": "Initial autonomy"
+          },
+          "final_time": {
+            "name": "Final time"
+          },
+          "final_percentage": {
+            "name": "Final percentage"
+          },
+          "final_energy": {
+            "name": "Final energy"
+          },
+          "final_autonomy": {
+            "name": "Final autonomy"
+          },
+          "duration": {
+            "name": "Duration"
+          },
+          "recharged_percent": {
+            "name": "Recharged percent"
+          },
+          "recharged_energy": {
+            "name": "Recharged energy"
+          },
+          "recharged_autonomy": {
+            "name": "Recharged autonomy"
+          },
+          "avg_power": {
+            "name": "Average power"
+          }
+        }
       }
     },
     "binary_sensor": {
