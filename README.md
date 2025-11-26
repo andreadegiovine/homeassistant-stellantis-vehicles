@@ -185,15 +185,15 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 5 beers**  
+Someone  
 exi  
 Philipp B. / tamcore  
-wech71  
 <sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
+John Woertman  
 Pekka  
 Gerhard  
-Simon Hunt  
 <sub>*and other heroes*</sub>
 
 **🥉 2 beers**  
