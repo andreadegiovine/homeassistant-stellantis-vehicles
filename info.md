@@ -185,9 +185,10 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 5 beers**  
+exi  
 Philipp B. / tamcore  
 wech71  
-Juraj  
+<sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
 Pekka  
