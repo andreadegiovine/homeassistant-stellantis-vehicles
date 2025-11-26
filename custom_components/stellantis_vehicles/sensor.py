@@ -253,7 +253,6 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
                     attributes["final_autonomy"] = self._coordinator._sensors.get("autonomy")
 
                 duration = get_datetime(attributes["final_time"]) - self._attr_native_value
-                _LOGGER.error(duration)
                 attributes["duration"] = strftime("%H:%M:%S", gmtime(duration.total_seconds()))
                 
                 attributes["recharged_percent"] = round(float(attributes["final_percentage"]) - float(attributes["initial_percentage"]))
