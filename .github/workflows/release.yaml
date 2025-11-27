@@ -116,12 +116,10 @@ jobs:
           echo "Cloning supporters repo..."
           git clone https://github.com/andreadegiovine/supporters.git supporters_repo
 
-          supporters_dir="supporters_repo/buymeacoffee"
-
           echo "Reading supporter files..."
           declare -A supporters_map
 
-          for file in "$supporters_dir"/*.txt; do
+          for file in supporters_repo/*.txt; do
             beers=$(basename "$file" .txt)
             supporters_map[$beers]="$file"
           done
