@@ -198,11 +198,13 @@ Gerhard
 
 **🥉 2 beers**  
 Grosi001  
+ryhaberecht  
+Tizian  
 
 **⭐ 1 beers**  
+teknohead  
 @bgoncal2  
 Max  
-Dave  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
