@@ -1,5 +1,5 @@
 class RateLimitException(Exception):
     pass
 
-class InternalServerError(Exception):
+class ComunicationError(Exception):
     pass

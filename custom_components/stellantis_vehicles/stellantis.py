@@ -23,7 +23,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from .utils import ( get_datetime, rate_limit )
-from .exceptions import InternalServerError
+from .exceptions import ComunicationError
 
 from .const import (
     DOMAIN,
@@ -211,7 +211,7 @@ class StellantisBase:
                     result = {}
                 elif str(resp.status).startswith("50"):
                     # Internal error
-                    raise InternalServerError(error)
+                    raise ComunicationError(error)
                 elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
                     # Token expiration
                     raise ConfigEntryAuthFailed(error)
@@ -220,6 +220,12 @@ class StellantisBase:
                     raise Exception(error)
                 _LOGGER.debug("---------- END make_http_request")
                 return result
+        except aiohttp.client_exceptions.ClientError as e:
+            await self.close_session()
+            _LOGGER.warning(f"Error: {e}")
+            _LOGGER.debug("---------- END make_http_request")
+            # Connection error
+            raise ComunicationError(e)
         except Exception as e:
             await self.close_session()
             _LOGGER.warning(f"Error: {e}")
@@ -445,7 +451,7 @@ class StellantisVehicles(StellantisOauth):
             elif get_datetime() > get_next_run():
                 await self.refresh_token_request()
             next_run = get_next_run()
-        except InternalServerError:
+        except ComunicationError:
             next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
@@ -567,7 +573,7 @@ class StellantisVehicles(StellantisOauth):
             elif get_datetime() > get_next_run():
                 await self.refresh_mqtt_token_request()
             next_run = get_next_run()
-        except InternalServerError:
+        except ComunicationError:
             next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
