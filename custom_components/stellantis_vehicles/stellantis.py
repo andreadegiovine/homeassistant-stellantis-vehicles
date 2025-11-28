@@ -442,7 +442,7 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- START scheduled_oauth_token_refresh")
         def get_next_run():
             expires_in = self.get_config("expires_in")
-            return datetime.fromisoformat(expires_in)
+            return datetime.fromisoformat(expires_in) - timedelta(minutes=3)
         try:
             if self._oauth_token_scheduled is not None:
                 self._oauth_token_scheduled()
@@ -452,7 +452,7 @@ class StellantisVehicles(StellantisOauth):
                 await self.refresh_token_request()
             next_run = get_next_run()
         except ComunicationError:
-            next_run = get_datetime() + timedelta(minutes=5)
+            next_run = get_datetime() + timedelta(minutes=1)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
@@ -564,7 +564,7 @@ class StellantisVehicles(StellantisOauth):
         def get_next_run():
             mqtt_config = self.get_config("mqtt")
             expires_in = mqtt_config["expires_in"]
-            return datetime.fromisoformat(expires_in)
+            return datetime.fromisoformat(expires_in) - timedelta(minutes=3)
         try:
             if self._mqtt_token_scheduled is not None or force:
                 self._mqtt_token_scheduled()
@@ -574,7 +574,7 @@ class StellantisVehicles(StellantisOauth):
                 await self.refresh_mqtt_token_request()
             next_run = get_next_run()
         except ComunicationError:
-            next_run = get_datetime() + timedelta(minutes=5)
+            next_run = get_datetime() + timedelta(minutes=1)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._mqtt_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_mqtt_token_refresh, next_run)
