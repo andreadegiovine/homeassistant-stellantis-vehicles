@@ -23,7 +23,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from .utils import ( get_datetime, rate_limit )
-from .exceptions import ComunicationError
+from .exceptions import ( ComunicationError, RateLimitException )
 
 from .const import (
     DOMAIN,
@@ -209,6 +209,9 @@ class StellantisBase:
                     # Not Found: We didn't find the status for this vehicle. - 40400
                     _LOGGER.warning(error)
                     result = {}
+                elif str(resp.status) == "401":
+                    # Oauth token seem expired, refresh request blocked by server/connection error
+                    raise ComunicationError(error)
                 elif str(resp.status).startswith("50"):
                     # Internal error
                     raise ComunicationError(error)
@@ -442,7 +445,7 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- START scheduled_oauth_token_refresh")
         def get_next_run():
             expires_in = self.get_config("expires_in")
-            return datetime.fromisoformat(expires_in) - timedelta(minutes=3)
+            return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
         try:
             if self._oauth_token_scheduled is not None:
                 self._oauth_token_scheduled()
@@ -452,7 +455,7 @@ class StellantisVehicles(StellantisOauth):
                 await self.refresh_token_request()
             next_run = get_next_run()
         except ComunicationError:
-            next_run = get_datetime() + timedelta(minutes=1)
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
@@ -575,6 +578,9 @@ class StellantisVehicles(StellantisOauth):
             next_run = get_next_run()
         except ComunicationError:
             next_run = get_datetime() + timedelta(minutes=1)
+        except RateLimitException:
+            _LOGGER.debug("Rate limit exceeded, check logs and restart integration")
+            return
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._mqtt_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_mqtt_token_refresh, next_run)
