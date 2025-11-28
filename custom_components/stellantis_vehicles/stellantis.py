@@ -157,6 +157,10 @@ class StellantisBase:
     def remote_commands(self):
         return self.get_config(FIELD_REMOTE_COMMANDS) in [None, True]
 
+    def disable_remote_commands(self):
+        self.save_config({FIELD_REMOTE_COMMANDS: False})
+        self.update_stored_config(FIELD_REMOTE_COMMANDS, False)
+
     def replace_placeholders(self, string, vehicle=None):
         if vehicle is None:
             vehicle = []
@@ -438,8 +442,7 @@ class StellantisVehicles(StellantisOauth):
 
     async def scheduled_tokens_refresh(self):
         await self.scheduled_oauth_token_refresh()
-        if self.remote_commands:
-            await self.scheduled_mqtt_token_refresh()
+        await self.scheduled_mqtt_token_refresh()
 
     async def scheduled_oauth_token_refresh(self, now=None):
         _LOGGER.debug("---------- START scheduled_oauth_token_refresh")
@@ -563,6 +566,8 @@ class StellantisVehicles(StellantisOauth):
 #         return vehicle_trips_request
 
     async def scheduled_mqtt_token_refresh(self, now=None, force=False):
+        if not self.remote_commands:
+            return
         _LOGGER.debug("---------- START scheduled_mqtt_token_refresh")
         def get_next_run():
             mqtt_config = self.get_config("mqtt")
@@ -743,9 +748,11 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug("---------- END send_mqtt_message")
             return action_id
         except ConfigEntryAuthFailed as e:
-            _LOGGER.error("Failed to send MQTT message for vehicle '%s' due to authentication error: %s", vehicle["vin"], e)
+            self.disable_remote_commands()
+            self.do_async(self.hass_notify("reconfigure_otp"))
+            _LOGGER.error("Failed to send MQTT message for vehicle '%s' due to authentication error: '%s'. To enable remote commands again please reconfigure the integration", vehicle["vin"], e)
             _LOGGER.debug("---------- END send_mqtt_message")
-            raise
+            pass
         except Exception as e:
             _LOGGER.error("Unexpected error during MQTT message sending: %s", e)
             _LOGGER.debug("---------- END send_mqtt_message")

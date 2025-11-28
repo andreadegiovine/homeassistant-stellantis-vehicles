@@ -175,13 +175,23 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_final(self, user_input=None):
-        if self.source == config_entries.SOURCE_REAUTH:
+        if self.source in [config_entries.SOURCE_REAUTH, config_entries.SOURCE_RECONFIGURE]:
             self._abort_if_unique_id_mismatch()
             return self.async_update_reload_and_abort(self._get_reauth_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
 
         await self.async_set_unique_id(str(self.data["customer_id"]))
         self._abort_if_unique_id_configured()
         return self.async_create_entry(title=self.data[FIELD_MOBILE_APP], data=self.data)
+
+
+    async def async_step_reconfigure(self, user_input = None):
+        if user_input is None:
+            return self.async_show_form(step_id="reconfigure")
+        self.stellantis = self.hass.data[DOMAIN][self._reconfigure_entry_id]
+        self.data = self.stellantis._entry.data
+        self.stellantis.disable_remote_commands()
+        self.data[FIELD_REMOTE_COMMANDS] = True
+        return await self.async_step_otp()
 
 
     async def async_step_reauth(self, entry_data):
