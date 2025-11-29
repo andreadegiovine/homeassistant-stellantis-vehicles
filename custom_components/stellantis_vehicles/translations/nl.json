@@ -22,6 +22,9 @@
           "sms_code": "SMS code van Stellantis",
           "pin_code": "Pin code van je mobiele app"
         }
+      },
+      "reauth_confirm": {
+        "description": "Je moet opnieuw inloggen om de integratie te blijven gebruiken"
       }
     },
     "error": {
@@ -94,7 +97,9 @@
       "command_status": {
         "name": "Command status",
         "state": {
+          "rate_limit": "Rate limit overschreden (6 per 20 minuten)",
           "not_compatible": "Niet compatibel",
+          "failed": "Mislukt",
           "900": "Geaccepteerd",
           "901": "Voertuig in slaapmodus",
           "903": "Doorgestuurd",
@@ -125,34 +130,81 @@
       },
       "air_temperature": {
         "name": "Luchttemperatuur"
-      }
-    },
-    "last_trip": {
-      "name": "Laatste rit",
-      "state_attributes": {
-        "duration": {
-          "name": "Duur"
-        },
-        "start_mileage": {
-          "name": "Kilometerstand bij start"
-        },
-        "avg_speed": {
-          "name": "Gemiddelde snelheid"
-        },
-        "max_speed": {
-          "name": "Maximale snelheid"
-        },
-        "electric_consumption": {
-          "name": "Energie verbruik"
-        },
-        "electric_avg_consumption": {
-          "name": "Gemiddelde elektrische verbruik"
-        },
-        "fuel_consumption": {
-          "name": "Brandstof verbruik"
-        },
-        "fuel_avg_consumption": {
-          "name": "Gemiddelde brandstof verbruik"
+      },
+      "last_trip": {
+        "name": "Laatste rit",
+        "state_attributes": {
+          "duration": {
+            "name": "Duur"
+          },
+          "start_mileage": {
+            "name": "Kilometerstand bij start"
+          },
+          "avg_speed": {
+            "name": "Gemiddelde snelheid"
+          },
+          "max_speed": {
+            "name": "Maximale snelheid"
+          },
+          "electric_consumption": {
+            "name": "Energie verbruik"
+          },
+          "electric_avg_consumption": {
+            "name": "Gemiddelde elektrische verbruik"
+          },
+          "fuel_consumption": {
+            "name": "Brandstof verbruik"
+          },
+          "fuel_avg_consumption": {
+            "name": "Gemiddelde brandstof verbruik"
+          }
+        }
+      },
+      "last_charge": {
+        "name": "Laatste laadsessie",
+        "state_attributes": {
+          "in_progress": {
+            "name": "Bezig",
+            "state": {
+              "true": "Ja"
+            }
+          },
+          "initial_percentage": {
+            "name": "Initiële percentage"
+          },
+          "initial_energy": {
+            "name": "Initiële energie"
+          },
+          "initial_autonomy": {
+            "name": "Initiële bereik"
+          },
+          "final_time": {
+            "name": "Eindtijd"
+          },
+          "final_percentage": {
+            "name": "Eind percentage"
+          },
+          "final_energy": {
+            "name": "Eind energie"
+          },
+          "final_autonomy": {
+            "name": "Eind bereik"
+          },
+          "duration": {
+            "name": "Duur"
+          },
+          "recharged_percent": {
+            "name": "Toegevoegde percentage"
+          },
+          "recharged_energy": {
+            "name": "Toegevoegde energie"
+          },
+          "recharged_autonomy": {
+            "name": "Toegevoegde bereik"
+          },
+          "avg_power": {
+            "name": "Gemiddeld vermogen"
+          }
         }
       }
     },
