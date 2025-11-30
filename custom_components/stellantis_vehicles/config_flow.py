@@ -44,7 +44,7 @@ OTP_SCHEMA = vol.Schema({
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     def __init__(self) -> None:
         self.data = dict()
@@ -184,7 +184,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(title=self.data[FIELD_MOBILE_APP], data=self.data)
 
 
-    async def async_step_reconfigure(self, user_input = None):
+    async def async_step_reconfigure(self, user_input=None):
         if user_input is None:
             return self.async_show_form(step_id="reconfigure")
         self.stellantis = self.hass.data[DOMAIN][self._reconfigure_entry_id]

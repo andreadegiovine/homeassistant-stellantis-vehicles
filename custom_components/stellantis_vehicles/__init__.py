@@ -8,11 +8,11 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry
 
 from .stellantis import StellantisVehicles
+from .exceptions import ComunicationError
 
 from .const import (
     DOMAIN,
     PLATFORMS,
-    IMAGE_PATH,
     OTP_FILENAME,
     FIELD_REMOTE_COMMANDS
 )
@@ -31,11 +31,9 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     try:
         vehicles = await stellantis.get_user_vehicles()
-    except ConfigEntryAuthFailed:
-        await stellantis.close_session()
+    except (ConfigEntryAuthFailed, ComunicationError):
         raise
     except Exception:
-        await stellantis.close_session()
         vehicles = {}
 
     if vehicles:
@@ -92,23 +90,22 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
             shutil.rmtree(storage_path)
 
         # Remove Stellantis image folder of this entry
-        entry_image_path = os.path.join(hass_config_path, "www", IMAGE_PATH, config.unique_id)
+        entry_image_path = os.path.join(hass_config_path, "www", DOMAIN, config.unique_id)
         if os.path.exists(entry_image_path) and os.path.isdir(entry_image_path):
             _LOGGER.debug(f"Deleting Stellantis entry image folder: {entry_image_path}")
             shutil.rmtree(entry_image_path)
 
         # Remove Stellantis image folder if empty
-        image_path = os.path.join(hass_config_path, "www", IMAGE_PATH)
+        image_path = os.path.join(hass_config_path, "www", DOMAIN)
         if os.path.exists(image_path) and os.path.isdir(image_path) and not os.listdir(image_path):
             _LOGGER.debug(f"Deleting Stellantis image folder: {image_path}")
             shutil.rmtree(image_path)
 
 
 async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
-    _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-
     # Migrate config prior 1.2 to 1.2 - unique_id and file structure
     if config.version == 1 and config.minor_version < 2:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         # update unique_id with customer_id - used to be data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5])
         new_unique_id = config.data.get("customer_id")
         if config.unique_id != new_unique_id:
@@ -130,7 +127,13 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
                 os.remove(old_otp_file_path)
         # Update config entry object
         hass.config_entries.async_update_entry(config, version=1, minor_version=2)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+    if config.version == 1 and config.minor_version < 3:
+        public_path = hass.config.path("www")
+        old_image_path = f"{public_path}/stellantis-vehicles"
+        if os.path.isdir(old_image_path):
+            _LOGGER.debug(f"Deleting Stellantis old image folder: {old_image_path}")
+            shutil.rmtree(old_image_path)
 
     return True

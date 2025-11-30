@@ -53,7 +53,6 @@ from .const import (
     MQTT_REQ_TOPIC,
     GET_USER_INFO_URL,
     CAR_API_GET_VEHICLE_TRIPS_URL,
-    IMAGE_PATH,
     MQTT_REFRESH_TOKEN_TTL,
     OTP_FILENAME,
     ABRP_URL,
@@ -413,27 +412,16 @@ class StellantisVehicles(StellantisOauth):
     async def resize_and_save_picture(self, url, vin):
         public_path = self._hass.config.path("www")
         customer_id = self.get_config("customer_id")
-
         if not os.path.isdir(public_path):
             _LOGGER.warning("Folder \"www\" not found in configuration folder")
             return url
-
-        stellantis_path = f"{public_path}/{IMAGE_PATH}"
-        entry_path = f"{stellantis_path}/{customer_id}"
+        entry_path = f"{public_path}/{DOMAIN}/{customer_id}"
         if not os.path.isdir(entry_path):
             os.makedirs(entry_path, exist_ok=True)
-
         image_path = f"{entry_path}/{vin}.png"
         image_url = image_path.replace(public_path, "/local")
-        # Migrate to new file structure - can be removed in future versions
-        old_image_path = f"{stellantis_path}/{vin}.png"
-        if os.path.isfile(old_image_path):
-            _LOGGER.debug(f"Migrating image file: {old_image_path} -> {image_path}")
-            os.rename(old_image_path, image_path)
-        # END Migrate to new file structure
         if os.path.isfile(image_path):
             return image_url
-
         image = await self._hass.async_add_executor_job(urlopen, url)
         with Image.open(image) as im:
             im = ImageOps.pad(im, (400, 400))
@@ -518,7 +506,7 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- START get_vehicle_status")
         # Ensure that the MQTT client is connected
         if self.remote_commands and (self._mqtt is None or self._mqtt.is_connected() is False):
-            _LOGGER.debug("------------ MQTT client is not connected, try to connect it")
+            _LOGGER.debug("MQTT client is not connected, try to connect it")
             await self.connect_mqtt()
         # Fetch the vehicle status using the API
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
