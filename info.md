@@ -185,15 +185,15 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 5 beers**  
+Kenneth Henderick  
 Someone  
 exi  
-Philipp B. / tamcore  
 <sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
+Martijn  
 John Woertman  
 Pekka  
-Gerhard  
 <sub>*and other heroes*</sub>
 
 **🥉 2 beers**  
@@ -202,9 +202,9 @@ ryhaberecht
 Tizian  
 
 **⭐ 1 beers**  
+Someone  
 teknohead  
 @bgoncal2  
-Max  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
