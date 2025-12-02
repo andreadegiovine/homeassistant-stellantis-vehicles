@@ -62,7 +62,12 @@
         "name": "Temperatura"
       },
       "mileage": {
-        "name": "Kilometraggio"
+        "name": "Kilometraggio",
+        "state_attributes": {
+          "updated_at": {
+            "name": "Aggiornato al"
+          }
+        }
       },
       "speed": {
         "name": "Velocità"

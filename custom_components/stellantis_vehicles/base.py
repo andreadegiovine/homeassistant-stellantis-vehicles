@@ -581,6 +581,8 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
             restored_state = await self.async_get_last_state()
         if restored_state:
             for key, attr_val in restored_state.attributes.items():
+                if key == "updated_at":
+                    key = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.updated_at.name", "updated_at")
                 self._attr_extra_state_attributes[key] = attr_val
 
         self.coordinator_update()
@@ -628,7 +630,8 @@ class StellantisBaseSensor(StellantisRestoreSensor):
     def coordinator_update(self):
         """ Coordinator update. """
         if self.value_was_updated():
-            self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
+            label = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.updated_at.name", "updated_at")
+            self._attr_extra_state_attributes[label] = self.get_updated_at_from_map(self._updated_at_map)
             self._attr_native_value = self.get_value(self._value_map)
 
 
@@ -655,7 +658,8 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
     def coordinator_update(self):
         """ Coordinator update. """
         if self.value_was_updated():
-            self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
+            label = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.updated_at.name", "updated_at")
+            self._attr_extra_state_attributes[label] = self.get_updated_at_from_map(self._updated_at_map)
             value = self.get_value(self._value_map)
             if value is None:
                 return

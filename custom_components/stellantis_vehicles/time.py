@@ -50,5 +50,6 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
 
     def coordinator_update(self):
         if self.value_was_updated():
-            self._attr_extra_state_attributes["updated_at"] = self.get_updated_at_from_map(self._updated_at_map)
+            label = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.updated_at.name", "updated_at")
+            self._attr_extra_state_attributes[label] = self.get_updated_at_from_map(self._updated_at_map)
             self._attr_native_value = self.get_value(self._value_map)

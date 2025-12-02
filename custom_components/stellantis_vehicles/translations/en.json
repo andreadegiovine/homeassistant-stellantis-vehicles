@@ -62,7 +62,12 @@
         "name": "Temperature"
       },
       "mileage": {
-        "name": "Mileage"
+        "name": "Mileage",
+        "state_attributes": {
+          "updated_at": {
+            "name": "Updated at"
+          }
+        }
       },
       "speed": {
         "name": "Speed"
