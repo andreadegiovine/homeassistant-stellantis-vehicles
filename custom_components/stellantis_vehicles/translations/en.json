@@ -64,8 +64,8 @@
       "mileage": {
         "name": "Mileage",
         "state_attributes": {
-          "updated_at": {
-            "name": "Updated at"
+          "last_updated": {
+            "name": "Last updated"
           }
         }
       },

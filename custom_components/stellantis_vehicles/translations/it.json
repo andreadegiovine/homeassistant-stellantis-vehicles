@@ -64,8 +64,8 @@
       "mileage": {
         "name": "Kilometraggio",
         "state_attributes": {
-          "updated_at": {
-            "name": "Aggiornato al"
+          "last_updated": {
+            "name": "Ultimo aggiornamento"
           }
         }
       },
