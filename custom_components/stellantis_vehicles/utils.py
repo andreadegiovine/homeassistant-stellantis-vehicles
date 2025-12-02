@@ -3,6 +3,8 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from asyncio import Semaphore
 from functools import wraps
+import re
+from typing import Any, Dict
 
 from homeassistant.util import dt
 
@@ -44,23 +46,6 @@ def date_from_pt_string(pt_string, start_date = None):
         _LOGGER.warning(str(e))
         return None
 
-# def masked_configs(configs = {}):
-#     masked_params = ["access_token","customer_id","refresh_token","vehicle_id","vin","client_id","client_secret","basic_token"]
-#     masks = {}
-#     for key in configs:
-#         if isinstance(configs[key], (tuple, list, set, dict)):
-#             masks.update(masked_configs(configs[key]))
-#         elif key in masked_params:
-#             masks.update({configs[key]: str(configs[key][:8]) + "******"})
-#     return masks
-#
-# def masked_log(data, configs = {}):
-#     masks = masked_configs(configs)
-#     result = json.dumps(data)
-#     for mask in masks:
-#         result = result.replace(mask, masks[mask])
-#     return result
-
 def rate_limit(limit: int, every: int):
     def limit_decorator(func):
         semaphore = Semaphore(limit)
@@ -82,3 +67,77 @@ def rate_limit(limit: int, every: int):
         return async_wrapper
     
     return limit_decorator
+
+class SensitiveDataFilter(logging.Filter):
+    def __init__(self):
+        super().__init__()
+        self.custom_values = []
+        self.masked_entry_keys = ["access_token", "refresh_token", "oauth_code", "customer_id"]
+
+    def add_custom_value(self, value):
+        self.custom_values.append(value)
+
+    def add_entry_values(self, entry_data):
+        self.entry_data = entry_data
+
+    def get_masked_values(self, data, result=None):
+        if result is None:
+            result = []
+        for key, value in data.items():
+            if isinstance(data[key], dict):
+                self.get_masked_values(data[key], result)
+            if key in self.masked_entry_keys:
+                result.append(value)
+        return result
+
+    @property
+    def compiled_patterns(self):
+        sensitive_values = self.get_masked_values(self.entry_data) + self.custom_values
+        return [re.compile(re.escape(value), re.IGNORECASE) for value in sensitive_values]
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.msg = self._mask_value(record.msg)
+
+        if record.args:
+            if isinstance(record.args, dict):
+                record.args = self._mask_dict(record.args)
+            elif isinstance(record.args, (tuple, list)):
+                record.args = tuple(self._mask_value(arg) for arg in record.args)
+            else:
+                record.args = self._mask_value(record.args)
+
+        return True
+
+    def _mask_value(self, value: Any) -> Any:
+        if value is None:
+            return value
+
+        if isinstance(value, dict):
+            return self._mask_dict(value)
+        elif isinstance(value, (list, tuple)):
+            return type(value)(self._mask_value(item) for item in value)
+        elif isinstance(value, str):
+            return self._mask_string(value)
+
+        return value
+
+    def _mask_dict(self, data: Dict) -> Dict:
+        masked = {}
+        for key, value in data.items():
+            masked[key] = self._mask_value(value)
+        return masked
+
+    def _mask_string(self, value: str) -> str:
+        for pattern in self.compiled_patterns:
+            value = pattern.sub(lambda m: self._mask_sensitive_value(m.group(0)), value)
+        return value
+
+    def _mask_sensitive_value(self, value: Any) -> str:
+        if value is None or value == '':
+            return '###'
+
+        value_str = str(value).strip()
+        if len(value_str) <= 5:
+            return '###'
+
+        return f"{value_str[:5]}###"

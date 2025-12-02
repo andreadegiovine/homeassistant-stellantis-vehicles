@@ -22,7 +22,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit )
+from .utils import ( get_datetime, rate_limit, SensitiveDataFilter )
 from .exceptions import ( ComunicationError, RateLimitException )
 
 from .const import (
@@ -117,6 +117,9 @@ class StellantisBase:
         self._session = None
         self.otp = None
 
+        self.logger_filter = SensitiveDataFilter()
+        _LOGGER.addFilter(self.logger_filter)
+
     def start_session(self):
         if not self._session:
             self._session = aiohttp.ClientSession()
@@ -137,7 +140,6 @@ class StellantisBase:
                 "basic_token": base64.b64encode(bytes(self._config["client_id"] + ":" + self._config["client_secret"], 'utf-8')).decode('utf-8'),
                 "culture": country_code.lower()
             })
-            _LOGGER.debug(self._config)
 
     def save_config(self, data):
         for key in data:
@@ -272,6 +274,10 @@ class StellantisOauth(StellantisBase):
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_GET_TOKEN_QUERY_PARAMS)
         headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
+        if "access_token" in token_request:
+            self.logger_filter.add_custom_value(token_request["access_token"])
+        if "refresh_token" in token_request:
+            self.logger_filter.add_custom_value(token_request["refresh_token"])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(token_request)
@@ -284,6 +290,8 @@ class StellantisOauth(StellantisBase):
         headers = self.apply_headers_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
         user_request = await self.make_http_request(url, 'GET', headers)
+        if "customer" in user_request[0]:
+            self.logger_filter.add_custom_value(user_request[0]["customer"])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(user_request)
@@ -321,6 +329,10 @@ class StellantisOauth(StellantisBase):
         try:
             otp_code = await self.get_otp_code()
             token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
+            if "access_token" in token_request:
+                self.logger_filter.add_custom_value(token_request["access_token"])
+            if "refresh_token" in token_request:
+                self.logger_filter.add_custom_value(token_request["refresh_token"])
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(token_request)
@@ -378,6 +390,7 @@ class StellantisVehicles(StellantisOauth):
 
     def set_entry(self, entry):
         self._entry = entry
+        self.logger_filter.add_entry_values(self._config)
 
     def update_stored_config(self, config, value):
         data = self._entry.data
@@ -458,6 +471,8 @@ class StellantisVehicles(StellantisOauth):
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
         headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
+        self.logger_filter.add_custom_value(token_request["access_token"])
+        self.logger_filter.add_custom_value(token_request["refresh_token"])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(token_request)
@@ -478,6 +493,11 @@ class StellantisVehicles(StellantisOauth):
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_headers_params(CAR_API_HEADERS)
             vehicles_request = await self.make_http_request(url, 'GET', headers)
+            if "_embedded" in vehicles_request:
+                if "vehicles" in vehicles_request["_embedded"]:
+                    for vehicle in vehicles_request["_embedded"]["vehicles"]:
+                        self.logger_filter.add_custom_value(vehicle["vin"])
+                        self.logger_filter.add_custom_value(vehicle["id"])
             _LOGGER.debug(url)
             _LOGGER.debug(headers)
             _LOGGER.debug(vehicles_request)
@@ -594,6 +614,10 @@ class StellantisVehicles(StellantisOauth):
                 return await self.refresh_mqtt_token_request(True)
         else:
             token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
+        if "access_token" in token_request:
+            self.logger_filter.add_custom_value(token_request["access_token"])
+        if "refresh_token" in token_request:
+            self.logger_filter.add_custom_value(token_request["refresh_token"])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(token_request)
@@ -614,7 +638,7 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- START connect_mqtt")
         if self._mqtt is None:
             self._mqtt = MqttClientMod(clean_session=True, protocol=mqtt.MQTTv311)
-            self._mqtt.enable_logger(logger=_LOGGER)
+            # self._mqtt.enable_logger(logger=_LOGGER)
             self._mqtt.tls_set_context(_SSL_CONTEXT)
             self._mqtt.on_connect = self._on_mqtt_connect
             self._mqtt.on_disconnect = self._on_mqtt_disconnect

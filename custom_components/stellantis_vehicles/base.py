@@ -48,6 +48,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 #        self._total_trip = None
         self._manage_charge_limit_sent = False
 
+        if self._stellantis.logger_filter:
+            _LOGGER.addFilter(self._stellantis.logger_filter)
+
     async def _async_update_data(self):
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("---------- START _async_update_data")
