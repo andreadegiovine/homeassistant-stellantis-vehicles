@@ -2,8 +2,8 @@
 - [Requirements](#requirements)
 - [Features](#features)
 - [Installation](#installation)
-- [OAuth2 Code](#oauth2-code)
 - [Screenshot](#screenshot)
+- [OAuth2 Code](#oauth2-code)
 - [Commands](#commands)
 - [Battery capacity / residual sensors](#battery-capacity--residual-sensors)
 - [Errors](#errors)
@@ -57,6 +57,10 @@ Send remote commands:
 
 </details>
 
+## Screenshot
+![Controls](./images/controls.png)
+![Sensors](./images/sensors.png)
+
 ## OAuth2 Code
 <details><summary><b>Using browser console</b></summary>
 
@@ -71,11 +75,10 @@ Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome Pyt
 
 </details>
 
-## Screenshot
-![Controls](./images/controls.png)
-![Sensors](./images/sensors.png)
-
 ## Commands
+To enable remote commands for new configuration, you must select the **"Configure remote commands (E-remote or Connect Plus required)"** checkbox in the OAuth step and complete the OTP step.  
+To enable/re-enable remote commands for an existing configuration, click the three dots in the configuration row > **Reconfigure** and complete the OTP step.
+
 ### WakeUp
 For some vehicles no updates are received a few minutes after the engine is turned off. Use automations like these to schedule the vehicle wake up:
 
@@ -191,9 +194,9 @@ exi
 <sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
+Sven  
 Martijn  
 John Woertman  
-Pekka  
 <sub>*and other heroes*</sub>
 
 **🥉 2 beers**  

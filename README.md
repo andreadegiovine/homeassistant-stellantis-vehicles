@@ -194,9 +194,9 @@ exi
 <sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
+Sven  
 Martijn  
 John Woertman  
-Pekka  
 <sub>*and other heroes*</sub>
 
 **🥉 2 beers**  
