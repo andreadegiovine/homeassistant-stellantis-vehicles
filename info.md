@@ -76,8 +76,13 @@ Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome Pyt
 </details>
 
 ## Commands
-To enable remote commands for new configuration, you must select the **"Configure remote commands (E-remote or Connect Plus required)"** checkbox in the OAuth step and complete the OTP step.  
+To enable remote commands for new configuration, you must select the **"Configure remote commands (E-remote or Connect Plus required)"** checkbox in the OAuth step and complete the OTP step.
+
+![Enable remote commands](./images/remote-commands-1.png)
+
 To enable/re-enable remote commands for an existing configuration, click the three dots in the configuration row > **Reconfigure** and complete the OTP step.
+
+![Enable remote commands](./images/remote-commands-2.png)
 
 ### WakeUp
 For some vehicles no updates are received a few minutes after the engine is turned off. Use automations like these to schedule the vehicle wake up:
