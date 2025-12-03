@@ -18,7 +18,7 @@ body:
         The problem isn't related to the integration but rather to the Stellantis servers, which aren't returning the vehicles linked to your account. Try completing all the connection procedures indicated in the official app. If that doesn't work, try creating a new Stellantis account, linking the vehicles, and using it for the integration.
 
         - **Remote control buttons are not visible?**
-        In the "OAuth code" authentication step, check the "Configure remote commands (E-remote or Connect Plus required)" checkbox and complete the OTP step.
+        In the "OAuth code" authentication step, check the "Configure remote commands (E-remote or Connect Plus required)" checkbox and complete the OTP step as described in "[Commands](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#commands)"  section.
 
         - **Remote control buttons are visible but not available?**
         For some vehicles Stellantis does not provide necessary data in the state as described in [issue #350](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/350)
