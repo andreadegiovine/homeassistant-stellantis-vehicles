@@ -3,7 +3,7 @@ import voluptuous as vol
 from datetime import timedelta
 from uuid import uuid4
 
-from homeassistant import config_entries
+from homeassistant.config_entries import ( ConfigFlow, SOURCE_REAUTH, SOURCE_RECONFIGURE )
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers import translation
 
@@ -42,7 +42,7 @@ OTP_SCHEMA = vol.Schema({
     vol.Required(FIELD_PIN_CODE): str
 })
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
     MINOR_VERSION = 3
 
@@ -148,8 +148,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await self.stellantis.get_otp_sms()
             except Exception as e:
-                self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_otp_sms", e)
+                message = self.get_error_message("get_otp_sms", e)
                 await self.stellantis.hass_notify("otp_error")
+                if self.source == SOURCE_RECONFIGURE:
+                    return self.async_abort(reason=message)
+                self.errors[FIELD_OAUTH_CODE] = message
                 return await self.async_step_oauth()
             return self.async_show_form(step_id="otp", data_schema=OTP_SCHEMA)
 
@@ -158,8 +161,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             otp_token_request = await self.stellantis.get_mqtt_access_token()
         except Exception as e:
             message = self.get_error_message("get_mqtt_access_token_" + str(e).lower().replace(":", "_"), e)
+            await self.stellantis.hass_notify("otp_error")
             if not message:
                 message = self.get_error_message("get_mqtt_access_token", e)
+            if self.source == SOURCE_RECONFIGURE:
+                return self.async_abort(reason=message)
             self.errors[FIELD_OAUTH_CODE] = message
             return await self.async_step_oauth()
 
@@ -175,9 +181,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_final(self, user_input=None):
-        if self.source in [config_entries.SOURCE_REAUTH, config_entries.SOURCE_RECONFIGURE]:
-            self._abort_if_unique_id_mismatch()
+        if self.source == SOURCE_REAUTH:
             return self.async_update_reload_and_abort(self._get_reauth_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
+        if self.source == SOURCE_RECONFIGURE:
+            self._abort_if_unique_id_mismatch()
+            self.data.update({FIELD_REMOTE_COMMANDS: True})
+            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
 
         await self.async_set_unique_id(str(self.data["customer_id"]))
         self._abort_if_unique_id_configured()
@@ -187,10 +196,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_reconfigure(self, user_input=None):
         if user_input is None:
             return self.async_show_form(step_id="reconfigure")
+        await self.init_translations()
         self.stellantis = self.hass.data[DOMAIN][self._reconfigure_entry_id]
-        self.data = self.stellantis._entry.data
+        self.data = dict(self.stellantis._entry.data)
         self.stellantis.disable_remote_commands()
-        self.data[FIELD_REMOTE_COMMANDS] = True
+        await self.async_set_unique_id(str(self.data["customer_id"]))
         return await self.async_step_otp()
 
 

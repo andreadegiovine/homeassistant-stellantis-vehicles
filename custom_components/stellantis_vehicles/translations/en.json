@@ -26,6 +26,9 @@
       },
       "reauth_confirm": {
         "description": "You need to re-authenticate to use this integration"
+      },
+      "reconfigure": {
+        "description": "Configure remote commands (E-remote or Connect Plus required)"
       }
     },
     "error": {
@@ -41,7 +44,8 @@
     },
     "abort": {
       "already_configured": "Account is already configured",
-      "reauth_successful": "Re-authentication was successful"
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Configuration was successful"
     }
   },
   "entity": {
