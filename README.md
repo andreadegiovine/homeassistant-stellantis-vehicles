@@ -1,6 +1,6 @@
 # HomeAssistant - Stellantis Vehicles
-![Active installations](https://img.shields.io/badge/active_installations-2500+-%2318BCF2?style=for-the-badge&logo=homeassistant)  
-![Version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=version)
+[![Active installations](https://img.shields.io/badge/active_installations-2500+-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=version)](#)
 
 - [Requirements](#requirements)
 - [Features](#features)
