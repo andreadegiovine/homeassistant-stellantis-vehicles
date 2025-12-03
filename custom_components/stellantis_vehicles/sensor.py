@@ -76,7 +76,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 icon = "mdi:format-list-bulleted-type",
                 entity_category = EntityCategory.DIAGNOSTIC
             )
-            entities.extend([StellantisRestoreSensor(coordinator, description)])
+            entities.extend([StellantisCommandStatusSensor(coordinator, description)])
 
         description = SensorEntityDescription(
             name = "last_trip",
@@ -105,6 +105,13 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 class StellantisTypeSensor(StellantisRestoreSensor):
     def coordinator_update(self):
         self._attr_native_value = self._coordinator.vehicle_type.lower()
+
+
+class StellantisCommandStatusSensor(StellantisRestoreSensor):
+    def coordinator_update(self):
+        command_history = self._coordinator.command_history
+        if command_history:
+            self._attr_native_value = command_history[next(iter(command_history))]
 
 
 class StellantisLastTripSensor(StellantisRestoreSensor):
