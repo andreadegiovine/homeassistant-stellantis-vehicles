@@ -2,6 +2,8 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.text import TextEntityDescription
+from homeassistant.const import EntityCategory
+
 from .base import StellantisBaseText
 
 from .const import (
@@ -25,7 +27,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 name = "abrp_token",
                 key = "abrp_token",
                 translation_key = "abrp_token",
-                icon = "mdi:source-branch"
+                icon = "mdi:source-branch",
+                entity_category = EntityCategory.CONFIG
             )
             entities.extend([StellantisBaseText(coordinator, description)])
 

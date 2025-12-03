@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume, UnitOfPower, PERCENTAGE )
 from homeassistant.components.sensor.const import ( SensorDeviceClass )
+from homeassistant.const import EntityCategory
 
 from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 from .utils import get_datetime
@@ -53,7 +54,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 key = "last_charge",
                 translation_key = "last_charge",
                 icon = "mdi:ev-station",
-                device_class = SensorDeviceClass.TIMESTAMP
+                device_class = SensorDeviceClass.TIMESTAMP,
+                entity_category = EntityCategory.DIAGNOSTIC
             )
             entities.extend([StellantisLastChargeSensor(coordinator, description)])
 
@@ -61,7 +63,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             name = "type",
             key = "type",
             translation_key = "type",
-            icon = "mdi:car-info"
+            icon = "mdi:car-info",
+            entity_category = EntityCategory.DIAGNOSTIC
         )
         entities.extend([StellantisTypeSensor(coordinator, description)])
 
@@ -70,7 +73,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 name = "command_status",
                 key = "command_status",
                 translation_key = "command_status",
-                icon = "mdi:format-list-bulleted-type"
+                icon = "mdi:format-list-bulleted-type",
+                entity_category = EntityCategory.DIAGNOSTIC
             )
             entities.extend([StellantisRestoreSensor(coordinator, description)])
 
@@ -80,7 +84,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             translation_key = "last_trip",
             icon = "mdi:map-marker-path",
             unit_of_measurement = UnitOfLength.KILOMETERS,
-            device_class = SensorDeviceClass.DISTANCE
+            device_class = SensorDeviceClass.DISTANCE,
+            entity_category = EntityCategory.DIAGNOSTIC
         )
         entities.extend([StellantisLastTripSensor(coordinator, description)])
 

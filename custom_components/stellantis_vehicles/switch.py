@@ -2,6 +2,8 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.switch import SwitchEntityDescription
+from homeassistant.const import EntityCategory
+
 from .base import StellantisBaseSwitch
 
 from .const import (
@@ -26,7 +28,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                     name = "battery_charging_limit",
                     key = "battery_charging_limit",
                     translation_key = "battery_charging_limit",
-                    icon = "mdi:battery-charging-60"
+                    icon = "mdi:battery-charging-60",
+                    entity_category = EntityCategory.CONFIG
                 )
                 entities.extend([StellantisBatteryChargingLimitSwitch(coordinator, description)])
 
@@ -34,7 +37,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 name = "abrp_sync",
                 key = "abrp_sync",
                 translation_key = "abrp_sync",
-                icon = "mdi:source-branch-sync"
+                icon = "mdi:source-branch-sync",
+                entity_category = EntityCategory.CONFIG
             )
             entities.extend([StellantisAbrpSyncSwitch(coordinator, description)])
 
@@ -42,7 +46,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 name = "battery_values_correction",
                 key = "battery_values_correction",
                 translation_key = "battery_values_correction",
-                icon = "mdi:auto-fix"
+                icon = "mdi:auto-fix",
+                entity_category = EntityCategory.CONFIG
             )
             entities.extend([StellantisBaseSwitch(coordinator, description)])
 
@@ -50,7 +55,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             name = "notifications",
             key = "notifications",
             translation_key = "notifications",
-            icon = "mdi:message-alert"
+            icon = "mdi:message-alert",
+            entity_category = EntityCategory.CONFIG
         )
         entities.extend([StellantisBaseSwitch(coordinator, description)])
 

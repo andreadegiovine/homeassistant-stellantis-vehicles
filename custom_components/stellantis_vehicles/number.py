@@ -3,6 +3,8 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.const import ( PERCENTAGE, UnitOfTime )
 from homeassistant.components.number import NumberMode, NumberEntityDescription
+from homeassistant.const import EntityCategory
+
 from .base import StellantisBaseNumber
 
 from .const import (
@@ -32,7 +34,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 native_min_value = 20,
                 native_max_value = 90,
                 native_step = 1,
-                mode = NumberMode.SLIDER
+                mode = NumberMode.SLIDER,
+                entity_category = EntityCategory.CONFIG
             )
             entities.extend([StellantisBaseNumber(coordinator, description)])
 
@@ -45,7 +48,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             native_min_value = 30,
             native_max_value = 3600,
             native_step = 5,
-            mode = NumberMode.BOX
+            mode = NumberMode.BOX,
+            entity_category = EntityCategory.CONFIG
         )
         entities.extend([StellantisBaseNumber(coordinator, description, UPDATE_INTERVAL)])
 

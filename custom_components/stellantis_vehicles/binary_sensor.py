@@ -2,6 +2,8 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.binary_sensor import ( BinarySensorEntity, BinarySensorEntityDescription, BinarySensorDeviceClass )
+from homeassistant.const import EntityCategory
+
 from .base import ( StellantisBaseBinarySensor, StellantisBaseEntity )
 
 from .const import (
@@ -40,7 +42,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 key = "remote_commands",
                 translation_key = "remote_commands",
                 icon = "mdi:broadcast",
-                device_class = BinarySensorDeviceClass.CONNECTIVITY
+                device_class = BinarySensorDeviceClass.CONNECTIVITY,
+                entity_category = EntityCategory.DIAGNOSTIC
             )
             entities.extend([StellantisRemoteCommandsBinarySensor(coordinator, description)])
 
