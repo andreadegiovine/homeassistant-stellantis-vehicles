@@ -72,6 +72,7 @@ class SensitiveDataFilter(logging.Filter):
     def __init__(self):
         super().__init__()
         self.custom_values = []
+        self.entry_data = {}
         self.masked_entry_keys = ["access_token", "refresh_token", "oauth_code", "customer_id"]
 
     def add_custom_value(self, value):

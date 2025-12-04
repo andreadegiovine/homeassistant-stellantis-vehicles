@@ -111,7 +111,7 @@ def _create_ssl_context() -> ssl.SSLContext:
 _SSL_CONTEXT = _create_ssl_context()
 
 class StellantisBase:
-    def __init__(self, hass:HomeAssistant) -> None:
+    def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
         self._config = {}
         self._session = None
@@ -166,7 +166,7 @@ class StellantisBase:
         if vehicle is None:
             vehicle = []
         for key in vehicle:
-            string = string.replace("{#"+key+"#}", str(vehicle[key]))
+            string = string.replace("{#" + key + "#}", str(vehicle[key]))
         for key, value in self._config.items():
             string = string.replace("{#" + key + "#}", str(value))
         return string
@@ -361,7 +361,7 @@ class StellantisOauth(StellantisBase):
             if not os.path.isfile(otp_file_path):
                 _LOGGER.error(f"Error: OTP file '{otp_file_path}' not found, please reauthenticate")
                 _LOGGER.debug("---------- END get_otp_code")
-                raise ConfigEntryAuthFailed(f"OTP file not found, please reauthenticate")
+                raise ConfigEntryAuthFailed("OTP file not found, please reauthenticate")
             self.otp = await self._hass.async_add_executor_job(load_otp, otp_file_path)
         # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
         otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
@@ -376,11 +376,11 @@ class StellantisOauth(StellantisBase):
 
 
 class StellantisVehicles(StellantisOauth):
-    def __init__(self, hass:HomeAssistant) -> None:
+    def __init__(self, hass: HomeAssistant) -> None:
         super().__init__(hass)
 
         self._entry = None
-        self._coordinator_dict  = {}
+        self._coordinator_dict = {}
         self._vehicles = []
         self._mqtt = None
         self._mqtt_last_request = None
@@ -538,7 +538,7 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
-    async def get_vehicle_last_trip(self, vehicle, page_token = False):
+    async def get_vehicle_last_trip(self, vehicle, page_token=False):
         _LOGGER.debug("---------- START get_vehicle_last_trip")
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_headers_params(CAR_API_HEADERS)
@@ -592,7 +592,14 @@ class StellantisVehicles(StellantisOauth):
         except ComunicationError:
             next_run = get_datetime() + timedelta(minutes=1)
         except RateLimitException:
-            _LOGGER.debug("Rate limit exceeded, check logs and restart integration")
+            _LOGGER.warning("Rate limit exceeded, check logs and restart integration")
+            _LOGGER.debug("---------- END scheduled_mqtt_token_refresh")
+            return
+        except ConfigException:
+            self.disable_remote_commands()
+            await self.hass_notify("reconfigure_otp")
+            _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
+            _LOGGER.debug("---------- END scheduled_mqtt_token_refresh")
             return
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
@@ -761,8 +768,8 @@ class StellantisVehicles(StellantisOauth):
             return action_id
         except ConfigEntryAuthFailed as e:
             self.disable_remote_commands()
-            self.do_async(self.hass_notify("reconfigure_otp"))
-            _LOGGER.error("Failed to send MQTT message for vehicle '%s' due to authentication error: '%s'. To enable remote commands again please reconfigure the integration", vehicle["vin"], e)
+            await self.hass_notify("reconfigure_otp")
+            _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             _LOGGER.debug("---------- END send_mqtt_message")
             pass
         except Exception as e:
