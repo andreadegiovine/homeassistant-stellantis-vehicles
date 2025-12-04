@@ -1,4 +1,7 @@
 # HomeAssistant - Stellantis Vehicles
+[![Active installations](https://img.shields.io/badge/active_installations-2500+-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Last version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=last%20version&color=green)](#)
+
 - [Requirements](#requirements)
 - [Features](#features)
 - [Installation](#installation)
@@ -210,9 +213,9 @@ ryhaberecht
 Tizian  
 
 **⭐ 1 beers**  
-Someone  
-teknohead  
-@bgoncal2  
+Thomas  
+@hengelha  
+speedmops  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
