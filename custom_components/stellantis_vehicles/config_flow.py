@@ -121,22 +121,6 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         })
 
         if self.data[FIELD_REMOTE_COMMANDS]:
-            self.stellantis.save_config({"access_token": self.data["access_token"]})
-
-            try:
-                user_info_request = await self.stellantis.get_user_info()
-            except Exception as e:
-                self.errors[FIELD_OAUTH_CODE] = self.get_error_message("get_user_info", e)
-                return await self.async_step_oauth()
-
-            if not user_info_request or "customer" not in user_info_request[0]:
-                self.errors[FIELD_OAUTH_CODE] = self.get_error_message("missing_user_info")
-                return await self.async_step_oauth()
-
-            self.data.update({"customer_id": user_info_request[0]["customer"]})
-
-            self.stellantis.save_config({"customer_id": self.data["customer_id"]})
-
             return await self.async_step_otp()
         else:
             self.data.update({"customer_id": "MN-" + str(uuid4()).replace("-", "")[:16]})
@@ -145,6 +129,28 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_otp(self, user_input=None):
         if user_input is None:
+            self.stellantis.save_config({"access_token": self.data["access_token"]})
+
+            try:
+                user_info_request = await self.stellantis.get_user_info()
+            except Exception as e:
+                message = self.get_error_message("get_user_info", e)
+                if self.source == SOURCE_RECONFIGURE:
+                    return self.async_abort(reason=message)
+                self.errors[FIELD_OAUTH_CODE] = message
+                return await self.async_step_oauth()
+
+            if not user_info_request or "customer" not in user_info_request[0]:
+                message = self.get_error_message("missing_user_info")
+                if self.source == SOURCE_RECONFIGURE:
+                    return self.async_abort(reason=message)
+                self.errors[FIELD_OAUTH_CODE] = message
+                return await self.async_step_oauth()
+
+            self.data.update({"customer_id": user_info_request[0]["customer"]})
+
+            self.stellantis.save_config({"customer_id": self.data["customer_id"]})
+
             try:
                 await self.stellantis.get_otp_sms()
             except Exception as e:
@@ -184,8 +190,11 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         if self.source == SOURCE_REAUTH:
             return self.async_update_reload_and_abort(self._get_reauth_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
         if self.source == SOURCE_RECONFIGURE:
+            if self._get_reconfigure_entry().unique_id != str(self.data["customer_id"]):
+                await self.async_set_unique_id(str(self.data["customer_id"]))
+                self._abort_if_unique_id_configured()
             self.data.update({FIELD_REMOTE_COMMANDS: True})
-            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
+            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False, unique_id=str(self.data["customer_id"]))
 
         await self.async_set_unique_id(str(self.data["customer_id"]))
         self._abort_if_unique_id_configured()
