@@ -292,6 +292,10 @@ class StellantisOauth(StellantisBase):
         user_request = await self.make_http_request(url, 'GET', headers)
         if "customer" in user_request[0]:
             self.logger_filter.add_custom_value(user_request[0]["customer"])
+        if "vehicle" in user_request[0]:
+            self.logger_filter.add_custom_value(user_request[0]["vehicle"])
+        if "car_association_id" in user_request[0]:
+            self.logger_filter.add_custom_value(user_request[0]["car_association_id"])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(user_request)
