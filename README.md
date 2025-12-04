@@ -202,9 +202,9 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 5 beers**  
+Andy  
 Kenneth Henderick  
 Someone  
-exi  
 <sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
