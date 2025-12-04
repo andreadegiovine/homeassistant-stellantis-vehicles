@@ -184,7 +184,6 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         if self.source == SOURCE_REAUTH:
             return self.async_update_reload_and_abort(self._get_reauth_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
         if self.source == SOURCE_RECONFIGURE:
-            self._abort_if_unique_id_mismatch()
             self.data.update({FIELD_REMOTE_COMMANDS: True})
             return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
 
@@ -200,7 +199,6 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         self.stellantis = self.hass.data[DOMAIN][self._reconfigure_entry_id]
         self.data = dict(self.stellantis._entry.data)
         self.stellantis.disable_remote_commands()
-        await self.async_set_unique_id(str(self.data["customer_id"]))
         return await self.async_step_otp()
 
 
