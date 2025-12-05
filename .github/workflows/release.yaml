@@ -25,6 +25,7 @@ jobs:
         run: |
           # Integration slug
           integration_slug="stellantis_vehicles"
+          hacs_id="839422993"
           
           # Fetch all tags
           git fetch --tags
@@ -95,6 +96,7 @@ jobs:
           
           echo "New tag: $new_tag_name"
           echo "integration_slug=$integration_slug" >> $GITHUB_OUTPUT
+          echo "hacs_id=$hacs_id" >> $GITHUB_OUTPUT
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
           echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
           echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
@@ -174,6 +176,59 @@ jobs:
           mv -f README.tmp README.md
           rm -rf supporters_repo
           rm "$tmp_section"
+
+      - name: Update active installations in README.md
+        if: ${{ steps.tag-name.outputs.hacs_id != '' }}
+        run: |
+          set -e
+
+          # Fetch HACS data
+          echo "Fetching HACS data..."
+          hacs_response=$(curl -s https://data-v2.hacs.xyz/integration/data.json)
+          
+          # Extract downloads count for this integration
+          new_installations=$(echo "$hacs_response" | jq -r --arg id "${{ steps.tag-name.outputs.hacs_id }}" '.[$id].downloads' 2>/dev/null || echo "")
+          
+          if [ -z "$new_installations" ] || [ "$new_installations" = "null" ]; then
+            echo "Could not fetch installations count from HACS"
+            exit 0
+          fi
+          
+          echo "New installations count: $new_installations"
+          
+          # Extract current installations count from README
+          current_line=$(grep -E "!\[Active installations\]" README.md || echo "")
+          
+          if [ -z "$current_line" ]; then
+            echo "Active installations line not found, creating it..."
+            
+            # Find the first heading (# Title)
+            first_heading_line=$(grep -n "^# " README.md | head -1 | cut -d: -f1)
+            
+            if [ -z "$first_heading_line" ]; then
+              echo "No main heading found in README.md"
+              exit 0
+            fi
+            
+            # Insert new line after first heading
+            new_line="[![Active installations](https://img.shields.io/badge/active_installations-${new_installations}-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  "
+            sed -i "${first_heading_line}a ${new_line}" README.md
+            echo "Active installations line created"
+          else
+            # Extract current count from the line
+            current_installations=$(echo "$current_line" | grep -oP 'active_installations-\K[0-9]+' | head -1)
+            
+            echo "Current installations count: $current_installations"
+            
+            # Compare and update if new count is higher
+            if [ "$new_installations" -gt "$current_installations" ]; then
+              echo "Updating installations count from $current_installations to $new_installations"
+              sed -E -i "s/(active_installations-)[0-9]+/\1${new_installations}/" README.md
+              echo "Active installations line updated"
+            else
+              echo "New count is not higher than current count, skipping update"
+            fi
+          fi
 
       - name: Copy README.md to info.md
         run: cp -f README.md info.md
