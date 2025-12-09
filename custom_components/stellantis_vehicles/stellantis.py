@@ -278,6 +278,8 @@ class StellantisOauth(StellantisBase):
             self.logger_filter.add_custom_value(token_request["access_token"])
         if "refresh_token" in token_request:
             self.logger_filter.add_custom_value(token_request["refresh_token"])
+        if "id_token" in token_request:
+            self.logger_filter.add_custom_value(token_request["id_token"])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(token_request)
