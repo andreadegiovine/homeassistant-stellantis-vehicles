@@ -17,6 +17,8 @@ OAUTH_BASE_URL = "{#oauth_url#}/am/oauth2"
 OAUTH_AUTHORIZE_URL = OAUTH_BASE_URL + "/authorize"
 OAUTH_TOKEN_URL = OAUTH_BASE_URL + "/access_token"
 
+OAUTH_CODE_URL = "https://hass-stellantis-vehicles-oauth.andreadegiovine.workers.dev"
+
 API_BASE_URL = "https://api.groupe-psa.com"
 GET_USER_INFO_URL = API_BASE_URL + "/applications/cvs/v4/mauv/car-associations"
 GET_OTP_URL = API_BASE_URL + "/applications/cvs/v4/mobile/smsCode"
@@ -83,6 +85,7 @@ CAR_API_HEADERS = {
 
 FIELD_MOBILE_APP = "mobile_app"
 FIELD_COUNTRY_CODE = "country_code"
+FIELD_OAUTH_MANUAL_MODE = "oauth_manual_mode"
 FIELD_OAUTH_CODE = "oauth_code"
 FIELD_REMOTE_COMMANDS = "remote_commands"
 FIELD_SMS_CODE = "sms_code"

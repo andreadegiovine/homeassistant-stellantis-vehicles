@@ -11,10 +11,28 @@
           "country_code": "Il codice del tuo paese"
         }
       },
-      "oauth": {
+      "oauth_mode": {
+        "description": "Per autenticare il tuo account verrà utilizzato un servizio remoto che non memorizzerà in alcun modo le tue credenziali, in alternativa puoi utilizzare il metodo manuale",
+        "data": {
+          "oauth_manual_mode": "Usa il metodo manuale"
+        }
+      },
+      "oauth_remote": {
+        "description": "Questo [servizio remoto](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker) viene utilizzato per simulare un browser ed effettuare l'accesso sul sito web ufficiale",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "oauth_manual": {
         "description": "Segui questi step dal **browser desktop**:\n\n1. vai sulla pagina di login {oauth_link};\n2. apri il **DevTools** (F12) del browser e vai al tab **Network**;\n3. accedi al tuo account e clicca l'ultimo bottone di conferma;\n4. dal tab **Network**  trova la richiesta in basso e copia il **{oauth_label}**;{oauth_devtools}",
         "data": {
-          "oauth_code": "Codice OAuth",
+          "oauth_code": "Codice OAuth"
+        }
+      },
+      "get_access_token": {
+        "description": "**Autenticazione completata**.\nPer utilizzare i comandi remoti seleziona l'opzione in basso e completa lo step OTP",
+        "data": {
           "remote_commands": "Configura comandi remoti (richiede E-remote o Connect Plus)"
         }
       },
@@ -32,6 +50,7 @@
       }
     },
     "error": {
+      "get_oauth_code": "Errore oauth code",
       "get_access_token": "Errore access token",
       "get_user_info": "Errore informazioni utente",
       "missing_user_info": "Informazioni utente mancanti",

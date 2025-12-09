@@ -11,7 +11,7 @@
           "country_code": "Seu código do país"
         }
       },
-      "oauth": {
+      "oauth_manual": {
         "description": "Siga estas etapas a partir do **navegador de desktop**:\n\n1. vá para a página de login {oauth_link};\n2. abra o **DevTools** e vá para a aba **Rede** (F12);\n3. faça login na sua conta e clique no último botão de confirmação;\n4. na aba **Rede** encontre a solicitação acima e copie o **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "Código OAuth"

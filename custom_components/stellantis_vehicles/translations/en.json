@@ -11,10 +11,28 @@
           "country_code": "Your country code"
         }
       },
-      "oauth": {
+      "oauth_mode": {
+        "description": "To authenticate your account, a remote service is used that does not store your credentials in any way, alternatively you can use the manual method",
+        "data": {
+          "oauth_manual_mode": "Use the manual method"
+        }
+      },
+      "oauth_remote": {
+        "description": "This [remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker) is used to simulate browser login on the official website",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "oauth_manual": {
         "description": "Follow this steps from **desktop browser**:\n\n1. go to {oauth_link} login page;\n2. open the browser **DevTools** (F12) and go to **Network** tab;\n3. login to your account and click the last confirm button;\n4. from **Network** tab find above request and copy the **{oauth_label}**;{oauth_devtools}",
         "data": {
-          "oauth_code": "OAuth code",
+          "oauth_code": "OAuth code"
+        }
+      },
+      "get_access_token": {
+        "description": "**Authentication completed**.\nTo use remote commands, check the option below and complete the OTP step",
+        "data": {
           "remote_commands": "Configure remote commands (E-remote or Connect Plus required)"
         }
       },
@@ -32,6 +50,7 @@
       }
     },
     "error": {
+      "get_oauth_code": "Get oauth code error",
       "get_access_token": "Get access token error",
       "get_user_info": "Get user info error",
       "missing_user_info": "Missing user info error",

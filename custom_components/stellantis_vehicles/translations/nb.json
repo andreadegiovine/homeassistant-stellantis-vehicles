@@ -11,7 +11,7 @@
           "country_code": "Landskode"
         }
       },
-      "oauth": {
+      "oauth_manual": {
         "description": "Følg disse trinnene fra en **nettleser på datamaskin**:\n\n1. Gå til {oauth_link} innloggingsside;\n2. Åpne **DevTools** (F12) og gå til fanen **Network**;\n3. Logg inn på kontoen din og klikk på siste bekreftelsesknapp;\n4. Finn forespørselen i **Network**-fanen og kopier **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth-kode"

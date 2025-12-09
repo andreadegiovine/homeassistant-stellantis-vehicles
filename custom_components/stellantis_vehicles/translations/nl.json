@@ -11,7 +11,7 @@
           "country_code": "Je land code"
         }
       },
-      "oauth": {
+      "oauth_manual": {
         "description": "Volg deze stappen in de **desktop browser**:\n\n1. Ga naar {oauth_link} login pagina;\n2. Open in je browser **DevTools** (F12) en ga naar het **Network** tabblad;\n3. Log in en klik op confirm;\n4. Vanuit het **Network** tab zoek zoek de **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth code"

@@ -11,7 +11,7 @@
           "country_code": "Votre code pays"
         }
       },
-      "oauth": {
+      "oauth_manual": {
         "description": "Suivez ces étapes depuis un **navigateur sur votre ordinateur**:\n\n1. Allez sur la page d'authentification {oauth_link}\n2. Dans le navigateur, ouvrez les **DevTools** (F12) et allez sur l'onglet **Réseau**\n3. Identifiez-vous et cliquez sur le dernier bouton de confirmation\n4. Sur l'onglet **Réseau** cherchez la requête ci-dessous et copiez le **{oauth_label}**{oauth_devtools}",
         "data": {
           "oauth_code": "Code OAuth"

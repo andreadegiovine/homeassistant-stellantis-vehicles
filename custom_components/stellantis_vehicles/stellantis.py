@@ -33,6 +33,7 @@ from .const import (
     MOBILE_APPS,
     OAUTH_AUTHORIZE_URL,
     OAUTH_TOKEN_URL,
+    OAUTH_CODE_URL,
     OAUTH_AUTHORIZE_QUERY_PARAMS,
     OAUTH_GET_TOKEN_QUERY_PARAMS,
     OAUTH_REFRESH_TOKEN_QUERY_PARAMS,
@@ -268,6 +269,15 @@ class StellantisBase:
 class StellantisOauth(StellantisBase):
     def get_oauth_url(self):
         return self.apply_query_params(OAUTH_AUTHORIZE_URL, OAUTH_AUTHORIZE_QUERY_PARAMS)
+
+    async def get_oauth_code(self, email, password):
+        _LOGGER.debug("---------- START get_oauth_code")
+        oauth_code_request = await self.make_http_request(OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password})
+        if "code" in oauth_code_request:
+            self.logger_filter.add_custom_value(oauth_code_request["code"])
+        _LOGGER.debug(oauth_code_request)
+        _LOGGER.debug("---------- END get_oauth_code")
+        return oauth_code_request
 
     async def get_access_token(self):
         _LOGGER.debug("---------- START get_access_token")

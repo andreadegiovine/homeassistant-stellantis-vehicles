@@ -11,7 +11,7 @@
           "country_code": "Dein Ländercode"
         }
       },
-      "oauth": {
+      "oauth_manual": {
         "description": "Führen Sie diese Schritte im **Desktop-Browser** aus:\n\n1. Gehen Sie zur Anmeldeseite {oauth_link};\n2. Öffnen Sie den Browser **DevTools** (F12) und wechseln Sie zur Registerkarte **Netzwerk**;\n3. Melden Sie sich bei Ihrem Konto an und klicken Sie auf die letzte Schaltfläche „Bestätigen“;\n4. Suchen Sie in der Registerkarte **Netzwerk** die obige Anfrage und kopieren Sie die **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth code"

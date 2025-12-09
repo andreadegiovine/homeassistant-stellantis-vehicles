@@ -11,7 +11,7 @@
           "country_code": "Din landskod"
         }
       },
-      "oauth": {
+      "oauth_manual": {
         "description": "Följ dessa steg från **desktop browser**:\n\n1. Gå till {oauth_link} login sida;\n2. Öppna webläsarens **DevTools** (F12) och går till **Network** tab;\n3. Logga in på ditt konto och klicka på sista confirm knappen;\n4. Från **Network** tabben hitta följande request och kopiera **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth kod"
