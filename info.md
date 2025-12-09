@@ -1,5 +1,5 @@
 # HomeAssistant - Stellantis Vehicles
-[![Active installations](https://img.shields.io/badge/active_installations-2200-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Active installations](https://img.shields.io/badge/active_installations-2219-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
 [![Last version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=last%20version&color=green)](#)
 
 - [Requirements](#requirements)
@@ -65,6 +65,12 @@ Send remote commands:
 ![Sensors](./images/sensors.png)
 
 ## OAuth2 Code
+### Remote service
+To authenticate your account, this [remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker) is used to simulate browser login on the official website. 
+
+<ins>**Your credentials are not stored or shared**</ins>
+
+### Manual
 <details><summary><b>Using browser console</b></summary>
 
 As described on config flow, please get the right code from the mobile app redirect like this example (Chrome browser):
