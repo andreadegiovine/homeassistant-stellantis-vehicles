@@ -31,8 +31,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 translation_key = "battery_charging_limit",
                 icon = "mdi:battery-charging-60",
                 unit_of_measurement = PERCENTAGE,
-                native_min_value = 20,
-                native_max_value = 90,
+                native_min_value = 15,
+                native_max_value = 95,
                 native_step = 1,
                 mode = NumberMode.SLIDER,
                 entity_category = EntityCategory.CONFIG
