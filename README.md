@@ -66,9 +66,13 @@ Send remote commands:
 
 ## OAuth2 Code
 ### Remote service
-To authenticate your account, this [remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker) is used to simulate browser login on the official website. 
+This **[remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker)** simulates a browser login session on the official website to authenticate your account.
 
-<ins>**Your credentials are not stored or shared**</ins>
+<ins>**Your credentials are neither stored nor shared**</ins>
+
+The service is provided by Cloudflare on a free tier, with the following limitations:
+- **Browser hours** 10 minutes per day;
+- **Concurrent browsers** 3 browsers;
 
 ### Manual
 <details><summary><b>Using browser console</b></summary>
@@ -167,6 +171,11 @@ It seems that this error is due to reaching the limit of associated devices / SM
 
 ### OTP error - NOK:NOK_BLOCKED
 It seems that this error is due to reaching the limit of wrong PIN used. Re-authenticate the integration.
+
+### Get oauth code error
+As described in the "OAuth2 Code > [Remote service](#remote-service)" section, this free service has usage limitations.  
+If you've hit these limits, please wait and try again.  
+If the problem persists or is unrelated to usage limits, please use "OAuth2 Code > [Manual](#manual)" mode.
 
 ## ABRP - A Better Routeplanner
 Get a token from [ABRP](https://abetterrouteplanner.com/):
