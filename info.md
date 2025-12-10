@@ -1,5 +1,5 @@
 # HomeAssistant - Stellantis Vehicles
-[![Active installations](https://img.shields.io/badge/active_installations-2219-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Active installations](https://img.shields.io/badge/active_installations-2375-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
 [![Last version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=last%20version&color=green)](#)
 
 - [Requirements](#requirements)
@@ -66,9 +66,13 @@ Send remote commands:
 
 ## OAuth2 Code
 ### Remote service
-To authenticate your account, this [remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker) is used to simulate browser login on the official website. 
+This **[remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker)** simulates a browser login session on the official website to authenticate your account.
 
-<ins>**Your credentials are not stored or shared**</ins>
+<ins>**Your credentials are neither stored nor shared**</ins>
+
+The service is provided by Cloudflare on a free tier, with the following limitations:
+- **Browser hours** 10 minutes per day;
+- **Concurrent browsers** 3 browsers;
 
 ### Manual
 <details><summary><b>Using browser console</b></summary>
@@ -168,6 +172,11 @@ It seems that this error is due to reaching the limit of associated devices / SM
 ### OTP error - NOK:NOK_BLOCKED
 It seems that this error is due to reaching the limit of wrong PIN used. Re-authenticate the integration.
 
+### Get oauth code error
+As described in the "OAuth2 Code > [Remote service](#remote-service)" section, this free service has usage limitations.  
+If you've hit these limits, please wait and try again.  
+If the problem persists or is unrelated to usage limits, please use "OAuth2 Code > [Manual](#manual)" mode.
+
 ## ABRP - A Better Routeplanner
 Get a token from [ABRP](https://abetterrouteplanner.com/):
 1. Login to your account;
@@ -208,15 +217,15 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 5 beers**  
+@LittonPaul  
 Andy  
 Kenneth Henderick  
-Someone  
 <sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
+tsairo  
 Sven  
 Martijn  
-John Woertman  
 <sub>*and other heroes*</sub>
 
 **🥉 2 beers**  

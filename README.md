@@ -1,5 +1,5 @@
 # HomeAssistant - Stellantis Vehicles
-[![Active installations](https://img.shields.io/badge/active_installations-2219-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Active installations](https://img.shields.io/badge/active_installations-2375-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
 [![Last version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=last%20version&color=green)](#)
 
 - [Requirements](#requirements)
@@ -217,15 +217,15 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 5 beers**  
+@LittonPaul  
 Andy  
 Kenneth Henderick  
-Someone  
 <sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
+tsairo  
 Sven  
 Martijn  
-John Woertman  
 <sub>*and other heroes*</sub>
 
 **🥉 2 beers**  
