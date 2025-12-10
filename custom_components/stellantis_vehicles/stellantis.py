@@ -714,7 +714,7 @@ class StellantisVehicles(StellantisOauth):
     def _on_mqtt_message(self, client, userdata, msg):
         _LOGGER.debug("---------- START _on_mqtt_message")
         try:
-            _LOGGER.debug("Message: %s %s %s", msg.topic, msg.payload, msg.qos)
+            _LOGGER.debug(f"Message: {msg.topic} {msg.payload} {msg.qos}")
             data = json.loads(msg.payload)
             if msg.topic.startswith(MQTT_RESP_TOPIC):
                 coordinator = self.do_async(self.async_get_coordinator_by_vin(data["vin"]))
@@ -728,7 +728,7 @@ class StellantisVehicles(StellantisOauth):
                     if result_code != "901": # Not store "Vehicle as sleep" event
                         self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                         if result_code == "0":
-                            _LOGGER.debug("Fetch updates after code: %s", data["return_code"])
+                            _LOGGER.debug(f"Fetch updates after code: {data['return_code']}")
                             self.do_async(coordinator.async_refresh(), 10)
                 elif data["return_code"] == "400":
                     if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
@@ -743,7 +743,7 @@ class StellantisVehicles(StellantisOauth):
                             _LOGGER.warning("Last request was sent twice without success")
                             self.do_async(coordinator.update_command_history(data["correlation_id"], "failed"))
                 elif data["return_code"] != "0":
-                    _LOGGER.warning('%s : %s', data["return_code"], data.get("reason", "?"))
+                    _LOGGER.warning(f"{data['return_code']}: {data.get('reason', '?')}")
             elif msg.topic.startswith(MQTT_EVENT_TOPIC):
 #                 charge_info = data["charging_state"]
 #                 programs = data["precond_state"].get("programs", None)
@@ -776,7 +776,7 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug(data)
             message_info = self._mqtt.publish(topic, data, qos=MQTT_QOS, retain=False)
             if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
-                _LOGGER.warning("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
+                _LOGGER.warning(f"Failed to send MQTT message: {mqtt.error_string(message_info.rc)}")
                 action_id = None
             if store:
                 self._mqtt_last_request = [service, message]
@@ -789,7 +789,7 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug("---------- END send_mqtt_message")
             pass
         except Exception as e:
-            _LOGGER.error("Unexpected error during MQTT message sending: %s", e)
+            _LOGGER.error(f"Unexpected error during MQTT message sending: {e}")
             _LOGGER.debug("---------- END send_mqtt_message")
             raise
 

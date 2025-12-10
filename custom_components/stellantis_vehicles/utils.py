@@ -107,10 +107,10 @@ class SensitiveDataFilter(logging.Filter):
             else:
                 record.args = self._mask_value(record.args)
 
-        record.msg = self._mask_value(record.msg)
-        if hasattr(record, 'msg') and record.args:
-            record.msg = record.getMessage()
-            record.args = None
+        # record.msg = self._mask_value(record.msg)
+        # if hasattr(record, 'msg') and record.args:
+        #     record.msg = record.getMessage()
+        #     record.args = None
 
         return True
 
