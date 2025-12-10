@@ -7,7 +7,8 @@ body:
         ## Frequent answers
         
         - **How to connect my Stellantis account to this integration?**
-        Using a desktop browser (like Chrome) or Python utility, please follow all the steps in the "[OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)" section. 
+        **REMOTE SERVICE** - As described in the "OAuth2 Code > [Remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#remote-service)" a free and limited service is used to simulate a browser and perform login on the official website.
+        **MANUAL** - Using a desktop browser (like Chrome) or Python utility, please follow all the steps in the "OAuth2 Code > [Manual](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#manual)" section.
         *Before opening a new issue, please try all the steps again.*
         
         - **How do I resolve the OTP error during authentication?**
