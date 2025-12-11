@@ -126,13 +126,12 @@ jobs:
             supporters_map[$beers]="$file"
           done
           
-          unset supporters_map[monthly]
+          unset supporters_map["monthly"]
 
           sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | sort -nr)
           
           if [ -f "supporters_repo/monthly.txt" ]; then
-            sorted_beers="monthly
-          $sorted_beers"
+            sorted_beers="monthly"$'\n'"$sorted_beers"
           fi
 
           tmp_section="new_support_section.txt"
