@@ -216,19 +216,22 @@ Thanks to everyone for the issues, especially to:
 ## Support the project
 **The latest heroes who believe in this project** 👇
 
-**🏆 5 beers**  
+**🏆 monthly beers**  
+John  
+
+**🥈 5 beers**  
 @LittonPaul  
 Andy  
 Kenneth Henderick  
 <sub>*and other heroes*</sub>
 
-**🥈 3 beers**  
+**🥉 3 beers**  
 Matze (Matthias)  
 tsairo  
 Sven  
 <sub>*and other heroes*</sub>
 
-**🥉 2 beers**  
+**⭐ 2 beers**  
 Grosi001  
 ryhaberecht  
 Tizian  
@@ -238,6 +241,9 @@ Thomas
 @hengelha  
 speedmops  
 <sub>*and other heroes*</sub>
+
+**⭐ monthly beers**  
+John  
 
 ### Want to join the Club?
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)  
