@@ -125,10 +125,6 @@ jobs:
             beers=$(basename "$file" .txt)
             supporters_map[$beers]="$file"
           done
-          
-          if [ -v supporters_map[monthly] ]; then
-            unset 'supporters_map[monthly]'
-          fi
 
           sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | sort -nr)
           
