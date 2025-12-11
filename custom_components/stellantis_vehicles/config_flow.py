@@ -140,7 +140,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             errors = self.errors
             self.errors = {}
             oauth_link = f"[{self.data[FIELD_MOBILE_APP]}]({self.stellantis.get_oauth_url()})"
-            oauth_label = self.get_translation("component.stellantis_vehicles.config.step.oauth.data.oauth_code").replace(" ", "_").upper()
+            oauth_label = self.get_translation("component.stellantis_vehicles.config.step.oauth_manual.data.oauth_code").replace(" ", "_").upper()
             oauth_devtools = f"\n\n>***://oauth2redirect...?code=`{oauth_label}`&scope=openid..."
             return self.async_show_form(step_id="oauth_manual", data_schema=OAUTH_MANUAL_SCHEMA, description_placeholders={"oauth_link": oauth_link, "oauth_label": oauth_label, "oauth_devtools": oauth_devtools}, errors=errors)
 
