@@ -223,9 +223,9 @@ Kenneth Henderick
 <sub>*and other heroes*</sub>
 
 **🥈 3 beers**  
+Matze (Matthias)  
 tsairo  
 Sven  
-Martijn  
 <sub>*and other heroes*</sub>
 
 **🥉 2 beers**  
