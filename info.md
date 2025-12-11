@@ -216,33 +216,33 @@ Thanks to everyone for the issues, especially to:
 ## Support the project
 **The latest heroes who believe in this project** 👇
 
-**🏆 monthly beers**  
+**🏆 MONTHLY BEERS**  
 John  
 
-**🥈 5 beers**  
+**🥈 5 BEERS**  
 @LittonPaul  
 Andy  
 Kenneth Henderick  
 <sub>*and other heroes*</sub>
 
-**🥉 3 beers**  
+**🥉 3 BEERS**  
 Matze (Matthias)  
 tsairo  
 Sven  
 <sub>*and other heroes*</sub>
 
-**⭐ 2 beers**  
+**⭐ 2 BEERS**  
 Grosi001  
 ryhaberecht  
 Tizian  
 
-**⭐ 1 beers**  
+**⭐ 1 BEERS**  
 Thomas  
 @hengelha  
 speedmops  
 <sub>*and other heroes*</sub>
 
-**⭐ monthly beers**  
+**⭐ MONTHLY BEERS**  
 John  
 
 ### Want to join the Club?
