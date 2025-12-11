@@ -74,6 +74,8 @@ The service is provided by Cloudflare on a free tier, with the following limitat
 - **Browser hours** 10 minutes per day;
 - **Concurrent browsers** 3 browsers;
 
+> If you want to support the project and extend these limits, <ins>become a hero</ins> and join our **monthly [supporters club](#support-the-project)**!
+
 ### Manual
 <details><summary><b>Using browser console</b></summary>
 
