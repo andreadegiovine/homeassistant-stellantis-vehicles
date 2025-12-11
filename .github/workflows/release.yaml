@@ -126,7 +126,7 @@ jobs:
             supporters_map[$beers]="$file"
           done
 
-          sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | sort -nr)
+          sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | grep -v "^monthly$" | sort -nr)
           
           if [ -f "supporters_repo/monthly.txt" ]; then
             sorted_beers="monthly"$'\n'"$sorted_beers"
