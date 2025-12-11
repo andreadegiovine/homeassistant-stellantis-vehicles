@@ -127,6 +127,11 @@ jobs:
           done
 
           sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | sort -nr)
+          
+          if [ -f "supporters_repo/monthly.txt" ]; then
+            sorted_beers="monthly
+          $sorted_beers"
+          fi
 
           tmp_section="new_support_section.txt"
           echo "**The latest heroes who believe in this project** 👇" >> "$tmp_section"
