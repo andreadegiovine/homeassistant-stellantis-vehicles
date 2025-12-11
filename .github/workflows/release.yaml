@@ -154,7 +154,7 @@ jobs:
               emoji="⭐"
             fi
 
-            echo "**${emoji} ${beer} beers**  " >> "$tmp_section"
+            echo "**${emoji} ${beer^^} BEERS**  " >> "$tmp_section"
           
             count=${#lines[@]}
             limit=$(( count < 3 ? count : 3 ))
