@@ -16,5 +16,5 @@
     "pycryptodome==3.*",
     "paho-mqtt>=1.3"
   ],
-  "version": "2025.12.7-beta.1"
+  "version": "2025.12.7"
 }
