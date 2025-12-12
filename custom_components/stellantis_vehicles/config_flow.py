@@ -144,7 +144,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             oauth_devtools = f"\n\n>***://oauth2redirect...?code=`{oauth_label}`&scope=openid..."
             return self.async_show_form(step_id="oauth_manual", data_schema=OAUTH_MANUAL_SCHEMA, description_placeholders={"oauth_link": oauth_link, "oauth_label": oauth_label, "oauth_devtools": oauth_devtools}, errors=errors)
 
-        self.stellantis.save_config({"oauth_code": self.data[FIELD_OAUTH_CODE]})
+        self.stellantis.save_config({"oauth_code": user_input[FIELD_OAUTH_CODE]})
         return await self.async_step_get_access_token()
 
 
