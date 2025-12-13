@@ -218,6 +218,9 @@ class StellantisBase:
                 elif str(resp.status) == "401":
                     # Oauth token seem expired, refresh request blocked by server/connection error
                     raise ComunicationError(error)
+                elif str(resp.status) == "500" and result.get("code", None) == "50000":
+                    # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
+                    raise ConfigEntryAuthFailed(error)
                 elif str(resp.status).startswith("50"):
                     # Internal error
                     raise ComunicationError(error)
