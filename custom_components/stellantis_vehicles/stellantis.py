@@ -215,18 +215,18 @@ class StellantisBase:
                     # Not Found: We didn't find the status for this vehicle. - 40400
                     _LOGGER.warning(error)
                     result = {}
-                elif str(resp.status) == "401":
-                    # Oauth token seem expired, refresh request blocked by server/connection error
-                    raise ComunicationError(error)
                 elif str(resp.status) == "500" and result.get("code", None) == "50000":
                     # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
                     raise ConfigEntryAuthFailed(error)
-                elif str(resp.status).startswith("50"):
-                    # Internal error
-                    raise ComunicationError(error)
                 elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
                     # Token expiration
                     raise ConfigEntryAuthFailed(error)
+                elif str(resp.status) == "401":
+                    # Oauth token seem expired, refresh request blocked by server/connection error
+                    raise ComunicationError(error)
+                elif str(resp.status).startswith("50"):
+                    # Internal error
+                    raise ComunicationError(error)
                 if error is not None:
                     # Generic error
                     raise Exception(error)
@@ -479,6 +479,9 @@ class StellantisVehicles(StellantisOauth):
             next_run = get_next_run()
         except ComunicationError:
             next_run = get_datetime() + timedelta(minutes=5)
+        except RateLimitException:
+            _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
+            next_run = get_datetime() + timedelta(minutes=30)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
@@ -611,9 +614,8 @@ class StellantisVehicles(StellantisOauth):
         except ComunicationError:
             next_run = get_datetime() + timedelta(minutes=1)
         except RateLimitException:
-            _LOGGER.warning("Rate limit exceeded, check logs and restart integration")
-            _LOGGER.debug("---------- END scheduled_mqtt_token_refresh")
-            return
+            _LOGGER.warning("Rate limit exceeded, retry after 1 day or check logs and restart integration")
+            next_run = get_datetime() + timedelta(days=1)
         except ConfigException:
             self.disable_remote_commands()
             await self.hass_notify("reconfigure_otp")
