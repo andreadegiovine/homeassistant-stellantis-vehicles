@@ -89,6 +89,11 @@ As described on config flow, please get the right code from the mobile app redir
 Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome Python tool to fetch oauth code without using browser console: [stellantis-oauth-helper](https://github.com/benbox69/stellantis-oauth-helper)
 
 </details>
+<details><summary><b>Using external service</b></summary>
+
+Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome external service to fetch oauth code without using browser console: [OAuth Code Extractor](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/discussions/378)
+
+</details>
 
 ## Commands
 To use remote commands, the "E-remote" or "Connect Plus" service must be activated and configured in the vehicle.
