@@ -103,7 +103,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         last_action_id = list(self._commands_history.keys())[-1]
         return not self._commands_history[last_action_id]["updates"]
 
-    def update_command_history(self, action_id, update = None):
+    async def update_command_history(self, action_id, update = None):
         """ Update command history. """
         if action_id not in self._commands_history:
             return
