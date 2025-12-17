@@ -767,7 +767,7 @@ class StellantisVehicles(StellantisOauth):
                         self.do_async(coordinator.async_refresh(), 10)
 
                     if result_code != "901":  # Not store "Vehicle as sleep" event
-                        coordinator.update_command_history(data["correlation_id"], result_code)
+                        self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                 else:
                     _LOGGER.error("No result code")
 
