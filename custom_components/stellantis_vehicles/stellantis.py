@@ -427,9 +427,15 @@ class StellantisVehicles(StellantisOauth):
             return self._entry.data[config]
         return False
 
-    async def async_get_coordinator_by_vin(self, vin):
+    def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:
             return self._coordinator_dict[vin]
+        return None
+
+    def async_get_coordinator_by_action_id(self, action_id):
+        for vin in self._coordinator_dict:
+            if action_id in self._coordinator_dict[vin]._commands_history:
+                return self._coordinator_dict[vin]
         return None
 
     async def async_get_coordinator(self, vehicle):
@@ -722,33 +728,49 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug(f"Message: {msg.topic} {msg.payload} {msg.qos}")
             data = json.loads(msg.payload)
             if msg.topic.startswith(MQTT_RESP_TOPIC):
-                coordinator = self.do_async(self.async_get_coordinator_by_vin(data["vin"]))
-                if "return_code" not in data or data["return_code"] in ["0", "300", "500", "502", "422"]:
-                    if "return_code" not in data:
-                        result_code = data["process_code"]
-                    else:
-                        result_code = data["return_code"]
-                    if result_code in ["300", "500"]:
-                        self.do_async(self.hass_notify("command_error"))
-                    if result_code != "901": # Not store "Vehicle as sleep" event
-                        self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
-                        if result_code == "0":
-                            _LOGGER.debug(f"Fetch updates after code: {data['return_code']}")
-                            self.do_async(coordinator.async_refresh(), 10)
-                elif data["return_code"] == "400":
-                    if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
-                        self.do_async(coordinator.update_command_history(data["correlation_id"], "not_compatible"))
-                    else:
-                        if self._mqtt_last_request:
+                if "vin" in data:
+                    coordinator = self.async_get_coordinator_by_vin(data["vin"])
+                else:
+                    coordinator = self.async_get_coordinator_by_action_id(data["correlation_id"])
+
+                if not coordinator:
+                    _LOGGER.error("No coordinator found by vin o correlation_id")
+                    _LOGGER.debug("---------- END _on_mqtt_message")
+                    return
+
+                result_code = None
+                if "return_code" in data:
+                    result_code = data["return_code"]
+                elif "process_code" in data:
+                    result_code = data["process_code"]
+
+                if result_code:
+                    if result_code == "400":
+                        if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
+                            result_code = "not_compatible"
+                        elif self._mqtt_last_request:
                             _LOGGER.debug("The mqtt token seems invalid, refresh the token and try sending the request again")
                             last_request = self._mqtt_last_request
                             self._mqtt_last_request = None
                             self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, False, data["correlation_id"]))
+                            _LOGGER.debug("---------- END _on_mqtt_message")
+                            return
                         else:
                             _LOGGER.warning("Last request was sent twice without success")
-                            self.do_async(coordinator.update_command_history(data["correlation_id"], "failed"))
-                elif data["return_code"] != "0":
-                    _LOGGER.warning(f"{data['return_code']}: {data.get('reason', '?')}")
+                            result_code = "failed"
+                    if result_code == "113":  # Error: vin (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
+                        result_code = "failed"
+                    if result_code in ["300", "500", "not_compatible", "failed"]:
+                        self.do_async(self.hass_notify("command_error"))
+                    if result_code == "0":
+                        _LOGGER.debug(f"Fetch updates after code: {result_code}")
+                        self.do_async(coordinator.async_refresh(), 10)
+
+                    if result_code != "901":  # Not store "Vehicle as sleep" event
+                        coordinator.update_command_history(data["correlation_id"], result_code)
+                else:
+                    _LOGGER.error("No result code")
+
             elif msg.topic.startswith(MQTT_EVENT_TOPIC):
 #                 charge_info = data["charging_state"]
 #                 programs = data["precond_state"].get("programs", None)

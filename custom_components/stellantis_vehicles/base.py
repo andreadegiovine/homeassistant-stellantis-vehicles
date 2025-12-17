@@ -103,7 +103,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         last_action_id = list(self._commands_history.keys())[-1]
         return not self._commands_history[last_action_id]["updates"]
 
-    async def update_command_history(self, action_id, update = None):
+    def update_command_history(self, action_id, update = None):
         """ Update command history. """
         if action_id not in self._commands_history:
             return
@@ -117,7 +117,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         current_datetime = get_datetime()
         self._commands_history.update({current_datetime.time(): {"name": name, "updates": [{"info": "rate_limit", "date": current_datetime}]}})
         self.async_update_listeners()
-
 
     async def send_command(self, name, service, message):
         """ Send a command to the vehicle. """
