@@ -578,14 +578,16 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
             self._attr_native_value = value
             self._coordinator._sensors[self._key] = value
 
-        # Restore attributes from the last state record (if present)
-        if restored_state is None:
-            restored_state = await self.async_get_last_state()
-        if restored_state:
-            for key, attr_val in restored_state.attributes.items():
-                if key in ["updated_at", "Updated at", "Aggiornato al"]:
-                    key = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.last_updated.name", "last_updated")
-                self._attr_extra_state_attributes[key] = attr_val
+        if self._key not in ["command_status"]: # TODO: remove this check on future release, need to remove dummy attributes
+            # Restore attributes from the last state record (if present)
+            if restored_state is None:
+                restored_state = await self.async_get_last_state()
+            if restored_state:
+                for key, attr_val in restored_state.attributes.items():
+                    # TODO: remove this check on future release, need to rename the attribute
+                    if key in ["updated_at", "Updated at", "Aggiornato al"]:
+                        key = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.last_updated.name", "last_updated")
+                    self._attr_extra_state_attributes[key] = attr_val
 
         self.coordinator_update()
 
