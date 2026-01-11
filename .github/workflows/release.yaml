@@ -20,7 +20,8 @@ env:
 
 jobs:
   update-readme:
-    uses: ./.github/workflows/update-readme.yml
+    uses: ./.github/workflows/update_readme.yml
+    
   deploy:
     runs-on: ubuntu-latest
     steps:
