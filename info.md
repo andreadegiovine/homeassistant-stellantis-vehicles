@@ -230,9 +230,9 @@ Kenneth Henderick
 <sub>*and other heroes*</sub>
 
 **🥈 3 BEERS**  
+Thomas H.  
+Al  
 Matze (Matthias)  
-tsairo  
-Sven  
 <sub>*and other heroes*</sub>
 
 **🥉 2 BEERS**  
@@ -242,9 +242,9 @@ ryhaberecht
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
-Milan  
-thitcher  
-Thomas  
+Tomasso  
+Pier  
+Denis  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
