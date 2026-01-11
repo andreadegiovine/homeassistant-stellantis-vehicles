@@ -17,6 +17,7 @@ env:
   BRANCH_MASTER: master
   BRANCH_DEVELOP: develop
   BETA_PREFIX: beta
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   deploy:
