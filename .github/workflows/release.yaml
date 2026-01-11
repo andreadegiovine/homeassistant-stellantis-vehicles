@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 env:
   INTEGRATION_SLUG: stellantis_vehicles
