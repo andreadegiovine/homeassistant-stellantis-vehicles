@@ -12,6 +12,12 @@ on:
 permissions:
   contents: write
 
+env:
+  INTEGRATION_SLUG: stellantis_vehicles
+  BRANCH_MASTER: master
+  BRANCH_DEVELOP: develop
+  BETA_PREFIX: beta
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,13 +26,13 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all commits and tags
 
+      - name: Update README.md
+        run: |
+          gh workflow run update_readme.yml
+
       - name: Get tag name
         id: tag-name
-        run: |
-          # Integration slug
-          integration_slug="stellantis_vehicles"
-          # hacs_id="839422993"
-          
+        run: |          
           # Fetch all tags
           git fetch --tags
           
@@ -39,20 +45,16 @@ jobs:
           
           current_year=$(date +%Y)
           current_month=$(date +%-m)
-          
-          branch_develop="develop"
-          branch_master="master"
-          beta_prefix="beta"
 
           if ${{ github.event.inputs.pre_release }}; then
           
-            branch="$branch_develop"
+            branch=${{ env.BRANCH_DEVELOP }}
           
             echo "Pre-release flow from $branch"
             
-            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+-$beta_prefix.[0-9]+$ ]]; then
+            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+-${{ env.BETA_PREFIX }}.[0-9]+$ ]]; then
               echo "Current month last pre-release: $last_tag"
-              last_tag=${last_tag//"-$beta_prefix"/}
+              last_tag=${last_tag//"-${{ env.BETA_PREFIX }}"/}
               IFS='.' read -r release_major release_minor release_patch release_beta <<< "$last_tag"
               new_tag_path="$release_patch"
               new_tag_beta=$((release_beta + 1))
@@ -68,17 +70,17 @@ jobs:
               new_tag_beta=1
             fi
           
-            new_tag_name="$current_year.$current_month.$new_tag_path-$beta_prefix.$new_tag_beta"
+            new_tag_name="$current_year.$current_month.$new_tag_path-${{ env.BETA_PREFIX }}.$new_tag_beta"
           
           else
           
-            branch="$branch_master"
+            branch=${{ env.BRANCH_MASTER }}
           
             echo "Release flow from $branch"
             
-            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+-$beta_prefix.[0-9]+$ ]]; then
+            if [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+-${{ env.BETA_PREFIX }}.[0-9]+$ ]]; then
               echo "Current month last pre-release: $last_tag"
-              last_tag=${last_tag//"-$beta_prefix"/}
+              last_tag=${last_tag//"-${{ env.BETA_PREFIX }}"/}
               IFS='.' read -r release_major release_minor release_patch release_beta <<< "$last_tag"
               new_tag_path="$release_patch"
             elif [[ "$last_tag" =~ ^$current_year.$current_month.[0-9]+$ ]]; then
@@ -95,147 +97,17 @@ jobs:
           fi
           
           echo "New tag: $new_tag_name"
-          echo "integration_slug=$integration_slug" >> $GITHUB_OUTPUT
-          # echo "hacs_id=$hacs_id" >> $GITHUB_OUTPUT
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
           echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
           echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
           echo "new_tag_branch=$branch" >> $GITHUB_OUTPUT
-          echo "branch_master=$branch_master" >> $GITHUB_OUTPUT
-          echo "branch_develop=$branch_develop" >> $GITHUB_OUTPUT
 
       - name: Update manifest.json
         uses: jossef/action-set-json-field@v2.1
         with:
-          file: custom_components/${{ steps.tag-name.outputs.integration_slug }}/manifest.json
+          file: custom_components/${{ env.INTEGRATION_SLUG }}/manifest.json
           field: version
           value: ${{ steps.tag-name.outputs.new_tag_name }}
-
-#      - name: Update Support section in README.md
-#        run: |
-#          set -e
-#
-#          echo "Cloning supporters repo..."
-#          git clone https://github.com/andreadegiovine/supporters.git supporters_repo
-#
-#          echo "Reading supporter files..."
-#          declare -A supporters_map
-#
-#          for file in supporters_repo/*.txt; do
-#            beers=$(basename "$file" .txt)
-#            supporters_map[$beers]="$file"
-#          done
-#
-#          sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | grep -v "^monthly$" | sort -nr)
-#
-#          if [ -f "supporters_repo/monthly.txt" ]; then
-#            sorted_beers="monthly"$'\n'"$sorted_beers"
-#          fi
-#
-#          tmp_section="new_support_section.txt"
-#          echo "**The latest heroes who believe in this project** 👇" >> "$tmp_section"
-#          echo "" >> "$tmp_section"
-#
-#          index=0
-#
-#          for beer in $sorted_beers; do
-#            file=${supporters_map[$beer]}
-#            mapfile -t lines < "$file"
-#
-#            if [ $index -eq 0 ]; then
-#              emoji="🏆"
-#            elif [ $index -eq 1 ]; then
-#              emoji="🥈"
-#            elif [ $index -eq 2 ]; then
-#              emoji="🥉"
-#            else
-#              emoji="⭐"
-#            fi
-#
-#            echo "**${emoji} ${beer^^} BEERS**  " >> "$tmp_section"
-#
-#            count=${#lines[@]}
-#            limit=$(( count < 3 ? count : 3 ))
-#
-#            for ((i=0; i<limit; i++)); do
-#              echo "${lines[$i]}  " >> "$tmp_section"
-#            done
-#
-#            if [ "$count" -gt 3 ]; then
-#              echo "<sub>*and other heroes*</sub>" >> "$tmp_section"
-#            fi
-#
-#            echo "" >> "$tmp_section"
-#            index=$((index+1))
-#          done
-#
-#          cat << 'EOF' >> "$tmp_section"
-#          ### Want to join the Club?
-#          [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)
-#          [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
-#          EOF
-#
-#          sed -n '1,/^## Support the project/p' README.md > README.tmp
-#          cat "$tmp_section" >> README.tmp
-#          mv -f README.tmp README.md
-#          rm -rf supporters_repo
-#          rm "$tmp_section"
-#
-#      - name: Update active installations in README.md
-#        if: ${{ steps.tag-name.outputs.hacs_id != '' }}
-#        run: |
-#          set -e
-#
-#          # Fetch HACS data
-#          echo "Fetching HACS data..."
-#          hacs_response=$(curl -s https://data-v2.hacs.xyz/integration/data.json)
-#
-#          # Extract downloads count for this integration
-#          new_installations=$(echo "$hacs_response" | jq -r --arg id "${{ steps.tag-name.outputs.hacs_id }}" '.[$id].downloads' 2>/dev/null || echo "")
-#
-#          if [ -z "$new_installations" ] || [ "$new_installations" = "null" ]; then
-#            echo "Could not fetch installations count from HACS"
-#            exit 0
-#          fi
-#
-#          echo "New installations count: $new_installations"
-#
-#          # Extract current installations count from README
-#          current_line=$(grep -E "!\[Active installations\]" README.md || echo "")
-#
-#          if [ -z "$current_line" ]; then
-#            echo "Active installations line not found, creating it..."
-#
-#            # Find the first heading (# Title)
-#            first_heading_line=$(grep -n "^# " README.md | head -1 | cut -d: -f1)
-#
-#            if [ -z "$first_heading_line" ]; then
-#              echo "No main heading found in README.md"
-#              exit 0
-#            fi
-#
-#            # Insert new line after first heading
-#            new_line="[![Active installations](https://img.shields.io/badge/active_installations-${new_installations}-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  "
-#            sed -i "${first_heading_line}a ${new_line}" README.md
-#            echo "Active installations line created"
-#          else
-#            # Extract current count from the line
-#            current_installations=$(echo "$current_line" | grep -oP 'active_installations-\K[0-9]+' | head -1)
-#
-#            echo "Current installations count: $current_installations"
-#
-#            # Compare and update if new count is higher
-#            if [ "$new_installations" -gt "$current_installations" ]; then
-#              echo "Updating installations count from $current_installations to $new_installations"
-#              sed -E -i "s/(active_installations-)[0-9]+/\1${new_installations}/" README.md
-#              echo "Active installations line updated"
-#            else
-#              echo "New count is not higher than current count, skipping update"
-#            fi
-#          fi
-#
-#      - name: Copy README.md to info.md
-#        run: cp -f README.md info.md
 
       - name: Commit changes
         run: |
@@ -269,7 +141,7 @@ jobs:
         id: release-notes
         run: |
           changes=$(
-            git log --no-merges --pretty=format:"%H %s [%an]" origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} | \
+            git log --no-merges --pretty=format:"%H %s [%an]" origin/${{ env.BRANCH_MASTER }}..origin/${{ env.BRANCH_DEVELOP }} | \
             grep -v "^.* Revert \"" | \
             grep -v "^.* Update manifest.json version to" | \
             grep -v '\.yaml' | \
@@ -279,7 +151,7 @@ jobs:
               hash=$(echo "$line" | cut -d' ' -f1)
               msg=$(git log -1 --pretty=%s "$hash")
               escaped_msg=$(echo "$msg" | sed 's/[[\]/\\&/g; s/\./\\./g; s/\*/\\*/g; s/\^/\\^/g; s/\$/\\$/g')
-              if ! git log origin/${{ steps.tag-name.outputs.branch_master }}..origin/${{ steps.tag-name.outputs.branch_develop }} --grep="$escaped_msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
+              if ! git log origin/${{ env.BRANCH_MASTER }}..origin/${{ env.BRANCH_DEVELOP }} --grep="$escaped_msg" --invert-grep --pretty=format:"%H" | grep -q "$hash"; then
                 echo "- $(echo "$line" | cut -d' ' -f2-)"
               fi
             done
@@ -308,14 +180,14 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Update master
-        if: ${{ steps.tag-name.outputs.new_tag_branch == steps.tag-name.outputs.branch_master }}
+        if: ${{ steps.tag-name.outputs.new_tag_branch == env.BRANCH_MASTER }}
         run: |
           git fetch
-          git checkout ${{ steps.tag-name.outputs.branch_develop }}
+          git checkout ${{ env.BRANCH_DEVELOP }}
           git pull
-          git checkout ${{ steps.tag-name.outputs.branch_master }}
+          git checkout ${{ env.BRANCH_MASTER }}
           git pull
-          git merge ${{ steps.tag-name.outputs.branch_develop }} --strategy-option theirs
+          git merge ${{ env.BRANCH_DEVELOP }} --strategy-option theirs
           git push
 
       - name: Create release
@@ -332,13 +204,13 @@ jobs:
       - name: "Create zip"
         run: |
           git fetch
-          git checkout ${{ steps.tag-name.outputs.branch_develop }}
+          git checkout ${{ env.BRANCH_DEVELOP }}
           git pull
-          cd "${{ github.workspace }}/custom_components/${{ steps.tag-name.outputs.integration_slug }}"
-          zip "${{ github.workspace }}/${{ steps.tag-name.outputs.integration_slug }}.zip" -r ./
+          cd "${{ github.workspace }}/custom_components/${{ env.INTEGRATION_SLUG }}"
+          zip "${{ github.workspace }}/${{ env.INTEGRATION_SLUG }}.zip" -r ./
 
       - name: "Add zip to release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ steps.tag-name.outputs.new_tag_name }} "${{ github.workspace }}/${{ steps.tag-name.outputs.integration_slug }}.zip"
+          gh release upload ${{ steps.tag-name.outputs.new_tag_name }} "${{ github.workspace }}/${{ env.INTEGRATION_SLUG }}.zip"
