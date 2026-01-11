@@ -481,9 +481,8 @@ class StellantisBaseEntity(CoordinatorEntity):
     def available_command(self):
         """ Base availability property for mqtt commands. """
         mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
-        engine_is_off = self._coordinator._sensors.get("engine") is None or self._coordinator._sensors.get("engine") == "Stop"
         command_is_enabled = self.name not in self._coordinator._disabled_commands
-        return mqtt_is_connected and engine_is_off and command_is_enabled and not self._coordinator.pending_action
+        return mqtt_is_connected and command_is_enabled and not self._coordinator.pending_action
 
     @callback
     def _handle_coordinator_update(self):
