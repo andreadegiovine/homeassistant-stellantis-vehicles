@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: "0 5 * * *"
 
+env:
+  HACS_ID: 839422993
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -84,7 +87,7 @@ jobs:
           rm "$tmp_section"
 
       - name: Update active installations
-        if: ${{ secrets.HACS_ID != null }}
+        if: ${{ env.HACS_ID != '' }}
         run: |
           set -e
 
@@ -93,7 +96,7 @@ jobs:
           hacs_response=$(curl -s https://data-v2.hacs.xyz/integration/data.json)
           
           # Extract downloads count for this integration
-          new_installations=$(echo "$hacs_response" | jq -r --arg id "${{ steps.tag-name.outputs.hacs_id }}" '.[$id].downloads' 2>/dev/null || echo "")
+          new_installations=$(echo "$hacs_response" | jq -r --arg id "${{ env.HACS_ID != '' }}" '.[$id].downloads' 2>/dev/null || echo "")
           
           if [ -z "$new_installations" ] || [ "$new_installations" = "null" ]; then
             echo "Could not fetch installations count from HACS"

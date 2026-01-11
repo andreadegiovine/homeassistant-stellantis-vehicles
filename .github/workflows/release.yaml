@@ -25,7 +25,7 @@ jobs:
         run: |
           # Integration slug
           integration_slug="stellantis_vehicles"
-          hacs_id="839422993"
+#          hacs_id="839422993"
           
           # Fetch all tags
           git fetch --tags
@@ -96,7 +96,7 @@ jobs:
           
           echo "New tag: $new_tag_name"
           echo "integration_slug=$integration_slug" >> $GITHUB_OUTPUT
-          echo "hacs_id=$hacs_id" >> $GITHUB_OUTPUT
+#          echo "hacs_id=$hacs_id" >> $GITHUB_OUTPUT
           echo "is_prerelease=${{ github.event.inputs.pre_release }}" >> $GITHUB_OUTPUT
           echo "previous_tag_name=$last_release" >> $GITHUB_OUTPUT
           echo "new_tag_name=$new_tag_name" >> $GITHUB_OUTPUT
