@@ -1,4 +1,5 @@
 name: Close inactive issues/PRs
+
 on:
   workflow_dispatch:
   schedule:

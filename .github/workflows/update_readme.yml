@@ -1,0 +1,148 @@
+name: Update readme
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * *"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all commits and tags
+
+      - name: Update Support section
+        run: |
+          set -e
+
+          echo "Cloning supporters repo..."
+          git clone https://github.com/andreadegiovine/supporters.git supporters_repo
+
+          echo "Reading supporter files..."
+          declare -A supporters_map
+
+          for file in supporters_repo/*.txt; do
+            beers=$(basename "$file" .txt)
+            supporters_map[$beers]="$file"
+          done
+
+          sorted_beers=$(printf "%s\n" "${!supporters_map[@]}" | grep -v "^monthly$" | sort -nr)
+          
+          if [ -f "supporters_repo/monthly.txt" ]; then
+            sorted_beers="monthly"$'\n'"$sorted_beers"
+          fi
+
+          tmp_section="new_support_section.txt"
+          echo "**The latest heroes who believe in this project** 👇" >> "$tmp_section"
+          echo "" >> "$tmp_section"
+
+          index=0
+
+          for beer in $sorted_beers; do
+            file=${supporters_map[$beer]}
+            mapfile -t lines < "$file"
+          
+            if [ $index -eq 0 ]; then
+              emoji="🏆"
+            elif [ $index -eq 1 ]; then
+              emoji="🥈"
+            elif [ $index -eq 2 ]; then
+              emoji="🥉"
+            else
+              emoji="⭐"
+            fi
+
+            echo "**${emoji} ${beer^^} BEERS**  " >> "$tmp_section"
+          
+            count=${#lines[@]}
+            limit=$(( count < 3 ? count : 3 ))
+
+            for ((i=0; i<limit; i++)); do
+              echo "${lines[$i]}  " >> "$tmp_section"
+            done
+          
+            if [ "$count" -gt 3 ]; then
+              echo "<sub>*and other heroes*</sub>" >> "$tmp_section"
+            fi
+
+            echo "" >> "$tmp_section"
+            index=$((index+1))
+          done
+          
+          cat << 'EOF' >> "$tmp_section"
+          ### Want to join the Club?
+          [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andreatito)  
+          [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W11C9QJ7)
+          EOF
+          
+          sed -n '1,/^## Support the project/p' README.md > README.tmp
+          cat "$tmp_section" >> README.tmp
+          mv -f README.tmp README.md
+          rm -rf supporters_repo
+          rm "$tmp_section"
+
+      - name: Update active installations
+        if: ${{ secrets.HACS_ID != null }}
+        run: |
+          set -e
+
+          # Fetch HACS data
+          echo "Fetching HACS data..."
+          hacs_response=$(curl -s https://data-v2.hacs.xyz/integration/data.json)
+          
+          # Extract downloads count for this integration
+          new_installations=$(echo "$hacs_response" | jq -r --arg id "${{ steps.tag-name.outputs.hacs_id }}" '.[$id].downloads' 2>/dev/null || echo "")
+          
+          if [ -z "$new_installations" ] || [ "$new_installations" = "null" ]; then
+            echo "Could not fetch installations count from HACS"
+            exit 0
+          fi
+          
+          echo "New installations count: $new_installations"
+          
+          # Extract current installations count from README
+          current_line=$(grep -E "!\[Active installations\]" README.md || echo "")
+          
+          if [ -z "$current_line" ]; then
+            echo "Active installations line not found, creating it..."
+            
+            # Find the first heading (# Title)
+            first_heading_line=$(grep -n "^# " README.md | head -1 | cut -d: -f1)
+            
+            if [ -z "$first_heading_line" ]; then
+              echo "No main heading found in README.md"
+              exit 0
+            fi
+            
+            # Insert new line after first heading
+            new_line="[![Active installations](https://img.shields.io/badge/active_installations-${new_installations}-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  "
+            sed -i "${first_heading_line}a ${new_line}" README.md
+            echo "Active installations line created"
+          else
+            # Extract current count from the line
+            current_installations=$(echo "$current_line" | grep -oP 'active_installations-\K[0-9]+' | head -1)
+            
+            echo "Current installations count: $current_installations"
+            
+            # Compare and update if new count is higher
+            if [ "$new_installations" -gt "$current_installations" ]; then
+              echo "Updating installations count from $current_installations to $new_installations"
+              sed -E -i "s/(active_installations-)[0-9]+/\1${new_installations}/" README.md
+              echo "Active installations line updated"
+            else
+              echo "New count is not higher than current count, skipping update"
+            fi
+          fi
+
+      - name: Copy README.md to info.md
+        run: cp -f README.md info.md
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "Update README.md" || exit 0
+          git push
