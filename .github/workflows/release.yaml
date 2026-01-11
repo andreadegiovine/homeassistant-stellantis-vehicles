@@ -17,19 +17,16 @@ env:
   BRANCH_MASTER: master
   BRANCH_DEVELOP: develop
   BETA_PREFIX: beta
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
+  update-readme:
+    uses: ./.github/workflows/update-readme.yml
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all commits and tags
-
-      - name: Update README.md
-        run: |
-          gh workflow run update_readme.yml
 
       - name: Get tag name
         id: tag-name
