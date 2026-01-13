@@ -242,9 +242,9 @@ ryhaberecht
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Steve  
 Tomasso  
 Pier  
-Denis  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
