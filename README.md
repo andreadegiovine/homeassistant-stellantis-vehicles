@@ -223,19 +223,22 @@ Thanks to everyone for the issues, especially to:
 ## Support the project
 **The latest heroes who believe in this project** 👇
 
-**🏆 5 BEERS**  
+**🏆 10 BEERS**  
+Fabian  
+
+**🥈 5 BEERS**  
 @LittonPaul  
 Andy  
 Kenneth Henderick  
 <sub>*and other heroes*</sub>
 
-**🥈 3 BEERS**  
+**🥉 3 BEERS**  
 Thomas H.  
 Al  
 Matze (Matthias)  
 <sub>*and other heroes*</sub>
 
-**🥉 2 BEERS**  
+**⭐ 2 BEERS**  
 b2un0  
 Grosi001  
 ryhaberecht  
