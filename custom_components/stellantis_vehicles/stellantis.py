@@ -188,11 +188,12 @@ class StellantisBase:
         query_params = '&'.join(query_params)
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
-    async def make_http_request(self, url, method='GET', headers=None, params=None, json=None, data=None):
+    async def make_http_request(self, url, method='GET', headers=None, params=None, json=None, data=None, timeout=60):
         _LOGGER.debug("---------- START make_http_request")
         self.start_session()
         try:
-            async with self._session.request(method, url, params=params, json=json, data=data, headers=headers) as resp:
+            _timeout = aiohttp.ClientTimeout(total=timeout)
+            async with self._session.request(method, url, params=params, json=json, data=data, headers=headers, timeout=_timeout) as resp:
                 result = {}
                 error = None
                 if method != "DELETE" and (await resp.text()):
@@ -232,6 +233,12 @@ class StellantisBase:
                     raise Exception(error)
                 _LOGGER.debug("---------- END make_http_request")
                 return result
+        except asyncio.TimeoutError as e:
+            await self.close_session()
+            _LOGGER.warning(f"Error: {e}")
+            _LOGGER.debug("---------- END make_http_request")
+            # Connection error
+            raise ComunicationError("Request timeout")
         except aiohttp.client_exceptions.ClientError as e:
             await self.close_session()
             _LOGGER.warning(f"Error: {e}")
@@ -275,7 +282,7 @@ class StellantisOauth(StellantisBase):
 
     async def get_oauth_code(self, email, password):
         _LOGGER.debug("---------- START get_oauth_code")
-        oauth_code_request = await self.make_http_request(OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password})
+        oauth_code_request = await self.make_http_request(OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
         if "code" in oauth_code_request:
             self.logger_filter.add_custom_value(oauth_code_request["code"])
         _LOGGER.debug(oauth_code_request)
