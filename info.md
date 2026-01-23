@@ -225,27 +225,27 @@ Thanks to everyone for the issues, especially to:
 Fabian  
 
 **🥈 5 BEERS**  
+2102Michael  
 @LittonPaul  
 Andy  
-Kenneth Henderick  
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
+Mickeybyte  
 Bernard H  
 Thomas H.  
-Al  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
+Liam  
 b2un0  
 Grosi001  
-ryhaberecht  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
-AvdL  
-Steve  
-Tomasso  
+Olivier  
+Krobi  
+AA  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
