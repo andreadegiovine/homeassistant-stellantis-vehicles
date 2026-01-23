@@ -18,7 +18,7 @@
         }
       },
       "oauth_remote": {
-        "description": "Den här tjänsten [remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker) simulerar en webbläsarinloggning mot den officiella webbplatsen",
+        "description": "Den här tjänsten [remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2) simulerar en webbläsarinloggning mot den officiella webbplatsen",
         "data": {
           "email": "E-post",
           "password": "Lösenord"

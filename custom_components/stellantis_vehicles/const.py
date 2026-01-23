@@ -17,7 +17,7 @@ OAUTH_BASE_URL = "{#oauth_url#}/am/oauth2"
 OAUTH_AUTHORIZE_URL = OAUTH_BASE_URL + "/authorize"
 OAUTH_TOKEN_URL = OAUTH_BASE_URL + "/access_token"
 
-OAUTH_CODE_URL = "https://hass-stellantis-vehicles-oauth.andreadegiovine.workers.dev"
+OAUTH_CODE_URL = "https://homeassistant-stellantis-vehicles-worker.onrender.com"
 
 API_BASE_URL = "https://api.groupe-psa.com"
 GET_USER_INFO_URL = API_BASE_URL + "/applications/cvs/v4/mauv/car-associations"

@@ -66,13 +66,11 @@ Send remote commands:
 
 ## OAuth2 Code
 ### Remote service
-This **[remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker)** simulates a browser login session on the official website to authenticate your account.
+This **[remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2)** simulates a browser login session on the official website to authenticate your account.
 
 <ins>**Your credentials are neither stored nor shared**</ins>
 
-The service is provided by Cloudflare on a free tier, with the following limitations:
-- **Browser hours** 10 minutes per day;
-- **Concurrent browsers** 3 browsers;
+The service is provided by Render.com on a free tier, with performance limitations.
 
 > If you want to support the project and extend these limits, <ins>become a hero</ins> and join our **monthly [supporters club](#support-the-project)**!
 
@@ -223,19 +221,22 @@ Thanks to everyone for the issues, especially to:
 ## Support the project
 **The latest heroes who believe in this project** 👇
 
-**🏆 5 BEERS**  
+**🏆 10 BEERS**  
+Fabian  
+
+**🥈 5 BEERS**  
 @LittonPaul  
 Andy  
 Kenneth Henderick  
 <sub>*and other heroes*</sub>
 
-**🥈 3 BEERS**  
+**🥉 3 BEERS**  
+Bernard H  
 Thomas H.  
 Al  
-Matze (Matthias)  
 <sub>*and other heroes*</sub>
 
-**🥉 2 BEERS**  
+**⭐ 2 BEERS**  
 b2un0  
 Grosi001  
 ryhaberecht  

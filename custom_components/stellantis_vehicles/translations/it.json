@@ -18,7 +18,7 @@
         }
       },
       "oauth_remote": {
-        "description": "Questo [servizio remoto](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker) viene utilizzato per simulare un browser ed effettuare l'accesso sul sito web ufficiale",
+        "description": "Questo [servizio remoto](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2) viene utilizzato per simulare un browser ed effettuare l'accesso sul sito web ufficiale",
         "data": {
           "email": "Email",
           "password": "Password"
