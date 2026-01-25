@@ -179,7 +179,7 @@
         "name": "Alarm"
       },
       "privacy": {
-        "name": "Alarmanlage"
+        "name": "Privatsphäre"
       },
       "remote_commands": {
         "name": "Fahrzeug aus der Entfernung bedienen"
@@ -205,16 +205,16 @@
         "name": "Standlicht"
       },
       "charge_start": {
-        "name": "Fahrzeug laden Starten"
+        "name": "Fahrzeug laden starten"
       },
       "charge_stop": {
-        "name": "Fahrzeug laden Stopen"
+        "name": "Fahrzeug laden stoppen"
       },
       "preconditioning_start": {
-        "name": "Vorbehandlung starten"
+        "name": "Vorklimatisierung starten"
       },
       "preconditioning_stop": {
-        "name": "Vorbehandlung stoppen"
+        "name": "Vorklimatisierung stoppen"
       }
     },
     "device_tracker": {
