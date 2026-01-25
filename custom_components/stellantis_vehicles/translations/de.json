@@ -154,6 +154,53 @@
             "name": "Durchschnittlicher Kraftstoffverbrauch"
           }
         }
+      },
+      "last_charge": {
+        "name": "Letzte Ladung",
+        "state_attributes": {
+          "in_progress": {
+            "name": "Wird geladen",
+            "state": {
+              "true": "Yes"
+            }
+          },
+            "initial_percentage": {
+            "name": "Anfänglicher Ladezustand"
+          },
+            "initial_energy": {
+            "name": "Anfängliche Energiemenge"
+          },
+            "initial_autonomy": {
+            "name": "Anfängliche Reichweite"
+          },
+            "final_time": {
+            "name": "Endzeit"
+          },
+            "final_percentage": {
+            "name": "Finaler Ladezustand"
+          },
+            "final_energy": {
+            "name": "Finaler Energieinhalt"
+          },
+            "final_autonomy": {
+            "name": "Finale Reichweite"
+          },
+            "duration": {
+            "name": "Dauer des Ladevorgangs"
+          },
+            "recharged_percent": {
+            "name": "Aufgeladene Energie in Prozent"
+          },
+            "recharged_energy": {
+            "name": "Aufgeladene Energiemenge"
+          },
+            "recharged_autonomy": {
+            "name": "Aufgeladene Reichweite"
+          },
+          "avg_power": {
+            "name": "Durchschnittliche Ladeleistung"
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -179,7 +226,7 @@
         "name": "Alarm"
       },
       "privacy": {
-        "name": "Alarmanlage"
+        "name": "Privatsphäre"
       },
       "remote_commands": {
         "name": "Fahrzeug aus der Entfernung bedienen"
@@ -205,16 +252,16 @@
         "name": "Standlicht"
       },
       "charge_start": {
-        "name": "Fahrzeug laden Starten"
+        "name": "Fahrzeug laden starten"
       },
       "charge_stop": {
-        "name": "Fahrzeug laden Stopen"
+        "name": "Fahrzeug laden stoppen"
       },
       "preconditioning_start": {
-        "name": "Vorbehandlung starten"
+        "name": "Vorklimatisierung starten"
       },
       "preconditioning_stop": {
-        "name": "Vorbehandlung stoppen"
+        "name": "Vorklimatisierung stoppen"
       }
     },
     "device_tracker": {
