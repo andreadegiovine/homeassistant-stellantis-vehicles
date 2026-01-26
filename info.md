@@ -222,6 +222,7 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 10 BEERS**  
+Andrea Donno  
 Fabian  
 
 **🥈 5 BEERS**  
