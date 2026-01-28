@@ -222,6 +222,7 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 10 BEERS**  
+Andrea Donno  
 Fabian  
 
 **🥈 5 BEERS**  
@@ -243,9 +244,9 @@ Grosi001
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Mickael RD  
 Olivier  
 Krobi  
-AA  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?

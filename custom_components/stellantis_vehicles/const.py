@@ -280,7 +280,7 @@ BINARY_SENSORS_DEFAULT = {
         "icon" : "mdi:car-traction-control",
         "value_map" : ["kinetic", "moving"],
         "updated_at_map" : ["kinetic", "createdAt"],
-        "device_class" : BinarySensorDeviceClass.MOTION,
+        "device_class" : BinarySensorDeviceClass.MOVING,
         "on_value": True
     },
     "doors" : {
