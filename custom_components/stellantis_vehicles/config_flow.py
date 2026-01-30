@@ -61,7 +61,7 @@ OTP_SCHEMA = vol.Schema({
 
 class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    MINOR_VERSION = 3
+    MINOR_VERSION = 4
 
     def __init__(self) -> None:
         self.data = dict()
@@ -156,12 +156,13 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.errors[FIELD_OAUTH_MANUAL_MODE] = self.get_error_message("get_access_token", e)
                 await self.stellantis.hass_notify("access_token_error")
                 return await self.async_step_oauth_mode()
-            self.data.update({
+            oauth = {"oauth": {
                 "access_token": token_request["access_token"],
                 "refresh_token": token_request["refresh_token"],
                 "expires_in": (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat()
-            })
-            self.stellantis.save_config({"access_token": self.data["access_token"]})
+            }}
+            self.data.update(oauth)
+            self.stellantis.save_config(oauth)
             return self.async_show_form(step_id="get_access_token", data_schema=OTP_CONFIGURE_SCHEMA)
 
         self.data.update({FIELD_REMOTE_COMMANDS: user_input[FIELD_REMOTE_COMMANDS]})

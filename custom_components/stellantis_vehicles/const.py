@@ -61,7 +61,7 @@ OAUTH_TOKEN_HEADERS = {
 }
 
 GET_OTP_HEADERS = {
-    "Authorization": "Bearer {#access_token#}",
+    "Authorization": "Bearer {#oauth|access_token#}",
     "User-Agent": "okhttp/4.8.0",
     "Accept": "application/hal+json",
     "x-introspect-realm": "{#realm#}"
@@ -75,12 +75,17 @@ OAUTH_GET_TOKEN_QUERY_PARAMS = {
 
 OAUTH_REFRESH_TOKEN_QUERY_PARAMS = {
     "grant_type": "refresh_token",
-    "refresh_token": "{#refresh_token#}"
+    "refresh_token": "{#oauth|refresh_token#}"
 }
 
 CAR_API_HEADERS = {
-    "Authorization": "Bearer {#access_token#}",
+    "Authorization": "Bearer {#oauth|access_token#}",
     "x-introspect-realm": "{#realm#}"
+}
+
+MQTT_REFRESH_TOKEN_JSON_DATA = {
+    "grant_type": "refresh_token",
+    "refresh_token": "{#mqtt|refresh_token#}"
 }
 
 FIELD_MOBILE_APP = "mobile_app"

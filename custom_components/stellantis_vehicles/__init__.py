@@ -130,10 +130,28 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     if config.version == 1 and config.minor_version < 3:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         public_path = hass.config.path("www")
         old_image_path = f"{public_path}/stellantis-vehicles"
         if os.path.isdir(old_image_path):
             _LOGGER.debug(f"Deleting Stellantis old image folder: {old_image_path}")
             shutil.rmtree(old_image_path)
+        hass.config_entries.async_update_entry(config, version=1, minor_version=3)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
+    if config.version == 1 and config.minor_version < 4:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+        data = dict(config.data)
+        oauth = {
+            "access_token": data["access_token"],
+            "refresh_token": data["refresh_token"],
+            "expires_in": data["expires_in"]
+        }
+        del data["access_token"]
+        del data["refresh_token"]
+        del data["expires_in"]
+        data["oauth"] = oauth
+        hass.config_entries.async_update_entry(config, data=data, version=1, minor_version=4)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     return True

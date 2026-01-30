@@ -54,6 +54,7 @@ from .const import (
     MQTT_REQ_TOPIC,
     GET_USER_INFO_URL,
     CAR_API_GET_VEHICLE_TRIPS_URL,
+    MQTT_REFRESH_TOKEN_JSON_DATA,
     MQTT_REFRESH_TOKEN_TTL,
     OTP_FILENAME,
     ABRP_URL,
@@ -170,10 +171,14 @@ class StellantisBase:
         for key in vehicle:
             string = string.replace("{#" + key + "#}", str(vehicle[key]))
         for key, value in self._config.items():
-            string = string.replace("{#" + key + "#}", str(value))
+            if isinstance(value, dict):
+                for subkey, subvalue in value.items():
+                    string = string.replace("{#" + key + "|" + subkey + "#}", str(subvalue))
+            else:
+                string = string.replace("{#" + key + "#}", str(value))
         return string
 
-    def apply_headers_params(self, headers):
+    def apply_dict_params(self, headers):
         new_headers = {}
         for key in headers:
             new_headers[key] = self.replace_placeholders(headers[key])
@@ -293,7 +298,7 @@ class StellantisOauth(StellantisBase):
     async def get_access_token(self):
         _LOGGER.debug("---------- START get_access_token")
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_GET_TOKEN_QUERY_PARAMS)
-        headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
+        headers = self.apply_dict_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
         if "access_token" in token_request:
             self.logger_filter.add_custom_value(token_request["access_token"])
@@ -310,7 +315,7 @@ class StellantisOauth(StellantisBase):
     async def get_user_info(self):
         _LOGGER.debug("---------- START get_user_info")
         url = self.apply_query_params(GET_USER_INFO_URL, CLIENT_ID_QUERY_PARAMS)
-        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        headers = self.apply_dict_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
         user_request = await self.make_http_request(url, 'GET', headers)
         if "customer" in user_request[0]:
@@ -327,7 +332,7 @@ class StellantisOauth(StellantisBase):
 
     def new_otp(self, sms_code, pin_code):
         try:
-            self.otp = Otp("bb8e981582b0f31353108fb020bead1c", device_id=str(self.get_config("access_token")[:16]))
+            self.otp = Otp("bb8e981582b0f31353108fb020bead1c", device_id=str(self.get_config("oauth")["access_token"][:16]))
             self.otp.smsCode = sms_code
             self.otp.codepin = pin_code
             if self.otp.activation_start():
@@ -341,7 +346,7 @@ class StellantisOauth(StellantisBase):
     async def get_otp_sms(self):
         _LOGGER.debug("---------- START get_otp_sms")
         url = self.apply_query_params(GET_OTP_URL, CLIENT_ID_QUERY_PARAMS)
-        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        headers = self.apply_dict_params(GET_OTP_HEADERS)
         sms_request = await self.make_http_request(url, 'POST', headers)
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
@@ -352,7 +357,7 @@ class StellantisOauth(StellantisBase):
     async def get_mqtt_access_token(self):
         _LOGGER.debug("---------- START get_mqtt_access_token")
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
-        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        headers = self.apply_dict_params(GET_OTP_HEADERS)
         try:
             otp_code = await self.get_otp_code()
             token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
@@ -481,7 +486,7 @@ class StellantisVehicles(StellantisOauth):
     async def scheduled_oauth_token_refresh(self, now=None):
         _LOGGER.debug("---------- START scheduled_oauth_token_refresh")
         def get_next_run():
-            expires_in = self.get_config("expires_in")
+            expires_in = self.get_config("oauth")["expires_in"]
             return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
         try:
             if self._oauth_token_scheduled is not None:
@@ -505,7 +510,7 @@ class StellantisVehicles(StellantisOauth):
     async def refresh_token_request(self):
         _LOGGER.debug("---------- START refresh_token_request")
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
-        headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
+        headers = self.apply_dict_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
         self.logger_filter.add_custom_value(token_request["access_token"])
         self.logger_filter.add_custom_value(token_request["refresh_token"])
@@ -517,17 +522,15 @@ class StellantisVehicles(StellantisOauth):
             "refresh_token": token_request["refresh_token"],
             "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
         }
-        self.save_config(new_config)
-        self.update_stored_config("access_token", new_config["access_token"])
-        self.update_stored_config("refresh_token", new_config["refresh_token"])
-        self.update_stored_config("expires_in", new_config["expires_in"])
+        self.save_config({"oauth": new_config})
+        self.update_stored_config("oauth", new_config)
         _LOGGER.debug("---------- END refresh_token_request")
 
     async def get_user_vehicles(self):
         _LOGGER.debug("---------- START get_user_vehicles")
         if not self._vehicles:
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
-            headers = self.apply_headers_params(CAR_API_HEADERS)
+            headers = self.apply_dict_params(CAR_API_HEADERS)
             vehicles_request = await self.make_http_request(url, 'GET', headers)
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
@@ -566,7 +569,7 @@ class StellantisVehicles(StellantisOauth):
             await self.connect_mqtt()
         # Fetch the vehicle status using the API
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
-        headers = self.apply_headers_params(CAR_API_HEADERS)
+        headers = self.apply_dict_params(CAR_API_HEADERS)
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
@@ -577,7 +580,7 @@ class StellantisVehicles(StellantisOauth):
     async def get_vehicle_last_trip(self, vehicle, page_token=False):
         _LOGGER.debug("---------- START get_vehicle_last_trip")
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
-        headers = self.apply_headers_params(CAR_API_HEADERS)
+        headers = self.apply_dict_params(CAR_API_HEADERS)
         limit_date = (get_datetime() - timedelta(days=1)).isoformat()
         limit_date = limit_date.split(".")[0] + "+" + limit_date.split(".")[1].split("+")[1]
         url = url + "&timestamps=" + limit_date + "/&distance=0.1-"
@@ -598,7 +601,7 @@ class StellantisVehicles(StellantisOauth):
 #     async def get_vehicle_trips(self, page_token=False):
 #         _LOGGER.debug("---------- START get_vehicle_trips")
 #         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
-#         headers = self.apply_headers_params(CAR_API_HEADERS)
+#         headers = self.apply_dict_params(CAR_API_HEADERS)
 #         url = url + "&distance=0.1-"
 #         if page_token:
 #             url = url + "&pageToken=" + page_token
@@ -644,7 +647,7 @@ class StellantisVehicles(StellantisOauth):
     async def refresh_mqtt_token_request(self, access_token_only=False):
         _LOGGER.debug("---------- START refresh_mqtt_token_request")
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
-        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        headers = self.apply_dict_params(GET_OTP_HEADERS)
         mqtt_config = self.get_config("mqtt")
         refresh_token_almost_expired = "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < get_datetime()
         if refresh_token_almost_expired and not access_token_only:
@@ -655,7 +658,8 @@ class StellantisVehicles(StellantisOauth):
                 _LOGGER.warning("Attempt to refresh MQTT access_token/refresh_token failed. This is NOT an error as long as the following attempt to refresh only the access_token (using current refresh_token) succeeds.")
                 return await self.refresh_mqtt_token_request(True)
         else:
-            token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
+            json_data = self.apply_dict_params(MQTT_REFRESH_TOKEN_JSON_DATA)
+            token_request = await self.make_http_request(url, 'POST', headers, None, json_data)
         if "access_token" in token_request:
             self.logger_filter.add_custom_value(token_request["access_token"])
         if "refresh_token" in token_request:
