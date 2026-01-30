@@ -438,7 +438,20 @@ class StellantisVehicles(StellantisOauth):
     def get_stored_config(self, config):
         if config in self._entry.data:
             return self._entry.data[config]
-        return False
+        return None
+
+    def update_vehicle_stored_config(self, vin, key, value):
+        data = self.get_stored_config(vin)
+        if not data:
+            data = {}
+        data[key] = value
+        self.update_stored_config(vin, data)
+
+    def get_vehicle_stored_config(self, vin, key):
+        data = self.get_stored_config(vin)
+        if data and key in data:
+            return data[key]
+        return None
 
     def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:

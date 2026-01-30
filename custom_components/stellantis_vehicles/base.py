@@ -728,8 +728,9 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
     @property
     def native_value(self):
         """ Native value. """
-        if self._stellantis.get_stored_config(self._sensor_key):
-            value = self._stellantis.get_stored_config(self._sensor_key)
+        vin = self._coordinator._vehicle['vin']
+        value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
+        if value:
             self._coordinator._sensors[self._sensor_key] = float(value)
             return value
         if self._sensor_key in self._coordinator._sensors:
@@ -740,7 +741,8 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
         """ Set native value. """
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = float(value)
-        self._stellantis.update_stored_config(self._sensor_key, float(value))
+        vin = self._coordinator._vehicle['vin']
+        self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, float(value))
         await self._coordinator.async_refresh()
 
 
@@ -752,8 +754,9 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
     @property
     def is_on(self):
         """ Is on. """
-        if self._stellantis.get_stored_config(self._sensor_key):
-            value = self._stellantis.get_stored_config(self._sensor_key)
+        vin = self._coordinator._vehicle['vin']
+        value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
+        if value:
             self._coordinator._sensors[self._sensor_key] = bool(value)
             return value
         if self._sensor_key in self._coordinator._sensors:
@@ -764,14 +767,16 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
         """ Turn on. """
         self._attr_is_on = True
         self._coordinator._sensors[self._sensor_key] = True
-        self._stellantis.update_stored_config(self._sensor_key, True)
+        vin = self._coordinator._vehicle['vin']
+        self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, True)
         await self._coordinator.async_refresh()
 
     async def async_turn_off(self, **kwargs):
         """ Turn off. """
         self._attr_is_on = False
         self._coordinator._sensors[self._sensor_key] = False
-        self._stellantis.update_stored_config(self._sensor_key, False)
+        vin = self._coordinator._vehicle['vin']
+        self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, False)
         await self._coordinator.async_refresh()
 
 
@@ -783,8 +788,9 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
     @property
     def native_value(self):
         """ Native value. """
-        if self._stellantis.get_stored_config(self._sensor_key):
-            value = self._stellantis.get_stored_config(self._sensor_key)
+        vin = self._coordinator._vehicle['vin']
+        value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
+        if value:
             self._coordinator._sensors[self._sensor_key] = str(value)
             return value
         if self._sensor_key in self._coordinator._sensors:
@@ -795,7 +801,8 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
         """ Set value. """
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = str(value)
-        self._stellantis.update_stored_config(self._sensor_key, str(value))
+        vin = self._coordinator._vehicle['vin']
+        self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, str(value))
         await self._coordinator.async_refresh()
 
 

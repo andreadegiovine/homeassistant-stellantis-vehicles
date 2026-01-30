@@ -147,11 +147,48 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             "refresh_token": data["refresh_token"],
             "expires_in": data["expires_in"]
         }
-        del data["access_token"]
-        del data["refresh_token"]
-        del data["expires_in"]
-        data["oauth"] = oauth
+        data.pop("access_token", None)
+        data.pop("refresh_token", None)
+        data.pop("expires_in", None)
         hass.config_entries.async_update_entry(config, data=data, version=1, minor_version=4)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
+    if config.version == 1 and config.minor_version < 5:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+        data = dict(config.data)
+
+        public_path = hass.config.path("www")
+        customer_id = data["customer_id"]
+        entry_path = f"{public_path}/{DOMAIN}/{customer_id}"
+        if os.path.isdir(entry_path):
+            for vin in os.listdir(entry_path):
+                vin_path = os.path.join(entry_path, vin)
+                if os.path.isfile(vin_path):
+                    vin = os.path.splitext(vin)[0]
+                    data[vin] = {}
+                    if "text_abrp_token" in data:
+                        data[vin]["text_abrp_token"] = data["text_abrp_token"]
+                    if "number_battery_charging_limit" in data:
+                        data[vin]["number_battery_charging_limit"] = data["number_battery_charging_limit"]
+                    if "number_refresh_interval" in data:
+                        data[vin]["number_refresh_interval"] = data["number_refresh_interval"]
+                    if "switch_battery_charging_limit" in data:
+                        data[vin]["switch_battery_charging_limit"] = data["switch_battery_charging_limit"]
+                    if "switch_abrp_sync" in data:
+                        data[vin]["switch_abrp_sync"] = data["switch_abrp_sync"]
+                    if "switch_battery_values_correction" in data:
+                        data[vin]["switch_battery_values_correction"] = data["switch_battery_values_correction"]
+                    if "switch_notifications" in data:
+                        data[vin]["switch_notifications"] = data["switch_notifications"]
+
+        data.pop("text_abrp_token", None)
+        data.pop("number_battery_charging_limit", None)
+        data.pop("number_refresh_interval", None)
+        data.pop("switch_battery_charging_limit", None)
+        data.pop("switch_abrp_sync", None)
+        data.pop("switch_battery_values_correction", None)
+        data.pop("switch_notifications", None)
+        hass.config_entries.async_update_entry(config, data=data, version=1, minor_version=5)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     return True

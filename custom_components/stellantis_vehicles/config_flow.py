@@ -61,7 +61,7 @@ OTP_SCHEMA = vol.Schema({
 
 class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    MINOR_VERSION = 4
+    MINOR_VERSION = 5
 
     def __init__(self) -> None:
         self.data = dict()
