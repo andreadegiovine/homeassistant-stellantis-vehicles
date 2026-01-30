@@ -80,7 +80,8 @@ class MqttClientMod(mqtt.Client):
             raise socket.error(f"getaddrinfo returned an empty list")
 
         # DNS returns multiple redundant MQTT IPs, but they are not rotated until the DNS cache expires
-        # we randomize the order to reconnect more quickly in case one of them has issues and the connection fails after TCP socket open (SSL handshake, broker overloaded)
+        # we randomize the order to reconnect more quickly in case oneof them has issues and
+        # the connection fails after TCP socket open (SSL handshake, broker overloaded)
         random.shuffle(addr_infos)
 
         # attempt to connect, raise only if none of them are connectable
@@ -188,12 +189,12 @@ class StellantisBase:
         query_params = '&'.join(query_params)
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
-    async def make_http_request(self, url, method='GET', headers=None, params=None, json=None, data=None, timeout=60):
+    async def make_http_request(self, url, method='GET', headers=None, params=None, json_data=None, data=None, timeout=60):
         _LOGGER.debug("---------- START make_http_request")
         self.start_session()
         try:
             _timeout = aiohttp.ClientTimeout(total=timeout)
-            async with self._session.request(method, url, params=params, json=json, data=data, headers=headers, timeout=_timeout) as resp:
+            async with self._session.request(method, url, params=params, json=json_data, data=data, headers=headers, timeout=_timeout) as resp:
                 result = {}
                 error = None
                 if method != "DELETE" and (await resp.text()):
@@ -202,7 +203,7 @@ class StellantisBase:
                     _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
                     _LOGGER.debug(headers)
                     _LOGGER.debug(params)
-                    _LOGGER.debug(json)
+                    _LOGGER.debug(json_data)
                     _LOGGER.debug(data)
                     _LOGGER.debug(result)
                     if "httpMessage" in result and "moreInformation" in result:
@@ -816,7 +817,7 @@ class StellantisVehicles(StellantisOauth):
                 self._mqtt_last_request = [service, message]
             _LOGGER.debug("---------- END send_mqtt_message")
             return action_id
-        except ConfigEntryAuthFailed as e:
+        except ConfigEntryAuthFailed:
             self.disable_remote_commands()
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")

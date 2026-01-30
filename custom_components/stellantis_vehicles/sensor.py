@@ -106,13 +106,11 @@ class StellantisTypeSensor(StellantisRestoreSensor):
     def coordinator_update(self):
         self._attr_native_value = self._coordinator.vehicle_type.lower()
 
-
 class StellantisCommandStatusSensor(StellantisRestoreSensor):
     def coordinator_update(self):
         command_history = self._coordinator.command_history
         if command_history:
             self._attr_native_value = command_history[next(iter(command_history))]
-
 
 class StellantisLastTripSensor(StellantisRestoreSensor):
     def coordinator_update(self):
@@ -157,7 +155,6 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
                 if "avgConsumption" in consuption and round(float(consuption["avgConsumption"])/divide, 2) > 0:
                     attributes[consuption["type"].lower() + "_avg_consumption"] = str(round(float(consuption["avgConsumption"])/divide, 2)) + " " + avg_consumption_unit_of_measurement
         self._attr_extra_state_attributes = attributes
-
 
 # class StellantisTotalTripSensor(StellantisRestoreSensor):
 #     def coordinator_update(self):
