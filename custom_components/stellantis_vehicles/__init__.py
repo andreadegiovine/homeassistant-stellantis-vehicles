@@ -142,7 +142,7 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
     if config.version == 1 and config.minor_version < 4:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         data = dict(config.data)
-        oauth = {
+        data["oauth"] = {
             "access_token": data["access_token"],
             "refresh_token": data["refresh_token"],
             "expires_in": data["expires_in"]
