@@ -238,9 +238,9 @@ Heiner Engelhardt
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
+Slin  
 Floribert M  
 Liam  
-b2un0  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
