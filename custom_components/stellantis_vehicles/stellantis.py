@@ -14,7 +14,7 @@ import ssl
 import socket
 import random
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import ( HomeAssistant, HassJob)
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
@@ -493,6 +493,12 @@ class StellantisVehicles(StellantisOauth):
         return image_url
 
     async def scheduled_tokens_refresh(self):
+        if self._oauth_token_scheduled is not None:
+            self._oauth_token_scheduled()
+            self._oauth_token_scheduled = None
+        if self._mqtt_token_scheduled is not None:
+            self._mqtt_token_scheduled()
+            self._mqtt_token_scheduled = None
         await self.scheduled_oauth_token_refresh()
         await self.scheduled_mqtt_token_refresh()
 
@@ -516,7 +522,8 @@ class StellantisVehicles(StellantisOauth):
             next_run = get_datetime() + timedelta(minutes=30)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
-        self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
+        next_job = HassJob(self.scheduled_oauth_token_refresh, f"{DOMAIN} refresh oauth token: {next_run}", cancel_on_shutdown=True)
+        self._oauth_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
         _LOGGER.debug("---------- END scheduled_oauth_token_refresh")
 
     @rate_limit(6, 1800) # 6 per 30 min
@@ -654,7 +661,8 @@ class StellantisVehicles(StellantisOauth):
             return
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
-        self._mqtt_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_mqtt_token_refresh, next_run)
+        next_job = HassJob(self.scheduled_mqtt_token_refresh, f"{DOMAIN} refresh mqtt token: {next_run}", cancel_on_shutdown=True)
+        self._mqtt_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
         _LOGGER.debug("---------- END scheduled_mqtt_token_refresh")
 
     async def refresh_mqtt_token_request(self, access_token_only=False):

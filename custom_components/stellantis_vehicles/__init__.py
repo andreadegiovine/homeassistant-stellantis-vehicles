@@ -181,7 +181,6 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
                             data[vin]["switch_battery_values_correction"] = data["switch_battery_values_correction"]
                         if "switch_notifications" in data:
                             data[vin]["switch_notifications"] = data["switch_notifications"]
-
             data.pop("text_abrp_token", None)
             data.pop("number_battery_charging_limit", None)
             data.pop("number_refresh_interval", None)
@@ -189,6 +188,7 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             data.pop("switch_abrp_sync", None)
             data.pop("switch_battery_values_correction", None)
             data.pop("switch_notifications", None)
+            return data
 
         new_data = await hass.async_add_executor_job(update_data, data)
         hass.config_entries.async_update_entry(config, data=new_data, version=1, minor_version=5)
