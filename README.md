@@ -232,21 +232,21 @@ Zauberertz
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
+Martin the Biuilder  
 trobete  
 Heiner Engelhardt  
-Mickeybyte  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
+mggevaer  
+Slin  
 Floribert M  
-Liam  
-b2un0  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Battiegoal  
 Mickael RD  
 Olivier  
-Krobi  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
