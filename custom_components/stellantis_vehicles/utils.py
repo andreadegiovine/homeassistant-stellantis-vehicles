@@ -130,7 +130,8 @@ class SensitiveDataFilter(logging.Filter):
     def _mask_dict(self, data: Dict) -> Dict:
         masked = {}
         for key, value in data.items():
-            masked[key] = self._mask_value(value)
+            masked_key = self._mask_value(key)
+            masked[masked_key] = self._mask_value(value)
         return masked
 
     def _mask_string(self, value: str) -> str:
