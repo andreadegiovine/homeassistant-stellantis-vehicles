@@ -244,9 +244,9 @@ Floribert M
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Grana  
 Battiegoal  
 Mickael RD  
-Olivier  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
