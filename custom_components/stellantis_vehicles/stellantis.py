@@ -14,7 +14,7 @@ import ssl
 import socket
 import random
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import ( HomeAssistant, HassJob)
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
@@ -54,6 +54,7 @@ from .const import (
     MQTT_REQ_TOPIC,
     GET_USER_INFO_URL,
     CAR_API_GET_VEHICLE_TRIPS_URL,
+    MQTT_REFRESH_TOKEN_JSON_DATA,
     MQTT_REFRESH_TOKEN_TTL,
     OTP_FILENAME,
     ABRP_URL,
@@ -80,7 +81,8 @@ class MqttClientMod(mqtt.Client):
             raise socket.error(f"getaddrinfo returned an empty list")
 
         # DNS returns multiple redundant MQTT IPs, but they are not rotated until the DNS cache expires
-        # we randomize the order to reconnect more quickly in case one of them has issues and the connection fails after TCP socket open (SSL handshake, broker overloaded)
+        # we randomize the order to reconnect more quickly in case oneof them has issues and
+        # the connection fails after TCP socket open (SSL handshake, broker overloaded)
         random.shuffle(addr_infos)
 
         # attempt to connect, raise only if none of them are connectable
@@ -169,10 +171,14 @@ class StellantisBase:
         for key in vehicle:
             string = string.replace("{#" + key + "#}", str(vehicle[key]))
         for key, value in self._config.items():
-            string = string.replace("{#" + key + "#}", str(value))
+            if isinstance(value, dict):
+                for subkey, subvalue in value.items():
+                    string = string.replace("{#" + key + "|" + subkey + "#}", str(subvalue))
+            else:
+                string = string.replace("{#" + key + "#}", str(value))
         return string
 
-    def apply_headers_params(self, headers):
+    def apply_dict_params(self, headers):
         new_headers = {}
         for key in headers:
             new_headers[key] = self.replace_placeholders(headers[key])
@@ -188,12 +194,12 @@ class StellantisBase:
         query_params = '&'.join(query_params)
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
-    async def make_http_request(self, url, method='GET', headers=None, params=None, json=None, data=None, timeout=60):
+    async def make_http_request(self, url, method='GET', headers=None, params=None, json_data=None, data=None, timeout=60):
         _LOGGER.debug("---------- START make_http_request")
         self.start_session()
         try:
             _timeout = aiohttp.ClientTimeout(total=timeout)
-            async with self._session.request(method, url, params=params, json=json, data=data, headers=headers, timeout=_timeout) as resp:
+            async with self._session.request(method, url, params=params, json=json_data, data=data, headers=headers, timeout=_timeout) as resp:
                 result = {}
                 error = None
                 if method != "DELETE" and (await resp.text()):
@@ -202,7 +208,7 @@ class StellantisBase:
                     _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
                     _LOGGER.debug(headers)
                     _LOGGER.debug(params)
-                    _LOGGER.debug(json)
+                    _LOGGER.debug(json_data)
                     _LOGGER.debug(data)
                     _LOGGER.debug(result)
                     if "httpMessage" in result and "moreInformation" in result:
@@ -292,7 +298,7 @@ class StellantisOauth(StellantisBase):
     async def get_access_token(self):
         _LOGGER.debug("---------- START get_access_token")
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_GET_TOKEN_QUERY_PARAMS)
-        headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
+        headers = self.apply_dict_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
         if "access_token" in token_request:
             self.logger_filter.add_custom_value(token_request["access_token"])
@@ -309,7 +315,7 @@ class StellantisOauth(StellantisBase):
     async def get_user_info(self):
         _LOGGER.debug("---------- START get_user_info")
         url = self.apply_query_params(GET_USER_INFO_URL, CLIENT_ID_QUERY_PARAMS)
-        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        headers = self.apply_dict_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
         user_request = await self.make_http_request(url, 'GET', headers)
         if "customer" in user_request[0]:
@@ -326,7 +332,7 @@ class StellantisOauth(StellantisBase):
 
     def new_otp(self, sms_code, pin_code):
         try:
-            self.otp = Otp("bb8e981582b0f31353108fb020bead1c", device_id=str(self.get_config("access_token")[:16]))
+            self.otp = Otp("bb8e981582b0f31353108fb020bead1c", device_id=str(self.get_config("oauth")["access_token"][:16]))
             self.otp.smsCode = sms_code
             self.otp.codepin = pin_code
             if self.otp.activation_start():
@@ -340,7 +346,7 @@ class StellantisOauth(StellantisBase):
     async def get_otp_sms(self):
         _LOGGER.debug("---------- START get_otp_sms")
         url = self.apply_query_params(GET_OTP_URL, CLIENT_ID_QUERY_PARAMS)
-        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        headers = self.apply_dict_params(GET_OTP_HEADERS)
         sms_request = await self.make_http_request(url, 'POST', headers)
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
@@ -351,7 +357,7 @@ class StellantisOauth(StellantisBase):
     async def get_mqtt_access_token(self):
         _LOGGER.debug("---------- START get_mqtt_access_token")
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
-        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        headers = self.apply_dict_params(GET_OTP_HEADERS)
         try:
             otp_code = await self.get_otp_code()
             token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
@@ -432,7 +438,20 @@ class StellantisVehicles(StellantisOauth):
     def get_stored_config(self, config):
         if config in self._entry.data:
             return self._entry.data[config]
-        return False
+        return None
+
+    def update_vehicle_stored_config(self, vin, key, value):
+        data = self.get_stored_config(vin)
+        if not data:
+            data = {}
+        data[key] = value
+        self.update_stored_config(vin, data)
+
+    def get_vehicle_stored_config(self, vin, key):
+        data = self.get_stored_config(vin)
+        if data and key in data:
+            return data[key]
+        return None
 
     def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:
@@ -474,13 +493,19 @@ class StellantisVehicles(StellantisOauth):
         return image_url
 
     async def scheduled_tokens_refresh(self):
+        if self._oauth_token_scheduled is not None:
+            self._oauth_token_scheduled()
+            self._oauth_token_scheduled = None
+        if self._mqtt_token_scheduled is not None:
+            self._mqtt_token_scheduled()
+            self._mqtt_token_scheduled = None
         await self.scheduled_oauth_token_refresh()
         await self.scheduled_mqtt_token_refresh()
 
     async def scheduled_oauth_token_refresh(self, now=None):
         _LOGGER.debug("---------- START scheduled_oauth_token_refresh")
         def get_next_run():
-            expires_in = self.get_config("expires_in")
+            expires_in = self.get_config("oauth")["expires_in"]
             return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
         try:
             if self._oauth_token_scheduled is not None:
@@ -497,14 +522,15 @@ class StellantisVehicles(StellantisOauth):
             next_run = get_datetime() + timedelta(minutes=30)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
-        self._oauth_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_oauth_token_refresh, next_run)
+        next_job = HassJob(self.scheduled_oauth_token_refresh, f"{DOMAIN} refresh oauth token: {next_run}", cancel_on_shutdown=True)
+        self._oauth_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
         _LOGGER.debug("---------- END scheduled_oauth_token_refresh")
 
     @rate_limit(6, 1800) # 6 per 30 min
     async def refresh_token_request(self):
         _LOGGER.debug("---------- START refresh_token_request")
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
-        headers = self.apply_headers_params(OAUTH_TOKEN_HEADERS)
+        headers = self.apply_dict_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
         self.logger_filter.add_custom_value(token_request["access_token"])
         self.logger_filter.add_custom_value(token_request["refresh_token"])
@@ -516,17 +542,15 @@ class StellantisVehicles(StellantisOauth):
             "refresh_token": token_request["refresh_token"],
             "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
         }
-        self.save_config(new_config)
-        self.update_stored_config("access_token", new_config["access_token"])
-        self.update_stored_config("refresh_token", new_config["refresh_token"])
-        self.update_stored_config("expires_in", new_config["expires_in"])
+        self.save_config({"oauth": new_config})
+        self.update_stored_config("oauth", new_config)
         _LOGGER.debug("---------- END refresh_token_request")
 
     async def get_user_vehicles(self):
         _LOGGER.debug("---------- START get_user_vehicles")
         if not self._vehicles:
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
-            headers = self.apply_headers_params(CAR_API_HEADERS)
+            headers = self.apply_dict_params(CAR_API_HEADERS)
             vehicles_request = await self.make_http_request(url, 'GET', headers)
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
@@ -565,7 +589,7 @@ class StellantisVehicles(StellantisOauth):
             await self.connect_mqtt()
         # Fetch the vehicle status using the API
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
-        headers = self.apply_headers_params(CAR_API_HEADERS)
+        headers = self.apply_dict_params(CAR_API_HEADERS)
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
@@ -576,7 +600,7 @@ class StellantisVehicles(StellantisOauth):
     async def get_vehicle_last_trip(self, vehicle, page_token=False):
         _LOGGER.debug("---------- START get_vehicle_last_trip")
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
-        headers = self.apply_headers_params(CAR_API_HEADERS)
+        headers = self.apply_dict_params(CAR_API_HEADERS)
         limit_date = (get_datetime() - timedelta(days=1)).isoformat()
         limit_date = limit_date.split(".")[0] + "+" + limit_date.split(".")[1].split("+")[1]
         url = url + "&timestamps=" + limit_date + "/&distance=0.1-"
@@ -597,7 +621,7 @@ class StellantisVehicles(StellantisOauth):
 #     async def get_vehicle_trips(self, page_token=False):
 #         _LOGGER.debug("---------- START get_vehicle_trips")
 #         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
-#         headers = self.apply_headers_params(CAR_API_HEADERS)
+#         headers = self.apply_dict_params(CAR_API_HEADERS)
 #         url = url + "&distance=0.1-"
 #         if page_token:
 #             url = url + "&pageToken=" + page_token
@@ -637,13 +661,14 @@ class StellantisVehicles(StellantisOauth):
             return
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
-        self._mqtt_token_scheduled = async_track_point_in_time(self._hass, self.scheduled_mqtt_token_refresh, next_run)
+        next_job = HassJob(self.scheduled_mqtt_token_refresh, f"{DOMAIN} refresh mqtt token: {next_run}", cancel_on_shutdown=True)
+        self._mqtt_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
         _LOGGER.debug("---------- END scheduled_mqtt_token_refresh")
 
     async def refresh_mqtt_token_request(self, access_token_only=False):
         _LOGGER.debug("---------- START refresh_mqtt_token_request")
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
-        headers = self.apply_headers_params(GET_OTP_HEADERS)
+        headers = self.apply_dict_params(GET_OTP_HEADERS)
         mqtt_config = self.get_config("mqtt")
         refresh_token_almost_expired = "refresh_token_expires_at" not in mqtt_config or datetime.fromisoformat(mqtt_config["refresh_token_expires_at"]) < get_datetime()
         if refresh_token_almost_expired and not access_token_only:
@@ -654,7 +679,8 @@ class StellantisVehicles(StellantisOauth):
                 _LOGGER.warning("Attempt to refresh MQTT access_token/refresh_token failed. This is NOT an error as long as the following attempt to refresh only the access_token (using current refresh_token) succeeds.")
                 return await self.refresh_mqtt_token_request(True)
         else:
-            token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "refresh_token", "refresh_token": mqtt_config["refresh_token"]})
+            json_data = self.apply_dict_params(MQTT_REFRESH_TOKEN_JSON_DATA)
+            token_request = await self.make_http_request(url, 'POST', headers, None, json_data)
         if "access_token" in token_request:
             self.logger_filter.add_custom_value(token_request["access_token"])
         if "refresh_token" in token_request:
@@ -816,7 +842,7 @@ class StellantisVehicles(StellantisOauth):
                 self._mqtt_last_request = [service, message]
             _LOGGER.debug("---------- END send_mqtt_message")
             return action_id
-        except ConfigEntryAuthFailed as e:
+        except ConfigEntryAuthFailed:
             self.disable_remote_commands()
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")

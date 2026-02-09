@@ -1,5 +1,5 @@
 # HomeAssistant - Stellantis Vehicles
-[![Active installations](https://img.shields.io/badge/active_installations-3901-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Active installations](https://img.shields.io/badge/active_installations-3939-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
 [![Last version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=last%20version&color=green)](#)
 
 - [Requirements](#requirements)
@@ -226,27 +226,27 @@ Andrea Donno
 Fabian  
 
 **🥈 5 BEERS**  
+Toine T  
+Zauberertz  
 2102Michael  
-@LittonPaul  
-Andy  
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
-Mickeybyte  
-Bernard H  
-Thomas H.  
+Martin the Biuilder  
+trobete  
+Heiner Engelhardt  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
-Liam  
-b2un0  
-Grosi001  
+mggevaer  
+Slin  
+Floribert M  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Grana  
+Battiegoal  
 Mickael RD  
-Olivier  
-Krobi  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?

@@ -68,7 +68,6 @@ class StellantisBatteryChargingLimitSwitch(StellantisBaseSwitch):
     def available(self):
         return super().available and self._coordinator._sensors.get("number_battery_charging_limit", False)
 
-
 class StellantisAbrpSyncSwitch(StellantisBaseSwitch):
     @property
     def available(self):

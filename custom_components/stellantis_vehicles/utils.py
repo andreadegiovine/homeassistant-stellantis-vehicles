@@ -35,7 +35,7 @@ def time_from_pt_string(pt_string):
 def time_from_string(string):
     return datetime.strptime(string, "%H:%M:%S").time()
 
-def date_from_pt_string(pt_string, start_date = None):
+def date_from_pt_string(pt_string, start_date=None):
     if not start_date:
         start_date = get_datetime()
     try:
@@ -74,12 +74,15 @@ class SensitiveDataFilter(logging.Filter):
         self.custom_values = []
         self.entry_data = {}
         self.masked_entry_keys = ["access_token", "refresh_token", "oauth_code", "customer_id"]
+        self._pattern_cache = None
 
     def add_custom_value(self, value):
         self.custom_values.append(value)
+        self._pattern_cache = None
 
     def add_entry_values(self, entry_data):
         self.entry_data = entry_data
+        self._pattern_cache = None
 
     def get_masked_values(self, data, result=None):
         if result is None:
@@ -93,8 +96,17 @@ class SensitiveDataFilter(logging.Filter):
 
     @property
     def compiled_patterns(self):
+        if self._pattern_cache is not None:
+            return self._pattern_cache
         sensitive_values = self.get_masked_values(self.entry_data) + self.custom_values
-        return [re.compile(re.escape(value), re.IGNORECASE) for value in sensitive_values]
+        valid_values = {str(v) for v in sensitive_values if v}
+        if not valid_values:
+            self._pattern_cache = None
+            return None
+        sorted_values = sorted(valid_values, key=len, reverse=True)
+        pattern_str = '|'.join(map(re.escape, sorted_values))
+        self._pattern_cache = re.compile(pattern_str, re.IGNORECASE)
+        return self._pattern_cache
 
     def filter(self, record: logging.LogRecord) -> bool:
         record.msg = self._mask_value(record.msg)
@@ -130,12 +142,14 @@ class SensitiveDataFilter(logging.Filter):
     def _mask_dict(self, data: Dict) -> Dict:
         masked = {}
         for key, value in data.items():
-            masked[key] = self._mask_value(value)
+            masked_key = self._mask_value(key)
+            masked[masked_key] = self._mask_value(value)
         return masked
 
     def _mask_string(self, value: str) -> str:
-        for pattern in self.compiled_patterns:
-            value = pattern.sub(lambda m: self._mask_sensitive_value(m.group(0)), value)
+        pattern = self.compiled_patterns
+        if pattern:
+            return pattern.sub(lambda m: self._mask_sensitive_value(m.group(0)), value)
         return value
 
     def _mask_sensitive_value(self, value: Any) -> str:

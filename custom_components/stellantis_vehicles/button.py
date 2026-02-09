@@ -110,7 +110,6 @@ class StellantisWakeUpButton(StellantisBaseButton):
         except RateLimitException:
             self._coordinator.update_command_history_rate_limit(self.name)
 
-
 class StellantisDoorButton(StellantisBaseActionButton):
     async def async_press(self):
         await self._coordinator.send_doors_command(self.name, self._action)
