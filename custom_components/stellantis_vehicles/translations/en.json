@@ -18,7 +18,7 @@
         }
       },
       "oauth_remote": {
-        "description": "This [remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2) is used to simulate browser login on the official website",
+        "description": "This [remote service]({oauth_remote_link}) is used to simulate browser login on the official website",
         "data": {
           "email": "Email",
           "password": "Password"
@@ -339,9 +339,9 @@
   },
   "common": {
     "access_token_error_title": "Access token error",
-    "access_token_error_message": "Check out the official documentation in the [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) section",
+    "access_token_error_message": "Check out the official documentation in the [OAuth2 Code]({oauth_token_doc_link}) section",
     "otp_error_title": "OTP error",
-    "otp_error_message": "Check out the official documentation in the [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) section",
+    "otp_error_message": "Check out the official documentation in the [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link}) section",
     "no_vehicles_found_title": "Unavailable",
     "no_vehicles_found_message": "No connected vehicles available on this account",
     "command_error_title": "Command",

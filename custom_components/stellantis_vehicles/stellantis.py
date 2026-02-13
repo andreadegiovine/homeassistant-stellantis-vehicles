@@ -22,7 +22,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit, SensitiveDataFilter )
+from .utils import ( get_datetime, rate_limit, SensitiveDataFilter, replace_string_placeholders )
 from .exceptions import ( ComunicationError, RateLimitException )
 
 from .const import (
@@ -58,7 +58,8 @@ from .const import (
     MQTT_REFRESH_TOKEN_TTL,
     OTP_FILENAME,
     ABRP_URL,
-    ABRP_API_KEY
+    ABRP_API_KEY,
+    TRANSLATION_PLACEHOLDERS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -274,6 +275,10 @@ class StellantisBase:
         if translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None):
             notification_title = notification_title + " - " + str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None))
         notification_message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_message", None))
+
+        notification_title = replace_string_placeholders(notification_title, TRANSLATION_PLACEHOLDERS)
+        notification_message = replace_string_placeholders(notification_message, TRANSLATION_PLACEHOLDERS)
+
         persistent_notification.async_create(
             self._hass,
             notification_message,

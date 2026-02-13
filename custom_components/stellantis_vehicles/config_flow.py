@@ -23,7 +23,8 @@ from .const import (
     FIELD_REMOTE_COMMANDS,
     FIELD_SMS_CODE,
     FIELD_PIN_CODE,
-    MQTT_REFRESH_TOKEN_TTL
+    MQTT_REFRESH_TOKEN_TTL,
+    TRANSLATION_PLACEHOLDERS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -122,7 +123,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_oauth_remote(self, user_input=None):
         if user_input is None:
-            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA)
+            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA, description_placeholders=TRANSLATION_PLACEHOLDERS)
 
         try:
             code_request = await self.stellantis.get_oauth_code(user_input[CONF_EMAIL], user_input[CONF_PASSWORD])

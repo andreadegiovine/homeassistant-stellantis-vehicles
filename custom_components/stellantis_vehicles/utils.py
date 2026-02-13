@@ -46,6 +46,14 @@ def date_from_pt_string(pt_string, start_date=None):
         _LOGGER.warning(str(e))
         return None
 
+def replace_string_placeholders(string, placeholders=None):
+    if placeholders is None:
+        placeholders = {}
+    for placeholder in placeholders:
+        value = placeholders[placeholder]
+        string = string.replace("{" + placeholder + "}", str(value))
+    return string
+
 def rate_limit(limit: int, every: int):
     def limit_decorator(func):
         semaphore = Semaphore(limit)

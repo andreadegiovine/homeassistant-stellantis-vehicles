@@ -304,9 +304,9 @@
   },
   "common": {
     "access_token_error_title": "Zugriffstoken-Fehler",
-    "access_token_error_message": "Lesen Sie die offizielle Dokumentation im [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) Abschnitt",
+    "access_token_error_message": "Lesen Sie die offizielle Dokumentation im [OAuth2 Code]({oauth_token_doc_link}) Abschnitt",
     "otp_error_title": "OTP Fehler",
-    "otp_error_message": "Lesen Sie die offizielle Dokumentation im [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) Abschnitt",
+    "otp_error_message": "Lesen Sie die offizielle Dokumentation im [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link}) Abschnitt",
     "no_vehicles_found_title": "Nicht verfügbar",
     "no_vehicles_found_message": "Für dieses Konto wurden keine Fahrzeuge gefunden",
     "command_error_title": "Befehl",

@@ -347,3 +347,9 @@ BINARY_SENSORS_DEFAULT = {
         "on_value": True
     }
 }
+
+TRANSLATION_PLACEHOLDERS = {
+    "oauth_remote_link": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2",
+    "oauth_token_doc_link": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code",
+    "otp_nokmaxnbtools_doc_link": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools"
+}

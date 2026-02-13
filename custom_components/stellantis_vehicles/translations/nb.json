@@ -257,9 +257,9 @@
   },
   "common": {
     "access_token_error_title": "Feil med tilgangstoken",
-    "access_token_error_message": "Se den offisielle dokumentasjonen i avsnittet [OAuth2-kode](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "access_token_error_message": "Se den offisielle dokumentasjonen i avsnittet [OAuth2-kode]({oauth_token_doc_link})",
     "otp_error_title": "OTP-feil",
-    "otp_error_message": "Se den offisielle dokumentasjonen i avsnittet [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "otp_error_message": "Se den offisielle dokumentasjonen i avsnittet [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link})",
     "no_vehicles_found_title": "Ikke tilgjengelig",
     "no_vehicles_found_message": "Ingen tilknyttede kjøretøy tilgjengelig på denne kontoen",
     "command_error_title": "Kommando",
