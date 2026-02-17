@@ -730,7 +730,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
         """ Native value. """
         vin = self._coordinator._vehicle['vin']
         value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
-        if value:
+        if value is not None:
             self._coordinator._sensors[self._sensor_key] = float(value)
             return value
         if self._sensor_key in self._coordinator._sensors:
@@ -756,7 +756,7 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
         """ Is on. """
         vin = self._coordinator._vehicle['vin']
         value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
-        if value:
+        if value is not None:
             self._coordinator._sensors[self._sensor_key] = bool(value)
             return value
         if self._sensor_key in self._coordinator._sensors:
@@ -790,7 +790,7 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
         """ Native value. """
         vin = self._coordinator._vehicle['vin']
         value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
-        if value:
+        if value is not None:
             self._coordinator._sensors[self._sensor_key] = str(value)
             return value
         if self._sensor_key in self._coordinator._sensors:
