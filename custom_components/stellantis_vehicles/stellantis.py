@@ -30,6 +30,7 @@ from .const import (
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
     FIELD_REMOTE_COMMANDS,
+    FIELD_NOTIFICATIONS,
     MOBILE_APPS,
     OAUTH_AUTHORIZE_URL,
     OAUTH_TOKEN_URL,
@@ -267,7 +268,7 @@ class StellantisBase:
 
     async def hass_notify(self, translation_key):
         """Create a persistent notification."""
-        if hasattr(self, '_entry') and not self.get_stored_config("switch_notifications"):
+        if hasattr(self, '_entry') and not self.get_stored_config(FIELD_NOTIFICATIONS):
             return
 
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})

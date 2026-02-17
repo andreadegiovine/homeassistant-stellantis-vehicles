@@ -9,6 +9,9 @@ from typing import Any, Dict
 from homeassistant.util import dt
 
 from .exceptions import RateLimitException
+from .const import (
+    FIELD_ANONYMIZE_LOGS
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,20 +120,20 @@ class SensitiveDataFilter(logging.Filter):
         return self._pattern_cache
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.msg = self._mask_value(record.msg)
+        if self.entry_data.get(FIELD_ANONYMIZE_LOGS, False):
+            record.msg = self._mask_value(record.msg)
+            if record.args:
+                if isinstance(record.args, dict):
+                    record.args = self._mask_dict(record.args)
+                elif isinstance(record.args, (tuple, list)):
+                    record.args = tuple(self._mask_value(arg) for arg in record.args)
+                else:
+                    record.args = self._mask_value(record.args)
 
-        if record.args:
-            if isinstance(record.args, dict):
-                record.args = self._mask_dict(record.args)
-            elif isinstance(record.args, (tuple, list)):
-                record.args = tuple(self._mask_value(arg) for arg in record.args)
-            else:
-                record.args = self._mask_value(record.args)
-
-        # record.msg = self._mask_value(record.msg)
-        # if hasattr(record, 'msg') and record.args:
-        #     record.msg = record.getMessage()
-        #     record.args = None
+            # record.msg = self._mask_value(record.msg)
+            # if hasattr(record, 'msg') and record.args:
+            #     record.msg = record.getMessage()
+            #     record.args = None
 
         return True
 

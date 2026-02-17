@@ -44,9 +44,6 @@
       },
       "reauth_confirm": {
         "description": "Du behöver autentisera dig igen för att använda integrationen"
-      },
-      "reconfigure": {
-        "description": "Konfigurera remote commands (E-remote eller Connect Plus krävs)"
       }
     },
     "error": {
@@ -321,9 +318,6 @@
       },
       "battery_values_correction": {
         "name": "Korrigering av batterivärden"
-      },
-      "notifications": {
-        "name": "Notifieringar"
       }
     },
     "text": {

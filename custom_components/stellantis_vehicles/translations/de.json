@@ -286,9 +286,6 @@
       },
       "battery_values_correction": {
         "name": "Korrektur der Batteriewerte"
-      },
-      "notifications": {
-        "name": "Benachrichtigung"
       }
     },
     "text": {

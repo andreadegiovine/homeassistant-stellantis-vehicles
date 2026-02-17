@@ -291,9 +291,6 @@
       },
       "battery_values_correction": {
         "name": "Batterij correctie"
-      },
-      "notifications": {
-        "name": "Meldingen"
       }
     },
     "text": {

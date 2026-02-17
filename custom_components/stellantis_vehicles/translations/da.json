@@ -230,9 +230,6 @@
       },
       "abrp_sync": {
         "name": "ABRP sync"
-      },
-      "notifications": {
-        "name": "Beskeder"
       }
     },
     "text": {

@@ -14,7 +14,7 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     OTP_FILENAME,
-    FIELD_REMOTE_COMMANDS
+    FIELD_NOTIFICATIONS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -188,6 +188,28 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             data.pop("switch_abrp_sync", None)
             data.pop("switch_battery_values_correction", None)
             data.pop("switch_notifications", None)
+            return data
+
+        new_data = await hass.async_add_executor_job(update_data, data)
+        hass.config_entries.async_update_entry(config, data=new_data, version=1, minor_version=5)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
+    if config.version == 1 and config.minor_version < 6:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+        data = dict(config.data)
+
+        def update_data(data):
+            public_path = hass.config.path("www")
+            customer_id = data["customer_id"]
+            entry_path = f"{public_path}/{DOMAIN}/{customer_id}"
+            if os.path.isdir(entry_path):
+                for vin in os.listdir(entry_path):
+                    vin_path = os.path.join(entry_path, vin)
+                    if os.path.isfile(vin_path):
+                        vin = os.path.splitext(vin)[0]
+                        if vin in data and "switch_notifications" in data[vin]:
+                            data[FIELD_NOTIFICATIONS] = data[vin]["switch_notifications"]
+                            data[vin].pop("switch_notifications", None)
             return data
 
         new_data = await hass.async_add_executor_job(update_data, data)

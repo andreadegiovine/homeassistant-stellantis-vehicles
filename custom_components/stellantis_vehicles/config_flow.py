@@ -23,6 +23,9 @@ from .const import (
     FIELD_REMOTE_COMMANDS,
     FIELD_SMS_CODE,
     FIELD_PIN_CODE,
+    FIELD_NOTIFICATIONS,
+    FIELD_ANONYMIZE_LOGS,
+    FIELD_RECONFIGURE,
     MQTT_REFRESH_TOKEN_TTL,
     TRANSLATION_PLACEHOLDERS
 )
@@ -60,9 +63,25 @@ OTP_SCHEMA = vol.Schema({
     vol.Required(FIELD_PIN_CODE): str
 })
 
+def OPTIONS_SCHEMA(reconfig=None):
+    defaults = {
+        FIELD_NOTIFICATIONS: True,
+        FIELD_ANONYMIZE_LOGS: True
+    }
+    if reconfig:
+        defaults.update(reconfig)
+    return vol.Schema({
+        vol.Required(FIELD_NOTIFICATIONS, default=defaults[FIELD_NOTIFICATIONS]): bool,
+        vol.Required(FIELD_ANONYMIZE_LOGS, default=defaults[FIELD_ANONYMIZE_LOGS]): bool
+    })
+
+RECONFIGURE_SCHEMA = vol.Schema({
+    vol.Required(FIELD_RECONFIGURE): selector({ "select": { "options": [FIELD_REMOTE_COMMANDS, 'options'], "translation_key": FIELD_RECONFIGURE } })
+})
+
 class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    MINOR_VERSION = 5
+    MINOR_VERSION = 6
 
     def __init__(self) -> None:
         self.data = dict()
@@ -71,6 +90,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         self.vehicles = {}
         self.errors = {}
         self._translations = None
+        self._enable_remote_commands = False
 
 
     async def init_translations(self):
@@ -172,7 +192,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self.async_step_otp()
         else:
             self.data.update({"customer_id": "MN-" + str(uuid4()).replace("-", "")[:16]})
-            return await self.async_step_final()
+            return await self.async_step_options()
 
 
     async def async_step_otp(self, user_input=None):
@@ -229,6 +249,18 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             "refresh_token_expires_at": (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
         }})
 
+        if self.source == SOURCE_RECONFIGURE:
+            self._enable_remote_commands = True
+            return await self.async_step_final()
+        else:
+            return await self.async_step_options()
+
+
+    async def async_step_options(self, user_input=None):
+        if user_input is None:
+            return self.async_show_form(step_id="options", data_schema=OPTIONS_SCHEMA(self.data))
+
+        self.data.update(user_input)
         return await self.async_step_final()
 
 
@@ -239,7 +271,8 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             if self._get_reconfigure_entry().unique_id != str(self.data["customer_id"]):
                 await self.async_set_unique_id(str(self.data["customer_id"]))
                 self._abort_if_unique_id_configured()
-            self.data.update({FIELD_REMOTE_COMMANDS: True})
+            if self._enable_remote_commands:
+                self.data.update({FIELD_REMOTE_COMMANDS: True})
             return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False, unique_id=str(self.data["customer_id"]))
 
         await self.async_set_unique_id(str(self.data["customer_id"]))
@@ -249,12 +282,17 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_reconfigure(self, user_input=None):
         if user_input is None:
-            return self.async_show_form(step_id="reconfigure")
+            return self.async_show_form(step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA)
+
         await self.init_translations()
         self.stellantis = self.hass.data[DOMAIN][self._reconfigure_entry_id]
         self.data = dict(self.stellantis._entry.data)
-        self.stellantis.disable_remote_commands()
-        return await self.async_step_otp()
+
+        if user_input[FIELD_RECONFIGURE] == FIELD_REMOTE_COMMANDS:
+            self.stellantis.disable_remote_commands()
+            return await self.async_step_otp()
+        else:
+            return await self.async_step_options()
 
 
     async def async_step_reauth(self, entry_data):

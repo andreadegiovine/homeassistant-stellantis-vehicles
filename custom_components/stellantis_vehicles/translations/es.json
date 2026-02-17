@@ -245,9 +245,6 @@
       },
       "battery_values_correction": {
         "name": "Corrección de valores de batería"
-      },
-      "notifications": {
-        "name": "Notificaciones"
       }
     },
     "text": {
