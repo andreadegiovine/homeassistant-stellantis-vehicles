@@ -9,6 +9,7 @@
 - [OAuth2 Code](#oauth2-code)
 - [Commands](#commands)
 - [Battery capacity / residual sensors](#battery-capacity--residual-sensors)
+- [Global preferences](#global-preferences)
 - [Errors](#errors)
 - [ABRP - A Better Routeplanner](#abrp---a-better-routeplanner)
 - [Support the project](#support-the-project)
@@ -164,6 +165,13 @@ As described in the Stellantis apps, the command is enabled when:
 Thanks to the community ([#272](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272)), it seems that for some vehicles **Stellantis provides incorrect values**. The **switch.battery_values_correction** entity (in your language) applies a correction if active.
 
 \*currently only to the battery_residual sensor
+
+## Global preferences
+These initial choices can be changed in the **Reconfigure** flow under **Global preferences**:
+- Enable persistent notifications
+- Anonymize personal data on logs
+
+Thanks to the community ([#414](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/414)), it seems that for some hardware, the "Anonymize personal data on logs" feature makes the environment unstable. It is recommended to disable this feature and enable it only when you need to share logs.
 
 ## Errors
 <ins>Before any issue request, please check the integration log and look for solution below</ins>.
