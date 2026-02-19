@@ -355,6 +355,7 @@
   "selector": {
     "reconfigure": {
       "options": {
+        "oauth": "Re-authenticate your account",
         "remote_commands": "Configure remote commands (E-remote or Connect Plus required)",
         "options": "Global preferences"
       }

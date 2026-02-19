@@ -76,7 +76,7 @@ def OPTIONS_SCHEMA(reconfig=None):
     })
 
 RECONFIGURE_SCHEMA = vol.Schema({
-    vol.Required(FIELD_RECONFIGURE): selector({ "select": { "options": [FIELD_REMOTE_COMMANDS, 'options'], "translation_key": FIELD_RECONFIGURE } })
+    vol.Required(FIELD_RECONFIGURE): selector({ "select": { "options": ['options', 'oauth', FIELD_REMOTE_COMMANDS], "translation_key": FIELD_RECONFIGURE } })
 })
 
 class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -148,7 +148,10 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         try:
             code_request = await self.stellantis.get_oauth_code(user_input[CONF_EMAIL], user_input[CONF_PASSWORD])
         except Exception as e:
-            self.errors[FIELD_OAUTH_MANUAL_MODE] = self.get_error_message("get_oauth_code", e)
+            message = self.get_error_message("get_oauth_code", e)
+            if self.source == SOURCE_RECONFIGURE:
+                return self.async_abort(reason=message)
+            self.errors[FIELD_OAUTH_MANUAL_MODE] = message
             await self.stellantis.hass_notify("get_oauth_code")
             return await self.async_step_oauth_mode()
 
@@ -174,9 +177,13 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 token_request = await self.stellantis.get_access_token()
             except Exception as e:
-                self.errors[FIELD_OAUTH_MANUAL_MODE] = self.get_error_message("get_access_token", e)
+                message = self.get_error_message("get_access_token", e)
+                if self.source == SOURCE_RECONFIGURE:
+                    return self.async_abort(reason=message)
+                self.errors[FIELD_OAUTH_MANUAL_MODE] = message
                 await self.stellantis.hass_notify("access_token_error")
                 return await self.async_step_oauth_mode()
+
             oauth = {"oauth": {
                 "access_token": token_request["access_token"],
                 "refresh_token": token_request["refresh_token"],
@@ -188,7 +195,10 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
         self.data.update({FIELD_REMOTE_COMMANDS: user_input[FIELD_REMOTE_COMMANDS]})
         self.stellantis.save_config({FIELD_REMOTE_COMMANDS: self.data[FIELD_REMOTE_COMMANDS]})
-        if self.data[FIELD_REMOTE_COMMANDS]:
+
+        if self.source == SOURCE_RECONFIGURE:
+            return await self.async_step_final()
+        elif self.data[FIELD_REMOTE_COMMANDS]:
             return await self.async_step_otp()
         else:
             self.data.update({"customer_id": "MN-" + str(uuid4()).replace("-", "")[:16]})
@@ -291,6 +301,8 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input[FIELD_RECONFIGURE] == FIELD_REMOTE_COMMANDS:
             self.stellantis.disable_remote_commands()
             return await self.async_step_otp()
+        elif user_input[FIELD_RECONFIGURE] == "oauth":
+            return await self.async_step_oauth_mode()
         else:
             return await self.async_step_options()
 
