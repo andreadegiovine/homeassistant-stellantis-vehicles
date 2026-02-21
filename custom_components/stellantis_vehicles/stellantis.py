@@ -22,7 +22,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit, SensitiveDataFilter )
+from .utils import ( get_datetime, rate_limit, SensitiveDataFilter, replace_string_placeholders )
 from .exceptions import ( ComunicationError, RateLimitException )
 
 from .const import (
@@ -30,6 +30,7 @@ from .const import (
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
     FIELD_REMOTE_COMMANDS,
+    FIELD_NOTIFICATIONS,
     MOBILE_APPS,
     OAUTH_AUTHORIZE_URL,
     OAUTH_TOKEN_URL,
@@ -58,7 +59,8 @@ from .const import (
     MQTT_REFRESH_TOKEN_TTL,
     OTP_FILENAME,
     ABRP_URL,
-    ABRP_API_KEY
+    ABRP_API_KEY,
+    TRANSLATION_PLACEHOLDERS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -266,7 +268,7 @@ class StellantisBase:
 
     async def hass_notify(self, translation_key):
         """Create a persistent notification."""
-        if hasattr(self, '_entry') and not self.get_stored_config("switch_notifications"):
+        if hasattr(self, '_entry') and not self.get_stored_config(FIELD_NOTIFICATIONS):
             return
 
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
@@ -274,6 +276,10 @@ class StellantisBase:
         if translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None):
             notification_title = notification_title + " - " + str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None))
         notification_message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_message", None))
+
+        notification_title = replace_string_placeholders(notification_title, TRANSLATION_PLACEHOLDERS)
+        notification_message = replace_string_placeholders(notification_message, TRANSLATION_PLACEHOLDERS)
+
         persistent_notification.async_create(
             self._hass,
             notification_message,
@@ -492,13 +498,22 @@ class StellantisVehicles(StellantisOauth):
         await self._hass.async_add_executor_job(im.save, image_path)
         return image_url
 
-    async def scheduled_tokens_refresh(self):
+    def reset_scheduled_tokens(self):
+        self.reset_scheduled_oauth_token()
+        self.reset_scheduled_mqtt_token()
+
+    def reset_scheduled_oauth_token(self):
         if self._oauth_token_scheduled is not None:
             self._oauth_token_scheduled()
             self._oauth_token_scheduled = None
+
+    def reset_scheduled_mqtt_token(self):
         if self._mqtt_token_scheduled is not None:
             self._mqtt_token_scheduled()
             self._mqtt_token_scheduled = None
+
+    async def scheduled_tokens_refresh(self):
+        self.reset_scheduled_tokens()
         await self.scheduled_oauth_token_refresh()
         await self.scheduled_mqtt_token_refresh()
 
@@ -509,8 +524,7 @@ class StellantisVehicles(StellantisOauth):
             return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
         try:
             if self._oauth_token_scheduled is not None:
-                self._oauth_token_scheduled()
-                self._oauth_token_scheduled = None
+                self.reset_scheduled_oauth_token()
                 await self.refresh_token_request()
             elif get_datetime() > get_next_run():
                 await self.refresh_token_request()
@@ -642,8 +656,7 @@ class StellantisVehicles(StellantisOauth):
             return datetime.fromisoformat(expires_in) - timedelta(minutes=3)
         try:
             if self._mqtt_token_scheduled is not None or force:
-                self._mqtt_token_scheduled()
-                self._mqtt_token_scheduled = None
+                self.reset_scheduled_mqtt_token()
                 await self.refresh_mqtt_token_request()
             elif get_datetime() > get_next_run():
                 await self.refresh_mqtt_token_request()

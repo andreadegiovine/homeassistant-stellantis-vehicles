@@ -18,7 +18,7 @@
         }
       },
       "oauth_remote": {
-        "description": "Questo [servizio remoto](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2) viene utilizzato per simulare un browser ed effettuare l'accesso sul sito web ufficiale",
+        "description": "Questo [servizio remoto]({oauth_remote_link}) viene utilizzato per simulare un browser ed effettuare l'accesso sul sito web ufficiale",
         "data": {
           "email": "Email",
           "password": "Password"
@@ -42,11 +42,19 @@
           "pin_code": "Codice pin dell'app mobile del veicolo"
         }
       },
+      "options": {
+        "data": {
+          "notifications": "Attiva le notifiche persistenti",
+          "anonymize_logs": "Nascondi i dati personali sui log"
+        }
+      },
       "reauth_confirm": {
         "description": "Devi effettuare nuovamente l'autenticazione per utilizzare quest'integrazione"
       },
       "reconfigure": {
-        "description": "Configura comandi remoti (richiede E-remote o Connect Plus)"
+        "data": {
+          "reconfigure": "Riconfigura"
+        }
       }
     },
     "error": {
@@ -321,9 +329,6 @@
       },
       "battery_values_correction": {
         "name": "Correzione valori batteria"
-      },
-      "notifications": {
-        "name": "Notifiche"
       }
     },
     "text": {
@@ -339,12 +344,21 @@
   },
   "common": {
     "access_token_error_title": "Access token error",
-    "access_token_error_message": "Consulta la documentazione ufficiale nella sezione [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "access_token_error_message": "Consulta la documentazione ufficiale nella sezione [OAuth2 Code]({oauth_token_doc_link})",
     "otp_error_title": "Errore OTP",
-    "otp_error_message": "Consulta la documentazione ufficiale nella sezione [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "otp_error_message": "Consulta la documentazione ufficiale nella sezione [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link})",
     "no_vehicles_found_title": "Non disponibile",
     "no_vehicles_found_message": "Nessun veicolo connesso disponibile in questo account",
     "command_error_title": "Comando",
     "command_error_message": "Il comando non è stato inviato correttamente"
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "Autentica nuovamente il tuo account",
+        "remote_commands": "Configura comandi remoti (richiede E-remote o Connect Plus)",
+        "options": "Opzioni globali"
+      }
+    }
   }
 }

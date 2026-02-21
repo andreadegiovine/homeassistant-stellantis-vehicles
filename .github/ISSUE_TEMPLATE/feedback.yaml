@@ -115,7 +115,7 @@ body:
             logs:
                 custom_components.stellantis_vehicles: debug
         ```
-        before pasting here, please remove your personal data (access_token, refresh_token, customer_id, vin, vehicle_id, coordinates, etc).
+        before pasting here, please enable the ["Anonymize personal data on logs" feature](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#global-preferences) or manually remove your personal data (access_token, refresh_token, customer_id, vin, vehicle_id, coordinates, etc).
   - type: textarea
     id: logs
     attributes:

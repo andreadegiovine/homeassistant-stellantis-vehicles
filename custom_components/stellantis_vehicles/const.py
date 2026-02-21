@@ -95,6 +95,9 @@ FIELD_OAUTH_CODE = "oauth_code"
 FIELD_REMOTE_COMMANDS = "remote_commands"
 FIELD_SMS_CODE = "sms_code"
 FIELD_PIN_CODE = "pin_code"
+FIELD_NOTIFICATIONS = "notifications"
+FIELD_ANONYMIZE_LOGS = "anonymize_logs"
+FIELD_RECONFIGURE = "reconfigure"
 
 PLATFORMS = [
     "binary_sensor",
@@ -346,4 +349,10 @@ BINARY_SENSORS_DEFAULT = {
         "updated_at_map" : ["environment", "luminosity", "createdAt"],
         "on_value": True
     }
+}
+
+TRANSLATION_PLACEHOLDERS = {
+    "oauth_remote_link": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2",
+    "oauth_token_doc_link": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code",
+    "otp_nokmaxnbtools_doc_link": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools"
 }

@@ -230,9 +230,6 @@
       },
       "abrp_sync": {
         "name": "ABRP sync"
-      },
-      "notifications": {
-        "name": "Beskeder"
       }
     },
     "text": {
@@ -248,9 +245,9 @@
   },
   "common": {
     "access_token_error_title": "Adgangstokenfejl",
-    "access_token_error_message": "Læs dokumentationen i denne [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) sektion",
+    "access_token_error_message": "Læs dokumentationen i denne [OAuth2 Code]({oauth_token_doc_link}) sektion",
     "otp_error_title": "OTP fejl",
-    "otp_error_message": "Læs dokumentationen i denne [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) sektion",
+    "otp_error_message": "Læs dokumentationen i denne [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link}) sektion",
     "no_vehicles_found_title": "Ikke tilgængelig",
     "no_vehicles_found_message": "Ingen forbundne køretøjer tilgængelig på denne konto",
     "command_error_title": "Kommando",

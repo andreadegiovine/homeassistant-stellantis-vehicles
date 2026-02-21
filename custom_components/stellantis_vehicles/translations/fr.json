@@ -229,9 +229,6 @@
       },
       "abrp_sync": {
         "name": "Synchronisation avec ABRP"
-      },
-      "notifications": {
-        "name": "Notifications"
       }
     },
     "text": {
@@ -247,9 +244,9 @@
   },
   "common": {
     "access_token_error_title": "Erreur Access token",
-    "access_token_error_message": "Vérifier la documentation officielle dans la section [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "access_token_error_message": "Vérifier la documentation officielle dans la section [OAuth2 Code]({oauth_token_doc_link})",
     "otp_error_title": "Erreur OTP",
-    "otp_error_message": "Vérifier la documentation officielle dans la section [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "otp_error_message": "Vérifier la documentation officielle dans la section [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link})",
     "no_vehicles_found_title": "Indisponible",
     "no_vehicles_found_message": "Aucun véhicule connecté disponible sur ce compte",
     "command_error_title": "Commande",

@@ -291,9 +291,6 @@
       },
       "battery_values_correction": {
         "name": "Batterij correctie"
-      },
-      "notifications": {
-        "name": "Meldingen"
       }
     },
     "text": {
@@ -309,9 +306,9 @@
   },
   "common": {
     "access_token_error_title": "Access token error",
-    "access_token_error_message": "Voor meer achtergrond, zie de officiele documentatie in de [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) sectie",
+    "access_token_error_message": "Voor meer achtergrond, zie de officiele documentatie in de [OAuth2 Code]({oauth_token_doc_link}) sectie",
     "otp_error_title": "OTP error",
-    "otp_error_message": "Voor meer achtergrond, zie de officiele documentatie in de [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) sectie",
+    "otp_error_message": "Voor meer achtergrond, zie de officiele documentatie in de [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link}) sectie",
     "no_vehicles_found_title": "Niet beschikbaar",
     "no_vehicles_found_message": "Geen gekoppelde voertuigen beschikbaar op dit account",
     "command_error_title": "Commando",

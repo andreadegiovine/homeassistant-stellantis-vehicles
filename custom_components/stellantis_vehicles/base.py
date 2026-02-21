@@ -210,28 +210,28 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             "is_parked": False
         }
 
-        if self._sensors.get("battery"):
+        if self._sensors.get("battery") is not None:
             tlm["soc"] = self._sensors.get("battery")
-        if self._sensors.get("speed"):
+        if self._sensors.get("speed") is not None:
             tlm["speed"] = self._sensors.get("speed")
-        if self._data.get("lastPosition"):
+        if self._data.get("lastPosition") is not None:
             tlm["lat"] = float(self._data["lastPosition"]["geometry"]["coordinates"][1])
             tlm["lon"] = float(self._data["lastPosition"]["geometry"]["coordinates"][0])
-        if self._sensors.get("battery_charging"):
+        if self._sensors.get("battery_charging") is not None:
             tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
-        if self._sensors.get("battery_charging_type"):
+        if self._sensors.get("battery_charging_type") is not None:
             tlm["is_dcfc"] = tlm["is_charging"] and self._sensors.get("battery_charging_type") == "Quick"
-        if self._sensors.get("battery_soh"):
+        if self._sensors.get("battery_soh") is not None:
             tlm["soh"] = float(self._sensors.get("battery_soh"))
-        if self._data.get("lastPosition", {}).get("properties", {}).get("heading"):
+        if self._data.get("lastPosition", {}).get("properties", {}).get("heading") is not None:
             tlm["heading"] = float(self._data.get("lastPosition").get("properties").get("heading"))
         if len(self._data.get("lastPosition", {}).get("geometry", {}).get("coordinates", [])) == 3:
             tlm["elevation"] = float(self._data.get("lastPosition").get("geometry").get("coordinates")[2])
-        if self._sensors.get("temperature"):
+        if self._sensors.get("temperature") is not None:
             tlm["ext_temp"] = self._sensors.get("temperature")
-        if self._sensors.get("mileage"):
+        if self._sensors.get("mileage") is not None:
             tlm["odometer"] = self._sensors.get("mileage")
-        if self._sensors.get("autonomy"):
+        if self._sensors.get("autonomy") is not None:
             tlm["est_battery_range"] = self._sensors.get("autonomy")
 
         params = {"tlm": json.dumps(tlm), "token": self._sensors.get("text_abrp_token")}
@@ -730,7 +730,7 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
         """ Native value. """
         vin = self._coordinator._vehicle['vin']
         value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
-        if value:
+        if value is not None:
             self._coordinator._sensors[self._sensor_key] = float(value)
             return value
         if self._sensor_key in self._coordinator._sensors:
@@ -756,7 +756,7 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
         """ Is on. """
         vin = self._coordinator._vehicle['vin']
         value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
-        if value:
+        if value is not None:
             self._coordinator._sensors[self._sensor_key] = bool(value)
             return value
         if self._sensor_key in self._coordinator._sensors:
@@ -790,7 +790,7 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
         """ Native value. """
         vin = self._coordinator._vehicle['vin']
         value = self._stellantis.get_vehicle_stored_config(vin, self._sensor_key)
-        if value:
+        if value is not None:
             self._coordinator._sensors[self._sensor_key] = str(value)
             return value
         if self._sensor_key in self._coordinator._sensors:

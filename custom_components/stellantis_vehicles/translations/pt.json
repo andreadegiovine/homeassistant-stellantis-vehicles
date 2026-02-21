@@ -239,9 +239,6 @@
       },
       "battery_values_correction": {
         "name": "Correção dos valores da bateria"
-      },
-      "notifications": {
-        "name": "Notificações"
       }
     },
     "text": {
@@ -257,9 +254,9 @@
   },
   "common": {
     "access_token_error_title": "Erro de token de acesso",
-    "access_token_error_message": "Verifique a documentação oficial na seção [Código OAuth2](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code)",
+    "access_token_error_message": "Verifique a documentação oficial na seção [Código OAuth2]({oauth_token_doc_link})",
     "otp_error_title": "Erro de OTP",
-    "otp_error_message": "Verifique a documentação oficial na seção [Erro de OTP - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools)",
+    "otp_error_message": "Verifique a documentação oficial na seção [Erro de OTP - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link})",
     "no_vehicles_found_title": "Indisponível",
     "no_vehicles_found_message": "Nenhum veículo conectado disponível nesta conta",
     "command_error_title": "Comando",

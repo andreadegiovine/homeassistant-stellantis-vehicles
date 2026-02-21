@@ -18,7 +18,7 @@
         }
       },
       "oauth_remote": {
-        "description": "Den här tjänsten [remote service](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2) simulerar en webbläsarinloggning mot den officiella webbplatsen",
+        "description": "Den här tjänsten [remote service]({oauth_remote_link}) simulerar en webbläsarinloggning mot den officiella webbplatsen",
         "data": {
           "email": "E-post",
           "password": "Lösenord"
@@ -44,9 +44,6 @@
       },
       "reauth_confirm": {
         "description": "Du behöver autentisera dig igen för att använda integrationen"
-      },
-      "reconfigure": {
-        "description": "Konfigurera remote commands (E-remote eller Connect Plus krävs)"
       }
     },
     "error": {
@@ -321,9 +318,6 @@
       },
       "battery_values_correction": {
         "name": "Korrigering av batterivärden"
-      },
-      "notifications": {
-        "name": "Notifieringar"
       }
     },
     "text": {
@@ -339,9 +333,9 @@
   },
   "common": {
     "access_token_error_title": "Access token-fel",
-    "access_token_error_message": "Se officiell dokumentation i [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) sektionen",
+    "access_token_error_message": "Se officiell dokumentation i [OAuth2 Code]({oauth_token_doc_link}) sektionen",
     "otp_error_title": "OTP fel",
-    "otp_error_message": "Se officiell dokumentation i [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) sektionen",
+    "otp_error_message": "Se officiell dokumentation i [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link}) sektionen",
     "no_vehicles_found_title": "Otillgänglig",
     "no_vehicles_found_message": "Inga fordon kopplade till detta konto",
     "command_error_title": "Command",

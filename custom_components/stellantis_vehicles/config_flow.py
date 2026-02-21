@@ -23,7 +23,11 @@ from .const import (
     FIELD_REMOTE_COMMANDS,
     FIELD_SMS_CODE,
     FIELD_PIN_CODE,
-    MQTT_REFRESH_TOKEN_TTL
+    FIELD_NOTIFICATIONS,
+    FIELD_ANONYMIZE_LOGS,
+    FIELD_RECONFIGURE,
+    MQTT_REFRESH_TOKEN_TTL,
+    TRANSLATION_PLACEHOLDERS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -59,9 +63,25 @@ OTP_SCHEMA = vol.Schema({
     vol.Required(FIELD_PIN_CODE): str
 })
 
+def OPTIONS_SCHEMA(reconfig=None):
+    defaults = {
+        FIELD_NOTIFICATIONS: True,
+        FIELD_ANONYMIZE_LOGS: True
+    }
+    if reconfig:
+        defaults.update(reconfig)
+    return vol.Schema({
+        vol.Required(FIELD_NOTIFICATIONS, default=defaults[FIELD_NOTIFICATIONS]): bool,
+        vol.Required(FIELD_ANONYMIZE_LOGS, default=defaults[FIELD_ANONYMIZE_LOGS]): bool
+    })
+
+RECONFIGURE_SCHEMA = vol.Schema({
+    vol.Required(FIELD_RECONFIGURE): selector({ "select": { "options": ['options', 'oauth', FIELD_REMOTE_COMMANDS], "translation_key": FIELD_RECONFIGURE } })
+})
+
 class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    MINOR_VERSION = 5
+    MINOR_VERSION = 6
 
     def __init__(self) -> None:
         self.data = dict()
@@ -70,6 +90,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         self.vehicles = {}
         self.errors = {}
         self._translations = None
+        self._enable_remote_commands = False
 
 
     async def init_translations(self):
@@ -122,12 +143,15 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_oauth_remote(self, user_input=None):
         if user_input is None:
-            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA)
+            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA, description_placeholders=TRANSLATION_PLACEHOLDERS)
 
         try:
             code_request = await self.stellantis.get_oauth_code(user_input[CONF_EMAIL], user_input[CONF_PASSWORD])
         except Exception as e:
-            self.errors[FIELD_OAUTH_MANUAL_MODE] = self.get_error_message("get_oauth_code", e)
+            message = self.get_error_message("get_oauth_code", e)
+            if self.source == SOURCE_RECONFIGURE:
+                return self.async_abort(reason=message)
+            self.errors[FIELD_OAUTH_MANUAL_MODE] = message
             await self.stellantis.hass_notify("get_oauth_code")
             return await self.async_step_oauth_mode()
 
@@ -153,9 +177,13 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 token_request = await self.stellantis.get_access_token()
             except Exception as e:
-                self.errors[FIELD_OAUTH_MANUAL_MODE] = self.get_error_message("get_access_token", e)
+                message = self.get_error_message("get_access_token", e)
+                if self.source == SOURCE_RECONFIGURE:
+                    return self.async_abort(reason=message)
+                self.errors[FIELD_OAUTH_MANUAL_MODE] = message
                 await self.stellantis.hass_notify("access_token_error")
                 return await self.async_step_oauth_mode()
+
             oauth = {"oauth": {
                 "access_token": token_request["access_token"],
                 "refresh_token": token_request["refresh_token"],
@@ -167,11 +195,14 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
         self.data.update({FIELD_REMOTE_COMMANDS: user_input[FIELD_REMOTE_COMMANDS]})
         self.stellantis.save_config({FIELD_REMOTE_COMMANDS: self.data[FIELD_REMOTE_COMMANDS]})
-        if self.data[FIELD_REMOTE_COMMANDS]:
+
+        if self.source == SOURCE_RECONFIGURE:
+            return await self.async_step_final()
+        elif self.data[FIELD_REMOTE_COMMANDS]:
             return await self.async_step_otp()
         else:
             self.data.update({"customer_id": "MN-" + str(uuid4()).replace("-", "")[:16]})
-            return await self.async_step_final()
+            return await self.async_step_options()
 
 
     async def async_step_otp(self, user_input=None):
@@ -228,6 +259,18 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             "refresh_token_expires_at": (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
         }})
 
+        if self.source == SOURCE_RECONFIGURE:
+            self._enable_remote_commands = True
+            return await self.async_step_final()
+        else:
+            return await self.async_step_options()
+
+
+    async def async_step_options(self, user_input=None):
+        if user_input is None:
+            return self.async_show_form(step_id="options", data_schema=OPTIONS_SCHEMA(self.data))
+
+        self.data.update(user_input)
         return await self.async_step_final()
 
 
@@ -238,7 +281,8 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             if self._get_reconfigure_entry().unique_id != str(self.data["customer_id"]):
                 await self.async_set_unique_id(str(self.data["customer_id"]))
                 self._abort_if_unique_id_configured()
-            self.data.update({FIELD_REMOTE_COMMANDS: True})
+            if self._enable_remote_commands:
+                self.data.update({FIELD_REMOTE_COMMANDS: True})
             return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False, unique_id=str(self.data["customer_id"]))
 
         await self.async_set_unique_id(str(self.data["customer_id"]))
@@ -248,12 +292,19 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_reconfigure(self, user_input=None):
         if user_input is None:
-            return self.async_show_form(step_id="reconfigure")
+            return self.async_show_form(step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA)
+
         await self.init_translations()
         self.stellantis = self.hass.data[DOMAIN][self._reconfigure_entry_id]
         self.data = dict(self.stellantis._entry.data)
-        self.stellantis.disable_remote_commands()
-        return await self.async_step_otp()
+
+        if user_input[FIELD_RECONFIGURE] == FIELD_REMOTE_COMMANDS:
+            self.stellantis.disable_remote_commands()
+            return await self.async_step_otp()
+        elif user_input[FIELD_RECONFIGURE] == "oauth":
+            return await self.async_step_oauth_mode()
+        else:
+            return await self.async_step_options()
 
 
     async def async_step_reauth(self, entry_data):

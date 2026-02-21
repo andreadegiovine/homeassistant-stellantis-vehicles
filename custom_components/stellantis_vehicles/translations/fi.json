@@ -239,9 +239,6 @@
       },
       "battery_values_correction": {
         "name": "Akun varaustason arvojen kompensointi"
-      },
-      "notifications": {
-        "name": "Huomautukset"
       }
     },
     "text": {
@@ -257,9 +254,9 @@
   },
   "common": {
     "access_token_error_title": "Tunnistusvirhe",
-    "access_token_error_message": "Tarkista ohjeistus [OAuth2 Code](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#oauth2-code) osiosta",
+    "access_token_error_message": "Tarkista ohjeistus [OAuth2 Code]({oauth_token_doc_link}) osiosta",
     "otp_error_title": "OTP-virhe",
-    "otp_error_message": "Tarkista ohjeistus [OTP error - NOK:MAXNBTOOLS](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles?tab=readme-ov-file#otp-error---nokmaxnbtools) osiosta",
+    "otp_error_message": "Tarkista ohjeistus [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link}) osiosta",
     "no_vehicles_found_title": "Ajoneuvo ei saatavissa",
     "no_vehicles_found_message": "Tilissä ei ole yhdistettyjä ajoneuvoja",
     "command_error_title": "Käsky",
