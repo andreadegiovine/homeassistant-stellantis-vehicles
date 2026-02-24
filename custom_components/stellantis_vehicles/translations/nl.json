@@ -50,7 +50,7 @@
       "type": {
         "name": "Type",
         "state": {
-          "electric": "Electrisch",
+          "electric": "Elektrisch",
           "hybrid": "Hybride",
           "thermic": "Thermisch",
           "hydrogen": "Waterstof"
