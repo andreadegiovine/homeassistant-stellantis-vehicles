@@ -246,9 +246,9 @@ trobete
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
+Dave  
 Somebody  
 mggevaer  
-Slin  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
