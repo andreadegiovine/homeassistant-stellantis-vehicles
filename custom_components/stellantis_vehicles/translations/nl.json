@@ -11,10 +11,29 @@
           "country_code": "Je land code"
         }
       },
+      "oauth_mode": {
+        "description": "Om uw account te verifiëren, wordt een externe service gebruikt die uw inloggegevens op geen enkele manier opslaat. U kunt ook de handmatige methode gebruiken.",
+        "data": {
+          "oauth_manual_mode": "Gebruik de manuele methode"
+        }
+      },
+      "oauth_remote": {
+        "description": "Deze [externe service]({oauth_remote_link}) wordt gebruikt om een browser login te simuleren op de officiële website",
+        "data": {
+          "email": "Email",
+          "password": "Wachtwoord"
+        }
+      },
       "oauth_manual": {
         "description": "Volg deze stappen in de **desktop browser**:\n\n1. Ga naar {oauth_link} login pagina;\n2. Open in je browser **DevTools** (F12) en ga naar het **Network** tabblad;\n3. Log in en klik op confirm;\n4. Vanuit het **Network** tab zoek zoek de **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth code"
+        }
+      },
+      "get_access_token": {
+        "description": "**Authenticatie succesvol!**\nOm opdrachten te verzenden, vink de optie hieronde aan en vervolledige de OTP stap",
+        "data": {
+          "remote_commands": "Configureer opdracht van op afstand(E-remote of Connect Plus zijn vereist)"
         }
       },
       "otp": {
@@ -23,23 +42,37 @@
           "pin_code": "Pin code van je mobiele app"
         }
       },
+      "options": {
+        "data": {
+          "notifications": "Permanente meldingen inschakelen",
+          "anonymize_logs": "Persoonsgegevens in logbestanden anonimiseren"
+        }
+      },
       "reauth_confirm": {
         "description": "Je moet opnieuw inloggen om de integratie te blijven gebruiken"
+      },
+      "reconfigure": {
+        "data": {
+          "reconfigure": "Herconfigureren"
+        }
       }
     },
     "error": {
-      "get_access_token": "Get access token error",
-      "get_user_info": "Get user info error",
-      "missing_user_info": "Missing user info error",
-      "get_otp_sms": "Get OTP sms error",
-      "get_mqtt_access_token": "Get mqtt access token error",
+      "get_oauth_code": "Foutmelding bij het verkrijgen van een OAuth-code",
+      "get_access_token": "Foutmelding bij het verkrijgen van een access token",
+      "get_user_info": "Foutmelding bij het verkrijgen van gebruikersinformatie",
+      "missing_user_info": "Foutmelding door ontbrekende gebruikersinformatie",
+      "get_otp_sms": "Foutmelding bij het verkrijgen van OTP SMS",
+      "get_mqtt_access_token": "Foutmelding bij het verkrijgen van MQTT access token",
       "get_mqtt_access_token_nok_access": "Incorrecte SMS code of Pin code",
       "get_mqtt_access_token_nok_maxnbtools": "Limiet bereikt van aantal gelinkte apparaten / smsjes ontvangen, reset je Stellantis account (zie README.md) en probeer het opnieuw",
-      "get_mqtt_access_token_nok_nok_blocked": "Limiet bereikt van aantal keer verkeerde pin code, herstart het configuratieproces door je pin code opnieuw in te stellen in de stellantis app"
+      "get_mqtt_access_token_nok_nok_blocked": "Limiet bereikt van aantal keer verkeerde pin code, herstart het configuratieproces door je pin code opnieuw in te stellen in de stellantis app",
+      "get_mqtt_access_token_rate_limit": "Limiet bereikt van aantal pogingen voor het verkrijgen van een access token (6 per dag)"
     },
     "abort": {
       "already_configured": "Account is al geconfigureerd",
-      "reauth_successful": "Herauthenticatie was successvol"
+      "reauth_successful": "Herauthenticatie was successvol",
+      "reconfigure_successful": "Configuratie is succesvol bijgewerkt"
     }
   },
   "entity": {
@@ -50,7 +83,7 @@
       "type": {
         "name": "Type",
         "state": {
-          "electric": "Electrisch",
+          "electric": "Elektrisch",
           "hybrid": "Hybride",
           "thermic": "Thermisch",
           "hydrogen": "Waterstof"
@@ -60,7 +93,12 @@
         "name": "Temperatuur"
       },
       "mileage": {
-        "name": "Kilometerstand"
+        "name": "Kilometerstand",
+        "state_attributes": {
+          "last_updated": {
+            "name": "Laatst bijgewerkt"
+          }
+        }
       },
       "speed": {
         "name": "Snelheid"
@@ -313,5 +351,14 @@
     "no_vehicles_found_message": "Geen gekoppelde voertuigen beschikbaar op dit account",
     "command_error_title": "Commando",
     "command_error_message": "Het commando is niet succesvol uitgevoerd"
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "",
+        "remote_commands": "",
+        "options": ""
+      }
+    }
   }
 }

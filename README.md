@@ -234,21 +234,21 @@ Andrea Donno
 Fabian  
 
 **🥈 5 BEERS**  
+Phil S  
 Toine T  
 Zauberertz  
-2102Michael  
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
+Marco  
 Martin the Biuilder  
 trobete  
-Heiner Engelhardt  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
+Dave  
 Somebody  
 mggevaer  
-Slin  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
