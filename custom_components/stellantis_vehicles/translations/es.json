@@ -3,13 +3,25 @@
     "step": {
       "user": {
         "data": {
-          "mobile_app": "Aplicación móvil del vehículo",
-          "remote_commands": "Configurar comandos remotos (se requiere E-remote o Connect Plus)"
+          "mobile_app": "Aplicación móvil del vehículo"
         }
       },
       "country": {
         "data": {
           "country_code": "Tu código de país"
+        }
+      },
+      "oauth_mode": {
+        "description": "Para autenticar tu cuenta, se utiliza un servicio remoto que no almacena tus credenciales de ninguna manera; alternativamente, puedes usar el método manual",
+        "data": {
+          "oauth_manual_mode": "Usar el método manual"
+        }
+      },
+      "oauth_remote": {
+        "description": "Este [servicio remoto]({oauth_remote_link}) se utiliza para simular el inicio de sesión del navegador en el sitio web oficial",
+        "data": {
+          "email": "Correo electrónico",
+          "password": "Contraseña"
         }
       },
       "oauth_manual": {
@@ -18,17 +30,35 @@
           "oauth_code": "Código OAuth"
         }
       },
+      "get_access_token": {
+        "description": "**Autenticación completada**.\nPara usar comandos remotos, marca la opción a continuación y completa el paso OTP",
+        "data": {
+          "remote_commands": "Configurar comandos remotos (se requiere E-remote o Connect Plus)"
+        }
+      },
       "otp": {
         "data": {
           "sms_code": "Código SMS de Stellantis",
           "pin_code": "Código PIN de la aplicación móvil del vehículo"
         }
       },
+      "options": {
+        "data": {
+          "notifications": "Habilitar notificaciones persistentes",
+          "anonymize_logs": "Anonimizar datos personales en los registros"
+        }
+      },
       "reauth_confirm": {
         "description": "Necesitas volver a autenticarte para usar esta integración"
+      },
+      "reconfigure": {
+        "data": {
+          "reconfigure": "Reconfigurar"
+        }
       }
     },
     "error": {
+      "get_oauth_code": "Error al obtener el código oauth",
       "get_access_token": "Error al obtener el token de acceso",
       "get_user_info": "Error al obtener la información del usuario",
       "missing_user_info": "Falta la información del usuario",
@@ -41,7 +71,8 @@
     },
     "abort": {
       "already_configured": "La cuenta ya está configurada",
-      "reauth_successful": "La reautenticación se realizó con éxito"
+      "reauth_successful": "La reautenticación se realizó con éxito",
+      "reconfigure_successful": "La configuración se realizó con éxito"
     }
   },
   "entity": {
@@ -62,7 +93,12 @@
         "name": "Temperatura"
       },
       "mileage": {
-        "name": "Kilometraje"
+        "name": "Kilometraje",
+        "state_attributes": {
+          "last_updated": {
+            "name": "Última actualización"
+          }
+        }
       },
       "speed": {
         "name": "Velocidad"
@@ -101,6 +137,7 @@
         "state": {
           "rate_limit": "Límite de tasa superado (6 cada 20 minutos)",
           "not_compatible": "No compatible",
+          "failed": "Fallido",
           "900": "Aceptado",
           "901": "Vehículo en reposo",
           "903": "Reenviado",
@@ -158,6 +195,53 @@
           },
           "fuel_avg_consumption": {
             "name": "Consumo medio de combustible"
+          }
+        }
+      },
+      "last_charge": {
+        "name": "Última carga",
+        "state_attributes": {
+          "in_progress": {
+            "name": "En curso",
+            "state": {
+              "true": "Sí"
+            }
+          },
+          "initial_percentage": {
+            "name": "Porcentaje inicial"
+          },
+          "initial_energy": {
+            "name": "Energía inicial"
+          },
+          "initial_autonomy": {
+            "name": "Autonomía inicial"
+          },
+          "final_time": {
+            "name": "Hora final"
+          },
+          "final_percentage": {
+            "name": "Porcentaje final"
+          },
+          "final_energy": {
+            "name": "Energía final"
+          },
+          "final_autonomy": {
+            "name": "Autonomía final"
+          },
+          "duration": {
+            "name": "Duración"
+          },
+          "recharged_percent": {
+            "name": "Porcentaje recargado"
+          },
+          "recharged_energy": {
+            "name": "Energía recargada"
+          },
+          "recharged_autonomy": {
+            "name": "Autonomía recargada"
+          },
+          "avg_power": {
+            "name": "Potencia media"
           }
         }
       }
@@ -267,5 +351,14 @@
     "no_vehicles_found_message": "No hay vehículos conectados disponibles en esta cuenta",
     "command_error_title": "Comando",
     "command_error_message": "El comando no se envió correctamente"
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "Vuelve a autenticar tu cuenta",
+        "remote_commands": "Configurar comandos remotos (se requiere E-remote o Connect Plus)",
+        "options": "Preferencias globales"
+      }
+    }
   }
 }
