@@ -234,9 +234,9 @@ Andrea Donno
 Fabian  
 
 **🥈 5 BEERS**  
+SA Energy  
 Phil S  
 Toine T  
-Zauberertz  
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
