@@ -252,9 +252,9 @@ mggevaer
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Schredder51  
 Grana  
 Battiegoal  
-Mickael RD  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
