@@ -62,8 +62,11 @@ Send remote commands:
 </details>
 
 ## Screenshot
+### Entities
 ![Controls](./images/controls.png)
 ![Sensors](./images/sensors.png)
+### Vehicle Card
+![Card](./images/card.png)
 
 ## OAuth2 Code
 ### Remote service
