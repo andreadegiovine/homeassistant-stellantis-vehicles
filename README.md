@@ -234,9 +234,9 @@ Andrea Donno
 Fabian  
 
 **🥈 5 BEERS**  
+SA Energy  
 Phil S  
 Toine T  
-Zauberertz  
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
@@ -252,9 +252,9 @@ mggevaer
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Schredder51  
 Grana  
 Battiegoal  
-Mickael RD  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?

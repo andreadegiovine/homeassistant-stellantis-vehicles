@@ -57,6 +57,15 @@ def replace_string_placeholders(string, placeholders=None):
         string = string.replace("{" + placeholder + "}", str(value))
     return string
 
+def sort_dict(items, ordered_keys=None):
+    if ordered_keys is None or not isinstance(ordered_keys, list):
+        return items
+    result = {}
+    for key in ordered_keys:
+        if key in items:
+            result[key] = items[key]
+    return result
+
 def rate_limit(limit: int, every: int):
     def limit_decorator(func):
         semaphore = Semaphore(limit)
