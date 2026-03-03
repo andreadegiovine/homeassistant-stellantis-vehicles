@@ -6,6 +6,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry
+from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.http import StaticPathConfig
 
 from .stellantis import StellantisVehicles
 from .exceptions import ComunicationError
@@ -47,6 +49,11 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     for vehicle in vehicles:
         coordinator = await stellantis.async_get_coordinator(vehicle)
         await coordinator.async_config_entry_first_refresh()
+
+    url = "/custom_components/stellantis_vehicles/frontend/stellantis-vehicle-card.js"
+    file_path = os.path.join(os.path.dirname(__file__), "frontend", "stellantis-vehicle-card.js")
+    await hass.http.async_register_static_paths([StaticPathConfig(url, str(file_path), False)])
+    add_extra_js_url(hass, url)
 
     return True
 
