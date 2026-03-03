@@ -9,7 +9,7 @@ from homeassistant.components.sensor.const import ( SensorDeviceClass )
 from homeassistant.const import EntityCategory
 
 from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
-from .utils import get_datetime
+from .utils import ( get_datetime, sort_dict )
 
 from .const import (
     DOMAIN,
@@ -264,5 +264,20 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
         for attribute in attributes:
             if attribute in unit_of_measurement:
                 attributes[attribute] = f"{attributes[attribute]} {unit_of_measurement[attribute]}"
-            
-        self._attr_extra_state_attributes = attributes
+
+        ordered_keys = [
+            "duration",
+            "final_time",
+            "initial_percentage",
+            "final_percentage",
+            "recharged_percent",
+            "initial_energy",
+            "final_energy",
+            "recharged_energy",
+            "initial_autonomy",
+            "final_autonomy",
+            "recharged_autonomy",
+            "avg_power"
+        ]
+
+        self._attr_extra_state_attributes = sort_dict(attributes, ordered_keys)
