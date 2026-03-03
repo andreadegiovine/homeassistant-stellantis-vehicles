@@ -1,6 +1,6 @@
 import { LitElement, html, css, nothing } from "https://unpkg.com/lit?module";
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const SELECTOR_KEY_HEADER = "features";
 const SELECTOR_KEY_IMAGE = "content";
 const SELECTOR_KEY_COMMANDS = "actions";
@@ -23,6 +23,7 @@ class StellantisVehicleCard extends LitElement {
         .sv-col {
             flex: 1;
             padding: var(--ha-space-1);
+            min-width: 0;
         }
         .sv-fc {
             display: flex;
@@ -40,6 +41,9 @@ class StellantisVehicleCard extends LitElement {
         .sv-pb {
             padding-bottom: var(--ha-space-1);
         }
+        .sv-pt {
+            padding-top: var(--ha-space-2);
+        }
         .sv-bb {
             border-bottom: 1px solid var(--divider-color);
         }
@@ -50,6 +54,13 @@ class StellantisVehicleCard extends LitElement {
         .sv-entity span {
             color: var(--primary-text-color);
             line-height: 1.3;
+            max-width: 100%;
+        }
+        .sv-entity span state-display {
+            display: block;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
         }
         .sv-entity.off {
             color: var(--state-unavailable-color);
@@ -116,6 +127,8 @@ class StellantisVehicleCard extends LitElement {
         if (!this._helpers) {
             this._helpers = await window.loadCardHelpers();
         }
+
+        this._cards = {};
     }
 
     set hass(hass) {
@@ -137,11 +150,7 @@ class StellantisVehicleCard extends LitElement {
         this._device_entities = Object.values(this._hass.entities)
             .filter(e => e.device_id === device_id)
             .reduce((acc, e) => {
-                const entity = this._hass.states[e.entity_id];
-                if (e.translation_key == "battery") {
-                    entity.attributes.icon = "mdi:battery-" + String(Math.ceil(entity.state / 10) * 10);
-                }
-                acc[e.translation_key] = entity;
+                acc[e.translation_key] = this._hass.states[e.entity_id];
                 return acc;
             }, {});
 
@@ -152,17 +161,14 @@ class StellantisVehicleCard extends LitElement {
         return 1;
     }
 
-    getEntityRow(entity, icon = null, custom_class = "") {
+    getEntityRow(entity, custom_class = "") {
         let state_value = Number.isInteger(Number(entity.state)) ? String(Number(entity.state)) : entity.state;
         if (state_value == "unavailable") {
             state_value = "off";
         }
         const state_class = custom_class+" "+state_value.toLowerCase().replace(/\s+/g, "-");
-        const state_icon = icon ? icon : (entity.attributes.icon ? entity.attributes.icon : null);
-        const state_icon_el = state_icon ? html`<ha-icon icon="${state_icon}"></ha-icon>` : '';
-        const state_el = ["on", "off"].includes(state_value) ? '' : html`
-            <span>${state_value + (entity.attributes.unit_of_measurement ? ' '+entity.attributes.unit_of_measurement : '')}</span>
-        `;
+        const state_icon_el = html`<ha-state-icon slot="icon" .stateObj=${entity} .hass=${this._hass}></ha-state-icon>`;
+        const state_el = html`<span><state-display .stateObj=${entity} .hass=${this._hass}></state-display></span>`;
         return html`
             <div class="sv-entity ${state_class}" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}">
                 ${state_icon_el}
@@ -196,7 +202,7 @@ class StellantisVehicleCard extends LitElement {
                                 if (!entity){
                                     return nothing;
                                 }
-                                return html`${this.getEntityRow(entity, null, "sv-col sv-fc")}`;
+                                return html`${this.getEntityRow(entity, "sv-col sv-fc")}`;
                             })}
                         </div>
                     `;
@@ -225,7 +231,7 @@ class StellantisVehicleCard extends LitElement {
                     if (!entity){
                         return nothing;
                     }
-                    return html`${this.getEntityRow(entity, null, "sv-fr")}`;
+                    return html`${this.getEntityRow(entity, "sv-fr")}`;
                 })}
             </div>
         `;
@@ -274,16 +280,34 @@ class StellantisVehicleCard extends LitElement {
         if (!this._device_entities.remote_commands || this._device_entities.remote_commands.state == "off") {
             return nothing;
         }
-
-        const result = this._helpers.createCardElement(this.getCommandButtonsConfig());
-        result.hass = this._hass;
+        if (!this._cards.commands) {
+            this._cards.commands = this._helpers.createCardElement(this.getCommandButtonsConfig());
+        }
+        this._cards.commands.hass = this._hass;
 
         return html`
             <div class="sv-commands sv-row sv-mb sv-pb sv-bb">
-                ${this.getEntityRow(this._device_entities.command_status, null, "sv-col sv-fr")}
+                ${this.getEntityRow(this._device_entities.command_status, "sv-col sv-fr")}
             </div>
-            ${result}
+            ${this._cards.commands}
         `;
+    }
+
+    getMapBlock() {
+        if (!this._cards.map) {
+            const config = {
+                type: "map",
+                theme_mode: "auto",
+                entities: [{entity: this._device_entities.vehicle.entity_id}],
+                auto_fit: true,
+                aspect_ratio: "50%",
+                default_zoom: 18
+            };
+
+            this._cards.map = this._helpers.createCardElement(config);
+        }
+        this._cards.map.hass = this._hass;
+        return html`<div class="sv-pt">${this._cards.map}</div>`;
     }
 
     render() {
@@ -291,15 +315,13 @@ class StellantisVehicleCard extends LitElement {
             return nothing;
         }
 
-        const vehicle = this._device_entities.vehicle;
-        const vehicle_img = vehicle.attributes?.entity_picture ?? "";
-
         return html`
             <ha-card>
                 <div class="card-content">
                     ${this.getHeaderBlock()}
                     ${this.getImageBlock()}
                     ${this.getCommandsBlock()}
+                    ${this.getMapBlock()}
                 </div>
             </ha-card>
         `;
@@ -390,7 +412,7 @@ class StellantisVehicleCardEditor extends LitElement {
         } else if (this._entities) {
             this.updateEntitySelector(SELECTOR_KEY_HEADER);
             this.updateEntitySelector(SELECTOR_KEY_IMAGE);
-            this.updateEntitySelector(SELECTOR_KEY_COMMANDS, ["button"]);
+            this.updateEntitySelector(SELECTOR_KEY_COMMANDS, ["button", "switch"]);
         }
     }
 
