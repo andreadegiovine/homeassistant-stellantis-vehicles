@@ -71,7 +71,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             name = "preconditioning_start",
             key = "preconditioning_start",
             translation_key = "preconditioning_start",
-            icon = "mdi:hvac"
+            icon = "mdi:fan"
         )
         entities.extend([StellantisPreconditioningButton(coordinator, description, "activate")])
 
@@ -79,7 +79,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             name = "preconditioning_stop",
             key = "preconditioning_stop",
             translation_key = "preconditioning_stop",
-            icon = "mdi:hvac-off"
+            icon = "mdi:fan-off"
         )
         entities.extend([StellantisPreconditioningButton(coordinator, description, "deactivate")])
 
