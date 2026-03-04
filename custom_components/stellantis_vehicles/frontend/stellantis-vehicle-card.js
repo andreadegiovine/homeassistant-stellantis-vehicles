@@ -353,7 +353,7 @@ window.customCards.push({
     name: 'Stellantis Vehicles',
     type: 'stellantis-vehicle-card',
     preview: true,
-    documentationURL: `https://github.com/andreadegiovine/homeassistant-stellantis-vehicles`,
+    documentationURL: `https://github.com/andreadegiovine/homeassistant-stellantis-vehicles#vehicle-card`,
 });
 
 class StellantisVehicleCardEditor extends LitElement {
