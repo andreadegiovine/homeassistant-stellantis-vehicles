@@ -1,10 +1,13 @@
 import { LitElement, html, css, nothing } from "https://unpkg.com/lit?module";
 
-const VERSION = "1.0.2";
+const VERSION = "1.0.3";
 const SELECTOR_KEY_HEADER = "features";
 const SELECTOR_KEY_IMAGE = "content";
 const SELECTOR_KEY_COMMANDS = "actions";
+const SELECTOR_KEY_ICON_SIZE = "icons_size";
 const SELECTOR_KEY_MAP = "map";
+const SELECTOR_KEY_LAST_TRIP = "last_trip";
+const SELECTOR_KEY_LAST_CHARGE = "last_charge";
 
 class StellantisVehicleCard extends LitElement {
     static properties = {
@@ -40,13 +43,16 @@ class StellantisVehicleCard extends LitElement {
             margin-bottom: var(--entities-card-row-gap,var(--card-row-gap,8px));
         }
         .sv-pb {
-            padding-bottom: var(--ha-space-1);
+            padding-bottom: var(--ha-space-2);
         }
         .sv-pt {
             padding-top: var(--ha-space-2);
         }
         .sv-bb {
             border-bottom: 1px solid var(--divider-color);
+        }
+        .sv-bt {
+            border-top: 1px solid var(--divider-color);
         }
 
         .sv-entity {
@@ -113,6 +119,21 @@ class StellantisVehicleCard extends LitElement {
 
         .sv-commands .sv-entity span {
             margin-left: var(--entities-card-row-gap,var(--card-row-gap,8px));
+        }
+
+        .sv-attributes .sv-col {
+            justify-content: space-between;
+            text-align: center;
+        }
+        .sv-attributes .sv-row {
+            border-top: 1px solid var(--divider-color);
+            font-size: var(--ha-font-size-s);
+            color: var(--primary-text-color);
+            line-height: var(--ha-line-height-condensed);
+        }
+        .sv-attributes .sv-row:first-child {
+            border-top: 0;
+            font-size: var(--ha-font-size-l);
         }
     `;
 
@@ -193,13 +214,14 @@ class StellantisVehicleCard extends LitElement {
         if (this._config["hide_"+SELECTOR_KEY_HEADER] || entities.length < 1) {
             return nothing;
         }
+        const icon_size = this._config[SELECTOR_KEY_ICON_SIZE] ? `--mdc-icon-size: ${this._config[SELECTOR_KEY_ICON_SIZE]}px` : "";
         const itemsPerRow = 5;
         const rows = Array.from(
             { length: Math.ceil(entities.length / itemsPerRow) },
             (_, i) => entities.slice(i * itemsPerRow, i * itemsPerRow + itemsPerRow)
         );
         return html`
-            <div class="sv-header">
+            <div class="sv-header" style="${icon_size}">
                 ${rows.map((row) => {
                     return html`
                         <div class="sv-row">
@@ -316,7 +338,50 @@ class StellantisVehicleCard extends LitElement {
             this._cards.map = this._helpers.createCardElement(config);
         }
         this._cards.map.hass = this._hass;
-        return html`<div class="sv-pt">${this._cards.map}</div>`;
+        return html`<div class="sv-pt sv-pb">${this._cards.map}</div>`;
+    }
+
+    renderAttributes(entity) {
+        const props = this._hass.entities[entity.entity_id];
+        const attributes = Object.entries(entity.attributes)
+            .filter(([key]) => !["friendly_name", "icon", "unit_of_measurement", "device_class"].includes(key));
+
+        const translation_path = `component.${props.platform}.entity.${entity.entity_id.split('.')[0]}.${props.translation_key}`;
+
+        return html`
+            <div class="sv-attributes sv-pt">
+                <div class="sv-row">
+                    <div class="sv-col sv-fr">
+                        <span>${this._hass.localize(`${translation_path}.name`)}</span>
+                        <span><state-display .stateObj=${entity} .hass=${this._hass}></state-display></span>
+                    </div>
+                </div>
+            ${attributes.map(
+                ([key, value]) => html`
+                    <div class="sv-row">
+                        <div class="sv-col sv-fr">
+                            <span>${this._hass.localize(`${translation_path}.state_attributes.${key}.name`)}</span>
+                            <span><state-display .stateObj=${entity} .hass=${this._hass} .content=${key}></state-display></span>
+                        </div>
+                    </div>
+                `
+            )}
+            </div>
+        `;
+    }
+
+    getLastTripBlock(){
+        if (this._config["hide_"+SELECTOR_KEY_LAST_TRIP]) {
+            return nothing;
+        }
+        return this.renderAttributes(this._device_entities.last_trip);
+    }
+
+    getLastChargeBlock(){
+        if (this._config["hide_"+SELECTOR_KEY_LAST_CHARGE] || !this._device_entities.last_charge) {
+            return nothing;
+        }
+        return this.renderAttributes(this._device_entities.last_charge);
     }
 
     render() {
@@ -331,6 +396,8 @@ class StellantisVehicleCard extends LitElement {
                     ${this.getImageBlock()}
                     ${this.getCommandsBlock()}
                     ${this.getMapBlock()}
+                    ${this.getLastTripBlock()}
+                    ${this.getLastChargeBlock()}
                 </div>
             </ha-card>
         `;
@@ -420,12 +487,32 @@ class StellantisVehicleCardEditor extends LitElement {
             this._schema = [this._schema[0]];
         } else if (this._entities) {
             this.updateEntitySelector(SELECTOR_KEY_HEADER);
+            this.updateSizeInput(SELECTOR_KEY_ICON_SIZE, "ui.panel.lovelace.editor.card.generic.icon_height");
             this.updateHideInput(SELECTOR_KEY_HEADER);
             this.updateEntitySelector(SELECTOR_KEY_IMAGE);
             this.updateHideInput(SELECTOR_KEY_IMAGE);
             this.updateEntitySelector(SELECTOR_KEY_COMMANDS, ["button", "switch"]);
             this.updateHideInput(SELECTOR_KEY_COMMANDS);
             this.updateHideInput(SELECTOR_KEY_MAP, "ui.panel.lovelace.editor.card.map.name");
+            this.updateHideInput(SELECTOR_KEY_LAST_TRIP, "component.stellantis_vehicles.entity.sensor.last_trip.name");
+            this.updateHideInput(SELECTOR_KEY_LAST_CHARGE, "component.stellantis_vehicles.entity.sensor.last_charge.name");
+        }
+    }
+
+    updateSizeInput(name, translation_path = null) {
+        if (!this._loaded_selectors) {
+            this._loaded_selectors = [];
+        }
+        if (!this._loaded_selectors.includes(name)) {
+            const config = {
+                name: name,
+                type: "float"
+            };
+            if (translation_path) {
+                config.translation_path = translation_path;
+            }
+            this._schema.push(config);
+            this._loaded_selectors.push(name);
         }
     }
 
@@ -488,10 +575,12 @@ class StellantisVehicleCardEditor extends LitElement {
                         let placeholder = this._hass.localize(`ui.panel.lovelace.editor.card.generic.${schema.translation_value}`);
                         if (schema.translation_value_path) {
                             placeholder = this._hass.localize(schema.translation_value_path);
-                            console.log(schema.translation_value_path);
-                            console.log(placeholder);
                         }
-                        label = this._hass.localize(schema.translation_path, schema.translation_placeholder, placeholder);
+                        if (schema.translation_placeholder) {
+                            label = this._hass.localize(schema.translation_path, schema.translation_placeholder, placeholder);
+                        } else {
+                            label = this._hass.localize(schema.translation_path);
+                        }
                     }
                     return label || schema.name;
                 }}
