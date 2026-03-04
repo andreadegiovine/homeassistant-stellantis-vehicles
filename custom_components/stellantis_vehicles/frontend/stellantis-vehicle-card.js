@@ -1,9 +1,10 @@
 import { LitElement, html, css, nothing } from "https://unpkg.com/lit?module";
 
-const VERSION = "1.0.1";
+const VERSION = "1.0.2";
 const SELECTOR_KEY_HEADER = "features";
 const SELECTOR_KEY_IMAGE = "content";
 const SELECTOR_KEY_COMMANDS = "actions";
+const SELECTOR_KEY_MAP = "map";
 
 class StellantisVehicleCard extends LitElement {
     static properties = {
@@ -62,13 +63,10 @@ class StellantisVehicleCard extends LitElement {
             overflow: hidden;
             white-space: nowrap;
         }
-        .sv-entity.off {
-            color: var(--state-unavailable-color);
-        }
 
         .sv-header {
             font-size: var(--ha-font-size-xs);
-            --mdc-icon-size: 16px;
+            --mdc-icon-size: 20px;
         }
         .sv-header .sv-row {
             margin-top: var(--ha-space-1);
@@ -161,18 +159,26 @@ class StellantisVehicleCard extends LitElement {
         return 1;
     }
 
-    getEntityRow(entity, custom_class = "") {
-        let state_value = Number.isInteger(Number(entity.state)) ? String(Number(entity.state)) : entity.state;
-        if (state_value == "unavailable") {
-            state_value = "off";
+    getIconColor(entity) {
+        let color = "var(--state-icon-color)";
+        if (entity.attributes?.state_class == "measurement" && entity.attributes?.unit_of_measurement == "%") {
+            const level = parseInt(entity.state, 10);
+            color = "var(--state-sensor-battery-low-color)";
+            if (level >= 30) color = "var(--state-sensor-battery-medium-color)";
+            if (level >= 70) color = "var(--state-sensor-battery-high-color)";
+        } else {
+            if (entity.state == "on") color = "var(--state-active-color)";
+            if (entity.state == "off") color = "var(--state-inactive-color)";
+            if (entity.state == "unavailable") color = "var(--state-unavailable-color)";
         }
-        const state_class = custom_class+" "+state_value.toLowerCase().replace(/\s+/g, "-");
-        const state_icon_el = html`<ha-state-icon slot="icon" .stateObj=${entity} .hass=${this._hass}></ha-state-icon>`;
-        const state_el = html`<span><state-display .stateObj=${entity} .hass=${this._hass}></state-display></span>`;
+        return color;
+    }
+
+    getEntityRow(entity, custom_class = "") {
         return html`
-            <div class="sv-entity ${state_class}" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}">
-                ${state_icon_el}
-                ${state_el}
+            <div class="sv-entity ${custom_class}" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}">
+                <ha-state-icon slot="icon" .stateObj=${entity} .hass=${this._hass} style="color: ${this.getIconColor(entity)}"></ha-state-icon>
+                <span><state-display .stateObj=${entity} .hass=${this._hass}></state-display></span>
             </div>
         `;
     }
@@ -184,7 +190,7 @@ class StellantisVehicleCard extends LitElement {
             defaults = false;
             entities = this._config[SELECTOR_KEY_HEADER];
         }
-        if (entities.length < 1) {
+        if (this._config["hide_"+SELECTOR_KEY_HEADER] || entities.length < 1) {
             return nothing;
         }
         const itemsPerRow = 5;
@@ -220,7 +226,7 @@ class StellantisVehicleCard extends LitElement {
         }
         const vehicle = this._device_entities.vehicle;
         const vehicle_img = vehicle.attributes?.entity_picture ?? null;
-        if (!vehicle_img) {
+        if (this._config["hide_"+SELECTOR_KEY_IMAGE] || !vehicle_img) {
             return nothing;
         }
         const items = entities.slice(0, 4);
@@ -277,7 +283,7 @@ class StellantisVehicleCard extends LitElement {
     }
 
     getCommandsBlock() {
-        if (!this._device_entities.remote_commands || this._device_entities.remote_commands.state == "off") {
+        if (this._config["hide_"+SELECTOR_KEY_COMMANDS] || !this._device_entities.remote_commands || this._device_entities.remote_commands.state == "off") {
             return nothing;
         }
         if (!this._cards.commands) {
@@ -294,6 +300,9 @@ class StellantisVehicleCard extends LitElement {
     }
 
     getMapBlock() {
+        if (this._config["hide_"+SELECTOR_KEY_MAP]) {
+            return nothing;
+        }
         if (!this._cards.map) {
             const config = {
                 type: "map",
@@ -411,8 +420,34 @@ class StellantisVehicleCardEditor extends LitElement {
             this._schema = [this._schema[0]];
         } else if (this._entities) {
             this.updateEntitySelector(SELECTOR_KEY_HEADER);
+            this.updateHideInput(SELECTOR_KEY_HEADER);
             this.updateEntitySelector(SELECTOR_KEY_IMAGE);
+            this.updateHideInput(SELECTOR_KEY_IMAGE);
             this.updateEntitySelector(SELECTOR_KEY_COMMANDS, ["button", "switch"]);
+            this.updateHideInput(SELECTOR_KEY_COMMANDS);
+            this.updateHideInput(SELECTOR_KEY_MAP, "ui.panel.lovelace.editor.card.map.name");
+        }
+    }
+
+    updateHideInput(name, translation_value_path = null) {
+        const input_name = "hide_" + name;
+        if (!this._loaded_selectors) {
+            this._loaded_selectors = [];
+        }
+        if (!this._loaded_selectors.includes(input_name)) {
+            const config = {
+                name: input_name,
+                type: "boolean",
+                translation_path: "ui.components.area-filter.hide",
+                translation_placeholder: "area"
+            };
+            if (translation_value_path) {
+                config.translation_value_path = translation_value_path;
+            } else {
+                config.translation_value = name;
+            }
+            this._schema.push(config);
+            this._loaded_selectors.push(input_name);
         }
     }
 
@@ -447,9 +482,19 @@ class StellantisVehicleCardEditor extends LitElement {
                 .hass=${this._hass}
                 .data=${this._config}
                 .schema=${this._schema}
-                .computeLabel=${(schema) =>
-                    this._hass.localize(`ui.panel.lovelace.editor.card.generic.${schema.name}`) || schema.name
-                }
+                .computeLabel=${(schema) => {
+                    let label = this._hass.localize(`ui.panel.lovelace.editor.card.generic.${schema.name}`);
+                    if (schema.translation_path) {
+                        let placeholder = this._hass.localize(`ui.panel.lovelace.editor.card.generic.${schema.translation_value}`);
+                        if (schema.translation_value_path) {
+                            placeholder = this._hass.localize(schema.translation_value_path);
+                            console.log(schema.translation_value_path);
+                            console.log(placeholder);
+                        }
+                        label = this._hass.localize(schema.translation_path, schema.translation_placeholder, placeholder);
+                    }
+                    return label || schema.name;
+                }}
                 @value-changed=${this.configChanged}
             ></ha-form>
         `;
