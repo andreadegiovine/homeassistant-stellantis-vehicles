@@ -71,7 +71,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             name = "preconditioning_start",
             key = "preconditioning_start",
             translation_key = "preconditioning_start",
-            icon = "mdi:air-conditioner"
+            icon = "mdi:hvac"
         )
         entities.extend([StellantisPreconditioningButton(coordinator, description, "activate")])
 
@@ -79,7 +79,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             name = "preconditioning_stop",
             key = "preconditioning_stop",
             translation_key = "preconditioning_stop",
-            icon = "mdi:air-conditioner"
+            icon = "mdi:hvac-off"
         )
         entities.extend([StellantisPreconditioningButton(coordinator, description, "deactivate")])
 
@@ -88,7 +88,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 name = "charge_start",
                 key = "charge_start",
                 translation_key = "charge_start",
-                icon = "mdi:play"
+                icon = "mdi:battery-charging"
             )
             entities.extend([StellantisChargingStartStopButton(coordinator, description, "immediate")])
 
@@ -96,7 +96,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 name = "charge_stop",
                 key = "charge_stop",
                 translation_key = "charge_stop",
-                icon = "mdi:pause"
+                icon = "mdi:battery-off"
             )
             entities.extend([StellantisChargingStartStopButton(coordinator, description, "delayed")])
 
