@@ -6,7 +6,8 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "webhook"
+    "webhook",
+    "http"
   ],
   "documentation": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles",
   "iot_class": "cloud_polling",
@@ -16,5 +17,5 @@
     "pycryptodome==3.*",
     "paho-mqtt>=1.3"
   ],
-  "version": "2026.3.2"
+  "version": "2026.3.3"
 }
