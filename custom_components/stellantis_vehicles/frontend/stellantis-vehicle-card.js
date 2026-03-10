@@ -63,6 +63,7 @@ class StellantisVehicleCard extends LitElement {
 
         .sv-entity {
             color: var(--state-icon-color);
+            cursor: pointer;
         }
         .sv-entity span {
             color: var(--primary-text-color);
@@ -140,6 +141,9 @@ class StellantisVehicleCard extends LitElement {
             border-top: 0;
             font-size: var(--ha-font-size-l);
         }
+        .sv-attributes .sv-row:first-child .sv-col {
+            cursor: pointer;
+        }
     `;
 
     setConfig(config) {
@@ -210,9 +214,19 @@ class StellantisVehicleCard extends LitElement {
         return color;
     }
 
+    _openMoreInfo(entity_id) {
+        const event = new Event("hass-more-info", {
+            bubbles: true,
+            composed: true,
+            cancelable: true
+        });
+        event.detail = { entityId: entity_id };
+        this.dispatchEvent(event);
+    }
+
     _getEntityBlock(entity, custom_class = "") {
         return html`
-            <div class="sv-entity ${custom_class}" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}">
+            <div class="sv-entity ${custom_class}" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}" @click=${() => this._openMoreInfo(entity.entity_id)}>
                 <ha-state-icon slot="icon" .stateObj=${entity} .hass=${this._hass} style="color: ${this._getIconColor(entity)}"></ha-state-icon>
                 <span><state-display .stateObj=${entity} .hass=${this._hass}></state-display></span>
             </div>
@@ -369,7 +383,7 @@ class StellantisVehicleCard extends LitElement {
         return html`
             <div class="sv-attributes sv-pb">
                 <div class="sv-row">
-                    <div class="sv-col sv-fr">
+                    <div class="sv-col sv-fr" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}" @click=${() => this._openMoreInfo(entity.entity_id)}>
                         <span>${this._hass.localize(`${translation_path}.name`)}</span>
                         <span><state-display .stateObj=${entity} .hass=${this._hass}></state-display></span>
                     </div>
