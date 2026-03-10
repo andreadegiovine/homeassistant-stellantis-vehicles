@@ -1,6 +1,7 @@
 import { LitElement, html, css, nothing } from "https://unpkg.com/lit?module";
 
-const VERSION = "1.0.4";
+const VERSION = import.meta.url.split("/").slice(-2, -1)[0];
+
 const SELECTOR_KEY_HEADER = "features";
 const SELECTOR_KEY_IMAGE = "content";
 const SELECTOR_KEY_COMMANDS = "actions";
@@ -10,7 +11,22 @@ const SELECTOR_KEY_LAST_CHARGE = "last_charge";
 
 const VALID_ENTITY_ID = /^(\w+)\.(\w+)$/;
 
-const HASS_HELPERS = await window.loadCardHelpers();
+let HASS_HELPERS;
+function getHassHelpers() {
+    if (!HASS_HELPERS) {
+        HASS_HELPERS = new Promise((resolve, reject) => {
+            const check = () => {
+                if (window.loadCardHelpers) {
+                    resolve(window.loadCardHelpers());
+                } else {
+                    setTimeout(check, 50);
+                }
+            };
+            check();
+        });
+    }
+    return HASS_HELPERS;
+}
 
 class StellantisVehicleCard extends LitElement {
     static properties = {
@@ -157,7 +173,10 @@ class StellantisVehicleCard extends LitElement {
         this._config = config;
 
         if (!this._helpers) {
-            this._helpers = HASS_HELPERS;
+            getHassHelpers().then((helpers) => {
+                this._helpers = helpers;
+                this.requestUpdate();
+            });
         }
 
         this._cards = {};
@@ -656,4 +675,4 @@ class StellantisVehicleCardEditor extends LitElement {
 }
 customElements.define("stellantis-vehicle-card-editor", StellantisVehicleCardEditor);
 
-console.info("%cSTELLANTIS-VEHICLES-CARD: v" + VERSION, "color: green; font-weight: bold")
+console.info("%cSTELLANTIS-VEHICLES-CARD: v" + VERSION, "color: green; font-weight: bold");
