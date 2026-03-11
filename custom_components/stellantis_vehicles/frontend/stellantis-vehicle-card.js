@@ -5,6 +5,8 @@ const VERSION = import.meta.url.split("/").slice(-2, -1)[0];
 const SELECTOR_KEY_HEADER = "features";
 const SELECTOR_KEY_IMAGE = "content";
 const SELECTOR_KEY_COMMANDS = "actions";
+const SELECTOR_KEY_CHARGING_LIMIT = "charging_limit";
+const SELECTOR_KEY_CHARGING_START = "charging_start";
 const SELECTOR_KEY_MAP = "map";
 const SELECTOR_KEY_LAST_TRIP = "last_trip";
 const SELECTOR_KEY_LAST_CHARGE = "last_charge";
@@ -143,6 +145,21 @@ class StellantisVehicleCard extends LitElement {
             margin-left: var(--entities-card-row-gap,var(--card-row-gap,8px));
         }
 
+        .sv-command {
+            --time-input-flex: 1;
+        }
+        .sv-command ha-state-icon, .sv-command state-display {
+            cursor: pointer;
+            padding: var(--ha-space-2);
+        }
+        .sv-command ha-slider, .sv-command ha-time-input {
+            flex: 1;
+        }
+        .sv-command state-display {
+            min-width: 45px;
+            text-align: end;
+        }
+
         .sv-attributes .sv-col {
             justify-content: space-between;
             text-align: center;
@@ -164,10 +181,10 @@ class StellantisVehicleCard extends LitElement {
 
     setConfig(config) {
         if (!config.entity) {
-          throw new Error("Entity must be specified");
+            throw new Error("Entity must be specified");
         }
         if (!this._isValidEntityId(config.entity)) {
-          throw new Error("Invalid entity");
+            throw new Error("Invalid entity");
         }
 
         this._config = config;
@@ -201,7 +218,8 @@ class StellantisVehicleCard extends LitElement {
         this._device_entities = Object.values(this._hass.entities)
             .filter(e => e.device_id === device_id)
             .reduce((acc, e) => {
-                acc[e.translation_key] = this._hass.states[e.entity_id];
+                const key = e.entity_id.split(".")[0] + "_" + e.translation_key;
+                acc[key] = this._hass.states[e.entity_id];
                 return acc;
             }, {});
 
@@ -214,6 +232,14 @@ class StellantisVehicleCard extends LitElement {
 
     _isValidEntityId(entity_id){
         return VALID_ENTITY_ID.test(entity_id);
+    }
+
+    _getEntity(key){
+        return this._device_entities[key] ?? null;
+    }
+
+    _getVehicleEntity(){
+        return this._getEntity("device_tracker_vehicle");
     }
 
     _getIconColor(entity) {
@@ -274,7 +300,7 @@ class StellantisVehicleCard extends LitElement {
                     return html`
                         <div class="sv-row">
                             ${row.map((entity) => {
-                                entity = defaults ? this._device_entities[entity] : this._hass.states[entity];
+                                entity = defaults ? this._getEntity(entity) : this._hass.states[entity];
                                 if (!entity){
                                     return nothing;
                                 }
@@ -294,8 +320,7 @@ class StellantisVehicleCard extends LitElement {
             defaults = false;
             entities = this._config[SELECTOR_KEY_IMAGE];
         }
-        const vehicle = this._device_entities.vehicle;
-        const vehicle_img = vehicle.attributes?.entity_picture ?? null;
+        const vehicle_img = this._getVehicleEntity().attributes?.entity_picture ?? null;
         if (this._config["hide_"+SELECTOR_KEY_IMAGE] || !vehicle_img) {
             return nothing;
         }
@@ -304,7 +329,7 @@ class StellantisVehicleCard extends LitElement {
         return html`
             <div class="sv-image" style="background-image: url(${vehicle_img}); ${icon_size}">
                 ${items.map((entity) => {
-                    entity = defaults ? this._device_entities[entity] : this._hass.states[entity];
+                    entity = defaults ? this._getEntity(entity) : this._hass.states[entity];
                     if (!entity){
                         return nothing;
                     }
@@ -340,7 +365,7 @@ class StellantisVehicleCard extends LitElement {
         };
 
         entities.forEach((entity) => {
-            entity = defaults ? this._device_entities[entity] : this._hass.states[entity];
+            entity = defaults ? this._getEntity(entity) : this._hass.states[entity];
             if (!entity){
                 return;
             }
@@ -353,8 +378,69 @@ class StellantisVehicleCard extends LitElement {
         return result;
     }
 
+    _updateState(entity, value) {
+        if (value !== entity.state) {
+            const entity_id = entity.entity_id;
+            this._hass.callService(entity_id.split(".", 1)[0], "set_value", {
+                value,
+                entity_id: entity_id,
+            });
+        }
+    }
+
+    _updateTimeState(entity, value) {
+        if (value !== entity.state) {
+            const entity_id = entity.entity_id;
+            this._hass.callService("time", "set_value", {
+                time: value,
+                entity_id: entity_id,
+            });
+        }
+    }
+
+    _getChargingLimitBlock(){
+        const entity = this._getEntity("number_battery_charging_limit");
+        if (this._config["hide_"+SELECTOR_KEY_CHARGING_LIMIT] || !entity) {
+            return nothing;
+        }
+        return html`
+            <div class="sv-command sv-fr sv-pt" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}">
+                <ha-state-icon slot="icon" .stateObj=${entity} .hass=${this._hass} style="color: ${this._getIconColor(entity)}" @click=${() => this._openMoreInfo(entity.entity_id)}></ha-state-icon>
+                <ha-slider
+                    labeled
+                    .disabled=${entity.state === "unavailable"}
+                    .step=${Number(entity.attributes.step)}
+                    .min=${Number(entity.attributes.min)}
+                    .max=${Number(entity.attributes.max)}
+                    .value=${Number(entity.state)}
+                    @change=${(ev) => this._updateState(entity, ev.target.value)}
+                ></ha-slider>
+                <state-display .stateObj=${entity} .hass=${this._hass} @click=${() => this._openMoreInfo(entity.entity_id)}></state-display>
+            </div>
+        `;
+    }
+
+    _getChargingStartBlock(){
+        const entity = this._getEntity("time_battery_charging_start");
+        if (this._config["hide_"+SELECTOR_KEY_CHARGING_START] || !entity) {
+            return nothing;
+        }
+        return html`
+            <div class="sv-command sv-fr sv-pt" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}">
+                <ha-state-icon slot="icon" .stateObj=${entity} .hass=${this._hass} style="color: ${this._getIconColor(entity)}" @click=${() => this._openMoreInfo(entity.entity_id)}></ha-state-icon>
+                <ha-time-input
+                    .value=${entity.state === "unavailable" ? undefined : entity.state}
+                    .locale=${this._hass.locale}
+                    .disabled=${entity.state === "unavailable"}
+                    @value-changed=${(ev) => ev.detail.value ? this._updateTimeState(entity, ev.detail.value) : null}
+                    @click=${(ev) => ev.stopPropagation()}
+                ></ha-time-input>
+            </div>
+        `;
+    }
+
     _getCommandsBlock() {
-        if (this._config["hide_"+SELECTOR_KEY_COMMANDS] || !this._device_entities.remote_commands || this._device_entities.remote_commands.state == "off") {
+        if (this._config["hide_"+SELECTOR_KEY_COMMANDS] || !this._getEntity("binary_sensor_remote_commands") || this._getEntity("binary_sensor_remote_commands").state == "off") {
             return nothing;
         }
         if (!this._cards.commands) {
@@ -364,23 +450,27 @@ class StellantisVehicleCard extends LitElement {
 
         return html`
             <div class="sv-commands sv-pb">
-                <div class="sv-row sv-mb sv-pb sv-bb">
-                    ${this._getEntityBlock(this._device_entities.command_status, "sv-col sv-fr")}
+                <div class="sv-row sv-pb sv-bb">
+                    ${this._getEntityBlock(this._getEntity("sensor_command_status"), "sv-col sv-fr")}
                 </div>
-                ${this._cards.commands}
+                <div class="sv-pt">
+                    ${this._cards.commands}
+                </div>
+                ${this._getChargingLimitBlock()}
+                ${this._getChargingStartBlock()}
             </div>
         `;
     }
 
     _getMapBlock() {
-        if (this._config["hide_"+SELECTOR_KEY_MAP] || !this._device_entities.vehicle.attributes?.latitude) {
+        if (this._config["hide_"+SELECTOR_KEY_MAP] || !this._getVehicleEntity().attributes?.latitude) {
             return nothing;
         }
         if (!this._cards.map) {
             const config = {
                 type: "map",
                 theme_mode: "auto",
-                entities: [{entity: this._device_entities.vehicle.entity_id}],
+                entities: [{entity: this._getVehicleEntity().entity_id}],
                 auto_fit: true,
                 aspect_ratio: "50%",
                 default_zoom: 18
@@ -422,17 +512,17 @@ class StellantisVehicleCard extends LitElement {
     }
 
     _getLastTripBlock(){
-        if (this._config["hide_"+SELECTOR_KEY_LAST_TRIP]) {
+        if (this._config["hide_"+SELECTOR_KEY_LAST_TRIP] || !this._getEntity("sensor_last_trip")) {
             return nothing;
         }
-        return this._getAttributesBlock(this._device_entities.last_trip);
+        return this._getAttributesBlock(this._getEntity("sensor_last_trip"));
     }
 
     _getLastChargeBlock(){
-        if (this._config["hide_"+SELECTOR_KEY_LAST_CHARGE] || !this._device_entities.last_charge) {
+        if (this._config["hide_"+SELECTOR_KEY_LAST_CHARGE] || !this._getEntity("sensor_last_charge")) {
             return nothing;
         }
-        return this._getAttributesBlock(this._device_entities.last_charge);
+        return this._getAttributesBlock(this._getEntity("sensor_last_charge"));
     }
 
     render() {
@@ -440,7 +530,7 @@ class StellantisVehicleCard extends LitElement {
             return nothing;
         }
 
-        if (!this._device_entities.vehicle) {
+        if (!this._getVehicleEntity()) {
             return html`
                 <hui-warning .hass=${this._hass}>
                     ${this._hass.localize("ui.card.common.entity_not_found")}
@@ -558,7 +648,11 @@ class StellantisVehicleCardEditor extends LitElement {
             ]);
             this._addExpandableSchema(SELECTOR_KEY_COMMANDS, [
                 this._getSwitchSchema(SELECTOR_KEY_COMMANDS),
-                this._getSelectorSchema(SELECTOR_KEY_COMMANDS)
+                this._getSelectorSchema(SELECTOR_KEY_COMMANDS),
+                this._getGridSchema([
+                    this._getSwitchSchema(SELECTOR_KEY_CHARGING_LIMIT, "component.stellantis_vehicles.entity.number.battery_charging_limit.name"),
+                    this._getSwitchSchema(SELECTOR_KEY_CHARGING_START, "component.stellantis_vehicles.entity.time.battery_charging_start.name")
+                ])
             ]);
             this._addSwitchSchema(SELECTOR_KEY_MAP, "ui.panel.lovelace.editor.card.map.name");
             this._addSwitchSchema(SELECTOR_KEY_LAST_TRIP, "component.stellantis_vehicles.entity.sensor.last_trip.name");
