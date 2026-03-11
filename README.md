@@ -9,6 +9,7 @@
 - [OAuth2 Code](#oauth2-code)
 - [Commands](#commands)
 - [Battery capacity / residual sensors](#battery-capacity--residual-sensors)
+- [Card: Stellantis Vehicles](#card-stellantis-vehicles)
 - [Global preferences](#global-preferences)
 - [Errors](#errors)
 - [ABRP - A Better Routeplanner](#abrp---a-better-routeplanner)
@@ -67,6 +68,8 @@ Send remote commands:
 ![Sensors](./images/sensors.png)
 ### Vehicle Card
 ![Card](./images/card.png)
+
+Documented on [Card: Stellantis Vehicles](#card-stellantis-vehicles) section.
 
 ## OAuth2 Code
 ### Remote service
@@ -169,6 +172,37 @@ Thanks to the community ([#272](https://github.com/andreadegiovine/homeassistant
 
 \*currently only to the battery_residual sensor
 
+## Card: Stellantis Vehicles
+A new custom card is available to manage the vehicle, the card is configurable from the visual editor or via yaml:
+```
+type: custom:stellantis-vehicle-card
+entity: device_tracker.#####VIN#####_vehicle
+hide_features: false
+features_icons_size: 20
+features:
+  - binary_sensor.#####VIN#####_remote_commands
+  - sensor.#####VIN#####_battery
+hide_content: false
+content_icons_size: 14
+content:
+  - sensor.#####VIN#####_temperature
+  - sensor.#####VIN#####_last_trip
+hide_actions: false
+actions:
+  - button.#####VIN#####_wakeup
+  - button.#####VIN#####_start_charge
+hide_charging_limit: false
+hide_charging_start: false
+hide_map: false
+hide_last_trip: false
+hide_last_charge: false
+```
+\* the entity names above are in english, please use your language entity names.
+
+Some users report bugs during first use or after page refresh ([#440](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/440), [#441](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/441)), it seems like a browser or mobile app cache issue.
+
+To reset mobile app cache try: **Settings > app settings > Problem solving > Reset frontend cache**
+
 ## Global preferences
 These initial choices can be changed in the **Reconfigure** flow under **Global preferences**:
 - Enable persistent notifications
@@ -243,9 +277,9 @@ Toine T
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
+DrBrochmann  
 Jeroen  
 Marco  
-Martin the Biuilder  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
