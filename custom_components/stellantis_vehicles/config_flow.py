@@ -15,6 +15,7 @@ from .utils import get_datetime
 from .stellantis import StellantisOauth
 from .const import (
     DOMAIN,
+    INTEGRATION_VERSION,
     MOBILE_APPS,
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
@@ -80,8 +81,7 @@ RECONFIGURE_SCHEMA = vol.Schema({
 })
 
 class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
-    VERSION = 1
-    MINOR_VERSION = 6
+    VERSION = INTEGRATION_VERSION
 
     def __init__(self) -> None:
         self.data = dict()
