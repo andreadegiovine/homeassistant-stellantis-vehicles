@@ -7,6 +7,17 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
 DOMAIN = "stellantis_vehicles"
 
+with open(os.path.dirname(os.path.abspath(__file__)) + "/manifest.json", "r") as f:
+    manifest = json.load(f)
+    versions = manifest["version"].split("-beta")[0].split(".")
+    minor = int(versions[1])
+    if minor < 10:
+        minor = f"0{minor}"
+    patch = int(versions[2])
+    if patch < 10:
+        patch = f"0{patch}"
+    INTEGRATION_VERSION = int(f"{versions[0]}{minor}{patch}")
+
 with open(os.path.dirname(os.path.abspath(__file__)) + "/configs.json", "r") as f:
     MOBILE_APPS = json.load(f)
 
