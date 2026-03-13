@@ -164,13 +164,13 @@ jobs:
           {
             echo "## What's Changed"
             if [ -n "$changes" ]; then
-              changes=$(echo "$changes" | sed -E "s|https://github.com/$GITHUB_REPOSITORY/issues/([0-9]+)|(#\1)[https://github.com/$GITHUB_REPOSITORY/issues/\1]|g")
+              changes=$(echo "$changes" | sed -E "s|https://github.com/$GITHUB_REPOSITORY/issues/([0-9]+)|[#\1](https://github.com/$GITHUB_REPOSITORY/issues/\1)|g")
               echo "$changes"
               echo
               echo
             fi
             if ! ${{ steps.tag-name.outputs.is_prerelease }}; then
-              echo "**Full Changelog**: (${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }})[https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}]"
+              echo "**Full Changelog**: [${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }}](https://github.com/${{ github.repository }}/compare/${{ steps.tag-name.outputs.previous_tag_name }}...${{ steps.tag-name.outputs.new_tag_name }})"
               echo
               echo
               echo "## Support the project"
