@@ -231,8 +231,29 @@
           },
           "avg_power": {
             "name": "Genomsnittlig effekt"
+          },
+          "initial_mileage": {
+            "name": "Initial mileage"
+          },
+          "final_mileage": {
+            "name": "Final mileage"
+          },
+          "distance_since_last_charge": {
+            "name": "Distance since last charge"
+          },
+          "charge_cost": {
+            "name": "Charge cost"
+          },
+          "actual_average_consumption": {
+            "name": "Actual average consumption"
           }
         }
+      },
+      "charge_cost": {
+        "name": "Charge cost"
+      },
+      "actual_average_consumption": {
+        "name": "Actual average consumption"
       }
     },
     "binary_sensor": {
@@ -307,6 +328,9 @@
       },
       "refresh_interval": {
         "name": "Uppdateringsfrekvens"
+      },
+      "kwh_cost": {
+        "name": "kWh cost"
       }
     },
     "switch": {

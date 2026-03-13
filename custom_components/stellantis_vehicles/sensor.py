@@ -5,11 +5,11 @@ from copy import deepcopy
 from homeassistant.core import HomeAssistant
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.const import ( UnitOfLength, UnitOfSpeed, UnitOfEnergy, UnitOfVolume, UnitOfPower, PERCENTAGE )
-from homeassistant.components.sensor.const import ( SensorDeviceClass )
+from homeassistant.components.sensor.const import ( SensorDeviceClass, SensorStateClass )
 from homeassistant.const import EntityCategory
 
 from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
-from .utils import ( get_datetime, sort_dict )
+from .utils import sort_dict
 
 from .const import (
     DOMAIN,
@@ -58,6 +58,28 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 entity_category = EntityCategory.DIAGNOSTIC
             )
             entities.extend([StellantisLastChargeSensor(coordinator, description)])
+
+            description = SensorEntityDescription(
+                name = "charge_cost",
+                key = "charge_cost",
+                translation_key = "charge_cost",
+                icon = "mdi:cash",
+                device_class = SensorDeviceClass.MONETARY,
+                suggested_display_precision = 2
+            )
+            entities.extend([StellantisChargeCostSensor(coordinator, description)])
+
+            description = SensorEntityDescription(
+                name = "actual_average_consumption",
+                key = "actual_average_consumption",
+                translation_key = "actual_average_consumption",
+                icon = "mdi:flash",
+                unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR+"/100"+UnitOfLength.KILOMETERS,
+                device_class = SensorDeviceClass.ENERGY_DISTANCE,
+                state_class = SensorStateClass.MEASUREMENT,
+                suggested_display_precision = 2
+            )
+            entities.extend([StellantisChargeMetricSensor(coordinator, description)])
 
         description = SensorEntityDescription(
             name = "type",
@@ -185,12 +207,13 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
     def __init__(self, coordinator, description) -> None:
         super().__init__(coordinator, description)
         self._sensor_key = self._key
-        self._wait_next_update = False
 
-    def coordinator_update(self):
-        in_progress = self._coordinator._sensors.get("battery_charging") == "InProgress"
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        self._coordinator.async_update_listeners()
 
-        unit_of_measurement = {
+    def _get_attribute_units(self):
+        return {
             "initial_percentage": PERCENTAGE,
             "final_percentage": PERCENTAGE,
             "recharged_percent": PERCENTAGE,
@@ -200,72 +223,71 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
             "avg_power": UnitOfPower.KILO_WATT,
             "initial_autonomy": UnitOfLength.KILOMETERS,
             "final_autonomy": UnitOfLength.KILOMETERS,
-            "recharged_autonomy": UnitOfLength.KILOMETERS
+            "recharged_autonomy": UnitOfLength.KILOMETERS,
+            "initial_mileage": UnitOfLength.KILOMETERS,
+            "final_mileage": UnitOfLength.KILOMETERS,
+            "distance_since_last_charge": UnitOfLength.KILOMETERS,
+            "charge_cost": self._coordinator.currency_code,
+            "actual_average_consumption": UnitOfEnergy.KILO_WATT_HOUR+"/100"+UnitOfLength.KILOMETERS
         }
 
-        attributes = deepcopy(self._attr_extra_state_attributes)
+    def _normalize_attributes(self, attributes):
+        units = self._get_attribute_units()
+        numbers = {
+            "initial_percentage",
+            "final_percentage",
+            "recharged_percent",
+            "initial_energy",
+            "final_energy",
+            "recharged_energy",
+            "avg_power",
+            "initial_autonomy",
+            "final_autonomy",
+            "recharged_autonomy",
+            "initial_mileage",
+            "final_mileage",
+            "distance_since_last_charge",
+            "charge_cost",
+            "actual_average_consumption"
+        }
+        integers = {"initial_percentage", "final_percentage", "recharged_percent"}
+        normalized = {}
 
-        for attribute in attributes:
-            if attribute in unit_of_measurement:
-                attributes[attribute] = attributes[attribute].replace(f" {unit_of_measurement[attribute]}", "")
-        
-        prev_in_progress = "in_progress" in attributes and attributes["in_progress"]
+        for key, value in attributes.items():
+            if key == "in_progress":
+                if isinstance(value, str):
+                    normalized[key] = value.lower() in ["true", "yes", "on"]
+                else:
+                    normalized[key] = bool(value)
+                continue
 
-        divide = 1000
-        correction_on = self._coordinator._sensors.get("switch_battery_values_correction", False)
-        if correction_on:
-            divide = divide / KWH_CORRECTION
+            if key in units and isinstance(value, str):
+                suffix = f" {units[key]}"
+                if suffix.strip() and value.endswith(suffix):
+                    value = value[:-len(suffix)]
 
-        if in_progress and not prev_in_progress:
-            self._attr_native_value = get_datetime()
-            attributes["in_progress"] = True
-            attributes["initial_percentage"] = round(self._coordinator._sensors.get("battery"))
-            if self._coordinator._sensors.get("battery_residual"):
-                attributes["initial_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
-            if self._coordinator._sensors.get("autonomy"):
-                attributes["initial_autonomy"] = self._coordinator._sensors.get("autonomy")
-            try:
-                del attributes["final_time"]
-                del attributes["final_percentage"]
-                del attributes["final_energy"]
-                del attributes["final_autonomy"]
-                del attributes["duration"]
-                del attributes["recharged_percent"]
-                del attributes["recharged_energy"]
-                del attributes["recharged_autonomy"]
-                del attributes["avg_power"]
-            except KeyError:
-                pass
-        elif prev_in_progress and not in_progress:
-            if self._wait_next_update:
-                del attributes["in_progress"]
-                attributes["final_time"] = get_datetime()
-                attributes["final_percentage"] = round(self._coordinator._sensors.get("battery"))
-                if self._coordinator._sensors.get("battery_residual"):
-                    attributes["final_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
-                if self._coordinator._sensors.get("autonomy"):
-                    attributes["final_autonomy"] = self._coordinator._sensors.get("autonomy")
+            if key in numbers:
+                value = self._coordinator._float_or_none(value)
+                if value is None:
+                    continue
+                if key in integers:
+                    value = round(value)
+            normalized[key] = value
 
-                duration = get_datetime(attributes["final_time"]) - self._attr_native_value
-                attributes["duration"] = strftime("%H:%M:%S", gmtime(duration.total_seconds()))
-                
-                attributes["recharged_percent"] = round(float(attributes["final_percentage"]) - float(attributes["initial_percentage"]))
-                if "initial_energy" in attributes and "final_energy" in attributes:
-                    recharged_energy = float(attributes["final_energy"]) - float(attributes["initial_energy"])
-                    attributes["recharged_energy"] = round(recharged_energy, 2)
-                    attributes["avg_power"] = round(recharged_energy / ((duration.total_seconds() / 60) / 60), 2)
-                if "initial_autonomy" in attributes and "final_autonomy" in attributes:
-                    attributes["recharged_autonomy"] = round(float(attributes["final_autonomy"]) - float(attributes["initial_autonomy"]))
+        return normalized
 
-                self._wait_next_update = False
-
-            self._wait_next_update = True
-
-        for attribute in attributes:
-            if attribute in unit_of_measurement:
-                attributes[attribute] = f"{attributes[attribute]} {unit_of_measurement[attribute]}"
+    def _format_attributes(self, attributes):
+        units = self._get_attribute_units()
+        formatted = deepcopy(attributes)
+        for key, value in list(formatted.items()):
+            if key == "in_progress":
+                continue
+            if key in units and value is not None:
+                unit = units[key]
+                formatted[key] = f"{value} {unit}" if unit else value
 
         ordered_keys = [
+            "in_progress",
             "duration",
             "final_time",
             "initial_percentage",
@@ -274,10 +296,41 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
             "initial_energy",
             "final_energy",
             "recharged_energy",
+            "charge_cost",
+            "avg_power",
             "initial_autonomy",
             "final_autonomy",
             "recharged_autonomy",
-            "avg_power"
+            "initial_mileage",
+            "final_mileage",
+            "distance_since_last_charge",
+            "actual_average_consumption"
         ]
 
-        self._attr_extra_state_attributes = sort_dict(attributes, ordered_keys)
+        return sort_dict(formatted, ordered_keys)
+
+    def coordinator_update(self):
+        last_charge_state = self._coordinator.get_last_charge_state()
+        if last_charge_state["native_value"] is None and not last_charge_state["attributes"] and (self._attr_native_value is not None or self._attr_extra_state_attributes):
+            self._coordinator.set_last_charge_state(self._attr_native_value, self._normalize_attributes(self._attr_extra_state_attributes))
+
+        last_charge_state = self._coordinator.update_charge_tracking()
+        self._attr_native_value = last_charge_state["native_value"]
+        self._coordinator._sensors[self._key] = self._attr_native_value
+        self._attr_extra_state_attributes = self._format_attributes(last_charge_state["attributes"])
+
+
+class StellantisChargeMetricSensor(StellantisRestoreSensor):
+    def coordinator_update(self):
+        last_charge_state = self._coordinator.get_last_charge_state()
+        if last_charge_state["native_value"] is None and not last_charge_state["attributes"]:
+            return
+
+        self._coordinator.update_charge_tracking()
+        self._attr_native_value = self._coordinator._sensors.get(self._key)
+
+
+class StellantisChargeCostSensor(StellantisChargeMetricSensor):
+    def coordinator_update(self):
+        self._attr_native_unit_of_measurement = self._coordinator.currency_code
+        super().coordinator_update()

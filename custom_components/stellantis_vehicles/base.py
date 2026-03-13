@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timedelta, UTC
 import json
 from copy import deepcopy
+from time import ( strftime, gmtime )
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -47,6 +48,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._last_trip = None
 #        self._total_trip = None
         self._manage_charge_limit_sent = False
+        self._last_charge_state = {"native_value": None, "attributes": {}}
+        self._charge_wait_next_update = False
+        self._charge_tracking_run_id = 0
+        self._charge_tracking_last_run_id = None
 
         if self._stellantis.logger_filter:
             _LOGGER.addFilter(self._stellantis.logger_filter)
@@ -64,6 +69,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         except Exception:
             pass
         await self.after_async_update_data()
+        self._charge_tracking_run_id = self._charge_tracking_run_id + 1
         _LOGGER.debug("---------- END _async_update_data")
 
     def get_translation(self, path, default = None):
@@ -74,6 +80,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def vehicle_type(self):
         """ Vehicle type. """
         return self._vehicle["type"]
+
+    @property
+    def currency_code(self):
+        """ Home Assistant currency code. """
+        return str(getattr(self._hass.config, "currency", "") or "")
 
     @property
     def command_history(self):
@@ -275,6 +286,238 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     self._last_trip = trips["_embedded"]["trips"][-1]
         except Exception:
             pass
+
+    @staticmethod
+    def _float_or_none(value):
+        """ Convert value to float if possible. """
+        if value is None or value == "":
+            return None
+        if isinstance(value, bool):
+            return float(value)
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            return float(str(value).strip())
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _datetime_or_none(value):
+        """ Convert value to timezone-aware datetime if possible. """
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return get_datetime(value)
+        try:
+            return get_datetime(datetime.fromisoformat(str(value)))
+        except (TypeError, ValueError):
+            return None
+
+    def get_vehicle_config_value(self, key, default = None):
+        """ Get per-vehicle stored config with sensor cache fallback. """
+        vin = self._vehicle["vin"]
+        value = self._stellantis.get_vehicle_stored_config(vin, key)
+        if value is None:
+            value = self._sensors.get(key, default)
+        if value is None:
+            return default
+        return value
+
+    def set_last_charge_state(self, native_value, attributes = None):
+        """ Store the current last charge session state. """
+        if attributes is None:
+            attributes = {}
+        self._last_charge_state = {
+            "native_value": native_value,
+            "attributes": deepcopy(attributes)
+        }
+        self._charge_tracking_last_run_id = None
+
+    def get_last_charge_state(self):
+        """ Get the current last charge session state. """
+        return {
+            "native_value": self._last_charge_state.get("native_value"),
+            "attributes": deepcopy(self._last_charge_state.get("attributes", {}))
+        }
+
+    def _get_corrected_energy_from_raw(self, raw_value):
+        """ Convert raw battery residual value to kWh. """
+        value = self._float_or_none(raw_value)
+        if value is None or value < 1:
+            return None
+
+        divide = 1000
+        correction_on = self._sensors.get("switch_battery_values_correction", False)
+        if correction_on:
+            divide = divide / KWH_CORRECTION
+
+        return round(value / divide, 2)
+
+    def _update_charge_metrics(self, attributes):
+        """ Recalculate charge-derived metrics from the stored session data. """
+        raw_initial_energy = self.get_vehicle_config_value("last_charge_initial_energy_raw")
+        raw_final_energy = self.get_vehicle_config_value("last_charge_final_energy_raw")
+
+        initial_energy = self._get_corrected_energy_from_raw(raw_initial_energy)
+        final_energy = self._get_corrected_energy_from_raw(raw_final_energy)
+
+        if initial_energy is not None:
+            attributes["initial_energy"] = initial_energy
+        else:
+            attributes.pop("initial_energy", None)
+
+        if final_energy is not None:
+            attributes["final_energy"] = final_energy
+        else:
+            attributes.pop("final_energy", None)
+
+        if initial_energy is not None and final_energy is not None:
+            recharged_energy = round(final_energy - initial_energy, 2)
+            attributes["recharged_energy"] = recharged_energy
+
+            started_at = self._datetime_or_none(self._last_charge_state.get("native_value"))
+            final_time = self._datetime_or_none(attributes.get("final_time"))
+            if started_at and final_time:
+                duration = final_time - started_at
+                duration_hours = duration.total_seconds() / 3600
+                if duration_hours > 0:
+                    attributes["avg_power"] = round(recharged_energy / duration_hours, 2)
+                else:
+                    attributes.pop("avg_power", None)
+        else:
+            attributes.pop("recharged_energy", None)
+            attributes.pop("avg_power", None)
+
+        kwh_cost = self._float_or_none(self.get_vehicle_config_value("number_kwh_cost", 0))
+        recharged_energy = self._float_or_none(attributes.get("recharged_energy"))
+        if kwh_cost is not None and kwh_cost > 0 and recharged_energy is not None and recharged_energy > 0:
+            attributes["charge_cost"] = round(recharged_energy * kwh_cost, 2)
+        else:
+            attributes.pop("charge_cost", None)
+
+        distance_since_last_charge = self._float_or_none(attributes.get("distance_since_last_charge"))
+        if recharged_energy is not None and recharged_energy > 0 and distance_since_last_charge is not None and distance_since_last_charge > 0:
+            attributes["actual_average_consumption"] = round((recharged_energy / distance_since_last_charge) * 100, 2)
+        else:
+            attributes.pop("actual_average_consumption", None)
+
+        self._sensors["charge_cost"] = attributes.get("charge_cost")
+        self._sensors["actual_average_consumption"] = attributes.get("actual_average_consumption")
+
+        return attributes
+
+    def update_charge_tracking(self, force = False):
+        """ Update the shared last charge state and derived charge metrics. """
+        if not force and self._charge_tracking_last_run_id == self._charge_tracking_run_id:
+            return self.get_last_charge_state()
+
+        native_value = self._last_charge_state.get("native_value")
+        attributes = deepcopy(self._last_charge_state.get("attributes", {}))
+        charging_status = self._sensors.get("battery_charging")
+        in_progress = charging_status == "InProgress"
+        prev_in_progress = bool(attributes.get("in_progress"))
+
+        if charging_status is not None:
+            if in_progress and not prev_in_progress:
+                native_value = get_datetime()
+                attributes["in_progress"] = True
+
+                battery = self._float_or_none(self._sensors.get("battery"))
+                if battery is not None:
+                    attributes["initial_percentage"] = round(battery)
+
+                initial_energy_raw = self._sensors.get("battery_residual")
+                self._stellantis.update_vehicle_stored_config(self._vehicle["vin"], "last_charge_initial_energy_raw", initial_energy_raw)
+                self._stellantis.update_vehicle_stored_config(self._vehicle["vin"], "last_charge_final_energy_raw", None)
+
+                initial_autonomy = self._float_or_none(self._sensors.get("autonomy"))
+                if initial_autonomy is not None:
+                    attributes["initial_autonomy"] = round(initial_autonomy, 2)
+
+                initial_mileage = self._float_or_none(self._sensors.get("mileage"))
+                if initial_mileage is not None:
+                    attributes["initial_mileage"] = round(initial_mileage, 2)
+
+                for key in [
+                    "final_time",
+                    "final_percentage",
+                    "final_energy",
+                    "final_autonomy",
+                    "final_mileage",
+                    "duration",
+                    "recharged_percent",
+                    "recharged_energy",
+                    "recharged_autonomy",
+                    "avg_power",
+                    "distance_since_last_charge",
+                    "charge_cost",
+                    "actual_average_consumption"
+                ]:
+                    attributes.pop(key, None)
+
+                self._charge_wait_next_update = False
+
+            elif prev_in_progress and not in_progress:
+                if self._charge_wait_next_update:
+                    attributes.pop("in_progress", None)
+                    attributes["final_time"] = get_datetime()
+
+                    battery = self._float_or_none(self._sensors.get("battery"))
+                    if battery is not None:
+                        attributes["final_percentage"] = round(battery)
+
+                    final_energy_raw = self._sensors.get("battery_residual")
+                    self._stellantis.update_vehicle_stored_config(self._vehicle["vin"], "last_charge_final_energy_raw", final_energy_raw)
+
+                    final_autonomy = self._float_or_none(self._sensors.get("autonomy"))
+                    if final_autonomy is not None:
+                        attributes["final_autonomy"] = round(final_autonomy, 2)
+
+                    final_mileage = self._float_or_none(self._sensors.get("mileage"))
+                    if final_mileage is not None:
+                        final_mileage = round(final_mileage, 2)
+                        attributes["final_mileage"] = final_mileage
+
+                    started_at = self._datetime_or_none(native_value)
+                    final_time = self._datetime_or_none(attributes.get("final_time"))
+                    if started_at and final_time:
+                        duration = final_time - started_at
+                        attributes["duration"] = strftime("%H:%M:%S", gmtime(duration.total_seconds()))
+
+                    initial_percentage = self._float_or_none(attributes.get("initial_percentage"))
+                    final_percentage = self._float_or_none(attributes.get("final_percentage"))
+                    if initial_percentage is not None and final_percentage is not None:
+                        attributes["recharged_percent"] = round(final_percentage - initial_percentage)
+
+                    initial_autonomy = self._float_or_none(attributes.get("initial_autonomy"))
+                    final_autonomy = self._float_or_none(attributes.get("final_autonomy"))
+                    if initial_autonomy is not None and final_autonomy is not None:
+                        attributes["recharged_autonomy"] = round(final_autonomy - initial_autonomy, 2)
+
+                    previous_final_mileage = self._float_or_none(self.get_vehicle_config_value("last_charge_final_mileage"))
+                    initial_mileage = self._float_or_none(attributes.get("initial_mileage"))
+                    if initial_mileage is not None and previous_final_mileage is not None:
+                        distance_since_last_charge = round(initial_mileage - previous_final_mileage, 2)
+                        if distance_since_last_charge > 0:
+                            attributes["distance_since_last_charge"] = distance_since_last_charge
+                        else:
+                            attributes.pop("distance_since_last_charge", None)
+                    else:
+                        attributes.pop("distance_since_last_charge", None)
+
+                    if final_mileage is not None:
+                        self._stellantis.update_vehicle_stored_config(self._vehicle["vin"], "last_charge_final_mileage", final_mileage)
+
+                    self._charge_wait_next_update = False
+                else:
+                    self._charge_wait_next_update = True
+            else:
+                self._charge_wait_next_update = False
+
+        attributes = self._update_charge_metrics(attributes)
+        self._last_charge_state = {"native_value": native_value, "attributes": attributes}
+        self._charge_tracking_last_run_id = self._charge_tracking_run_id
+        return self.get_last_charge_state()
 
 #     def parse_trips_page_data(self, data):
 #         result = []
