@@ -21,6 +21,8 @@
 |--------------------------------------|--------------------------------------|----------------------------|--------------------------------|----------------------------------------|
 | ![MyPeugeot](./images/MyPeugeot.png) | ![MyCitroen](./images/MyCitroen.png) | ![MyDS](./images/MyDS.png) | ![MyOpel](./images/MyOpel.png) | ![MyVauxhall](./images/MyVauxhall.png) |
 
+**Inspired by [PSA Car Controller](https://github.com/flobz/psa_car_controller) (OTP step its a fork). Thanks to [Florian BEZANNIER](https://github.com/flobz) for his great work**
+
 ## Requirements
 Get status:
 - **Vehicle native mobile app** installed and active;
@@ -289,9 +291,9 @@ mggevaer
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+MR  
 Christof  
 Luke  
-Schredder51  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
