@@ -164,43 +164,64 @@
               "true": "Yes"
             }
           },
-            "initial_percentage": {
+          "initial_percentage": {
             "name": "Anfänglicher Ladezustand"
           },
-            "initial_energy": {
+          "initial_energy": {
             "name": "Anfängliche Energiemenge"
           },
-            "initial_autonomy": {
+          "initial_autonomy": {
             "name": "Anfängliche Reichweite"
           },
-            "final_time": {
+          "final_time": {
             "name": "Endzeit"
           },
-            "final_percentage": {
+          "final_percentage": {
             "name": "Finaler Ladezustand"
           },
-            "final_energy": {
+          "final_energy": {
             "name": "Finaler Energieinhalt"
           },
-            "final_autonomy": {
+          "final_autonomy": {
             "name": "Finale Reichweite"
           },
-            "duration": {
+          "duration": {
             "name": "Dauer des Ladevorgangs"
           },
-            "recharged_percent": {
+          "recharged_percent": {
             "name": "Aufgeladene Energie in Prozent"
           },
-            "recharged_energy": {
+          "recharged_energy": {
             "name": "Aufgeladene Energiemenge"
           },
-            "recharged_autonomy": {
+          "recharged_autonomy": {
             "name": "Aufgeladene Reichweite"
           },
           "avg_power": {
             "name": "Durchschnittliche Ladeleistung"
+          },
+          "initial_mileage": {
+            "name": "Initial mileage"
+          },
+          "final_mileage": {
+            "name": "Final mileage"
+          },
+          "distance_since_last_charge": {
+            "name": "Distance since last charge"
+          },
+          "charge_cost": {
+            "name": "Charge cost"
+          },
+          "actual_average_consumption": {
+            "name": "Actual average consumption"
           }
         }
+      },
+      "charge_cost": {
+        "name": "Charge cost"
+      },
+      "actual_average_consumption": {
+        "name": "Actual average consumption"
       }
     },
     "binary_sensor": {
@@ -275,6 +296,9 @@
       },
       "refresh_interval": {
         "name": "Aktualisierungsintervall"
+      },
+      "kwh_cost": {
+        "name": "kWh cost"
       }
     },
     "switch": {

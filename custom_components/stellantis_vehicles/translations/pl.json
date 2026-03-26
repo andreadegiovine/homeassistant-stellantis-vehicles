@@ -132,6 +132,32 @@
             "name": "Średni zużycie paliwa"
           }
         }
+      },
+      "charge_cost": {
+        "name": "Charge cost"
+      },
+      "actual_average_consumption": {
+        "name": "Actual average consumption"
+      },
+      "last_charge": {
+        "name": "Last charge",
+        "state_attributes": {
+          "initial_mileage": {
+            "name": "Initial mileage"
+          },
+          "final_mileage": {
+            "name": "Final mileage"
+          },
+          "distance_since_last_charge": {
+            "name": "Distance since last charge"
+          },
+          "charge_cost": {
+            "name": "Charge cost"
+          },
+          "actual_average_consumption": {
+            "name": "Actual average consumption"
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -203,8 +229,11 @@
       "battery_charging_limit": {
         "name": "Limit ładowania baterii"
       },
-    "refresh_interval": {
+      "refresh_interval": {
         "name": "Czestotliwość odświeżania"
+      },
+      "kwh_cost": {
+        "name": "kWh cost"
       }
     },
     "switch": {

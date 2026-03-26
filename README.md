@@ -9,6 +9,7 @@
 - [OAuth2 Code](#oauth2-code)
 - [Commands](#commands)
 - [Battery capacity / residual sensors](#battery-capacity--residual-sensors)
+- [Charge cost / actual consumption](#charge-cost--actual-consumption)
 - [Card: Stellantis Vehicles](#card-stellantis-vehicles)
 - [Global preferences](#global-preferences)
 - [Errors](#errors)
@@ -173,6 +174,18 @@ As described in the Stellantis apps, the command is enabled when:
 Thanks to the community ([#272](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/272)), it seems that for some vehicles **Stellantis provides incorrect values**. The **switch.battery_values_correction** entity (in your language) applies a correction if active.
 
 \*currently only to the battery_residual sensor
+
+## Charge cost / actual consumption
+Charge-capable vehicles now expose:
+- **number.kwh_cost** to set your per-vehicle electricity tariff
+- **sensor.charge_cost** for the latest completed charge cost
+- **sensor.actual_average_consumption** for the real-world efficiency since the previous completed charge, in `kWh/100km`
+
+The existing **sensor.last_charge** entity also includes charge cost, mileage, distance since last charge, and actual average consumption in its attributes.
+
+Charge cost stays unavailable until you set **number.kwh_cost** to a value greater than `0`.
+
+The first valid **sensor.actual_average_consumption** value requires **two completed charges recorded by this version**, because it uses the distance driven between charge sessions.
 
 ## Card: Stellantis Vehicles
 A new custom card is available to manage the vehicle, the card is configurable from the visual editor or via yaml:
