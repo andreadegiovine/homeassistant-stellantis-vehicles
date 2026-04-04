@@ -285,9 +285,9 @@ Jeroen
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
+Kristian  
 Dave  
 Somebody  
-mggevaer  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
