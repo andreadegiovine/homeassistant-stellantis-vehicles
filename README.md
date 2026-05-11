@@ -291,9 +291,9 @@ Somebody
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Bjoern  
 Kosh42  
 Someone  
-MR  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
