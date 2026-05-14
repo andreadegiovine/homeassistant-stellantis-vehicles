@@ -411,7 +411,21 @@ class StellantisBaseEntity(CoordinatorEntity):
                     value = None
             if value is None: # Stop iteration immediately if None value encountered at this stage
                 break
-
+        # --- FIX_BUG API STELLANTIS ---
+        # Caso noto: autonomia = 0 km ma batteria = 100%
+        if (
+            key == "battery"
+            and value is not None
+            and value > 90
+            and self._coordinator._sensors.get("autonomy") == 0
+        ):
+            _LOGGER.warning(
+                "Stellantis API bug detected: autonomy=0 km, battery=%s%%. Forcing battery to 0%%.",
+                value,
+            )
+            value = 0
+            self._coordinator._sensors[key] = value
+        # --- FINE FIX ---
         return value
 
     def get_value(self, value_map):
