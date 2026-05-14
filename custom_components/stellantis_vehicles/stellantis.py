@@ -57,6 +57,7 @@ from .const import (
     CAR_API_GET_VEHICLE_TRIPS_URL,
     MQTT_REFRESH_TOKEN_JSON_DATA,
     MQTT_REFRESH_TOKEN_TTL,
+    OAUTH_REFRESH_TOKEN_TTL,
     OTP_FILENAME,
     ABRP_URL,
     ABRP_API_KEY,
@@ -226,10 +227,9 @@ class StellantisBase:
                     result = {}
                 elif str(resp.status) == "500" and result.get("code", None) == "50000":
                     # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
-                    raise ConfigEntryAuthFailed(error)
+                    raise ComunicationError(error)
                 elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
-                    # Token expiration
-                    raise ConfigEntryAuthFailed(error)
+                    raise ConfigEntryAuthFailed("Stellantis Vehicles authentication expired (invalid_grant). Please re-authenticate the integration.")
                 elif str(resp.status) == "401":
                     # Oauth token seem expired, refresh request blocked by server/connection error
                     raise ComunicationError(error)
@@ -522,6 +522,11 @@ class StellantisVehicles(StellantisOauth):
         def get_next_run():
             expires_in = self.get_config("oauth")["expires_in"]
             return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
+        oauth_config = self.get_config("oauth")
+        if "refresh_token_expires_at" in oauth_config:
+            refresh_expires = datetime.fromisoformat(oauth_config["refresh_token_expires_at"])
+            if get_datetime() > refresh_expires - timedelta(hours=1):
+                raise ConfigEntryAuthFailed("Stellantis Vehicles: OAuth refresh token is about to expire. Please re-authenticate the integration.")
         try:
             if self._oauth_token_scheduled is not None:
                 self.reset_scheduled_oauth_token()
@@ -554,7 +559,8 @@ class StellantisVehicles(StellantisOauth):
         new_config = {
             "access_token": token_request["access_token"],
             "refresh_token": token_request["refresh_token"],
-            "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+            "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat(),
+            "refresh_token_expires_at": (get_datetime() + timedelta(minutes=int(OAUTH_REFRESH_TOKEN_TTL))).isoformat()
         }
         self.save_config({"oauth": new_config})
         self.update_stored_config("oauth", new_config)

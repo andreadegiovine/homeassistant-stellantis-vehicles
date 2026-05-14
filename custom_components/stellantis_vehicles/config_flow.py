@@ -28,6 +28,7 @@ from .const import (
     FIELD_ANONYMIZE_LOGS,
     FIELD_RECONFIGURE,
     MQTT_REFRESH_TOKEN_TTL,
+    OAUTH_REFRESH_TOKEN_TTL,
     TRANSLATION_PLACEHOLDERS
 )
 
@@ -187,7 +188,8 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             oauth = {"oauth": {
                 "access_token": token_request["access_token"],
                 "refresh_token": token_request["refresh_token"],
-                "expires_in": (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat()
+                "expires_in": (get_datetime() + timedelta(0, int(token_request["expires_in"]))).isoformat(),
+                "refresh_token_expires_at": (get_datetime() + timedelta(minutes=int(OAUTH_REFRESH_TOKEN_TTL))).isoformat()
             }}
             self.data.update(oauth)
             self.stellantis.save_config(oauth)
