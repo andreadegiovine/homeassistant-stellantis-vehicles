@@ -22,6 +22,7 @@ with open(os.path.dirname(os.path.abspath(__file__)) + "/configs.json", "r") as 
     MOBILE_APPS = json.load(f)
 
 MQTT_REFRESH_TOKEN_TTL = (60*24*3) # 3 days
+OAUTH_REFRESH_TOKEN_TTL = (60*24*7) # 7 days
 OTP_FILENAME = "{#customer_id#}_otp.pickle"
 
 OAUTH_BASE_URL = "{#oauth_url#}/am/oauth2"

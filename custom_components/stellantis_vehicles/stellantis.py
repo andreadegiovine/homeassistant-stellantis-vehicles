@@ -19,6 +19,7 @@ from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
 from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.helpers.config_entry_oauth2_flow import AbstractOAuth2Implementation
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
@@ -57,6 +58,7 @@ from .const import (
     CAR_API_GET_VEHICLE_TRIPS_URL,
     MQTT_REFRESH_TOKEN_JSON_DATA,
     MQTT_REFRESH_TOKEN_TTL,
+    OAUTH_REFRESH_TOKEN_TTL,
     OTP_FILENAME,
     ABRP_URL,
     ABRP_API_KEY,
@@ -229,11 +231,9 @@ class StellantisBase:
                     # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
                     raise ComunicationError(error)
                 elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
-                    # Token expiration
                     raise ConfigEntryAuthFailed(error)
                 elif str(resp.status) == "401":
-                    # Oauth token seem expired, refresh request blocked by server/connection error
-                    raise ComunicationError(error)
+                    raise ConfigEntryAuthFailed(error)
                 elif str(resp.status).startswith("50"):
                     # Internal error
                     raise ComunicationError(error)
@@ -429,6 +429,7 @@ class StellantisVehicles(StellantisOauth):
 
     def set_entry(self, entry):
         self._entry = entry
+        self._oauth_implementation = StellantisOAuth2Implementation(self._hass, self)
         self.logger_filter.add_entry_values(self._config)
 
     def update_stored_config(self, config, value):
@@ -523,6 +524,11 @@ class StellantisVehicles(StellantisOauth):
         def get_next_run():
             expires_in = self.get_config("oauth")["expires_in"]
             return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
+        oauth_config = self.get_config("oauth")
+        if "refresh_token_expires_at" in oauth_config:
+            refresh_expires = datetime.fromisoformat(oauth_config["refresh_token_expires_at"])
+            if get_datetime() > refresh_expires - timedelta(hours=1):
+                raise ConfigEntryAuthFailed("Stellantis Vehicles: OAuth refresh token is about to expire. Please re-authenticate the integration.")
         try:
             if self._oauth_token_scheduled is not None:
                 self.reset_scheduled_oauth_token()
@@ -555,7 +561,8 @@ class StellantisVehicles(StellantisOauth):
         new_config = {
             "access_token": token_request["access_token"],
             "refresh_token": token_request["refresh_token"],
-            "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
+            "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat(),
+            "refresh_token_expires_at": (get_datetime() + timedelta(minutes=int(OAUTH_REFRESH_TOKEN_TTL))).isoformat()
         }
         self.save_config({"oauth": new_config})
         self.update_stored_config("oauth", new_config)
@@ -879,3 +886,28 @@ class StellantisVehicles(StellantisOauth):
         except Exception:
             pass
         _LOGGER.debug("---------- END send_abrp_data")
+
+
+class StellantisOAuth2Implementation(AbstractOAuth2Implementation):
+
+    def __init__(self, hass: HomeAssistant, stellantis: StellantisVehicles) -> None:
+        self._hass = hass
+        self._stellantis = stellantis
+
+    @property
+    def name(self) -> str:
+        return "Stellantis Vehicles"
+
+    @property
+    def domain(self) -> str:
+        return DOMAIN
+
+    async def async_generate_authorize_url(self, flow_id: str) -> str:
+        return self._stellantis.get_oauth_url()
+
+    async def async_resolve_external_data(self, external_data) -> dict:
+        return external_data
+
+    async def _async_refresh_token(self, token: dict) -> dict:
+        await self._stellantis.refresh_token_request()
+        return self._stellantis.get_config("oauth")
