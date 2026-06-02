@@ -291,9 +291,9 @@ Somebody
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Giuliano  
+guimi  
 Bjoern  
-Kosh42  
-Someone  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
