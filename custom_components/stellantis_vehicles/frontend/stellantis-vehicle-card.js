@@ -280,7 +280,18 @@ class StellantisVehicleCard extends LitElement {
 
     _getHeaderBlock(){
         let defaults = true;
-        let entities = ["remote_commands", "engine", "moving", "preconditioning", "temperature", "autonomy", "battery", "battery_plugged", "battery_charging", "battery_soh"];
+        let entities = [
+            "binary_sensor_remote_commands",
+            "binary_sensor_engine",
+            "binary_sensor_moving",
+            "binary_sensor_preconditioning",
+            "sensor_temperature",
+            "sensor_autonomy",
+            "sensor_battery",
+            "binary_sensor_battery_plugged",
+            "binary_sensor_battery_charging",
+            "sensor_battery_soh"
+        ];
         if (this._config[SELECTOR_KEY_HEADER] && this._config[SELECTOR_KEY_HEADER].length > 0) {
             defaults = false;
             entities = this._config[SELECTOR_KEY_HEADER];
@@ -315,7 +326,10 @@ class StellantisVehicleCard extends LitElement {
 
     _getImageBlock() {
         let defaults = true;
-        let entities = ["mileage", "service_battery_voltage"];
+        let entities = [
+            "sensor_mileage",
+            "sensor_service_battery_voltage"
+        ];
         if (this._config[SELECTOR_KEY_IMAGE] && this._config[SELECTOR_KEY_IMAGE].length > 0) {
             defaults = false;
             entities = this._config[SELECTOR_KEY_IMAGE];
@@ -341,7 +355,17 @@ class StellantisVehicleCard extends LitElement {
 
     _getCommandButtonsConfig() {
         let defaults = true;
-        let entities = ["wakeup", "lights", "horn", "doors_lock", "doors_unlock", "preconditioning_start", "preconditioning_stop", "charge_start", "charge_stop"];
+        let entities = [
+            "button_wakeup",
+            "button_lights",
+            "button_horn",
+            "button_doors_lock",
+            "button_doors_unlock",
+            "button_preconditioning_start",
+            "button_preconditioning_stop",
+            "button_charge_start",
+            "button_charge_stop"
+        ];
         if (this._config[SELECTOR_KEY_COMMANDS] && this._config[SELECTOR_KEY_COMMANDS].length > 0) {
             defaults = false;
             entities = this._config[SELECTOR_KEY_COMMANDS];
@@ -648,7 +672,7 @@ class StellantisVehicleCardEditor extends LitElement {
             ]);
             this._addExpandableSchema(SELECTOR_KEY_COMMANDS, [
                 this._getSwitchSchema(SELECTOR_KEY_COMMANDS),
-                this._getSelectorSchema(SELECTOR_KEY_COMMANDS),
+                this._getSelectorSchema(SELECTOR_KEY_COMMANDS, ["button", "switch"]),
                 this._getGridSchema([
                     this._getSwitchSchema(SELECTOR_KEY_CHARGING_LIMIT, "component.stellantis_vehicles.entity.number.battery_charging_limit.name"),
                     this._getSwitchSchema(SELECTOR_KEY_CHARGING_START, "component.stellantis_vehicles.entity.time.battery_charging_start.name")
@@ -665,7 +689,7 @@ class StellantisVehicleCardEditor extends LitElement {
             this._loaded_selectors = [];
         }
         if (!this._loaded_selectors.includes(name)) {
-            this._schema.push(this._getExpandableSchema(name, items));
+            this._schema = [...this._schema, this._getExpandableSchema(name, items)];
             this._loaded_selectors.push(name);
         }
     }
@@ -701,7 +725,7 @@ class StellantisVehicleCardEditor extends LitElement {
             this._loaded_selectors = [];
         }
         if (!this._loaded_selectors.includes(name)) {
-            this._schema.push(this._getSwitchSchema(name, translation_value_path));
+            this._schema = [...this._schema, this._getSwitchSchema(name, translation_value_path)];
             this._loaded_selectors.push(name);
         }
     }

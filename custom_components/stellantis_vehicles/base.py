@@ -473,6 +473,13 @@ class StellantisBaseEntity(CoordinatorEntity):
             if country in fahrenheit_countries:
                 value = (value - 32) * 5.0 / 9.0
 
+        if key == 'battery':
+            value = int(value)
+            autonomy = self._coordinator._sensors.get("autonomy")
+            if value > 90 and autonomy is not None and autonomy == 0:
+                # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/476
+                value = 0
+
         if isinstance(value, str):
             value = value.lower()
 

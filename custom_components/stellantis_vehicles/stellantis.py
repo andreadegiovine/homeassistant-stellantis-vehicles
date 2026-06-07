@@ -226,7 +226,8 @@ class StellantisBase:
                     result = {}
                 elif str(resp.status) == "500" and result.get("code", None) == "50000":
                     # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
-                    raise ConfigEntryAuthFailed(error)
+                    # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
+                    raise ComunicationError(error)
                 elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
                     # Token expiration
                     raise ConfigEntryAuthFailed(error)
