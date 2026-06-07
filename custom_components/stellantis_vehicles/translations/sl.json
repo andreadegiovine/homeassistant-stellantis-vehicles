@@ -3,361 +3,323 @@
     "step": {
       "user": {
         "data": {
-          "mobile_app": "Vehicle mobile app"
+          "mobile_app": "Mobilna aplikacija vozila"
         }
       },
       "country": {
         "data": {
-          "country_code": "Your country code"
+          "country_code": "Koda vaše države"
         }
       },
       "oauth_mode": {
-        "description": "To authenticate your account, a remote service is used that does not store your credentials in any way, alternatively you can use the manual method",
+        "description": "Za preverjanje pristnosti vašega računa se uporablja oddaljena storitev, ki vaših poverilnic na noben način ne shranjuje; alternativno lahko uporabite ročni način",
         "data": {
-          "oauth_manual_mode": "Use the manual method"
+          "oauth_manual_mode": "Uporabi ročni način"
         }
       },
       "oauth_remote": {
-        "description": "This [remote service]({oauth_remote_link}) is used to simulate browser login on the official website",
+        "description": "Ta [oddaljena storitev]({oauth_remote_link}) se uporablja za simulacijo prijave v brskalniku na uradni strani",
         "data": {
-          "email": "Email",
-          "password": "Password"
+          "email": "E-pošta",
+          "password": "Geslo"
         }
       },
       "oauth_manual": {
-        "description": "Follow this steps from **desktop browser**:\n\n1. go to {oauth_link} login page;\n2. open the browser **DevTools** (F12) and go to **Network** tab;\n3. login to your account and click the last confirm button;\n4. from **Network** tab find above request and copy the **{oauth_label}**;{oauth_devtools}",
+        "description": "Sledite tem korakom v **namiznem brskalniku**:\\n\\n1. pojdite na prijavno stran {oauth_link};\\n2. odprite **DevTools** (F12) in pojdite na zavihek **Network**;\\n3. prijavite se v svoj račun in kliknite zadnji potrditveni gumb;\\n4. v zavihku **Network** poiščite zgornjo zahtevo in kopirajte **{oauth_label}**;{oauth_devtools}",
         "data": {
-          "oauth_code": "OAuth code"
+          "oauth_code": "OAuth koda"
         }
       },
       "get_access_token": {
-        "description": "**Authentication completed**.\nTo use remote commands, check the option below and complete the OTP step",
+        "description": "**Preverjanje pristnosti uspešno zaključeno**.\\nZa uporabo oddaljenih ukazov označite spodnjo možnost in zaključite OTP korak",
         "data": {
-          "remote_commands": "Configure remote commands (E-remote or Connect Plus required)"
+          "remote_commands": "Nastavi oddaljene ukaze (zahteva E-remote ali Connect Plus)"
         }
       },
       "otp": {
         "data": {
-          "sms_code": "SMS code from Stellantis",
-          "pin_code": "Pin code from vehicle mobile app"
+          "sms_code": "SMS koda od Stellantis",
+          "pin_code": "PIN koda iz mobilne aplikacije vozila"
         }
       },
       "options": {
         "data": {
-          "notifications": "Enable persistent notifications",
-          "anonymize_logs": "Anonymize personal data on logs"
+          "notifications": "Omogoči trajna obvestila",
+          "anonymize_logs": "Anonimiziraj osebne podatke v dnevnikih"
         }
       },
       "reauth_confirm": {
-        "description": "You need to re-authenticate to use this integration"
+        "description": "Za uporabo te integracije se morate ponovno prijaviti"
       },
       "reconfigure": {
         "data": {
-          "reconfigure": "Reconfigure"
+          "reconfigure": "Ponovno konfiguriraj"
         }
       }
     },
     "error": {
-      "get_oauth_code": "Get oauth code error",
-      "get_access_token": "Get access token error",
-      "get_user_info": "Get user info error",
-      "missing_user_info": "Missing user info error",
-      "get_otp_sms": "Get OTP sms error",
-      "get_mqtt_access_token": "Get mqtt access token error",
-      "get_mqtt_access_token_nok_access": "Invalid SMS code or Pin code",
-      "get_mqtt_access_token_nok_maxnbtools": "Limit of associated devices / SMS received, reset your Stellantis account and try again",
-      "get_mqtt_access_token_nok_nok_blocked": "Limit of wrong PIN used, restart the configuration process",
-      "get_mqtt_access_token_rate_limit": "Rate limit of mqtt access token request exceeded (6 per day)"
+      "get_oauth_code": "Napaka pri pridobivanju OAuth kode",
+      "get_access_token": "Napaka pri pridobivanju dostopnega žetona",
+      "get_user_info": "Napaka pri pridobivanju uporabniških podatkov",
+      "missing_user_info": "Manjkajo uporabniški podatki",
+      "get_otp_sms": "Napaka pri pridobivanju OTP SMS",
+      "get_mqtt_access_token": "Napaka pri pridobivanju MQTT dostopnega žetona",
+      "get_mqtt_access_token_nok_access": "Neveljavna SMS koda ali PIN koda",
+      "get_mqtt_access_token_nok_maxnbtools": "Preseženo število povezanih naprav / prejetih SMS-ov, ponastavite Stellantis račun in poskusite znova",
+      "get_mqtt_access_token_nok_nok_blocked": "Preveč napačnih PIN-ov, ponovno zaženite postopek konfiguracije",
+      "get_mqtt_access_token_rate_limit": "Presežena omejitev zahtev za MQTT žeton (6 na dan)"
     },
     "abort": {
-      "already_configured": "Account is already configured",
-      "reauth_successful": "Re-authentication was successful",
-      "reconfigure_successful": "Configuration was successful"
+      "already_configured": "Račun je že konfiguriran",
+      "reauth_successful": "Ponovna prijava uspešna",
+      "reconfigure_successful": "Konfiguracija uspešna"
     }
   },
   "entity": {
     "sensor": {
       "service_battery_voltage": {
-        "name": "Service battery"
+        "name": "Servisna baterija"
       },
       "type": {
-        "name": "Type",
+        "name": "Tip",
         "state": {
-          "electric": "Electric",
-          "hybrid": "Hybrid",
-          "thermic": "Thermic",
-          "hydrogen": "Hydrogen"
+          "electric": "Električno",
+          "hybrid": "Hibridno",
+          "thermic": "Termično",
+          "hydrogen": "Vodik"
         }
       },
       "temperature": {
-        "name": "Temperature"
+        "name": "Temperatura"
       },
       "mileage": {
-        "name": "Mileage",
+        "name": "Kilometrina",
         "state_attributes": {
           "last_updated": {
-            "name": "Last updated"
+            "name": "Zadnja posodobitev"
           }
         }
       },
       "speed": {
-        "name": "Speed"
+        "name": "Hitrost"
       },
       "autonomy": {
-        "name": "Autonomy"
+        "name": "Doseg"
       },
       "battery": {
-        "name": "Battery"
+        "name": "Baterija"
       },
       "battery_soh": {
-        "name": "Battery SOH"
+        "name": "SOH baterije"
       },
       "battery_charging_rate": {
-        "name": "Battery charging rate"
+        "name": "Hitrost polnjenja baterije"
       },
       "battery_charging_type": {
-        "name": "Battery charging type",
+        "name": "Vrsta polnjenja baterije",
         "state": {
-          "no": "No",
-          "slow": "Slow",
-          "quick": "Fast"
+          "no": "Ne",
+          "slow": "Počasno",
+          "quick": "Hitro"
         }
       },
       "battery_charging_end": {
-        "name": "Battery charging end"
+        "name": "Konec polnjenja baterije"
       },
       "battery_capacity": {
-        "name": "Battery capacity"
+        "name": "Kapaciteta baterije"
       },
       "battery_residual": {
-        "name": "Battery residual"
+        "name": "Preostanek baterije"
       },
       "command_status": {
-        "name": "Command status",
+        "name": "Status ukaza",
         "state": {
-          "rate_limit": "Rate limit exceeded (6 per 20 minutes)",
-          "not_compatible": "Not compatible",
-          "failed": "Failed",
-          "900": "Accepted",
-          "901": "Vehicle as sleep",
-          "903": "Forwarded",
-          "0": "Complete",
-          "300": "Canceled",
-          "500": "Error",
-          "502": "Duplicate",
-          "422": "Privacy enabled"
+          "rate_limit": "Omejitev zahtev presežena (6 na 20 minut)",
+          "not_compatible": "Ni združljivo",
+          "failed": "Neuspešno",
+          "900": "Sprejeto",
+          "901": "Vozilo spi",
+          "903": "Posredovano",
+          "0": "Zaključeno",
+          "300": "Preklicano",
+          "500": "Napaka",
+          "502": "Podvojeno",
+          "422": "Zasebnost omogočena"
         }
       },
       "fuel": {
-        "name": "Fuel"
+        "name": "Gorivo"
       },
       "fuel_autonomy": {
-        "name": "Fuel autonomy"
+        "name": "Doseg z gorivom"
       },
       "fuel_consumption_total": {
-        "name": "Fuel consumption total"
+        "name": "Skupna poraba goriva"
       },
       "fuel_consumption_instant": {
-        "name": "Fuel consumption instant"
+        "name": "Trenutna poraba goriva"
       },
       "coolant_temperature": {
-        "name": "Coolant temperature"
+        "name": "Temperatura hladilne tekočine"
       },
       "oil_temperature": {
-        "name": "Oil temperature"
+        "name": "Temperatura olja"
       },
       "air_temperature": {
-        "name": "Air temperature"
+        "name": "Temperatura zraka"
       },
       "last_trip": {
-        "name": "Last trip",
+        "name": "Zadnja vožnja",
         "state_attributes": {
           "duration": {
-            "name": "Duration"
+            "name": "Trajanje"
           },
           "start_mileage": {
-            "name": "Start mileage"
+            "name": "Začetna kilometrina"
           },
           "avg_speed": {
-            "name": "Average speed"
+            "name": "Povprečna hitrost"
           },
           "max_speed": {
-            "name": "Max speed"
+            "name": "Največja hitrost"
           },
           "electric_consumption": {
-            "name": "Electric consumption"
+            "name": "Poraba elektrike"
           },
           "electric_avg_consumption": {
-            "name": "Electric average consumption"
+            "name": "Povprečna poraba elektrike"
           },
           "fuel_consumption": {
-            "name": "Fuel consumption"
+            "name": "Poraba goriva"
           },
           "fuel_avg_consumption": {
-            "name": "Fuel average consumption"
+            "name": "Povprečna poraba goriva"
           }
         }
       },
       "last_charge": {
-        "name": "Last charge",
+        "name": "Zadnje polnjenje",
         "state_attributes": {
           "in_progress": {
-            "name": "In progress",
+            "name": "V teku",
             "state": {
-              "true": "Yes"
+              "true": "Da"
             }
           },
           "initial_percentage": {
-            "name": "Initial percentage"
+            "name": "Začetni odstotek"
           },
           "initial_energy": {
-            "name": "Initial energy"
+            "name": "Začetna energija"
           },
           "initial_autonomy": {
-            "name": "Initial autonomy"
+            "name": "Začetni doseg"
           },
           "final_time": {
-            "name": "Final time"
+            "name": "Končni čas"
           },
           "final_percentage": {
-            "name": "Final percentage"
+            "name": "Končni odstotek"
           },
           "final_energy": {
-            "name": "Final energy"
+            "name": "Končna energija"
           },
           "final_autonomy": {
-            "name": "Final autonomy"
+            "name": "Končni doseg"
           },
           "duration": {
-            "name": "Duration"
+            "name": "Trajanje"
           },
           "recharged_percent": {
-            "name": "Recharged percent"
+            "name": "Napolnjeni odstotek"
           },
           "recharged_energy": {
-            "name": "Recharged energy"
+            "name": "Napolnjena energija"
           },
           "recharged_autonomy": {
-            "name": "Recharged autonomy"
+            "name": "Pridobljen doseg"
           },
           "avg_power": {
-            "name": "Average power"
+            "name": "Povprečna moč"
           }
         }
       }
     },
     "binary_sensor": {
-      "moving": {
-        "name": "Moving"
-      },
-      "doors": {
-        "name": "Doors"
-      },
-      "battery_plugged": {
-        "name": "Battery plugged"
-      },
-      "battery_charging": {
-        "name": "Battery charging"
-      },
-      "engine": {
-        "name": "Engine"
-      },
-      "preconditioning": {
-        "name": "Preconditioning"
-      },
-      "alarm": {
-        "name": "Alarm"
-      },
-      "privacy": {
-        "name": "Privacy"
-      },
-      "remote_commands": {
-        "name": "Remote commands"
-      },
-      "daylight": {
-        "name": "Daylight"
-      }
+      "moving": { "name": "Premikanje" },
+      "doors": { "name": "Vrata" },
+      "battery_plugged": { "name": "Baterija priklopljena" },
+      "battery_charging": { "name": "Polnjenje baterije" },
+      "engine": { "name": "Motor" },
+      "preconditioning": { "name": "Priprava (predkondicioniranje)" },
+      "alarm": { "name": "Alarm" },
+      "privacy": { "name": "Zasebnost" },
+      "remote_commands": { "name": "Oddaljeni ukazi" },
+      "daylight": { "name": "Dnevna svetloba" }
     },
     "button": {
-      "wakeup": {
-        "name": "WakeUp"
-      },
-      "doors_lock": {
-        "name": "Doors lock"
-      },
-      "doors_unlock": {
-        "name": "Doors unlock"
-      },
-      "horn": {
-        "name": "Horn"
-      },
-      "lights": {
-        "name": "Lights"
-      },
-      "charge_start": {
-        "name": "Charge start"
-      },
-      "charge_stop": {
-        "name": "Charge stop"
-      },
-      "preconditioning_start": {
-        "name": "Preconditioning start"
-      },
-      "preconditioning_stop": {
-        "name": "Preconditioning stop"
-      }
+      "wakeup": { "name": "Zbudi vozilo" },
+      "doors_lock": { "name": "Zakleni vrata" },
+      "doors_unlock": { "name": "Odkleni vrata" },
+      "horn": { "name": "Hupa" },
+      "lights": { "name": "Luči" },
+      "charge_start": { "name": "Začni polnjenje" },
+      "charge_stop": { "name": "Ustavi polnjenje" },
+      "preconditioning_start": { "name": "Začni pripravo" },
+      "preconditioning_stop": { "name": "Ustavi pripravo" }
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Vehicle"
+        "name": "Vozilo"
       }
     },
     "number": {
       "battery_charging_limit": {
-        "name": "Battery charging limit"
+        "name": "Omejitev polnjenja baterije"
       },
       "refresh_interval": {
-        "name": "Refresh data interval"
+        "name": "Interval osveževanja podatkov"
       }
     },
     "switch": {
       "battery_charging_limit": {
-        "name": "Battery charging limit"
+        "name": "Omejitev polnjenja baterije"
       },
       "abrp_sync": {
-        "name": "ABRP sync"
+        "name": "ABRP sinhronizacija"
       },
       "battery_values_correction": {
-        "name": "Battery values correction"
+        "name": "Popravek vrednosti baterije"
       }
     },
     "text": {
       "abrp_token": {
-        "name": "ABRP token"
+        "name": "ABRP žeton"
       }
     },
     "time": {
       "battery_charging_start": {
-        "name": "Battery charging start"
+        "name": "Začetek polnjenja baterije"
       }
     }
   },
   "common": {
-    "access_token_error_title": "Access token error",
-    "access_token_error_message": "Check out the official documentation in the [OAuth2 Code]({oauth_token_doc_link}) section",
-    "otp_error_title": "OTP error",
-    "otp_error_message": "Check out the official documentation in the [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link}) section",
-    "no_vehicles_found_title": "Unavailable",
-    "no_vehicles_found_message": "No connected vehicles available on this account",
-    "command_error_title": "Command",
-    "command_error_message": "The command was not sent correctly"
+    "access_token_error_title": "Napaka dostopnega žetona",
+    "access_token_error_message": "Preverite uradno dokumentacijo v razdelku [OAuth2 koda]({oauth_token_doc_link})",
+    "otp_error_title": "Napaka OTP",
+    "otp_error_message": "Preverite uradno dokumentacijo v razdelku [OTP napaka - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link})",
+    "no_vehicles_found_title": "Ni na voljo",
+    "no_vehicles_found_message": "Na tem računu ni povezanih vozil",
+    "command_error_title": "Ukaz",
+    "command_error_message": "Ukaz ni bil pravilno poslan"
   },
   "selector": {
     "reconfigure": {
       "options": {
-        "oauth": "Re-authenticate your account",
-        "remote_commands": "Configure remote commands (E-remote or Connect Plus required)",
-        "options": "Global preferences"
+        "oauth": "Ponovno preveri pristnost računa",
+        "remote_commands": "Nastavi oddaljene ukaze (zahteva E-remote ali Connect Plus)",
+        "options": "Splošne nastavitve"
       }
     }
   }
