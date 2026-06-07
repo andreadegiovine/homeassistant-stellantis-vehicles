@@ -1,0 +1,364 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "mobile_app": "Vehicle mobile app"
+        }
+      },
+      "country": {
+        "data": {
+          "country_code": "Your country code"
+        }
+      },
+      "oauth_mode": {
+        "description": "To authenticate your account, a remote service is used that does not store your credentials in any way, alternatively you can use the manual method",
+        "data": {
+          "oauth_manual_mode": "Use the manual method"
+        }
+      },
+      "oauth_remote": {
+        "description": "This [remote service]({oauth_remote_link}) is used to simulate browser login on the official website",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "oauth_manual": {
+        "description": "Follow this steps from **desktop browser**:\n\n1. go to {oauth_link} login page;\n2. open the browser **DevTools** (F12) and go to **Network** tab;\n3. login to your account and click the last confirm button;\n4. from **Network** tab find above request and copy the **{oauth_label}**;{oauth_devtools}",
+        "data": {
+          "oauth_code": "OAuth code"
+        }
+      },
+      "get_access_token": {
+        "description": "**Authentication completed**.\nTo use remote commands, check the option below and complete the OTP step",
+        "data": {
+          "remote_commands": "Configure remote commands (E-remote or Connect Plus required)"
+        }
+      },
+      "otp": {
+        "data": {
+          "sms_code": "SMS code from Stellantis",
+          "pin_code": "Pin code from vehicle mobile app"
+        }
+      },
+      "options": {
+        "data": {
+          "notifications": "Enable persistent notifications",
+          "anonymize_logs": "Anonymize personal data on logs"
+        }
+      },
+      "reauth_confirm": {
+        "description": "You need to re-authenticate to use this integration"
+      },
+      "reconfigure": {
+        "data": {
+          "reconfigure": "Reconfigure"
+        }
+      }
+    },
+    "error": {
+      "get_oauth_code": "Get oauth code error",
+      "get_access_token": "Get access token error",
+      "get_user_info": "Get user info error",
+      "missing_user_info": "Missing user info error",
+      "get_otp_sms": "Get OTP sms error",
+      "get_mqtt_access_token": "Get mqtt access token error",
+      "get_mqtt_access_token_nok_access": "Invalid SMS code or Pin code",
+      "get_mqtt_access_token_nok_maxnbtools": "Limit of associated devices / SMS received, reset your Stellantis account and try again",
+      "get_mqtt_access_token_nok_nok_blocked": "Limit of wrong PIN used, restart the configuration process",
+      "get_mqtt_access_token_rate_limit": "Rate limit of mqtt access token request exceeded (6 per day)"
+    },
+    "abort": {
+      "already_configured": "Account is already configured",
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Configuration was successful"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "service_battery_voltage": {
+        "name": "Service battery"
+      },
+      "type": {
+        "name": "Type",
+        "state": {
+          "electric": "Electric",
+          "hybrid": "Hybrid",
+          "thermic": "Thermic",
+          "hydrogen": "Hydrogen"
+        }
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "mileage": {
+        "name": "Mileage",
+        "state_attributes": {
+          "last_updated": {
+            "name": "Last updated"
+          }
+        }
+      },
+      "speed": {
+        "name": "Speed"
+      },
+      "autonomy": {
+        "name": "Autonomy"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "battery_soh": {
+        "name": "Battery SOH"
+      },
+      "battery_charging_rate": {
+        "name": "Battery charging rate"
+      },
+      "battery_charging_type": {
+        "name": "Battery charging type",
+        "state": {
+          "no": "No",
+          "slow": "Slow",
+          "quick": "Fast"
+        }
+      },
+      "battery_charging_end": {
+        "name": "Battery charging end"
+      },
+      "battery_capacity": {
+        "name": "Battery capacity"
+      },
+      "battery_residual": {
+        "name": "Battery residual"
+      },
+      "command_status": {
+        "name": "Command status",
+        "state": {
+          "rate_limit": "Rate limit exceeded (6 per 20 minutes)",
+          "not_compatible": "Not compatible",
+          "failed": "Failed",
+          "900": "Accepted",
+          "901": "Vehicle as sleep",
+          "903": "Forwarded",
+          "0": "Complete",
+          "300": "Canceled",
+          "500": "Error",
+          "502": "Duplicate",
+          "422": "Privacy enabled"
+        }
+      },
+      "fuel": {
+        "name": "Fuel"
+      },
+      "fuel_autonomy": {
+        "name": "Fuel autonomy"
+      },
+      "fuel_consumption_total": {
+        "name": "Fuel consumption total"
+      },
+      "fuel_consumption_instant": {
+        "name": "Fuel consumption instant"
+      },
+      "coolant_temperature": {
+        "name": "Coolant temperature"
+      },
+      "oil_temperature": {
+        "name": "Oil temperature"
+      },
+      "air_temperature": {
+        "name": "Air temperature"
+      },
+      "last_trip": {
+        "name": "Last trip",
+        "state_attributes": {
+          "duration": {
+            "name": "Duration"
+          },
+          "start_mileage": {
+            "name": "Start mileage"
+          },
+          "avg_speed": {
+            "name": "Average speed"
+          },
+          "max_speed": {
+            "name": "Max speed"
+          },
+          "electric_consumption": {
+            "name": "Electric consumption"
+          },
+          "electric_avg_consumption": {
+            "name": "Electric average consumption"
+          },
+          "fuel_consumption": {
+            "name": "Fuel consumption"
+          },
+          "fuel_avg_consumption": {
+            "name": "Fuel average consumption"
+          }
+        }
+      },
+      "last_charge": {
+        "name": "Last charge",
+        "state_attributes": {
+          "in_progress": {
+            "name": "In progress",
+            "state": {
+              "true": "Yes"
+            }
+          },
+          "initial_percentage": {
+            "name": "Initial percentage"
+          },
+          "initial_energy": {
+            "name": "Initial energy"
+          },
+          "initial_autonomy": {
+            "name": "Initial autonomy"
+          },
+          "final_time": {
+            "name": "Final time"
+          },
+          "final_percentage": {
+            "name": "Final percentage"
+          },
+          "final_energy": {
+            "name": "Final energy"
+          },
+          "final_autonomy": {
+            "name": "Final autonomy"
+          },
+          "duration": {
+            "name": "Duration"
+          },
+          "recharged_percent": {
+            "name": "Recharged percent"
+          },
+          "recharged_energy": {
+            "name": "Recharged energy"
+          },
+          "recharged_autonomy": {
+            "name": "Recharged autonomy"
+          },
+          "avg_power": {
+            "name": "Average power"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "moving": {
+        "name": "Moving"
+      },
+      "doors": {
+        "name": "Doors"
+      },
+      "battery_plugged": {
+        "name": "Battery plugged"
+      },
+      "battery_charging": {
+        "name": "Battery charging"
+      },
+      "engine": {
+        "name": "Engine"
+      },
+      "preconditioning": {
+        "name": "Preconditioning"
+      },
+      "alarm": {
+        "name": "Alarm"
+      },
+      "privacy": {
+        "name": "Privacy"
+      },
+      "remote_commands": {
+        "name": "Remote commands"
+      },
+      "daylight": {
+        "name": "Daylight"
+      }
+    },
+    "button": {
+      "wakeup": {
+        "name": "WakeUp"
+      },
+      "doors_lock": {
+        "name": "Doors lock"
+      },
+      "doors_unlock": {
+        "name": "Doors unlock"
+      },
+      "horn": {
+        "name": "Horn"
+      },
+      "lights": {
+        "name": "Lights"
+      },
+      "charge_start": {
+        "name": "Charge start"
+      },
+      "charge_stop": {
+        "name": "Charge stop"
+      },
+      "preconditioning_start": {
+        "name": "Preconditioning start"
+      },
+      "preconditioning_stop": {
+        "name": "Preconditioning stop"
+      }
+    },
+    "device_tracker": {
+      "vehicle": {
+        "name": "Vehicle"
+      }
+    },
+    "number": {
+      "battery_charging_limit": {
+        "name": "Battery charging limit"
+      },
+      "refresh_interval": {
+        "name": "Refresh data interval"
+      }
+    },
+    "switch": {
+      "battery_charging_limit": {
+        "name": "Battery charging limit"
+      },
+      "abrp_sync": {
+        "name": "ABRP sync"
+      },
+      "battery_values_correction": {
+        "name": "Battery values correction"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "ABRP token"
+      }
+    },
+    "time": {
+      "battery_charging_start": {
+        "name": "Battery charging start"
+      }
+    }
+  },
+  "common": {
+    "access_token_error_title": "Access token error",
+    "access_token_error_message": "Check out the official documentation in the [OAuth2 Code]({oauth_token_doc_link}) section",
+    "otp_error_title": "OTP error",
+    "otp_error_message": "Check out the official documentation in the [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link}) section",
+    "no_vehicles_found_title": "Unavailable",
+    "no_vehicles_found_message": "No connected vehicles available on this account",
+    "command_error_title": "Command",
+    "command_error_message": "The command was not sent correctly"
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "Re-authenticate your account",
+        "remote_commands": "Configure remote commands (E-remote or Connect Plus required)",
+        "options": "Global preferences"
+      }
+    }
+  }
+}
