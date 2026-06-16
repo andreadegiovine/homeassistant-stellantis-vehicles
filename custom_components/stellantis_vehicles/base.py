@@ -57,7 +57,19 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug(self._config)
         try:
             # Vehicle status
-            self._data = await self._stellantis.get_vehicle_status(self._vehicle)
+            new_data = await self._stellantis.get_vehicle_status(self._vehicle)
+            if "createdAt" in new_data:
+                if "createdAt" in self._data:
+                    old_data_time = datetime.fromisoformat(self._data["createdAt"])
+                    new_data_time = datetime.fromisoformat(new_data["createdAt"])
+                    if new_data_time > old_data_time:
+                        self._data = new_data
+                    elif new_data_time < old_data_time:
+                        _LOGGER.warning("Discarded stale data set - received 'createdAt' too old:")
+                        _LOGGER.warning(f"  self._data['createdAt']: {old_data_time}")
+                        _LOGGER.warning(f"    new_data['createdAt']: {new_data_time})")
+                else:
+                    self._data = new_data
         except ConfigEntryAuthFailed:
             _LOGGER.debug("---------- END _async_update_data")
             raise
