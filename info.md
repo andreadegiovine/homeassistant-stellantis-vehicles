@@ -1,5 +1,5 @@
 # HomeAssistant - Stellantis Vehicles
-[![Active installations](https://img.shields.io/badge/active_installations-5472-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Active installations](https://img.shields.io/badge/active_installations-5610-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
 [![Last version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=last%20version&color=green)](#)
 
 - [Requirements](#requirements)
@@ -291,9 +291,9 @@ Somebody
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Somebody  
 Someone  
 Giuliano  
-guimi  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
