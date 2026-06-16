@@ -476,7 +476,7 @@ class StellantisVehicles(StellantisOauth):
         if vin in self._coordinator_dict:
             return self._coordinator_dict[vin]
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "entity", {DOMAIN})
-        coordinator = StellantisVehicleCoordinator(self._hass, self._config, vehicle, self, translations)
+        coordinator = StellantisVehicleCoordinator(self._hass, self._config, vehicle, self, translations, config_entry=self._entry)
         self._coordinator_dict[vin] = coordinator
         return coordinator
 
