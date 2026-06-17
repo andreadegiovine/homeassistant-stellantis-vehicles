@@ -63,11 +63,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     old_data_time = datetime.fromisoformat(self._data["createdAt"])
                     new_data_time = datetime.fromisoformat(new_data["createdAt"])
                     if new_data_time > old_data_time:
+                        # Only accept new data sets that are actually newer than the last one
                         self._data = new_data
                     elif new_data_time < old_data_time:
-                        _LOGGER.warning("Discarded stale data set - received 'createdAt' too old:")
-                        _LOGGER.warning(f"  self._data['createdAt']: {old_data_time}")
-                        _LOGGER.warning(f"    new_data['createdAt']: {new_data_time})")
+                        # If the received data set is actually older, log a warning
+                        _LOGGER.warning(f"Discarded stale data set - new 'createdAt' too old: self._data: {old_data_time}, new_data: {new_data_time})")
                 else:
                     self._data = new_data
         except ConfigEntryAuthFailed:
