@@ -55,6 +55,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("---------- START _async_update_data")
         _LOGGER.debug(self._config)
+        accepted_new_data = False
         try:
             # Vehicle status
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
@@ -65,6 +66,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     if new_data_time > old_data_time:
                         # Only accept new data sets that are actually newer than the last one
                         self._data = new_data
+                        accepted_new_data = True
                     elif new_data_time < old_data_time:
                         # If the received data set is actually older, log a warning
                         _LOGGER.warning(f"Discarded stale data set - new 'createdAt' too old: self._data: {old_data_time}, new_data: {new_data_time})")
@@ -75,7 +77,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             raise
         except Exception:
             pass
-        await self.after_async_update_data()
+        if accepted_new_data:
+            await self.after_async_update_data()
         _LOGGER.debug("---------- END _async_update_data")
 
     def get_translation(self, path, default = None):
