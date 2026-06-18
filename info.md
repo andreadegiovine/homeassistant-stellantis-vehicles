@@ -1,5 +1,5 @@
 # HomeAssistant - Stellantis Vehicles
-[![Active installations](https://img.shields.io/badge/active_installations-5696-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Active installations](https://img.shields.io/badge/active_installations-5770-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
 [![Last version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=last%20version&color=green)](#)
 
 - [Requirements](#requirements)
@@ -279,9 +279,9 @@ Phil S
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
+Someone  
 Mark  
 Somebody  
-Someone  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
