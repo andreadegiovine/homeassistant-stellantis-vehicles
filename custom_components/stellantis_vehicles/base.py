@@ -69,7 +69,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                         accepted_new_data = True
                     elif new_data_time < old_data_time:
                         # If the received data set is actually older, log a warning
-                        _LOGGER.warning(f"Discarded stale data set - new 'createdAt' too old: self._data: {old_data_time}, new_data: {new_data_time})")
+                        _LOGGER.warning(f"Discarded stale data set - new 'createdAt' too old: self._data: {old_data_time}, new_data: {new_data_time}")
                 else:
                     self._data = new_data
                     accepted_new_data = True
