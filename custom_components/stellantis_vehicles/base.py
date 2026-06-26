@@ -57,7 +57,19 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         _LOGGER.debug(self._config)
         try:
             # Vehicle status
-            self._data = await self._stellantis.get_vehicle_status(self._vehicle)
+            new_data = await self._stellantis.get_vehicle_status(self._vehicle)
+            if "createdAt" in new_data and "createdAt" in self._data:
+                try:
+                    current_dt = datetime.fromisoformat(self._data["createdAt"])
+                    new_dt = datetime.fromisoformat(new_data["createdAt"])
+                except ValueError:
+                    _LOGGER.debug("Invalid createdAt values, proceeding with update without timestamp comparison")
+                else:
+                    if new_dt <= current_dt:
+                        _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
+                        _LOGGER.debug("---------- END _async_update_data")
+                        return
+            self._data = new_data
         except ConfigEntryAuthFailed:
             _LOGGER.debug("---------- END _async_update_data")
             raise
