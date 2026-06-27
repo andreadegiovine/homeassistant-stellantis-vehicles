@@ -32,8 +32,8 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations) -> None:
-        super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
+    def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations, config_entry) -> None:
+        super().__init__(hass, _LOGGER, config_entry=config_entry, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
         self._translations = translations
