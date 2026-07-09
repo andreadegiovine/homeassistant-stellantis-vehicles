@@ -290,7 +290,8 @@ class StellantisVehicleCard extends LitElement {
             "sensor_battery",
             "binary_sensor_battery_plugged",
             "binary_sensor_battery_charging",
-            "sensor_battery_soh"
+            "sensor_battery_health_resistance",
+            "sensor_battery_health_capacity"
         ];
         if (this._config[SELECTOR_KEY_HEADER] && this._config[SELECTOR_KEY_HEADER].length > 0) {
             defaults = false;
