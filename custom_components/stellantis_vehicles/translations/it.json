@@ -109,8 +109,11 @@
       "battery": {
         "name": "Batteria"
       },
-      "battery_soh": {
-        "name": "Batteria SOH"
+      "battery_health_resistance": {
+        "name": "SOH resistenza batteria"
+      },
+      "battery_health_capacity": {
+        "name": "SOH capacità batteria"
       },
       "battery_charging_rate": {
         "name": "Velocità ricarica batteria"

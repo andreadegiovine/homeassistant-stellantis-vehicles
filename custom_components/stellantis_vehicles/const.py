@@ -180,11 +180,19 @@ SENSORS_DEFAULT = {
         "updated_at_map" : ["energy", {"type":"Electric"}, "updatedAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
-    "battery_soh" : {
+    "battery_health_resistance" : {
         "icon" : "mdi:battery-heart-variant",
         "unit_of_measurement" : PERCENTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
         "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "battery", "health", "resistance"],
+        "updated_at_map" : ["energy", {"type":"Electric"}, "updatedAt"],
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
+    },
+    "battery_health_capacity" : {
+        "icon" : "mdi:battery-heart-variant",
+        "unit_of_measurement" : PERCENTAGE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "battery", "health", "capacity"],
         "updated_at_map" : ["energy", {"type":"Electric"}, "updatedAt"],
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },

@@ -221,8 +221,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
         if self._sensors.get("battery_charging_type") is not None:
             tlm["is_dcfc"] = tlm["is_charging"] and self._sensors.get("battery_charging_type") == "Quick"
-        if self._sensors.get("battery_soh") is not None:
-            tlm["soh"] = float(self._sensors.get("battery_soh"))
+        if self._sensors.get("battery_health_resistance") is not None:
+            tlm["soh"] = float(self._sensors.get("battery_health_resistance"))
+        if self._sensors.get("battery_health_capacity") is not None:
+            tlm["soh"] = float(self._sensors.get("battery_health_capacity"))
         if self._data.get("lastPosition", {}).get("properties", {}).get("heading") is not None:
             tlm["heading"] = float(self._data.get("lastPosition").get("properties").get("heading"))
         if len(self._data.get("lastPosition", {}).get("geometry", {}).get("coordinates", [])) == 3:
@@ -366,16 +368,6 @@ class StellantisBaseEntity(CoordinatorEntity):
             "model": self._coordinator.get_translation(f"component.stellantis_vehicles.entity.sensor.type.state.{self._vehicle["type"].lower()}", self._vehicle["type"]) + " - " + self._vehicle["vin"],
             "manufacturer": self._config[FIELD_MOBILE_APP]
         }
-
-    def update_maps_for_hybrid(self):
-        """ Update value/updated_at map for hybrid vehicles. """
-        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
-#            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
-#                self._value_map[1] = 1
-#                self._updated_at_map[1] = 1
-
-            if self._key == "battery_soh":
-                self._value_map[6] = "capacity"
 
     def value_was_updated(self):
         """ Check if value was changed. """
@@ -606,8 +598,6 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
 
-        self.update_maps_for_hybrid()
-
         self._available = available
 
     @property
@@ -648,8 +638,6 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
-
-        self.update_maps_for_hybrid()
 
         self._on_value = on_value
 
