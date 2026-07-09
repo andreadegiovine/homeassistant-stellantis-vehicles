@@ -519,15 +519,6 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
         return False
 
     @property
-    def battery_level(self):
-        """ Battery level. """
-        if self._coordinator._sensors.get("battery"):
-            return int(float(self._coordinator._sensors.get("battery")))
-        elif self._coordinator._sensors.get("service_battery_voltage"):
-            return int(float(self._coordinator._sensors.get("service_battery_voltage")))
-        return None
-
-    @property
     def latitude(self):
         """ Latitude. """
         if "lastPosition" in self._coordinator._data:
