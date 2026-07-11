@@ -285,9 +285,9 @@ Mark
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
+Liam  
 Kristian  
 Dave  
-Somebody  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
