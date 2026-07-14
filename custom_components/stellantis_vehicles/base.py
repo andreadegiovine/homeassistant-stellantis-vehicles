@@ -59,19 +59,25 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             # Vehicle status
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
-            if "createdAt" in new_data and "createdAt" in self._data:
-                old_data_time = datetime.fromisoformat(self._data["createdAt"])
-                new_data_time = datetime.fromisoformat(new_data["createdAt"])
-                if new_data_time > old_data_time:
-                    # Only accept new data sets that are actually newer than the last one
+            try:
+                if "createdAt" in new_data and "createdAt" in self._data:
+                    old_data_time = datetime.fromisoformat(self._data["createdAt"])
+                    new_data_time = datetime.fromisoformat(new_data["createdAt"])
+                    if new_data_time > old_data_time:
+                        # Only accept new data sets that are actually newer than the last one
+                        self._data = new_data
+                        accepted_new_data = True
+                    elif new_data_time < old_data_time:
+                        # If the received data set is actually older, log a warning
+                        _LOGGER.debug(f"Discarded stale data set - new 'createdAt' too old: self._data: {old_data_time}, new_data: {new_data_time}")
+                else:
                     self._data = new_data
                     accepted_new_data = True
-                elif new_data_time < old_data_time:
-                    # If the received data set is actually older, log a warning
-                    _LOGGER.debug(f"Discarded stale data set - new 'createdAt' too old: self._data: {old_data_time}, new_data: {new_data_time}")
-            else:
+                    _LOGGER.debug("Accepted data set with missing 'createdAt'")
+            except ValueError:
                 self._data = new_data
                 accepted_new_data = True
+                _LOGGER.debug("Accepted data set with corrupt 'createdAt'")
         except ConfigEntryAuthFailed:
             _LOGGER.debug("---------- END _async_update_data")
             raise
