@@ -18,10 +18,11 @@
         }
       },
       "oauth_remote": {
-        "description": "This [remote service]({oauth_remote_link}) is used to simulate browser login on the official website",
+        "description": "This [remote service]({oauth_remote_link}) is used to simulate browser login on the official website. You can use the default hosted service or point to your own self-hosted deployment",
         "data": {
           "email": "Email",
-          "password": "Password"
+          "password": "Password",
+          "oauth_code_url": "Login service URL"
         }
       },
       "oauth_manual": {

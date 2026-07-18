@@ -21,6 +21,7 @@ from .const import (
     FIELD_COUNTRY_CODE,
     FIELD_OAUTH_MANUAL_MODE,
     FIELD_OAUTH_CODE,
+    FIELD_OAUTH_CODE_URL,
     FIELD_REMOTE_COMMANDS,
     FIELD_SMS_CODE,
     FIELD_PIN_CODE,
@@ -28,6 +29,7 @@ from .const import (
     FIELD_ANONYMIZE_LOGS,
     FIELD_RECONFIGURE,
     MQTT_REFRESH_TOKEN_TTL,
+    OAUTH_CODE_URL,
     TRANSLATION_PLACEHOLDERS
 )
 
@@ -50,10 +52,12 @@ OAUTH_MANUAL_SCHEMA = vol.Schema({
     vol.Required(FIELD_OAUTH_CODE): str
 })
 
-OAUTH_REMOTE_SCHEMA = vol.Schema({
-    vol.Required(CONF_EMAIL): str,
-    vol.Required(CONF_PASSWORD): str
-})
+def OAUTH_REMOTE_SCHEMA(default_oauth_code_url=None):
+    return vol.Schema({
+        vol.Required(CONF_EMAIL): str,
+        vol.Required(CONF_PASSWORD): str,
+        vol.Optional(FIELD_OAUTH_CODE_URL, default=default_oauth_code_url or OAUTH_CODE_URL): str
+    })
 
 OTP_CONFIGURE_SCHEMA = vol.Schema({
     vol.Required(FIELD_REMOTE_COMMANDS, default=False): bool
@@ -143,10 +147,10 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_oauth_remote(self, user_input=None):
         if user_input is None:
-            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA, description_placeholders=TRANSLATION_PLACEHOLDERS)
+            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA(self.data.get(FIELD_OAUTH_CODE_URL)), description_placeholders=TRANSLATION_PLACEHOLDERS)
 
         try:
-            code_request = await self.stellantis.get_oauth_code(user_input[CONF_EMAIL], user_input[CONF_PASSWORD])
+            code_request = await self.stellantis.get_oauth_code(user_input[CONF_EMAIL], user_input[CONF_PASSWORD], user_input.get(FIELD_OAUTH_CODE_URL, OAUTH_CODE_URL))
         except Exception as e:
             message = self.get_error_message("get_oauth_code", e)
             if self.source == SOURCE_RECONFIGURE:
@@ -155,6 +159,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             await self.stellantis.hass_notify("get_oauth_code")
             return await self.async_step_oauth_mode()
 
+        self.data.update({FIELD_OAUTH_CODE_URL: user_input.get(FIELD_OAUTH_CODE_URL, OAUTH_CODE_URL)})
         self.stellantis.save_config({"oauth_code": code_request["code"]})
         return await self.async_step_get_access_token()
 
@@ -310,6 +315,8 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reauth(self, entry_data):
         _LOGGER.debug("---------- START async_step_reauth")
         self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP], FIELD_COUNTRY_CODE: entry_data[FIELD_COUNTRY_CODE]})
+        if FIELD_OAUTH_CODE_URL in entry_data:
+            self.data.update({FIELD_OAUTH_CODE_URL: entry_data[FIELD_OAUTH_CODE_URL]})
         _LOGGER.debug("---------- END async_step_reauth")
         return await self.async_step_reauth_confirm()
 
