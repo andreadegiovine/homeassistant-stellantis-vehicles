@@ -279,21 +279,21 @@ Phil S
 <sub>*and other heroes*</sub>
 
 **🥉 3 BEERS**  
+Hubert  
 Someone  
 Mark  
-Somebody  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
+Liam  
 Kristian  
 Dave  
-Somebody  
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Sneopu  
+Nischi  
 Somebody  
-Someone  
-Giuliano  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
