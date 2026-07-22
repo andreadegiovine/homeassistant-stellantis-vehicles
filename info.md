@@ -269,6 +269,7 @@ Thanks to everyone for the issues, especially to:
 **The latest heroes who believe in this project** 👇
 
 **🏆 10 BEERS**  
+Rüdiger  
 Andrea Donno  
 Fabian  
 
