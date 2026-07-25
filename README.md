@@ -192,7 +192,7 @@ content:
 hide_actions: false
 actions:
   - button.#####VIN#####_wakeup
-  - button.#####VIN#####_start_charge
+  - button.#####VIN#####_charge_start
 hide_charging_limit: false
 hide_charging_start: false
 hide_map: false
