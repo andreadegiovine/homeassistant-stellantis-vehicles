@@ -1,6 +1,7 @@
 import logging
 import voluptuous as vol
 from datetime import timedelta
+from urllib.parse import urlparse, parse_qs
 from uuid import uuid4
 
 from homeassistant.config_entries import ( ConfigFlow, SOURCE_REAUTH, SOURCE_RECONFIGURE )
@@ -168,8 +169,25 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             oauth_devtools = f"\n\n>***://oauth2redirect...?code=`{oauth_label}`&scope=openid..."
             return self.async_show_form(step_id="oauth_manual", data_schema=OAUTH_MANUAL_SCHEMA, description_placeholders={"oauth_link": oauth_link, "oauth_label": oauth_label, "oauth_devtools": oauth_devtools}, errors=errors)
 
-        self.stellantis.save_config({"oauth_code": user_input[FIELD_OAUTH_CODE]})
+        self.stellantis.save_config({"oauth_code": self._extract_oauth_code(user_input[FIELD_OAUTH_CODE])})
         return await self.async_step_get_access_token()
+
+
+    @staticmethod
+    def _extract_oauth_code(raw_value):
+        """Accept either a bare code or the full (failed) redirect URL and return just the code.
+
+        The redirect after login is a custom app scheme (e.g. mymacsdk://oauth2redirect/...)
+        that browsers can't open, so users often copy the whole broken-link URL rather than
+        hand-picking the code query param out of it.
+        """
+        value = raw_value.strip()
+        if "code=" in value and ("://" in value or value.startswith("?")):
+            query = urlparse(value).query
+            code_values = parse_qs(query).get("code")
+            if code_values:
+                return code_values[0]
+        return value
 
 
     async def async_step_get_access_token(self, user_input=None):

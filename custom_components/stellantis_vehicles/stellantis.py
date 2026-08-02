@@ -295,7 +295,10 @@ class StellantisOauth(StellantisBase):
 
     async def get_oauth_code(self, email, password):
         _LOGGER.debug("---------- START get_oauth_code")
-        oauth_code_request = await self.make_http_request(OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
+        # The external worker can hang indefinitely instead of erroring, so a
+        # 300s timeout meant users waited 5 minutes to see any failure. 60s is
+        # still generous for a cold-start free-tier instance, but fails fast.
+        oauth_code_request = await self.make_http_request(OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 60)
         if "code" in oauth_code_request:
             self.logger_filter.add_custom_value(oauth_code_request["code"])
         _LOGGER.debug(oauth_code_request)
