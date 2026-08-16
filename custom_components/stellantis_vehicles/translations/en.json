@@ -142,10 +142,10 @@
           "not_compatible": "Not compatible",
           "failed": "Failed",
           "900": "Accepted",
-          "901": "Vehicle as sleep",
+          "901": "Wakeup Vehicle",
           "903": "Forwarded",
           "0": "Complete",
-          "300": "Canceled",
+          "300": "Timeout",
           "500": "Error",
           "502": "Duplicate",
           "422": "Privacy enabled"

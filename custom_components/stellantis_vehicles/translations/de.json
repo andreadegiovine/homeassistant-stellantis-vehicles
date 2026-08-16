@@ -96,12 +96,12 @@
         "state": {
           "0": "Abgeschlossen",
           "not_compatible": "Nicht kompatibel",
-          "300": "Abgebrochen",
+          "300": "Zeitüberschreitung",
           "422": "Alarmanlage aktiviert",
           "500": "Fehler",
           "502": "Doppelt",
           "900": "Akzeptiert",
-          "901": "Fahrzeug schläft",
+          "901": "Fahrzeug aufwecken",
           "903": "Weitergeleitet"
         }
       },
