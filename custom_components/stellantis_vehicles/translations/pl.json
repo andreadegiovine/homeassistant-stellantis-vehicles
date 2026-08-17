@@ -76,10 +76,10 @@
         "state": {
           "not_compatible": "Nie kompatybilne",
           "900": "Zaakceptowano",
-          "901": "Pojazd w uśpieniu",
+          "901": "Budzenie pojazdu",
           "903": "Przekazano",
           "0": "Zakończono",
-          "300": "Anulowano",
+          "300": "Przekroczono limit czasu",
           "500": "Błąd"
         }
       },

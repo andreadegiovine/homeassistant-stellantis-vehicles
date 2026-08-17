@@ -142,10 +142,10 @@
           "not_compatible": "Non compatibile",
           "failed": "Fallito",
           "900": "Accettato",
-          "901": "Il veicolo dorme",
+          "901": "Risveglio del veicolo",
           "903": "Inoltrato",
           "0": "Completato",
-          "300": "Annullato",
+          "300": "Timeout",
           "500": "Errore",
           "502": "Duplicato",
           "422": "Privacy attiva"

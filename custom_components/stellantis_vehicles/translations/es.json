@@ -139,10 +139,10 @@
           "not_compatible": "No compatible",
           "failed": "Fallido",
           "900": "Aceptado",
-          "901": "Vehículo en reposo",
+          "901": "Despertar vehículo",
           "903": "Reenviado",
           "0": "Completado",
-          "300": "Cancelado",
+          "300": "Tiempo de espera agotado",
           "500": "Error",
           "502": "Duplicado",
           "422": "Privacidad activada"
