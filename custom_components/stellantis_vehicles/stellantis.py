@@ -770,11 +770,14 @@ class StellantisVehicles(StellantisOauth):
 
     def _on_mqtt_subscribe(self, client, userdata, mid, granted_qos):
         _LOGGER.debug("---------- START _on_mqtt_subscribe")
-        for i, qos in enumerate(granted_qos):
-            if qos == 0x80:
-                _LOGGER.debug("Failed")
+        try:
+            if any(qos == 0x80 for qos in granted_qos):
+                _LOGGER.warning("Subscription failed, try to reconnect MQTT in 300 seconds")
+                self.do_async(self.connect_mqtt(), 300)
             else:
-                _LOGGER.debug(f"Completed (QoS: {qos})")
+                _LOGGER.debug(f"Completed (QoS: {granted_qos})")
+        except Exception as e:
+            _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END _on_mqtt_subscribe")
 
     def _on_mqtt_message(self, client, userdata, msg):
