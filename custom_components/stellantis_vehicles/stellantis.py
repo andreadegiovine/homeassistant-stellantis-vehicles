@@ -620,24 +620,26 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
-    async def get_vehicle_last_trip(self, vehicle, page_token=False):
+    async def get_vehicle_last_trip(self, vehicle, page_token=None):
         _LOGGER.debug("---------- START get_vehicle_last_trip")
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
-        limit_date = (get_datetime() - timedelta(days=1)).isoformat()
-        limit_date = limit_date.split(".")[0] + "+" + limit_date.split(".")[1].split("+")[1]
-        url = url + "&timestamps=" + limit_date + "/&distance=0.1-"
-        if page_token:
-            url = url + "&pageToken=" + page_token
+        limit_date = (get_datetime() - timedelta(days=1)).isoformat(timespec="seconds")
+        url += "&timestamps=" + limit_date + "/" + "&distance=0.1-" #+ "&pageSize=60"
+        if page_token is not None:
+            url += "&pageToken=" + page_token
         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(vehicle_trips_request)
-        if "total" in vehicle_trips_request and int(vehicle_trips_request["total"]) > 60 and not page_token:
-            last_page_url = vehicle_trips_request["_links"]["last"]["href"]
-            page_token = last_page_url.split("pageToken=")[1]
-            _LOGGER.debug("---------- END get_vehicle_last_trip")
-            return await self.get_vehicle_last_trip(page_token)
+        links = vehicle_trips_request.get("_links", {})
+        last_href = links.get("last", {}).get("href")
+        self_href = links.get("self", {}).get("href")
+        if last_href and last_href != self_href:
+            next_page_token = last_href.split("pageToken=")[-1]
+            if next_page_token != page_token:
+                _LOGGER.debug("---------- END get_vehicle_last_trip")
+                return await self.get_vehicle_last_trip(vehicle, next_page_token)
         _LOGGER.debug("---------- END get_vehicle_last_trip")
         return vehicle_trips_request
 
