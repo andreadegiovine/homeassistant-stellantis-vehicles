@@ -32,8 +32,8 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations) -> None:
-        super().__init__(hass, _LOGGER, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
+    def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations, config_entry) -> None:
+        super().__init__(hass, _LOGGER, config_entry=config_entry, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
 
         self._hass = hass
         self._translations = translations
@@ -55,15 +55,37 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("---------- START _async_update_data")
         _LOGGER.debug(self._config)
+        accepted_new_data = False
         try:
             # Vehicle status
-            self._data = await self._stellantis.get_vehicle_status(self._vehicle)
+            new_data = await self._stellantis.get_vehicle_status(self._vehicle)
+            try:
+                if "createdAt" in new_data and "createdAt" in self._data:
+                    old_data_time = datetime.fromisoformat(self._data["createdAt"])
+                    new_data_time = datetime.fromisoformat(new_data["createdAt"])
+                    if new_data_time > old_data_time:
+                        # Only accept new data sets that are actually newer than the last one
+                        self._data = new_data
+                        accepted_new_data = True
+                    elif new_data_time < old_data_time:
+                        # If the received data set is actually older, log a warning
+                        _LOGGER.debug(f"Discarded stale data set - new 'createdAt' too old: self._data: {old_data_time}, new_data: {new_data_time}")
+                    # Discard data sets that have the same 'createdAt' value as the last accepted data set (not new but also not old)
+                else:
+                    self._data = new_data
+                    accepted_new_data = True
+                    _LOGGER.debug("Accepted data set with missing 'createdAt'")
+            except ValueError:
+                self._data = new_data
+                accepted_new_data = True
+                _LOGGER.debug("Accepted data set with corrupt 'createdAt'")
         except ConfigEntryAuthFailed:
             _LOGGER.debug("---------- END _async_update_data")
             raise
         except Exception:
             pass
-        await self.after_async_update_data()
+        if accepted_new_data:
+            await self.after_async_update_data()
         _LOGGER.debug("---------- END _async_update_data")
 
     def get_translation(self, path, default = None):
@@ -221,8 +243,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
         if self._sensors.get("battery_charging_type") is not None:
             tlm["is_dcfc"] = tlm["is_charging"] and self._sensors.get("battery_charging_type") == "Quick"
-        if self._sensors.get("battery_soh") is not None:
-            tlm["soh"] = float(self._sensors.get("battery_soh"))
+        if self._sensors.get("battery_health_resistance") is not None:
+            tlm["soh"] = float(self._sensors.get("battery_health_resistance"))
+        if self._sensors.get("battery_health_capacity") is not None:
+            tlm["soh"] = float(self._sensors.get("battery_health_capacity"))
         if self._data.get("lastPosition", {}).get("properties", {}).get("heading") is not None:
             tlm["heading"] = float(self._data.get("lastPosition").get("properties").get("heading"))
         if len(self._data.get("lastPosition", {}).get("geometry", {}).get("coordinates", [])) == 3:
@@ -367,16 +391,6 @@ class StellantisBaseEntity(CoordinatorEntity):
             "manufacturer": self._config[FIELD_MOBILE_APP]
         }
 
-    def update_maps_for_hybrid(self):
-        """ Update value/updated_at map for hybrid vehicles. """
-        if self._coordinator.vehicle_type == VEHICLE_TYPE_HYBRID:
-#            if self._value_map[0] == "energies" and self._value_map[1] == 0 and not self._key.startswith("fuel"):
-#                self._value_map[1] = 1
-#                self._updated_at_map[1] = 1
-
-            if self._key == "battery_soh":
-                self._value_map[6] = "capacity"
-
     def value_was_updated(self):
         """ Check if value was changed. """
         current_value = self._coordinator._sensors.get(self._key)
@@ -519,15 +533,6 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
         return False
 
     @property
-    def battery_level(self):
-        """ Battery level. """
-        if self._coordinator._sensors.get("battery"):
-            return int(float(self._coordinator._sensors.get("battery")))
-        elif self._coordinator._sensors.get("service_battery_voltage"):
-            return int(float(self._coordinator._sensors.get("service_battery_voltage")))
-        return None
-
-    @property
     def latitude(self):
         """ Latitude. """
         if "lastPosition" in self._coordinator._data:
@@ -615,8 +620,6 @@ class StellantisBaseSensor(StellantisRestoreSensor):
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
 
-        self.update_maps_for_hybrid()
-
         self._available = available
 
     @property
@@ -657,8 +660,6 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 
         self._value_map = deepcopy(value_map)
         self._updated_at_map = deepcopy(updated_at_map)
-
-        self.update_maps_for_hybrid()
 
         self._on_value = on_value
 
