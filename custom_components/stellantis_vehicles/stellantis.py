@@ -268,12 +268,13 @@ class StellantisBase:
             _LOGGER.debug("---------- END make_http_request")
             raise
 
-    def do_async(self, async_func, delay=0):
+    def do_async(self, async_func, delay=0, wait=True):
         async def delayed_execution():
             if delay > 0:
                 await asyncio.sleep(delay)
             return await async_func
-        return asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop).result()
+        future = asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop)
+        return future.result() if wait else None
 
     async def hass_notify(self, translation_key):
         """Create a persistent notification."""
@@ -772,8 +773,11 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- START _on_mqtt_subscribe")
         try:
             if any(qos == 0x80 for qos in granted_qos):
-                _LOGGER.warning("Subscription failed, try to reconnect MQTT in 300 seconds")
-                self.do_async(self.connect_mqtt(), 300)
+                _LOGGER.warning("Subscription failed, will try to reconnect MQTT in 300 seconds")
+                # wait=False: this callback runs on the paho-mqtt network thread, so
+                # blocking it for 300s here would stall the loop (pings, reconnects,
+                # other callbacks)
+                self.do_async(self.connect_mqtt(), 300, wait=False)
             else:
                 _LOGGER.debug(f"Completed (QoS: {granted_qos})")
         except Exception as e:
