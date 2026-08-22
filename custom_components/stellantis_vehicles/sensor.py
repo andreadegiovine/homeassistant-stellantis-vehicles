@@ -201,7 +201,7 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
             "avg_power": UnitOfPower.KILO_WATT,
             "initial_autonomy": UnitOfLength.KILOMETERS,
             "final_autonomy": UnitOfLength.KILOMETERS,
-            "recharged_autonomy": UnitOfLength.KILOMETERS
+            "recharged_autonomy": UnitOfLength.KILOMETERS,
             "mileage": UnitOfLength.KILOMETERS
         }
 
