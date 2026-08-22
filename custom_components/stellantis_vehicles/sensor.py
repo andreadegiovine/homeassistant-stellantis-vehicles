@@ -182,10 +182,6 @@ class StellantisLastTripSensor(StellantisRestoreSensor):
 #         self._attr_extra_state_attributes = results
 
 class StellantisLastChargeSensor(StellantisRestoreSensor):
-    def __init__(self, coordinator, description) -> None:
-        super().__init__(coordinator, description)
-        self._sensor_key = self._key
-        self._wait_next_update = False
 
     def coordinator_update(self):
         in_progress = self._coordinator._sensors.get("battery_charging") == "InProgress"
@@ -234,7 +230,6 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
 
         elif prev_in_progress and not in_progress:
             # End of charging detected
-#            if self._wait_next_update: DO NOT WAIT NEXT UPDATE
             del attributes["in_progress"]
             attributes["final_time"] = get_datetime()
             attributes["final_percentage"] = round(self._coordinator._sensors.get("battery"))
@@ -253,11 +248,6 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
                 attributes["avg_power"] = round(recharged_energy / ((duration.total_seconds() / 60) / 60), 2)
             if "initial_autonomy" in attributes and "final_autonomy" in attributes:
                 attributes["recharged_autonomy"] = round(float(attributes["final_autonomy"]) - float(attributes["initial_autonomy"]))
-
-# Previous wait_next_update management failing : set to false and immediatly after set to true...
-#                self._wait_next_update = False
-
-#            self._wait_next_update = True
 
         # Restore units of measurement in attributes
         for attribute in attributes:
