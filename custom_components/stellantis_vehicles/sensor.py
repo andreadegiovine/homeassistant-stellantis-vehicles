@@ -190,6 +190,7 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
     def coordinator_update(self):
         in_progress = self._coordinator._sensors.get("battery_charging") == "InProgress"
 
+        # Add mileage attribute
         unit_of_measurement = {
             "initial_percentage": PERCENTAGE,
             "final_percentage": PERCENTAGE,
@@ -201,10 +202,12 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
             "initial_autonomy": UnitOfLength.KILOMETERS,
             "final_autonomy": UnitOfLength.KILOMETERS,
             "recharged_autonomy": UnitOfLength.KILOMETERS
+            "mileage": UnitOfLength.KILOMETERS
         }
 
         attributes = deepcopy(self._attr_extra_state_attributes)
 
+        # Remove units of measurement in attributes for being able to calculate
         for attribute in attributes:
             if attribute in unit_of_measurement:
                 attributes[attribute] = attributes[attribute].replace(f" {unit_of_measurement[attribute]}", "")
@@ -217,55 +220,56 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
             divide = divide / KWH_CORRECTION
 
         if in_progress and not prev_in_progress:
+            # Start of charging detected
             self._attr_native_value = get_datetime()
+            
+            attributes = {} # Clear all previous attributes
             attributes["in_progress"] = True
+            attributes["mileage"] = round(self._coordinator._sensors.get("mileage")) # add mileage attribute
             attributes["initial_percentage"] = round(self._coordinator._sensors.get("battery"))
             if self._coordinator._sensors.get("battery_residual"):
                 attributes["initial_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
             if self._coordinator._sensors.get("autonomy"):
                 attributes["initial_autonomy"] = self._coordinator._sensors.get("autonomy")
-            try:
-                del attributes["final_time"]
-                del attributes["final_percentage"]
-                del attributes["final_energy"]
-                del attributes["final_autonomy"]
-                del attributes["duration"]
-                del attributes["recharged_percent"]
-                del attributes["recharged_energy"]
-                del attributes["recharged_autonomy"]
-                del attributes["avg_power"]
-            except KeyError:
-                pass
+
         elif prev_in_progress and not in_progress:
-            if self._wait_next_update:
-                del attributes["in_progress"]
-                attributes["final_time"] = get_datetime()
-                attributes["final_percentage"] = round(self._coordinator._sensors.get("battery"))
-                if self._coordinator._sensors.get("battery_residual"):
-                    attributes["final_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
-                if self._coordinator._sensors.get("autonomy"):
-                    attributes["final_autonomy"] = self._coordinator._sensors.get("autonomy")
+            # End of charging detected
+#            if self._wait_next_update: DO NOT WAIT NEXT UPDATE
+            del attributes["in_progress"]
+            attributes["final_time"] = get_datetime()
+            attributes["final_percentage"] = round(self._coordinator._sensors.get("battery"))
+            if self._coordinator._sensors.get("battery_residual"):
+                attributes["final_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
+            if self._coordinator._sensors.get("autonomy"):
+                attributes["final_autonomy"] = self._coordinator._sensors.get("autonomy")
 
-                duration = get_datetime(attributes["final_time"]) - self._attr_native_value
-                attributes["duration"] = strftime("%H:%M:%S", gmtime(duration.total_seconds()))
-                
-                attributes["recharged_percent"] = round(float(attributes["final_percentage"]) - float(attributes["initial_percentage"]))
-                if "initial_energy" in attributes and "final_energy" in attributes:
-                    recharged_energy = float(attributes["final_energy"]) - float(attributes["initial_energy"])
-                    attributes["recharged_energy"] = round(recharged_energy, 2)
-                    attributes["avg_power"] = round(recharged_energy / ((duration.total_seconds() / 60) / 60), 2)
-                if "initial_autonomy" in attributes and "final_autonomy" in attributes:
-                    attributes["recharged_autonomy"] = round(float(attributes["final_autonomy"]) - float(attributes["initial_autonomy"]))
+            duration = get_datetime(attributes["final_time"]) - self._attr_native_value
+            attributes["duration"] = strftime("%H:%M:%S", gmtime(duration.total_seconds()))
+            
+            attributes["recharged_percent"] = round(float(attributes["final_percentage"]) - float(attributes["initial_percentage"]))
+            if "initial_energy" in attributes and "final_energy" in attributes:
+                recharged_energy = float(attributes["final_energy"]) - float(attributes["initial_energy"])
+                attributes["recharged_energy"] = round(recharged_energy, 2)
+                attributes["avg_power"] = round(recharged_energy / ((duration.total_seconds() / 60) / 60), 2)
+            if "initial_autonomy" in attributes and "final_autonomy" in attributes:
+                attributes["recharged_autonomy"] = round(float(attributes["final_autonomy"]) - float(attributes["initial_autonomy"]))
 
-                self._wait_next_update = False
+# Previous wait_next_update management failing : set to false and immediatly after set to true...
+#                self._wait_next_update = False
 
-            self._wait_next_update = True
+#            self._wait_next_update = True
 
+        # Restore units of measurement in attributes
         for attribute in attributes:
             if attribute in unit_of_measurement:
                 attributes[attribute] = f"{attributes[attribute]} {unit_of_measurement[attribute]}"
 
+        # Add "in_progress" attribute in ordered_keys otherwise the attribute is removed by the sort 
+        # and caused the end of charging detection to fail 
+        # Add also new attribute "mileage"
         ordered_keys = [
+            "in_progress",
+            "mileage",
             "duration",
             "final_time",
             "initial_percentage",
