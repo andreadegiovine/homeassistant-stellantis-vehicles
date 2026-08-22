@@ -42,11 +42,19 @@
           "pin_code": "Pin-Code aus der Fahrzeug App"
         }
       },
+      "options": {
+        "data": {
+          "notifications": "Persistente Benachrichtigungen aktivieren",
+          "anonymize_logs": "Persönliche Daten in Protokollen anonymisieren"
+        }
+      },
       "reauth_confirm": {
         "description": "Sie müssen sich erneut authentifizieren, um diese Integration zu verwenden"
       },
       "reconfigure": {
-        "description": "Fernbefehle konfigurieren (E-Remote oder Connect Plus erforderlich)"
+        "data": {
+          "reconfigure": "Neu konfigurieren"
+        }
       }
     },
     "error": {
@@ -101,8 +109,11 @@
       "battery": {
         "name": "Batterie"
       },
-      "battery_soh": {
-        "name": "Batterie SOH (Gesundheitszustand der Batterie)"
+      "battery_health_resistance": {
+        "name": "Batterie-SOH (Widerstand)"
+      },
+      "battery_health_capacity": {
+        "name": "Batterie-SOH (Kapazität)"
       },
       "battery_charging_rate": {
         "name": "Batterie Laderate"
@@ -343,5 +354,14 @@
     "no_vehicles_found_message": "Für dieses Konto wurden keine Fahrzeuge gefunden",
     "command_error_title": "Befehl",
     "command_error_message": "Der Befehl wurde nicht korrekt gesendet."
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "Konto erneut authentifizieren",
+        "remote_commands": "Fernbefehle konfigurieren (E-Remote oder Connect Plus erforderlich)",
+        "options": "Globale Einstellungen"
+      }
+    }
   }
 }
