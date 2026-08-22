@@ -281,11 +281,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if "switch_abrp_sync" in self._sensors and self._sensors.get("switch_abrp_sync") and "text_abrp_token" in self._sensors and len(self._sensors.get("text_abrp_token")) == 36:
                 await self.send_abrp_data()
 
-        if "engine" in self._sensors and "ignition" in self._data and "type" in self._data["ignition"]:
-            current_engine_status = self._sensors.get("engine")
-            new_engine_status = self._data["ignition"]["type"]
-            if current_engine_status != "Stop" and new_engine_status == "Stop":
-                await self.get_vehicle_last_trip()
+        current_engine_status = self._sensors.get("engine")
+        new_engine_status = self._data.get("ignition", {}).get("type")
+        if new_engine_status == "Stop" and current_engine_status not in (None, "Stop"):
+            _LOGGER.debug("Engine status changed from %s to %s, fetching last trip data", current_engine_status, new_engine_status)
+            await self.get_vehicle_last_trip()
+        else:
+            _LOGGER.debug("Engine status unchanged or not relevant for trip data fetch: %s vs %s", current_engine_status, new_engine_status)
 
         if "number_refresh_interval" in self._sensors and self._sensors.get("number_refresh_interval") > 0 and self._sensors.get("number_refresh_interval") != self._update_interval_seconds:
             self.update_interval = timedelta(seconds=self._sensors.get("number_refresh_interval"))
@@ -415,7 +417,7 @@ class StellantisBaseEntity(CoordinatorEntity):
                     if isinstance(value, list): # key is a dict and value a list
                         # Use dictionnary in map as key_field, key_value to look for in value list
                         key_field, key_value = next(iter(key.items()))
-                        # Select value in list with key_field matching to key_value 
+                        # Select value in list with key_field matching to key_value
                         value = next((item for item in value if item.get(key_field) == key_value), None)
                     else: # set value to None if key is dictionnary and value not a list
                         value = None
