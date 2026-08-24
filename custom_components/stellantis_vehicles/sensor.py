@@ -220,9 +220,9 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
             self._attr_native_value = get_datetime()          
             attributes = {} # Clear all previous attributes
             attributes["in_progress"] = True
-            if self._coordinator._sensors.get("mileage") is not None
+            if self._coordinator._sensors.get("mileage") is not None:
                 attributes["mileage"] = round(self._coordinator._sensors.get("mileage")) # add mileage attribute
-            if self._coordinator._sensors.get("battery") is not None
+            if self._coordinator._sensors.get("battery") is not None:
                 attributes["initial_percentage"] = round(self._coordinator._sensors.get("battery"))
             if self._coordinator._sensors.get("battery_residual") is not None:
                 attributes["initial_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
@@ -233,7 +233,7 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
             # End of charging detected
             del attributes["in_progress"]
             attributes["final_time"] = get_datetime()
-            if self._coordinator._sensors.get("battery") is not None
+            if self._coordinator._sensors.get("battery") is not None:
                 attributes["final_percentage"] = round(self._coordinator._sensors.get("battery"))
             if self._coordinator._sensors.get("battery_residual") is not None:
                 attributes["final_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
