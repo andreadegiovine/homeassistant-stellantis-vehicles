@@ -72,11 +72,11 @@ _LOGGER = logging.getLogger(__name__)
 class MqttClientMod(mqtt.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    
+
     def _create_socket_connection(self) -> socket.socket:
         if self._get_proxy():
             return super()._create_socket_connection()  # SOCKS will reduce MSS by itself
-        
+
         addr_infos = socket.getaddrinfo(self._host, self._port, 0, socket.SOCK_STREAM)
         addr_cnt = len(addr_infos)
         if addr_cnt == 0:
@@ -197,22 +197,18 @@ class StellantisBase:
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
     async def make_http_request(self, url, method='GET', headers=None, params=None, json_data=None, data=None, timeout=60):
+        """Perform an HTTP request and return the decoded JSON response."""
         _LOGGER.debug("---------- START make_http_request")
         self.start_session()
         try:
             _timeout = aiohttp.ClientTimeout(total=timeout)
             async with self._session.request(method, url, params=params, json=json_data, data=data, headers=headers, timeout=_timeout) as resp:
                 result = {}
-                error = None
                 if method != "DELETE" and (await resp.text()):
                     result = await resp.json()
+
                 if not str(resp.status).startswith("20"):
-                    _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
-                    _LOGGER.debug(headers)
-                    _LOGGER.debug(params)
-                    _LOGGER.debug(json_data)
-                    _LOGGER.debug(data)
-                    _LOGGER.debug(result)
+                    error = None
                     if "httpMessage" in result and "moreInformation" in result:
                         error = result["httpMessage"] + " - " + result["moreInformation"]
                     elif "error" in result and "error_description" in result:
@@ -220,26 +216,34 @@ class StellantisBase:
                     elif "message" in result and "code" in result:
                         error = result["message"] + " - " + str(result["code"])
 
-                if str(resp.status) == "404" and str(result["code"]) == "40400":
-                    # Not Found: We didn't find the status for this vehicle. - 40400
-                    _LOGGER.warning(error)
-                    result = {}
-                elif str(resp.status) == "500" and result.get("code", None) == "50000":
-                    # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
-                    # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
-                    raise ComunicationError(error)
-                elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
-                    # Token expiration
-                    raise ConfigEntryAuthFailed(error)
-                elif str(resp.status) == "401":
-                    # Oauth token seem expired, refresh request blocked by server/connection error
-                    raise ComunicationError(error)
-                elif str(resp.status).startswith("50"):
-                    # Internal error
-                    raise ComunicationError(error)
-                if error is not None:
-                    # Generic error
-                    raise Exception(error)
+                    _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
+                    _LOGGER.debug(headers)
+                    _LOGGER.debug(params)
+                    _LOGGER.debug(json_data)
+                    _LOGGER.debug(data)
+                    _LOGGER.debug(result)
+
+                    if str(resp.status) == "404" and str(result.get("code")) == "40400":
+                        # Not Found: We didn't find the status for this vehicle. - 40400
+                        _LOGGER.warning(error)
+                        _LOGGER.debug("---------- END make_http_request")
+                        return {}
+                    if str(resp.status) == "500" and str(result.get("code")) == "50000":
+                        # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
+                        # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
+                        raise ComunicationError(error)
+                    if str(resp.status) == "400" and result.get("error") == "invalid_grant":
+                        # Token expiration
+                        raise ConfigEntryAuthFailed(error)
+                    if str(resp.status) == "401":
+                        # Oauth token seem expired, refresh request blocked by server/connection error
+                        raise ComunicationError(error)
+                    if str(resp.status).startswith("50"):
+                        # Internal error
+                        raise ComunicationError(error)
+                    # Any other non-2xx response we don't have a specific case for
+                    raise ComunicationError(error or f"Unexpected HTTP status {resp.status}")
+
                 _LOGGER.debug("---------- END make_http_request")
                 return result
         except asyncio.TimeoutError as e:
@@ -247,25 +251,30 @@ class StellantisBase:
             _LOGGER.warning(f"Error: {e}")
             _LOGGER.debug("---------- END make_http_request")
             # Connection error
-            raise ComunicationError("Request timeout")
+            raise ComunicationError("Request timeout") from e
         except aiohttp.client_exceptions.ClientError as e:
             await self.close_session()
             _LOGGER.warning(f"Error: {e}")
             _LOGGER.debug("---------- END make_http_request")
             # Connection error
-            raise ComunicationError(e)
+            raise ComunicationError(e) from e
+        except (ConfigEntryAuthFailed, ComunicationError):
+            await self.close_session()
+            _LOGGER.debug("---------- END make_http_request")
+            raise
         except Exception as e:
             await self.close_session()
             _LOGGER.warning(f"Error: {e}")
             _LOGGER.debug("---------- END make_http_request")
             raise
 
-    def do_async(self, async_func, delay=0):
+    def do_async(self, async_func, delay=0, wait=True):
         async def delayed_execution():
             if delay > 0:
                 await asyncio.sleep(delay)
             return await async_func
-        return asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop).result()
+        future = asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop)
+        return future.result() if wait else None
 
     async def hass_notify(self, translation_key):
         """Create a persistent notification."""
@@ -612,24 +621,26 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
-    async def get_vehicle_last_trip(self, vehicle, page_token=False):
+    async def get_vehicle_last_trip(self, vehicle, page_token=None):
         _LOGGER.debug("---------- START get_vehicle_last_trip")
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
-        limit_date = (get_datetime() - timedelta(days=1)).isoformat()
-        limit_date = limit_date.split(".")[0] + "+" + limit_date.split(".")[1].split("+")[1]
-        url = url + "&timestamps=" + limit_date + "/&distance=0.1-"
-        if page_token:
-            url = url + "&pageToken=" + page_token
+        limit_date = (get_datetime() - timedelta(days=1)).isoformat(timespec="seconds")
+        url += "&timestamps=" + limit_date + "/" + "&distance=0.1-" #+ "&pageSize=60"
+        if page_token is not None:
+            url += "&pageToken=" + page_token
         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(vehicle_trips_request)
-        if "total" in vehicle_trips_request and int(vehicle_trips_request["total"]) > 60 and not page_token:
-            last_page_url = vehicle_trips_request["_links"]["last"]["href"]
-            page_token = last_page_url.split("pageToken=")[1]
-            _LOGGER.debug("---------- END get_vehicle_last_trip")
-            return await self.get_vehicle_last_trip(page_token)
+        links = vehicle_trips_request.get("_links", {})
+        last_href = links.get("last", {}).get("href")
+        self_href = links.get("self", {}).get("href")
+        if last_href and last_href != self_href:
+            next_page_token = last_href.split("pageToken=")[-1]
+            if next_page_token != page_token:
+                _LOGGER.debug("---------- END get_vehicle_last_trip")
+                return await self.get_vehicle_last_trip(vehicle, next_page_token)
         _LOGGER.debug("---------- END get_vehicle_last_trip")
         return vehicle_trips_request
 
@@ -760,11 +771,17 @@ class StellantisVehicles(StellantisOauth):
 
     def _on_mqtt_subscribe(self, client, userdata, mid, granted_qos):
         _LOGGER.debug("---------- START _on_mqtt_subscribe")
-        for i, qos in enumerate(granted_qos):
-            if qos == 0x80:
-                _LOGGER.debug("Failed")
+        try:
+            if any(qos == 0x80 for qos in granted_qos):
+                _LOGGER.warning("Subscription failed, will try to reconnect MQTT in 300 seconds")
+                # wait=False: this callback runs on the paho-mqtt network thread, so
+                # blocking it for 300s here would stall the loop (pings, reconnects,
+                # other callbacks)
+                self.do_async(self.connect_mqtt(), 300, wait=False)
             else:
-                _LOGGER.debug(f"Completed (QoS: {qos})")
+                _LOGGER.debug(f"Completed (QoS: {granted_qos})")
+        except Exception as e:
+            _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END _on_mqtt_subscribe")
 
     def _on_mqtt_message(self, client, userdata, msg):
