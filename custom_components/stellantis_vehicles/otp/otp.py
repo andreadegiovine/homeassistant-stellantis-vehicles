@@ -7,9 +7,9 @@ from collections import defaultdict
 from xml.etree import cElementTree as ElT
 
 import requests
-from Cryptodome.Cipher import AES
-from Cryptodome.PublicKey import RSA
-from Cryptodome.Hash import SHA256
+from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA256
 
 from . import oaep
 from .load import IWData

@@ -1,9 +1,9 @@
-import Cryptodome
-from Cryptodome import Random
-from Cryptodome.Cipher.PKCS1_OAEP import PKCS1OAEP_Cipher
-from Cryptodome.Util.number import ceil_div, bytes_to_long, long_to_bytes
-from Cryptodome.Util.py3compat import bord
-from Cryptodome.Util.strxor import strxor
+import Crypto
+from Crypto import Random
+from Crypto.Cipher.PKCS1_OAEP import PKCS1OAEP_Cipher
+from Crypto.Util.number import ceil_div, bytes_to_long, long_to_bytes
+from Crypto.Util.py3compat import bord
+from Crypto.Util.strxor import strxor
 
 
 class MyOAEP(PKCS1OAEP_Cipher):
@@ -27,7 +27,7 @@ class MyOAEP(PKCS1OAEP_Cipher):
         """
 
         # See 7.1.2 in RFC3447
-        mod_bits = Cryptodome.Util.number.size(self._key.n)
+        mod_bits = Crypto.Util.number.size(self._key.n)
         k = ceil_div(mod_bits, 8)  # Convert from bits to bytes
         h_len = self._hashObj.digest_size
 
