@@ -217,25 +217,27 @@ class StellantisLastChargeSensor(StellantisRestoreSensor):
 
         if in_progress and not prev_in_progress:
             # Start of charging detected
-            self._attr_native_value = get_datetime()
-            
+            self._attr_native_value = get_datetime()          
             attributes = {} # Clear all previous attributes
             attributes["in_progress"] = True
-            attributes["mileage"] = round(self._coordinator._sensors.get("mileage")) # add mileage attribute
-            attributes["initial_percentage"] = round(self._coordinator._sensors.get("battery"))
-            if self._coordinator._sensors.get("battery_residual"):
+            if self._coordinator._sensors.get("mileage") is not None
+                attributes["mileage"] = round(self._coordinator._sensors.get("mileage")) # add mileage attribute
+            if self._coordinator._sensors.get("battery") is not None
+                attributes["initial_percentage"] = round(self._coordinator._sensors.get("battery"))
+            if self._coordinator._sensors.get("battery_residual") is not None:
                 attributes["initial_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
-            if self._coordinator._sensors.get("autonomy"):
+            if self._coordinator._sensors.get("autonomy") is not None:
                 attributes["initial_autonomy"] = self._coordinator._sensors.get("autonomy")
 
         elif prev_in_progress and not in_progress:
             # End of charging detected
             del attributes["in_progress"]
             attributes["final_time"] = get_datetime()
-            attributes["final_percentage"] = round(self._coordinator._sensors.get("battery"))
-            if self._coordinator._sensors.get("battery_residual"):
+            if self._coordinator._sensors.get("battery") is not None
+                attributes["final_percentage"] = round(self._coordinator._sensors.get("battery"))
+            if self._coordinator._sensors.get("battery_residual") is not None:
                 attributes["final_energy"] = round(float(self._coordinator._sensors.get("battery_residual")) / divide, 2)
-            if self._coordinator._sensors.get("autonomy"):
+            if self._coordinator._sensors.get("autonomy") is not None:
                 attributes["final_autonomy"] = self._coordinator._sensors.get("autonomy")
 
             duration = get_datetime(attributes["final_time"]) - self._attr_native_value
