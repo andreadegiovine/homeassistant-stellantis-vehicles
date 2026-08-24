@@ -211,6 +211,9 @@
               "true": "Yes"
             }
           },
+          "mileage": {
+            "name": "Mileage"
+          },
           "initial_percentage": {
             "name": "Initial percentage"
           },
