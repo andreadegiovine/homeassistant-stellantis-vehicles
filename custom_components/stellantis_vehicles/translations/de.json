@@ -11,10 +11,29 @@
           "country_code": "Dein Ländercode"
         }
       },
+      "oauth_mode": {
+        "description": "Um Ihr Konto zu authentifizieren, wird ein Remote-Dienst verwendet, der Ihre Zugangsdaten in keiner Weise speichert. Alternativ können Sie die manuelle Methode verwenden",
+        "data": {
+          "oauth_manual_mode": "Die manuelle Methode verwenden"
+        }
+      },
+      "oauth_remote": {
+        "description": "Dieser [Remote-Dienst]({oauth_remote_link}) wird verwendet, um die Browser-Anmeldung auf der offiziellen Website zu simulieren",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort"
+        }
+      },
       "oauth_manual": {
         "description": "Führen Sie diese Schritte im **Desktop-Browser** aus:\n\n1. Gehen Sie zur Anmeldeseite {oauth_link};\n2. Öffnen Sie den Browser **DevTools** (F12) und wechseln Sie zur Registerkarte **Netzwerk**;\n3. Melden Sie sich bei Ihrem Konto an und klicken Sie auf die letzte Schaltfläche „Bestätigen“;\n4. Suchen Sie in der Registerkarte **Netzwerk** die obige Anfrage und kopieren Sie die **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth code"
+        }
+      },
+      "get_access_token": {
+        "description": "**Authentifizierung abgeschlossen**.\nUm Fernbefehle zu nutzen, aktivieren Sie die Option unten und schließen Sie den OTP-Schritt ab",
+        "data": {
+          "remote_commands": "Fernbefehle konfigurieren (E-Remote oder Connect Plus erforderlich)"
         }
       },
       "otp": {
@@ -22,9 +41,24 @@
           "sms_code": "SMS-Code von Stellantis",
           "pin_code": "Pin-Code aus der Fahrzeug App"
         }
+      },
+      "options": {
+        "data": {
+          "notifications": "Persistente Benachrichtigungen aktivieren",
+          "anonymize_logs": "Persönliche Daten in Protokollen anonymisieren"
+        }
+      },
+      "reauth_confirm": {
+        "description": "Sie müssen sich erneut authentifizieren, um diese Integration zu verwenden"
+      },
+      "reconfigure": {
+        "data": {
+          "reconfigure": "Neu konfigurieren"
+        }
       }
     },
     "error": {
+      "get_oauth_code": "Fehler beim Abrufen des OAuth-Codes",
       "get_access_token": "Fehler beim Abrufen des Zugriffstokens",
       "get_user_info": "Fehler beim Abrufen der Benutzerinformationen",
       "missing_user_info": "Fehler: Fehlende Benutzerinformationen",
@@ -32,11 +66,13 @@
       "get_mqtt_access_token": "Fehler beim Abrufen des MQTT-Zugriffstokens",
       "get_mqtt_access_token_nok_access": "Ungültiger SMS-Code oder PIN-Code",
       "get_mqtt_access_token_nok_maxnbtools": "Begrenzung der verbundenen Geräte/empfangenen SMS, setzen Sie Ihr Stellantis-Konto zurück und versuchen Sie es erneut",
-      "get_mqtt_access_token_nok_nok_blocked": "Grenze für falsche PIN-Eingaben erreicht, Konfigurationsvorgang neu starten"
+      "get_mqtt_access_token_nok_nok_blocked": "Grenze für falsche PIN-Eingaben erreicht, Konfigurationsvorgang neu starten",
+      "get_mqtt_access_token_rate_limit": "Ratenlimit für MQTT-Zugriffstoken-Anfragen überschritten (6 pro Tag)"
     },
     "abort": {
       "already_configured": "Der Account ist bereits konfiguriert",
-      "reauth_successful": "Die erneute Authentifizierung war erfolgreich"
+      "reauth_successful": "Die erneute Authentifizierung war erfolgreich",
+      "reconfigure_successful": "Die Konfiguration war erfolgreich"
     }
   },
   "entity": {
@@ -57,7 +93,12 @@
         "name": "Temperatur"
       },
       "mileage": {
-        "name": "Kilometer"
+        "name": "Kilometer",
+        "state_attributes": {
+          "last_updated": {
+            "name": "Zuletzt aktualisiert"
+          }
+        }
       },
       "speed": {
         "name": "Geschwindigkeit"
@@ -68,8 +109,11 @@
       "battery": {
         "name": "Batterie"
       },
-      "battery_soh": {
-        "name": "Batterie SOH (Gesundheitszustand der Batterie)"
+      "battery_health_resistance": {
+        "name": "Batterie-SOH (Widerstand)"
+      },
+      "battery_health_capacity": {
+        "name": "Batterie-SOH (Kapazität)"
       },
       "battery_charging_rate": {
         "name": "Batterie Laderate"
@@ -77,7 +121,7 @@
       "battery_charging_type": {
         "name": "Batterie Ladetyp",
         "state": {
-          "no": "Nichts",
+          "no": "Kein Ladetyp",
           "slow": "Langsam",
           "quick": "Schnell"
         }
@@ -96,6 +140,8 @@
         "state": {
           "0": "Abgeschlossen",
           "not_compatible": "Nicht kompatibel",
+          "failed": "Fehlgeschlagen",
+          "rate_limit": "Ratenlimit überschritten (6 pro 20 Minuten)",
           "300": "Zeitüberschreitung",
           "422": "Alarmanlage aktiviert",
           "500": "Fehler",
@@ -161,7 +207,7 @@
           "in_progress": {
             "name": "Wird geladen",
             "state": {
-              "true": "Yes"
+              "true": "Ja"
             }
           },
             "initial_percentage": {
@@ -308,5 +354,14 @@
     "no_vehicles_found_message": "Für dieses Konto wurden keine Fahrzeuge gefunden",
     "command_error_title": "Befehl",
     "command_error_message": "Der Befehl wurde nicht korrekt gesendet."
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "Konto erneut authentifizieren",
+        "remote_commands": "Fernbefehle konfigurieren (E-Remote oder Connect Plus erforderlich)",
+        "options": "Globale Einstellungen"
+      }
+    }
   }
 }
