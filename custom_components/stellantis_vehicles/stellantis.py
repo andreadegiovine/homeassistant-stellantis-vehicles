@@ -535,6 +535,9 @@ class StellantisVehicles(StellantisOauth):
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
             next_run = get_datetime() + timedelta(minutes=30)
+        except Exception as e:
+            _LOGGER.error(f"Unexpected error during OAuth token refresh, rescheduling in 5 min: {e}")
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         next_job = HassJob(self.scheduled_oauth_token_refresh, f"{DOMAIN} refresh oauth token: {next_run}", cancel_on_shutdown=True)
@@ -671,6 +674,9 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             _LOGGER.debug("---------- END scheduled_mqtt_token_refresh")
             return
+        except Exception as e:
+            _LOGGER.error(f"Unexpected error during MQTT token refresh, rescheduling in 5 min: {e}")
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug(f"Current time: {get_datetime()}")
         _LOGGER.debug(f"Next refresh: {next_run}")
         next_job = HassJob(self.scheduled_mqtt_token_refresh, f"{DOMAIN} refresh mqtt token: {next_run}", cancel_on_shutdown=True)
