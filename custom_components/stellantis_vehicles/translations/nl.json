@@ -139,10 +139,10 @@
           "not_compatible": "Niet compatibel",
           "failed": "Mislukt",
           "900": "Geaccepteerd",
-          "901": "Voertuig in slaapmodus",
+          "901": "Voertuig wekken",
           "903": "Doorgestuurd",
           "0": "Afgerond",
-          "300": "Geannuleerd",
+          "300": "Time-out",
           "500": "Error",
           "502": "Dubbel",
           "422": "Privacy ingeschakeld"

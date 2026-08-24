@@ -96,10 +96,10 @@
         "state": {
           "99": "Incompatível",
           "900": "Aceito",
-          "901": "Veículo em repouso",
+          "901": "Despertar veículo",
           "903": "Encaminhado",
           "0": "Completo",
-          "300": "Cancelado",
+          "300": "Tempo esgotado",
           "500": "Erro",
           "502": "Duplicado",
           "422": "Privacidade ativada"

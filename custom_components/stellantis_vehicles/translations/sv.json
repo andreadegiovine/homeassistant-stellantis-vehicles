@@ -128,10 +128,10 @@
           "not_compatible": "Ej kompatibel",
           "failed": "Misslyckad",
           "900": "Accepterad",
-          "901": "Fordonet i viloläge",
+          "901": "Väcker fordonet",
           "903": "Skickat till fordonet",
           "0": "Klar",
-          "300": "Avbruten",
+          "300": "Tidsgräns överskriden",
           "500": "Fel",
           "502": "Duplikat",
           "422": "Sekretess påslagen"

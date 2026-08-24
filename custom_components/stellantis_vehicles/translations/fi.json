@@ -96,10 +96,10 @@
         "state": {
           "not_compatible": "Ei yhteensopiva",
           "900": "Hyväksytty",
-          "901": "Lepotilassa",
+          "901": "Ajoneuvon herätys",
           "903": "Yhdistetty autoon",
           "0": "Suoritettu",
-          "300": "Keskeytetty",
+          "300": "Aikakatkaisu",
           "500": "Virhe",
           "502": "Komento jo käynnissä",
           "422": "Yksityisyys käytössä"
