@@ -18,10 +18,11 @@
         }
       },
       "oauth_remote": {
-        "description": "Ce [remote service]({oauth_remote_link}) est utilisé pour simuler une connexion sur le site officiel",
+        "description": "Ce [remote service]({oauth_remote_link}) est utilisé pour simuler une connexion sur le site officiel STELLANTIS. Vous pouvez utiliser ce service hébergé par défaut ou pointer vers votre propre service auto-hébergé.",
         "data": {
           "email": "Email",
-          "password": "Mot de passe"
+          "password": "Mot de passe",
+          "oauth_code_url": "URL de votre service hébergé"
         }
       },
       "oauth_manual": {
