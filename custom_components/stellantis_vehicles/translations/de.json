@@ -142,12 +142,12 @@
           "not_compatible": "Nicht kompatibel",
           "failed": "Fehlgeschlagen",
           "rate_limit": "Ratenlimit überschritten (6 pro 20 Minuten)",
-          "300": "Abgebrochen",
-          "422": "Privatsphäre aktiviert",
+          "300": "Zeitüberschreitung",
+          "422": "Alarmanlage aktiviert",
           "500": "Fehler",
           "502": "Doppelt",
           "900": "Akzeptiert",
-          "901": "Fahrzeug schläft",
+          "901": "Fahrzeug aufwecken",
           "903": "Weitergeleitet"
         }
       },

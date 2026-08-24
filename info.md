@@ -1,5 +1,5 @@
 # HomeAssistant - Stellantis Vehicles
-[![Active installations](https://img.shields.io/badge/active_installations-7297-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
+[![Active installations](https://img.shields.io/badge/active_installations-7452-%2318BCF2?style=for-the-badge&logo=homeassistant)](#)  
 [![Last version](https://img.shields.io/github/v/release/andreadegiovine/homeassistant-stellantis-vehicles?style=for-the-badge&logo=github&label=last%20version&color=green)](#)
 
 - [Requirements](#requirements)
@@ -12,6 +12,10 @@
 - [Card: Stellantis Vehicles](#card-stellantis-vehicles)
 - [Global preferences](#global-preferences)
 - [Errors](#errors)
+  - [OTP error - NOK:MAXNBTOOLS](#otp-error---nokmaxnbtools)
+  - [OTP error - NOK:NOK_BLOCKED](#otp-error---noknok_blocked)
+  - [Get oauth code error](#get-oauth-code-error)
+  - [Command status 901 and 300 - Wakeup timeout](#command-status-901-and-300---wakeup-timeout)
 - [ABRP - A Better Routeplanner](#abrp---a-better-routeplanner)
 - [Support the project](#support-the-project)
 
@@ -228,6 +232,17 @@ It seems that this error is due to reaching the limit of wrong PIN used. Re-auth
 As described in the "OAuth2 Code > [Remote service](#remote-service)" section, this free service has usage limitations.  
 If you've hit these limits, please wait and try again.  
 If the problem persists or is unrelated to usage limits, please use "OAuth2 Code > [Manual](#manual)" mode.
+
+### Command status 901 and 300 - Wakeup timeout
+**901 (Wakeup Vehicle)** is the wakeup command being forwarded from the Stellantis backend to your vehicle, it doesn't say anything about the vehicle's state by itself. If it's followed by **300 (Timeout)** instead of **0 (Complete)**, the vehicle didn't respond, which means it's in a deep sleep.
+
+Stellantis disables connectivity to protect the 12V battery, the vehicle apps explain it like this:
+
+> Your vehicle has not been used for more than 15 consecutive minutes in the last 7 days. To preserve your 12V battery, connectivity is disabled.
+
+This is tracked per vehicle, not per integration: any trip shorter than 15 minutes doesn't count, no matter how close it gets. If all your trips in the last 7 days were under 15 minutes, connectivity gets disabled and every wakeup times out until a trip passes the threshold again.
+
+To avoid repeated timeouts, take at least one trip longer than 15 minutes every 7 days.
 
 ## ABRP - A Better Routeplanner
 Get a token from [ABRP](https://abetterrouteplanner.com/):

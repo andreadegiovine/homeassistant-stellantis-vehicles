@@ -96,10 +96,10 @@
         "state": {
           "not_compatible": "Ikke kompatibel",
           "900": "Godkjent",
-          "901": "Kjøretøy i dvalemodus",
+          "901": "Vekker kjøretøyet",
           "903": "Videresendt",
           "0": "Fullført",
-          "300": "Avbrutt",
+          "300": "Tidsavbrudd",
           "500": "Feil",
           "502": "Duplikat",
           "422": "Personvern aktivert"

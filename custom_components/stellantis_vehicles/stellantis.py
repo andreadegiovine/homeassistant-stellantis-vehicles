@@ -293,9 +293,9 @@ class StellantisOauth(StellantisBase):
     def get_oauth_url(self):
         return self.apply_query_params(OAUTH_AUTHORIZE_URL, OAUTH_AUTHORIZE_QUERY_PARAMS)
 
-    async def get_oauth_code(self, email, password):
+    async def get_oauth_code(self, email, password, code_url=None):
         _LOGGER.debug("---------- START get_oauth_code")
-        oauth_code_request = await self.make_http_request(OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
+        oauth_code_request = await self.make_http_request(code_url or OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
         if "code" in oauth_code_request:
             self.logger_filter.add_custom_value(oauth_code_request["code"])
         _LOGGER.debug(oauth_code_request)
@@ -811,8 +811,7 @@ class StellantisVehicles(StellantisOauth):
                         _LOGGER.debug(f"Fetch updates after code: {result_code}")
                         self.do_async(coordinator.async_refresh(), 10)
 
-                    if result_code != "901":  # Not store "Vehicle as sleep" event
-                        self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
+                    self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
                 else:
                     _LOGGER.error("No result code")
 

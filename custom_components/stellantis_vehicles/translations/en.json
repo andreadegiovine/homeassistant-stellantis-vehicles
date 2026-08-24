@@ -18,10 +18,11 @@
         }
       },
       "oauth_remote": {
-        "description": "This [remote service]({oauth_remote_link}) is used to simulate browser login on the official website",
+        "description": "This [remote service]({oauth_remote_link}) is used to simulate browser login on the official website. You can use the default hosted service or point to your own self-hosted deployment",
         "data": {
           "email": "Email",
-          "password": "Password"
+          "password": "Password",
+          "oauth_code_url": "Login service URL"
         }
       },
       "oauth_manual": {
@@ -142,10 +143,10 @@
           "not_compatible": "Not compatible",
           "failed": "Failed",
           "900": "Accepted",
-          "901": "Vehicle as sleep",
+          "901": "Wakeup Vehicle",
           "903": "Forwarded",
           "0": "Complete",
-          "300": "Canceled",
+          "300": "Timeout",
           "500": "Error",
           "502": "Duplicate",
           "422": "Privacy enabled"

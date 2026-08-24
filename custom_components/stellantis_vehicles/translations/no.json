@@ -70,10 +70,10 @@
         "state": {
           "not_compatible": "Ikke kompatibel",
           "900": "Akseptert",
-          "901": "Kjøretøy i hvilemodus",
+          "901": "Vekker kjøretøyet",
           "903": "Sendt til kjøretøyet",
           "0": "Ferdig",
-          "300": "Avbrutt",
+          "300": "Tidsavbrudd",
           "500": "Feil"
         }
       },
