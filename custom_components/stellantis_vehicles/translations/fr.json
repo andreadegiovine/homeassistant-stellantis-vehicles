@@ -11,10 +11,30 @@
           "country_code": "Votre code pays"
         }
       },
+      "oauth_mode": {
+        "description": "Pour identifier votre compte, un service distant est utilisé qui ne conserve aucun de vos identifiants. De manière alternative, vous pouvez utiliser la méthode manuelle",
+        "data": {
+          "oauth_manual_mode": "Utiliser la méthode manuelle"
+        }
+      },
+      "oauth_remote": {
+        "description": "Ce [remote service]({oauth_remote_link}) est utilisé pour simuler une connexion sur le site officiel STELLANTIS. Vous pouvez utiliser ce service hébergé par défaut ou pointer vers votre propre service auto-hébergé.",
+        "data": {
+          "email": "Email",
+          "password": "Mot de passe",
+          "oauth_code_url": "URL de votre service hébergé"
+        }
+      },
       "oauth_manual": {
         "description": "Suivez ces étapes depuis un **navigateur sur votre ordinateur**:\n\n1. Allez sur la page d'authentification {oauth_link}\n2. Dans le navigateur, ouvrez les **DevTools** (F12) et allez sur l'onglet **Réseau**\n3. Identifiez-vous et cliquez sur le dernier bouton de confirmation\n4. Sur l'onglet **Réseau** cherchez la requête ci-dessous et copiez le **{oauth_label}**{oauth_devtools}",
         "data": {
           "oauth_code": "Code OAuth"
+        }
+      },
+      "get_access_token": {
+        "description": "**Authentification terminée**.\nPour utiliser les commandes à distance, cochez l'option ci-dessous et complétez l'étape OTP",
+        "data": {
+          "remote_commands": "Configurer les commandes à distance (E-remote ou Connect Plus requis)"
         }
       },
       "otp": {
@@ -22,18 +42,38 @@
           "sms_code": "Code SMS reçu de Stellantis",
           "pin_code": "Code PIN de votre application mobile du véhicule"
         }
+      },
+      "options": {
+        "data": {
+          "notifications": "Enable persistent notifications",
+          "anonymize_logs": "Anonymize personal data on logs"
+        }
+      },
+      "reauth_confirm": {
+        "description": "You need to re-authenticate to use this integration"
+      },
+      "reconfigure": {
+        "data": {
+          "reconfigure": "Reconfigure"
+        }
       }
     },
     "error": {
+      "get_oauth_code": "Get oauth code error",
       "get_access_token": "Erreur lors de la récupération du jeton d'accès",
       "get_user_info": "Erreur lors de la récupération des informations utilisateur",
       "missing_user_info": "Erreur informations utilisateur manquantes",
       "get_otp_sms": "Erreur lors de la récupération du code OTP SMS",
-      "get_mqtt_access_token": "Erreur lors de la récupération du jeton accès MQTT"
+      "get_mqtt_access_token": "Erreur lors de la récupération du jeton accès MQTT",
+      "get_mqtt_access_token_nok_access": "Code SMS ou code Pin invalide",
+      "get_mqtt_access_token_nok_maxnbtools": "Limite atteinte nombre d'équipement associés ou nombre de SMS. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
+      "get_mqtt_access_token_nok_nok_blocked": "Limite atteinte nombre de code PIN incorrects. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
+      "get_mqtt_access_token_rate_limit": "Limite de requêtes du jeton d'accès MQTT dépassée (6 par jour)"
     },
     "abort": {
       "already_configured": "Compte déjà configuré",
-      "reauth_successful": "Ré-authentification réussie"
+      "reauth_successful": "Ré-authentification réussie",
+      "reconfigure_successful": "Re-configuration réussie"
     }
   },
   "entity": {
@@ -54,7 +94,12 @@
         "name": "Température"
       },
       "mileage": {
-        "name": "Kilométrage"
+        "name": "Kilométrage",
+        "state_attributes": {
+          "last_updated": {
+            "name": "Dernière mise à jour"
+          }
+        }
       },
       "speed": {
         "name": "Vitesse"
@@ -65,8 +110,11 @@
       "battery": {
         "name": "Niveau batterie"
       },
-      "battery_soh": {
-        "name": "SOH batterie"
+      "battery_health_resistance": {
+        "name": "Résistance SOH batterie"
+      },
+      "battery_health_capacity": {
+        "name": "Capacité SOH batterie"
       },
       "battery_charging_rate": {
         "name": "Vitesse de charge batterie"
@@ -91,14 +139,17 @@
       "command_status": {
         "name": "Statut de la commande",
         "state": {
+          "rate_limit": "Limite de requêtes dépassée (6 par 20 minutes)",
           "not_compatible": "Non compatible",
+          "failed": "Échouée",
           "900": "Acceptée",
           "901": "Réveil du véhicule",
           "903": "Transmise",
           "0": "Terminée",
           "300": "Délai d'attente dépassé",
           "500": "Erreur",
-          "502": "Dupliquée"
+          "502": "Dupliquée",
+          "422": "Confidentialité activée"
         }
       },
       "fuel": {
@@ -150,6 +201,56 @@
             "name": "Consommation carburant moyenne"
           }
         }
+      },
+      "last_charge": {
+        "name": "Dernière recharge",
+        "state_attributes": {
+          "in_progress": {
+            "name": "En cours",
+            "state": {
+              "true": "Oui"
+            }
+          },
+          "mileage": {
+            "name": "Kilométrage"
+          },
+          "initial_percentage": {
+            "name": "Pourcentage initial"
+          },
+          "initial_energy": {
+            "name": "Énergie initiale"
+          },
+          "initial_autonomy": {
+            "name": "Autonomie initiale"
+          },
+          "final_time": {
+            "name": "Heure de fin"
+          },
+          "final_percentage": {
+            "name": "Pourcentage final"
+          },
+          "final_energy": {
+            "name": "Énergie finale"
+          },
+          "final_autonomy": {
+            "name": "Autonomie finale"
+          },
+          "duration": {
+            "name": "Durée"
+          },
+          "recharged_percent": {
+            "name": "Pourcentage rechargé"
+          },
+          "recharged_energy": {
+            "name": "Énergie rechargée"
+          },
+          "recharged_autonomy": {
+            "name": "Autonomie rechargée"
+          },
+          "avg_power": {
+            "name": "Puissance moyenne"
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -179,6 +280,9 @@
       },
       "remote_commands": {
         "name": "Commandes à distance"
+      },
+      "daylight": {
+        "name": "Lumière du jour"
       }
     },
     "button": {
@@ -229,6 +333,9 @@
       },
       "abrp_sync": {
         "name": "Synchronisation avec ABRP"
+      },
+      "battery_values_correction": {
+        "name": "Correction des valeurs de la batterie"
       }
     },
     "text": {
@@ -238,7 +345,7 @@
     },
     "time": {
       "battery_charging_start": {
-        "name": "Recharge batterie démarée"
+        "name": "Début recharge batterie"
       }
     }
   },
@@ -251,5 +358,14 @@
     "no_vehicles_found_message": "Aucun véhicule connecté disponible sur ce compte",
     "command_error_title": "Commande",
     "command_error_message": "La commande n'a pas été envoyée correctement"
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "Ré-authentificatiion compte Stellantis",
+        "remote_commands": "Configuration des commandes à distance (E-remote ou Connect Plus requis) ",
+        "options": "Préférences globales"
+      }
+    }
   }
 }
