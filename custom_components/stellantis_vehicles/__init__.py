@@ -115,8 +115,10 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
 
 
 async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
-    # Migrate config prior 1.2 to 1.2 - unique_id and file structure
-    if config.version == 1 and config.minor_version < 2:
+
+    target_version = 1
+    target_minor_version = 2    # Migrate config prior 1.2 to 1.2 - unique_id and file structure
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         # update unique_id with customer_id - used to be data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5])
         new_unique_id = config.data.get("customer_id")
@@ -138,20 +140,24 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             else:
                 os.remove(old_otp_file_path)
         # Update config entry object
-        hass.config_entries.async_update_entry(config, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    if config.version == 1 and config.minor_version < 3:
+    target_version = 1
+    target_minor_version = 3
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         public_path = hass.config.path("www")
         old_image_path = f"{public_path}/stellantis-vehicles"
         if os.path.isdir(old_image_path):
             _LOGGER.debug(f"Deleting Stellantis old image folder: {old_image_path}")
             shutil.rmtree(old_image_path)
-        hass.config_entries.async_update_entry(config, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    if config.version == 1 and config.minor_version < 4:
+    target_version = 1
+    target_minor_version = 4
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         data = dict(config.data)
         data["oauth"] = {
@@ -162,10 +168,12 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
         data.pop("access_token", None)
         data.pop("refresh_token", None)
         data.pop("expires_in", None)
-        hass.config_entries.async_update_entry(config, data=data, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, data=data, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    if config.version == 1 and config.minor_version < 5:
+    target_version = 1
+    target_minor_version = 5
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         data = dict(config.data)
 
@@ -203,10 +211,12 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             return data
 
         new_data = await hass.async_add_executor_job(update_data, data)
-        hass.config_entries.async_update_entry(config, data=new_data, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    if config.version == 1 and config.minor_version < 6:
+    target_version = 1
+    target_minor_version = 6
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         data = dict(config.data)
 
@@ -225,7 +235,19 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             return data
 
         new_data = await hass.async_add_executor_job(update_data, data)
-        hass.config_entries.async_update_entry(config, data=new_data, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=target_minor_version)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
+    # template for future migration steps
+    target_version = 20260702   # to be updated with the next version number
+    if config.version < target_version:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+        data = dict(config.data)
+        def update_data(data):
+            # migration logic here
+            return data
+        new_data = await hass.async_add_executor_job(update_data, data)
+        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     # Global update of versions
