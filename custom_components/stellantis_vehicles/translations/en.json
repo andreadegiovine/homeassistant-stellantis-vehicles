@@ -173,6 +173,9 @@
       "air_temperature": {
         "name": "Air temperature"
       },
+      "driving_behavior": {
+        "name": "Driving behavior"
+      },
       "last_trip": {
         "name": "Last trip",
         "state_attributes": {
