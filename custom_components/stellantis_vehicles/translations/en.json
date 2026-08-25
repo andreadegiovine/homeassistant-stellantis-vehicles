@@ -260,6 +260,12 @@
       "doors": {
         "name": "Doors"
       },
+      "belt_driver": {
+        "name": "Driver seatbelt"
+      },
+      "belt_passenger": {
+        "name": "Passenger seatbelt"
+      },
       "battery_plugged": {
         "name": "Battery plugged"
       },

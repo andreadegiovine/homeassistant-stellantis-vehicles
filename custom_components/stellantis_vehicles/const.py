@@ -318,6 +318,20 @@ BINARY_SENSORS_DEFAULT = {
         "device_class" : BinarySensorDeviceClass.LOCK,
         "on_value": "Unlocked"
     },
+    "belt_driver" : {
+        "icon" : "mdi:seatbelt",
+        "value_map" : ["safety", "beltStatus", {"id":"Driver"}, "belt"],
+        "updated_at_map" : ["safety", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.SAFETY,
+        "on_value": "Omission"
+    },
+    "belt_passenger" : {
+        "icon" : "mdi:seatbelt",
+        "value_map" : ["safety", "beltStatus", {"id":"Passenger"}, "belt"],
+        "updated_at_map" : ["safety", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.SAFETY,
+        "on_value": "Omission"
+    },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",
         "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "charging", "plugged"],

@@ -259,6 +259,12 @@
       "doors": {
         "name": "Türen"
       },
+      "belt_driver": {
+        "name": "Fahrer-Sicherheitsgurt"
+      },
+      "belt_passenger": {
+        "name": "Beifahrer-Sicherheitsgurt"
+      },
       "battery_plugged": {
         "name": "Ladekabel angeschlossen"
       },
