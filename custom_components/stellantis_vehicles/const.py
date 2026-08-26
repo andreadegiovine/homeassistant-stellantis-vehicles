@@ -318,6 +318,41 @@ BINARY_SENSORS_DEFAULT = {
         "device_class" : BinarySensorDeviceClass.LOCK,
         "on_value": "Unlocked"
     },
+    "door_trunk" : {
+        "icon" : "mdi:car-back",
+        "value_map" : ["doorsState", "opening", {"identifier":"Trunk"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "door_driver" : {
+        "icon" : "mdi:car-door",
+        "value_map" : ["doorsState", "opening", {"identifier":"Driver"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "door_passenger" : {
+        "icon" : "mdi:car-door",
+        "value_map" : ["doorsState", "opening", {"identifier":"Passenger"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "door_rear_left" : {
+        "icon" : "mdi:car-door",
+        "value_map" : ["doorsState", "opening", {"identifier":"RearLeft"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "door_rear_right" : {
+        "icon" : "mdi:car-door",
+        "value_map" : ["doorsState", "opening", {"identifier":"RearRight"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",
         "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "charging", "plugged"],
