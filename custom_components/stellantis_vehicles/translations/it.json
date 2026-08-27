@@ -274,6 +274,12 @@
       "door_rear_right": {
         "name": "Sportello posteriore destro"
       },
+      "belt_driver": {
+        "name": "Cintura di sicurezza guidatore"
+      },
+      "belt_passenger": {
+        "name": "Cintura di sicurezza passeggero"
+      },
       "battery_plugged": {
         "name": "Batteria collegata"
       },
