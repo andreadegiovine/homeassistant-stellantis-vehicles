@@ -596,7 +596,13 @@ class StellantisVehicles(StellantisOauth):
                             picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
                             vehicle_data["picture"] = picture
                         except Exception as e:
-                            _LOGGER.warning(str(e))
+                            pictures = vehicle.get("pictures") or []
+                            _LOGGER.warning(
+                                "Unable to download and save the vehicle picture for VIN %s from %s: %s",
+                                vehicle["vin"],
+                                pictures[0] if pictures else "<no picture URL>",
+                                e,
+                            )
                         self._vehicles.append(vehicle_data)
                 else:
                     _LOGGER.warning("No vehicles found in vehicles_request['_embedded']")
