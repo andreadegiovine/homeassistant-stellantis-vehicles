@@ -300,6 +300,11 @@ SENSORS_DEFAULT = {
         "value_map" : ["engines", 0, "extension", "thermic", "air", "temp"],
         "updated_at_map" : ["engines", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    },
+    "driving_behavior" : {
+        "icon": "mdi:steering",
+        "value_map" : ["drivingBehavior", "mode"],
+        "updated_at_map" : ["drivingBehavior", "createdAt"]
     }
 }
 

@@ -172,6 +172,9 @@
       "air_temperature": {
         "name": "Temperatura aria"
       },
+      "driving_behavior": {
+        "name": "Modalità di guida"
+      },
       "last_trip": {
         "name": "Ultimo viaggio",
         "state_attributes": {
