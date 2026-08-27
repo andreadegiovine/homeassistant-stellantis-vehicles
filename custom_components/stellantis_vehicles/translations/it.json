@@ -256,6 +256,21 @@
       "doors": {
         "name": "Portiere"
       },
+      "door_trunk": {
+        "name": "Bagagliaio"
+      },
+      "door_driver": {
+        "name": "Sportello conducente"
+      },
+      "door_passenger": {
+        "name": "Sportello passeggero"
+      },
+      "door_rear_left": {
+        "name": "Sportello posteriore sinistro"
+      },
+      "door_rear_right": {
+        "name": "Sportello posteriore destro"
+      },
       "battery_plugged": {
         "name": "Batteria collegata"
       },

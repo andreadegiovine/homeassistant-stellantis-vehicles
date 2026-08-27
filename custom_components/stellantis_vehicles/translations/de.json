@@ -259,6 +259,21 @@
       "doors": {
         "name": "Türen"
       },
+      "door_trunk": {
+        "name": "Kofferraum"
+      },
+      "door_driver": {
+        "name": "Fahrertür"
+      },
+      "door_passenger": {
+        "name": "Beifahrertür"
+      },
+      "door_rear_left": {
+        "name": "Hintere Tür links"
+      },
+      "door_rear_right": {
+        "name": "Hintere Tür rechts"
+      },
       "battery_plugged": {
         "name": "Ladekabel angeschlossen"
       },
