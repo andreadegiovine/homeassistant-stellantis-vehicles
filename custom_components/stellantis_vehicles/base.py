@@ -55,6 +55,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("---------- START _async_update_data")
         _LOGGER.debug(self._config)
+
+        refresh_interval = self._sensors.get("number_refresh_interval")
+        if refresh_interval and refresh_interval > 0 and refresh_interval != self.update_interval.total_seconds():
+            self.update_interval = timedelta(seconds=refresh_interval)
+
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
         except ConfigEntryAuthFailed:
@@ -285,9 +290,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             await self.get_vehicle_last_trip()
         else:
             _LOGGER.debug("Engine status unchanged or not relevant for trip data fetch: %s vs %s", current_engine_status, new_engine_status)
-
-        if "number_refresh_interval" in self._sensors and self._sensors.get("number_refresh_interval") > 0 and self._sensors.get("number_refresh_interval") != self._update_interval_seconds:
-            self.update_interval = timedelta(seconds=self._sensors.get("number_refresh_interval"))
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """
