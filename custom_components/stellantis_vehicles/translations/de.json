@@ -172,6 +172,9 @@
       "air_temperature": {
         "name": "Lufttemperatur"
       },
+      "driving_behavior": {
+        "name": "Fahrverhalten"
+      },
       "last_trip": {
         "name": "Letzte Fahrt",
         "state_attributes": {
@@ -258,6 +261,27 @@
       },
       "doors": {
         "name": "Türen"
+      },
+      "door_trunk": {
+        "name": "Kofferraum"
+      },
+      "door_driver": {
+        "name": "Fahrertür"
+      },
+      "door_passenger": {
+        "name": "Beifahrertür"
+      },
+      "door_rear_left": {
+        "name": "Hintere Tür links"
+      },
+      "door_rear_right": {
+        "name": "Hintere Tür rechts"
+      },
+      "belt_driver": {
+        "name": "Fahrer-Sicherheitsgurt"
+      },
+      "belt_passenger": {
+        "name": "Beifahrer-Sicherheitsgurt"
       },
       "battery_plugged": {
         "name": "Ladekabel angeschlossen"

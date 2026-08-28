@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, UTC
 import json
 from copy import deepcopy
 
-from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator )
+from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator, UpdateFailed )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
 from homeassistant.components.sensor import RestoreSensor
 from homeassistant.components.binary_sensor import BinarySensorEntity
@@ -55,25 +55,38 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("---------- START _async_update_data")
         _LOGGER.debug(self._config)
+
+        refresh_interval = self._sensors.get("number_refresh_interval")
+        if refresh_interval and refresh_interval > 0 and refresh_interval != self.update_interval.total_seconds():
+            self.update_interval = timedelta(seconds=refresh_interval)
+
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
-            if "updatedAt" in new_data and "updatedAt" in self._data:
-                try:
-                    current_dt = datetime.fromisoformat(self._data["updatedAt"])
-                    new_dt = datetime.fromisoformat(new_data["updatedAt"])
-                except ValueError:
-                    _LOGGER.debug("Invalid updatedAt values, proceeding with update without timestamp comparison")
-                else:
-                    if new_dt <= current_dt:
-                        _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
-                        _LOGGER.debug("---------- END _async_update_data")
-                        return
-            self._data = new_data
         except ConfigEntryAuthFailed:
             _LOGGER.debug("---------- END _async_update_data")
             raise
-        except Exception:
-            pass
+        except Exception as err:
+            _LOGGER.debug("Error communicating with Stellantis API: %s", err)
+            _LOGGER.debug("---------- END _async_update_data")
+            raise UpdateFailed("Error communicating with Stellantis API") from err
+
+        if "updatedAt" in new_data and "updatedAt" in self._data:
+            try:
+                current_dt = datetime.fromisoformat(self._data["updatedAt"])
+                new_dt = datetime.fromisoformat(new_data["updatedAt"])
+                if current_dt.tzinfo is None:
+                    current_dt = current_dt.replace(tzinfo=UTC)
+                if new_dt.tzinfo is None:
+                    new_dt = new_dt.replace(tzinfo=UTC)
+            except (ValueError, TypeError):
+                _LOGGER.debug("Invalid updatedAt values, proceeding with update without timestamp comparison")
+            else:
+                if new_dt <= current_dt:
+                    _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
+                    _LOGGER.debug("---------- END _async_update_data")
+                    return
+
+        self._data = new_data
         await self.after_async_update_data()
         _LOGGER.debug("---------- END _async_update_data")
 
@@ -277,9 +290,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             await self.get_vehicle_last_trip()
         else:
             _LOGGER.debug("Engine status unchanged or not relevant for trip data fetch: %s vs %s", current_engine_status, new_engine_status)
-
-        if "number_refresh_interval" in self._sensors and self._sensors.get("number_refresh_interval") > 0 and self._sensors.get("number_refresh_interval") != self._update_interval_seconds:
-            self.update_interval = timedelta(seconds=self._sensors.get("number_refresh_interval"))
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """

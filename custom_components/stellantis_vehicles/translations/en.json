@@ -173,6 +173,9 @@
       "air_temperature": {
         "name": "Air temperature"
       },
+      "driving_behavior": {
+        "name": "Driving behavior"
+      },
       "last_trip": {
         "name": "Last trip",
         "state_attributes": {
@@ -259,6 +262,27 @@
       },
       "doors": {
         "name": "Doors"
+      },
+      "door_trunk": {
+        "name": "Trunk"
+      },
+      "door_driver": {
+        "name": "Driver door"
+      },
+      "door_passenger": {
+        "name": "Passenger door"
+      },
+      "door_rear_left": {
+        "name": "Rear left door"
+      },
+      "door_rear_right": {
+        "name": "Rear right door"
+      },
+      "belt_driver": {
+        "name": "Driver seatbelt"
+      },
+      "belt_passenger": {
+        "name": "Passenger seatbelt"
       },
       "battery_plugged": {
         "name": "Battery plugged"

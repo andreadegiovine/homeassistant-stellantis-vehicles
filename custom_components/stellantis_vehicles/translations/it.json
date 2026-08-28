@@ -172,6 +172,9 @@
       "air_temperature": {
         "name": "Temperatura aria"
       },
+      "driving_behavior": {
+        "name": "Modalità di guida"
+      },
       "last_trip": {
         "name": "Ultimo viaggio",
         "state_attributes": {
@@ -255,6 +258,27 @@
       },
       "doors": {
         "name": "Portiere"
+      },
+      "door_trunk": {
+        "name": "Bagagliaio"
+      },
+      "door_driver": {
+        "name": "Sportello conducente"
+      },
+      "door_passenger": {
+        "name": "Sportello passeggero"
+      },
+      "door_rear_left": {
+        "name": "Sportello posteriore sinistro"
+      },
+      "door_rear_right": {
+        "name": "Sportello posteriore destro"
+      },
+      "belt_driver": {
+        "name": "Cintura di sicurezza guidatore"
+      },
+      "belt_passenger": {
+        "name": "Cintura di sicurezza passeggero"
       },
       "battery_plugged": {
         "name": "Batteria collegata"
