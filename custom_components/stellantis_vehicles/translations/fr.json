@@ -45,21 +45,21 @@
       },
       "options": {
         "data": {
-          "notifications": "Enable persistent notifications",
-          "anonymize_logs": "Anonymize personal data on logs"
+          "notifications": "Activer les notifications persistantes",
+          "anonymize_logs": "Anonymiser les données personnelles dans les journaux"
         }
       },
       "reauth_confirm": {
-        "description": "You need to re-authenticate to use this integration"
+        "description": "Vou devez vous ré-authentifier pour utiliser cette intégration"
       },
       "reconfigure": {
         "data": {
-          "reconfigure": "Reconfigure"
+          "reconfigure": "Reconfigurer l'intégration"
         }
       }
     },
     "error": {
-      "get_oauth_code": "Get oauth code error",
+      "get_oauth_code": "Erreur lors de la récupération du code OAuth",
       "get_access_token": "Erreur lors de la récupération du jeton d'accès",
       "get_user_info": "Erreur lors de la récupération des informations utilisateur",
       "missing_user_info": "Erreur informations utilisateur manquantes",
@@ -173,6 +173,9 @@
       "air_temperature": {
         "name": "Température air"
       },
+      "driving_behavior": {
+        "name": "Comportement de conduite"
+      },
       "last_trip": {
         "name": "Dernier trajet",
         "state_attributes": {
@@ -260,6 +263,27 @@
       "doors": {
         "name": "Portes"
       },
+      "door_trunk": {
+        "name": "Coffre"
+      },
+      "door_driver": {
+        "name": "Porte conducteur"
+      },
+      "door_passenger": {
+        "name": "Porte passager"
+      },
+      "door_rear_left": {
+        "name": "Porte arrière gauche"
+      },
+      "door_rear_right": {
+        "name": "Porte arrière droite"
+      },
+      "belt_driver": {
+        "name": "Ceinture sécurité conducteur"
+      },
+      "belt_passenger": {
+        "name": "Ceinture sécurité passager"
+      },
       "battery_plugged": {
         "name": "Batterie branchée"
       },
@@ -296,10 +320,10 @@
         "name": "Déverrouiller portes"
       },
       "horn": {
-        "name": "Klaxon"
+        "name": "Activer klaxon"
       },
       "lights": {
-        "name": "Phares"
+        "name": "Allumer phares"
       },
       "charge_start": {
         "name": "Démarrer recharge"
@@ -350,7 +374,7 @@
     }
   },
   "common": {
-    "access_token_error_title": "Erreur Access token",
+    "access_token_error_title": "Erreur jeton d'accès",
     "access_token_error_message": "Vérifier la documentation officielle dans la section [OAuth2 Code]({oauth_token_doc_link})",
     "otp_error_title": "Erreur OTP",
     "otp_error_message": "Vérifier la documentation officielle dans la section [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link})",
@@ -362,7 +386,7 @@
   "selector": {
     "reconfigure": {
       "options": {
-        "oauth": "Ré-authentificatiion compte Stellantis",
+        "oauth": "Ré-authentification de votre compte Stellantis",
         "remote_commands": "Configuration des commandes à distance (E-remote ou Connect Plus requis) ",
         "options": "Préférences globales"
       }
