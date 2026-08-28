@@ -534,30 +534,55 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
         return False
 
     @property
+    def _last_position(self):
+        """ Last known position feature. """
+        last_position = self._coordinator._data.get("lastPosition")
+        return last_position if isinstance(last_position, dict) else {}
+
+    @property
+    def _coordinates(self):
+        """ GPS coordinates [lon, lat, alt] of the last known position. """
+        geometry = self._last_position.get("geometry") or {}
+        coordinates = geometry.get("coordinates")
+        return coordinates if isinstance(coordinates, list) else []
+
+    @property
+    def _position_properties(self):
+        """ Properties of the last known position. """
+        properties = self._last_position.get("properties")
+        return properties if isinstance(properties, dict) else {}
+
+    @property
     def latitude(self):
         """ Latitude. """
-        if "lastPosition" in self._coordinator._data:
-            return float(self._coordinator._data["lastPosition"]["geometry"]["coordinates"][1])
-        return None
+        return float(self._coordinates[1]) if len(self._coordinates) >= 2 else None
 
     @property
     def longitude(self):
         """ Longitude. """
-        if "lastPosition" in self._coordinator._data:
-            return float(self._coordinator._data["lastPosition"]["geometry"]["coordinates"][0])
-        return None
+        return float(self._coordinates[0]) if len(self._coordinates) >= 2 else None
 
     @property
     def location_accuracy(self):
         """ Location accuracy. """
-        if "lastPosition" in self._coordinator._data:
-            return 10
-        return None
+        return 10 if len(self._coordinates) >= 2 else None
 
     @property
     def source_type(self):
         """ Source type. """
         return SourceType.GPS
+
+    @property
+    def extra_state_attributes(self):
+        """ Extra state attributes. """
+        attributes = dict(self._attr_extra_state_attributes)
+        coordinates = self._coordinates
+        properties = self._position_properties
+        attributes["altitude"] = float(coordinates[2]) if len(coordinates) == 3 else None
+        attributes["fix_status"] = properties.get("fixStatus")
+        attributes["signal_quality"] = properties.get("signalQuality")
+        attributes["position_updated_at"] = properties.get("createdAt")
+        return attributes
 
     def coordinator_update(self):
         """ Coordinator update. """
