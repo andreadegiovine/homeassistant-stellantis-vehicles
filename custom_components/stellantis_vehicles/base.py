@@ -288,8 +288,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if new_engine_status == "Stop" and current_engine_status not in (None, "Stop"):
             _LOGGER.debug("Engine status changed from %s to %s, fetching last trip data", current_engine_status, new_engine_status)
             await self.get_vehicle_last_trip()
-        else:
-            _LOGGER.debug("Engine status unchanged or not relevant for trip data fetch: %s vs %s", current_engine_status, new_engine_status)
+        elif new_engine_status == "Stop":
+            _LOGGER.debug("No last-trip fetch needed (engine %s -> Stop)", current_engine_status)
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """
