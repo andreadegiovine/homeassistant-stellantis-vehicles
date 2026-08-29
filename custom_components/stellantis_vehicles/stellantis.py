@@ -173,6 +173,10 @@ class StellantisBase:
         for key in vehicle:
             string = string.replace("{#" + key + "#}", str(vehicle[key]))
         for key, value in self._config.items():
+            # Per-vehicle stored config is never a placeholder source and its
+            # nested dict-of-dicts shape would not stringify usefully here.
+            if key == "vehicles":
+                continue
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
                     string = string.replace("{#" + key + "|" + subkey + "#}", str(subvalue))
@@ -456,18 +460,33 @@ class StellantisVehicles(StellantisOauth):
             return self._entry.data[config]
         return None
 
+    def get_vehicles_stored_config(self):
+        """Return the per-vehicle stored config sub-node, keyed by VIN."""
+        return self.get_stored_config("vehicles") or {}
+
     def update_vehicle_stored_config(self, vin, key, value):
-        data = self.get_stored_config(vin)
-        if not data:
-            data = {}
-        data[key] = value
-        self.update_stored_config(vin, data)
+        vehicles = deepcopy(self.get_vehicles_stored_config())
+        vehicles.setdefault(vin, {})[key] = value
+        self.update_stored_config("vehicles", vehicles)
+        self._config["vehicles"] = deepcopy(vehicles)
 
     def get_vehicle_stored_config(self, vin, key):
-        data = self.get_stored_config(vin)
-        if data and key in data:
-            return data[key]
+        vehicle = self.get_vehicles_stored_config().get(vin)
+        if vehicle and key in vehicle:
+            return vehicle[key]
         return None
+
+    def prune_stored_vehicle_configs(self, live_vins):
+        """Drop per-vehicle stored config for vehicles no longer on the account."""
+        vehicles = self.get_vehicles_stored_config()
+        stale = [vin for vin in vehicles if vin not in live_vins]
+        if not stale:
+            return []
+        new_vehicles = {vin: deepcopy(value) for vin, value in vehicles.items() if vin not in stale}
+        self.update_stored_config("vehicles", new_vehicles)
+        self._config["vehicles"] = deepcopy(new_vehicles)
+        _LOGGER.info("Removed stored config for vehicles no longer on the account: %s", ", ".join(stale))
+        return stale
 
     def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:

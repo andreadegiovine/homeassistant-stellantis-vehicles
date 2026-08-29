@@ -16,6 +16,7 @@ from .config_flow import StellantisVehiclesConfigFlow
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
+    INTEGRATION_IS_BETA,
     PLATFORMS,
     OTP_FILENAME,
     FIELD_NOTIFICATIONS,
@@ -42,6 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         vehicles = {}
 
     if vehicles:
+        stellantis.prune_stored_vehicle_configs({vehicle["vin"] for vehicle in vehicles})
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
     else:
         _LOGGER.warning("No vehicles found for this account")
@@ -243,6 +245,41 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
         hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
+    # Bumped past the current INTEGRATION_VERSION (20260801) on purpose: betas
+    # already shipped as 20260801, so this migration must still trigger for
+    # entries already sitting at that version. Aligns with INTEGRATION_VERSION
+    # once the 2026.8.2 stable ships.
+    target_version = 20260802
+    if config.version < target_version or "vehicles" not in config.data:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+        data = dict(config.data)
+
+        def update_data(data):
+            # Move all flat per-vehicle nodes under a dedicated "vehicles" sub-node
+            # so the stale-vehicle prune process can no longer touch other config data.
+            vehicles = dict(data.get("vehicles", {}))
+            reserved = ("oauth", "mqtt", "vehicles")
+            for key in list(data.keys()):
+                value = data[key]
+                if key in reserved or not isinstance(value, dict):
+                    continue
+                # Extra safety: only treat entries that look like a VIN (17 alphanumeric chars).
+                if len(key) == 17 and key.isalnum():
+                    moved = data.pop(key)
+                    # A "vehicles" entry written by a newer build before this
+                    # migration ran wins per key over the older flat data.
+                    vehicles[key] = {**moved, **vehicles.get(key, {})}
+            data["vehicles"] = vehicles
+            return data
+
+        new_data = await hass.async_add_executor_job(update_data, data)
+        if INTEGRATION_IS_BETA:
+            # Leave the entry version alone on beta (see the global update below)
+            hass.config_entries.async_update_entry(config, data=new_data)
+        else:
+            hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
     # template for future migration steps
     target_version = 20260702   # to be updated with the next version number
     if config.version < target_version:
@@ -252,11 +289,17 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             # migration logic here
             return data
         new_data = await hass.async_add_executor_job(update_data, data)
-        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
+        if INTEGRATION_IS_BETA:
+            # Leave the entry version alone on beta (see the global update below)
+            hass.config_entries.async_update_entry(config, data=new_data)
+        else:
+            hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    # Global update of versions
-    if config.version < INTEGRATION_VERSION:
+    # Global update of versions - only pull the entry version forward on real
+    # (non-beta) releases, so beta iterations that share a version number keep
+    # re-triggering their own migration steps until the stable release ships.
+    if config.version < INTEGRATION_VERSION and not INTEGRATION_IS_BETA:
         _LOGGER.debug("Entry version updated from %s.%s to %s.1", config.version, config.minor_version, INTEGRATION_VERSION)
         hass.config_entries.async_update_entry(config, version=INTEGRATION_VERSION, minor_version=1)
 
