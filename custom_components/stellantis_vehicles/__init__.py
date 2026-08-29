@@ -41,6 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         vehicles = {}
 
     if vehicles:
+        stellantis.prune_stored_vehicle_configs({vehicle["vin"] for vehicle in vehicles})
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
     else:
         _LOGGER.warning("No vehicles found for this account")
