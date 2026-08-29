@@ -340,7 +340,24 @@
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Véhicule"
+        "name": "Véhicule",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude"
+          },
+          "fix_status": {
+            "name": "État du fix"
+          },
+          "signal_quality": {
+            "name": "Qualité du signal"
+          },
+          "position_updated_at": {
+            "name": "Mis à jour à"
+          },
+          "entity_picture": {
+            "name": "Image de l'entité"
+          }
+        }
       }
     },
     "number": {
