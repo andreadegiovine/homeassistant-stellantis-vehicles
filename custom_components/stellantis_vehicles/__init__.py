@@ -16,6 +16,7 @@ from .config_flow import StellantisVehiclesConfigFlow
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
+    INTEGRATION_IS_BETA,
     PLATFORMS,
     OTP_FILENAME,
     FIELD_NOTIFICATIONS
@@ -248,11 +249,17 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             # migration logic here
             return data
         new_data = await hass.async_add_executor_job(update_data, data)
-        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
+        if INTEGRATION_IS_BETA:
+            # Leave the entry version alone on beta (see the global update below)
+            hass.config_entries.async_update_entry(config, data=new_data)
+        else:
+            hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    # Global update of versions
-    if config.version < INTEGRATION_VERSION:
+    # Global update of versions - only pull the entry version forward on real
+    # (non-beta) releases, so beta iterations that share a version number keep
+    # re-triggering their own migration steps until the stable release ships.
+    if config.version < INTEGRATION_VERSION and not INTEGRATION_IS_BETA:
         _LOGGER.debug("Entry version updated from %s.%s to %s.1", config.version, config.minor_version, INTEGRATION_VERSION)
         hass.config_entries.async_update_entry(config, version=INTEGRATION_VERSION, minor_version=1)
 

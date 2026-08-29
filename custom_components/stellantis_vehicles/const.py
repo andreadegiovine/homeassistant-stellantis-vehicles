@@ -9,6 +9,8 @@ DOMAIN = "stellantis_vehicles"
 
 with open(os.path.dirname(os.path.abspath(__file__)) + "/manifest.json", "r") as f:
     manifest = json.load(f)
+    # A pre-release manifest version carries a "-beta.N" suffix (e.g. "2026.8.1-beta.3").
+    INTEGRATION_IS_BETA = "-beta" in manifest["version"]
     versions = manifest["version"].split("-beta")[0].split(".")
     minor = int(versions[1])
     if minor < 10:
