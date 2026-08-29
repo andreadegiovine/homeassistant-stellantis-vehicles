@@ -5,7 +5,7 @@ import os
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers import issue_registry
+from homeassistant.helpers import issue_registry, device_registry as dr
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
@@ -79,6 +79,32 @@ async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(config.entry_id)
 
     return unload_ok
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, config: ConfigEntry, device: dr.DeviceEntry
+) -> bool:
+    """Allow deleting a device only when its vehicle is no longer on the account.
+
+    Without this the UI offers no way to remove a vehicle's device, so the
+    device and its (now unavailable) entities linger after the vehicle is
+    unpaired. A device for a vehicle still returned by the account cannot be
+    deleted - it would just be recreated on the next refresh.
+    """
+    stellantis = hass.data.get(DOMAIN, {}).get(config.entry_id)
+    if stellantis is None:
+        return True
+    try:
+        known_vins = {
+            vehicle["vin"] for vehicle in await stellantis.get_user_vehicles()
+        }
+    except Exception as err:  # noqa: BLE001 - never block manual cleanup on an API error
+        _LOGGER.warning("Could not verify account vehicles before device removal: %s", err)
+        known_vins = set()
+    return not any(
+        identifier[0] == DOMAIN and identifier[1] in known_vins
+        for identifier in device.identifiers
+    )
 
 
 async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:

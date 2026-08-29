@@ -17,6 +17,7 @@ from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit )
 
@@ -26,6 +27,7 @@ from .const import (
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
     UPDATE_INTERVAL,
+    EMPTY_STATUS_LIMIT,
     KWH_CORRECTION
 )
 
@@ -49,6 +51,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._manage_charge_limit_sent = False
         self._phase_offset = 0
         self._privacy_full_logged = False
+        self._empty_status_count = 0
+        self._vehicle_removed = False
 
         if self._stellantis.logger_filter:
             _LOGGER.addFilter(self._stellantis.logger_filter)
@@ -79,7 +83,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("---------- END _async_update_data")
             raise UpdateFailed("Error communicating with Stellantis API") from err
 
-        if new_data:
+        if not new_data:
+            self._empty_status_count += 1
+            if self._empty_status_count >= EMPTY_STATUS_LIMIT and not self._vehicle_removed:
+                await self._reconcile_vehicle()
+        else:
+            self._empty_status_count = 0
+            self._clear_vehicle_removed()
             self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
 
         if "updatedAt" in new_data and "updatedAt" in self._data:
@@ -120,6 +130,39 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         elif not active and self._privacy_full_logged:
             self._privacy_full_logged = False
             _LOGGER.info("Private mode is disabled on vehicle %s, live data updates resumed", self._vehicle["vin"])
+
+    async def _reconcile_vehicle(self):
+        """ Re-fetch the account vehicle list to check whether this vehicle was unpaired. """
+        vin = self._vehicle["vin"]
+        try:
+            live = await self._stellantis.get_user_vehicles(force=True)
+        except Exception as err:
+            _LOGGER.debug("Could not refresh the vehicle list for %s: %s", vin, err)
+            return
+        live_vins = {vehicle.get("vin") for vehicle in live}
+        if not live_vins or vin in live_vins:
+            # List unavailable or the vehicle is still there: keep polling.
+            self._empty_status_count = 0
+            return
+        self._vehicle_removed = True
+        _LOGGER.warning("Vehicle %s is no longer linked to this Stellantis account", vin)
+        ir.async_create_issue(
+            self._hass,
+            DOMAIN,
+            f"vehicle_removed_{vin}",
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="vehicle_removed",
+            translation_placeholders={"vin": vin},
+        )
+
+    def _clear_vehicle_removed(self):
+        """ Vehicle answered again: drop the repair issue and log the recovery once. """
+        if not self._vehicle_removed:
+            return
+        self._vehicle_removed = False
+        _LOGGER.info("Vehicle %s is reachable again", self._vehicle["vin"])
+        ir.async_delete_issue(self._hass, DOMAIN, f"vehicle_removed_{self._vehicle['vin']}")
 
     def get_translation(self, path, default = None):
         """ Get translation from path. """
