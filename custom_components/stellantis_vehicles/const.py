@@ -1,7 +1,7 @@
 import os
 import json
 
-from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfEnergy, UnitOfSpeed, UnitOfVolume )
+from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfEnergy, UnitOfSpeed, UnitOfVolume, EntityCategory )
 from homeassistant.components.sensor.const import ( SensorDeviceClass, SensorStateClass )
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
@@ -412,11 +412,11 @@ BINARY_SENSORS_DEFAULT = {
         "on_value": "Active"
     },
     "privacy" : {
-        "icon" : "mdi:alarm-light",
+        "icon" : "mdi:eye-off",
         "value_map" : ["privacy", "state"],
         "updated_at_map" : ["privacy", "createdAt"],
-        "device_class" : BinarySensorDeviceClass.LOCK,
-        "on_value": "None"
+        "entity_category" : EntityCategory.DIAGNOSTIC,
+        "on_value": "Full"
     },
     "daylight" : {
         "icon" : "mdi:weather-sunny",

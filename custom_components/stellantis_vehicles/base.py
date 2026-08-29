@@ -48,6 +48,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 #        self._total_trip = None
         self._manage_charge_limit_sent = False
         self._phase_offset = 0
+        self._privacy_full_logged = False
 
         if self._stellantis.logger_filter:
             _LOGGER.addFilter(self._stellantis.logger_filter)
@@ -78,6 +79,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("---------- END _async_update_data")
             raise UpdateFailed("Error communicating with Stellantis API") from err
 
+        if new_data:
+            self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
+
         if "updatedAt" in new_data and "updatedAt" in self._data:
             try:
                 current_dt = datetime.fromisoformat(self._data["updatedAt"])
@@ -106,6 +110,16 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             return
         self._phase_offset = offset_seconds
         self.update_interval = timedelta(seconds=UPDATE_INTERVAL + offset_seconds)
+
+    def _log_privacy_mode(self, state):
+        """ Log once when Stellantis private mode starts or stops pausing live data. """
+        active = state == "Full"
+        if active and not self._privacy_full_logged:
+            self._privacy_full_logged = True
+            _LOGGER.info("Private mode is enabled on vehicle %s, Stellantis has paused live data updates", self._vehicle["vin"])
+        elif not active and self._privacy_full_logged:
+            self._privacy_full_logged = False
+            _LOGGER.info("Private mode is disabled on vehicle %s, live data updates resumed", self._vehicle["vin"])
 
     def get_translation(self, path, default = None):
         """ Get translation from path. """
