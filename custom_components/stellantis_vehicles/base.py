@@ -47,6 +47,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._last_trip = None
 #        self._total_trip = None
         self._manage_charge_limit_sent = False
+        self._phase_offset = 0
 
         if self._stellantis.logger_filter:
             _LOGGER.addFilter(self._stellantis.logger_filter)
@@ -55,6 +56,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("---------- START _async_update_data")
         _LOGGER.debug(self._config)
+
+        if self._phase_offset:
+            # The one-time startup stagger has been consumed, go back to the
+            # normal cadence (a number_refresh_interval override, if any, is
+            # re-applied just below).
+            self._phase_offset = 0
+            self.update_interval = timedelta(seconds=UPDATE_INTERVAL)
 
         refresh_interval = self._sensors.get("number_refresh_interval")
         if refresh_interval and refresh_interval > 0 and refresh_interval != self.update_interval.total_seconds():
@@ -89,6 +97,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._data = new_data
         await self.after_async_update_data()
         _LOGGER.debug("---------- END _async_update_data")
+
+    def stagger_first_poll(self, offset_seconds):
+        """ Push this vehicle's next poll back once so several vehicles do not all
+        poll at the same instant after a restart. """
+        offset_seconds = int(offset_seconds)
+        if offset_seconds <= 0:
+            return
+        self._phase_offset = offset_seconds
+        self.update_interval = timedelta(seconds=UPDATE_INTERVAL + offset_seconds)
 
     def get_translation(self, path, default = None):
         """ Get translation from path. """

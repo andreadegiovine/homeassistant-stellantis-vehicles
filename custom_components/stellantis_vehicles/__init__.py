@@ -18,7 +18,8 @@ from .const import (
     INTEGRATION_VERSION,
     PLATFORMS,
     OTP_FILENAME,
-    FIELD_NOTIFICATIONS
+    FIELD_NOTIFICATIONS,
+    UPDATE_INTERVAL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,9 +48,13 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         await stellantis.hass_notify("no_vehicles_found")
         await stellantis.close_session()
 
-    for vehicle in vehicles:
+    for index, vehicle in enumerate(vehicles):
         coordinator = await stellantis.async_get_coordinator(vehicle)
         await coordinator.async_config_entry_first_refresh()
+        if index and len(vehicles) > 1:
+            # Spread the periodic polls of multiple vehicles across the interval
+            # instead of hitting the API for all of them at the same instant.
+            coordinator.stagger_first_poll(index * UPDATE_INTERVAL / len(vehicles))
 
     url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
     if url not in hass.data["frontend_extra_module_url"].urls:
