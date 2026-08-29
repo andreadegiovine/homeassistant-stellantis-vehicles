@@ -126,6 +126,10 @@ PLATFORMS = [
 
 UPDATE_INTERVAL = 60 # seconds
 
+# Consecutive empty vehicle-status responses before the account vehicle list is
+# re-fetched to check whether the vehicle was unpaired.
+EMPTY_STATUS_LIMIT = 3
+
 VEHICLE_TYPE_ELECTRIC = "Electric"
 VEHICLE_TYPE_HYBRID = "Hybrid"
 VEHICLE_TYPE_THERMIC = "Thermic"

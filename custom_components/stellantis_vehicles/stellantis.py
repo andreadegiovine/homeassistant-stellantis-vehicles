@@ -589,8 +589,12 @@ class StellantisVehicles(StellantisOauth):
         self.update_stored_config("oauth", new_config)
         _LOGGER.debug("---------- END refresh_token_request")
 
-    async def get_user_vehicles(self):
+    async def get_user_vehicles(self, force=False):
         _LOGGER.debug("---------- START get_user_vehicles")
+        if force:
+            # Drop the cache so the account vehicle list is fetched again, e.g. to
+            # confirm a vehicle was unpaired without restarting Home Assistant.
+            self._vehicles = []
         if not self._vehicles:
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_dict_params(CAR_API_HEADERS)
