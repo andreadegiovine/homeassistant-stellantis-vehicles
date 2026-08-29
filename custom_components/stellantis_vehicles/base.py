@@ -86,7 +86,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             raise
         except Exception as err:
             _LOGGER.debug("Error communicating with Stellantis API: %s", err)
-            raise UpdateFailed("Error communicating with Stellantis API") from err
+            raise UpdateFailed(
+                "Error communicating with Stellantis API, enable debug logging for details"
+            ) from err
 
         if not new_data:
             # Keep the last known data instead of blanking every entity on a

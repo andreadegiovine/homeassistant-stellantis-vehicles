@@ -212,7 +212,7 @@ class StellantisBase:
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
     @log_call
-    async def make_http_request(self, url, method='GET', headers=None, params=None, json_data=None, data=None, timeout=60):
+    async def make_http_request(self, url, method='GET', headers=None, params=None, json_data=None, data=None, timeout=60, _retried=False):
         """Perform an HTTP request and return the decoded JSON response."""
         self.start_session()
         try:
@@ -255,8 +255,24 @@ class StellantisBase:
                         # Token expiration
                         raise ConfigEntryAuthFailed(error)
                     if str(resp.status) == "401":
-                        # Oauth token seem expired, refresh request blocked by server/connection error
-                        raise CommunicationError(error)
+                        # The OAuth access token was rejected. This is usually a
+                        # short-lived blip right after a token rotation, so
+                        # refresh the token once and retry the same request
+                        # before surfacing an error.
+                        if not _retried and OAUTH_TOKEN_URL not in url:
+                            _LOGGER.debug("401 received, refreshing the OAuth token and retrying once")
+                            try:
+                                await self.refresh_oauth_token_request()
+                            except (CommunicationError, RateLimitException) as refresh_err:
+                                # ConfigEntryAuthFailed (dead refresh token) is left
+                                # to propagate so Home Assistant starts reauth.
+                                _LOGGER.debug("Token refresh before retry failed: %s", refresh_err)
+                            else:
+                                new_token = (self.get_config("oauth") or {}).get("access_token")
+                                if headers and "Authorization" in headers and new_token:
+                                    headers = {**headers, "Authorization": f"Bearer {new_token}"}
+                                return await self.make_http_request(url, method, headers, params, json_data, data, timeout, _retried=True)
+                        raise CommunicationError("Stellantis rejected the access token (HTTP 401)")
                     if str(resp.status).startswith("50"):
                         # Internal error
                         raise CommunicationError(error)
