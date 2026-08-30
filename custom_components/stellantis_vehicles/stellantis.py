@@ -848,11 +848,11 @@ class StellantisVehicles(StellantisOauth):
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
         _LOGGER.debug(f"Code: {result_code} -> {mqtt.error_string(result_code)}")
-        try:
-            if result_code == 11: # MQTT_ERR_AUTH
-                self.do_async(self.scheduled_mqtt_token_refresh(force=True))
-        except Exception:
-            pass  # refresh_mqtt_token already logs the exception, and raising would halt the Paho reconnect loop
+        if result_code == 11: # MQTT_ERR_AUTH
+            # Runs on the paho network thread; wait=False keeps the reconnect loop
+            # from blocking on the token refresh (network I/O, no timeout).
+            # do_async already guards shutdown and the coroutine logs its own errors.
+            self.do_async(self.scheduled_mqtt_token_refresh(force=True), wait=False)
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
     def _on_mqtt_subscribe(self, client, userdata, mid, granted_qos):
@@ -900,7 +900,10 @@ class StellantisVehicles(StellantisOauth):
                             _LOGGER.debug("The mqtt token seems invalid, refresh the token and try sending the request again")
                             last_request = self._mqtt_last_request
                             self._mqtt_last_request = None
-                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, False, data["correlation_id"]))
+                            # wait=False: don't block the paho network thread while the
+                            # retry forces a token refresh; the result comes back as a
+                            # fresh MQTT response and send_mqtt_message logs its own errors
+                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, False, data["correlation_id"]), wait=False)
                             _LOGGER.debug("---------- END _on_mqtt_message")
                             return
                         else:
@@ -908,13 +911,15 @@ class StellantisVehicles(StellantisOauth):
                             result_code = "failed"
                     if result_code == "113":  # Error: vin (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
                         result_code = "failed"
+                    # wait=False: fire-and-forget so the paho network thread isn't
+                    # blocked (the results aren't used here anyway)
                     if result_code in ["300", "500", "not_compatible", "failed"]:
-                        self.do_async(self.hass_notify("command_error"))
+                        self.do_async(self.hass_notify("command_error"), wait=False)
                     if result_code == "0":
                         _LOGGER.debug(f"Fetch updates after code: {result_code}")
-                        self.do_async(coordinator.async_refresh(), 10)
+                        self.do_async(coordinator.async_refresh(), 10, wait=False)
 
-                    self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
+                    self.do_async(coordinator.update_command_history(data["correlation_id"], result_code), wait=False)
                 else:
                     _LOGGER.error("No result code")
 
