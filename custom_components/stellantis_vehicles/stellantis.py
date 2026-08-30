@@ -560,9 +560,6 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt_token_scheduled()
             self._mqtt_token_scheduled = None
 
-    # TODO: once bugfix/first-refresh-before-platforms is merged, route its
-    # setup-failure cleanup block through async_shutdown() instead of calling
-    # reset_scheduled_tokens() + close_session() separately.
     async def async_shutdown(self) -> None:
         """Tear down everything created for this config entry.
 
