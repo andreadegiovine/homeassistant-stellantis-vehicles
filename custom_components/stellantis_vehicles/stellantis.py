@@ -409,7 +409,7 @@ class StellantisOauth(StellantisBase):
             _LOGGER.debug(token_request)
         except ConfigException as e:
             _LOGGER.debug("---------- END get_mqtt_access_token")
-            raise ConfigEntryAuthFailed(str(e))
+            raise ConfigEntryAuthFailed(str(e)) from e
         except Exception:
             _LOGGER.debug("---------- END get_mqtt_access_token")
             raise

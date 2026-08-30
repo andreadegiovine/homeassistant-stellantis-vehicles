@@ -171,9 +171,9 @@ class Otp:
             if setup:
                 return etree_to_dict(ElT.XML(raw_xml))["ActionSetup"]
             return etree_to_dict(ElT.XML(raw_xml))["ActionFinalize"]
-        except KeyError:
+        except KeyError as e:
             logger.debug(raw_xml)
-            raise ValueError("Bad response from server") from KeyError
+            raise ValueError("Bad response from server") from e
 
     def activation_start(self):
         param = {"action": "ActionSetup", "mode": self.mode, "id": self.data.iwid, "lastsync": self.data.iwTsync,
@@ -217,8 +217,8 @@ class Otp:
         if self.mode == Otp.OTP_MODE:
             try:
                 self.defi = str(xml["defi"])
-            except KeyError:
-                raise ConfigException from KeyError
+            except KeyError as e:
+                raise ConfigException("Missing 'defi' in OTP response") from e
             if "J" in xml:
                 logger.debug("Need another otp request")
                 return Otp.OTP_TWICE
