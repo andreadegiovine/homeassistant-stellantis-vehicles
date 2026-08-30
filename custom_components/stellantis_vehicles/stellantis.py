@@ -121,6 +121,8 @@ class StellantisBase:
         self._config = {}
         self._session = None
         self.otp = None
+        self._shutting_down = False
+        self._pending_tasks: set[asyncio.Task] = set()
 
         self.logger_filter = SensitiveDataFilter()
         _LOGGER.addFilter(self.logger_filter)
@@ -173,6 +175,10 @@ class StellantisBase:
         for key in vehicle:
             string = string.replace("{#" + key + "#}", str(vehicle[key]))
         for key, value in self._config.items():
+            # Per-vehicle stored config is never a placeholder source and its
+            # nested dict-of-dicts shape would not stringify usefully here.
+            if key == "vehicles":
+                continue
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
                     string = string.replace("{#" + key + "|" + subkey + "#}", str(subvalue))
@@ -269,10 +275,29 @@ class StellantisBase:
             raise
 
     def do_async(self, async_func, delay=0, wait=True):
+        if self._shutting_down:
+            # The config entry is being unloaded - drop the coroutine instead of
+            # scheduling work that would resurrect the MQTT client or hit an
+            # already closed aiohttp session.
+            async_func.close()
+            return None
+
         async def delayed_execution():
-            if delay > 0:
-                await asyncio.sleep(delay)
-            return await async_func
+            task = asyncio.current_task()
+            self._pending_tasks.add(task)
+            try:
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                if self._shutting_down:
+                    async_func.close()
+                    return None
+                return await async_func
+            except asyncio.CancelledError:
+                async_func.close()
+                raise
+            finally:
+                self._pending_tasks.discard(task)
+
         future = asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop)
         return future.result() if wait else None
 
@@ -334,12 +359,10 @@ class StellantisOauth(StellantisBase):
         headers = self.apply_dict_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
         user_request = await self.make_http_request(url, 'GET', headers)
-        if "customer" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["customer"])
-        if "vehicle" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["vehicle"])
-        if "car_association_id" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["car_association_id"])
+        user_info = user_request[0] if isinstance(user_request, list) and user_request else {}
+        for key in ("customer", "vehicle", "car_association_id"):
+            if key in user_info:
+                self.logger_filter.add_custom_value(user_info[key])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(user_request)
@@ -456,18 +479,33 @@ class StellantisVehicles(StellantisOauth):
             return self._entry.data[config]
         return None
 
+    def get_vehicles_stored_config(self):
+        """Return the per-vehicle stored config sub-node, keyed by VIN."""
+        return self.get_stored_config("vehicles") or {}
+
     def update_vehicle_stored_config(self, vin, key, value):
-        data = self.get_stored_config(vin)
-        if not data:
-            data = {}
-        data[key] = value
-        self.update_stored_config(vin, data)
+        vehicles = deepcopy(self.get_vehicles_stored_config())
+        vehicles.setdefault(vin, {})[key] = value
+        self.update_stored_config("vehicles", vehicles)
+        self._config["vehicles"] = deepcopy(vehicles)
 
     def get_vehicle_stored_config(self, vin, key):
-        data = self.get_stored_config(vin)
-        if data and key in data:
-            return data[key]
+        vehicle = self.get_vehicles_stored_config().get(vin)
+        if vehicle and key in vehicle:
+            return vehicle[key]
         return None
+
+    def prune_stored_vehicle_configs(self, live_vins):
+        """Drop per-vehicle stored config for vehicles no longer on the account."""
+        vehicles = self.get_vehicles_stored_config()
+        stale = [vin for vin in vehicles if vin not in live_vins]
+        if not stale:
+            return []
+        new_vehicles = {vin: deepcopy(value) for vin, value in vehicles.items() if vin not in stale}
+        self.update_stored_config("vehicles", new_vehicles)
+        self._config["vehicles"] = deepcopy(new_vehicles)
+        _LOGGER.info("Removed stored config for vehicles no longer on the account: %s", ", ".join(stale))
+        return stale
 
     def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:
@@ -522,6 +560,39 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt_token_scheduled()
             self._mqtt_token_scheduled = None
 
+    # TODO: once bugfix/first-refresh-before-platforms is merged, route its
+    # setup-failure cleanup block through async_shutdown() instead of calling
+    # reset_scheduled_tokens() + close_session() separately.
+    async def async_shutdown(self) -> None:
+        """Tear down everything created for this config entry.
+
+        Called from async_unload_entry so a reload does not leak the paho-mqtt
+        network thread, the delayed do_async reconnect tasks, the scheduled
+        token-refresh callbacks or the aiohttp session.
+        """
+        self._shutting_down = True
+
+        # Stop the scheduled oauth/mqtt token-refresh callbacks.
+        self.reset_scheduled_tokens()
+
+        # Cancel any pending (possibly still sleeping) do_async coroutines,
+        # e.g. the 300s MQTT reconnect scheduled from _on_mqtt_subscribe.
+        for task in list(self._pending_tasks):
+            task.cancel()
+        self._pending_tasks.clear()
+
+        # Tear down the MQTT client and join its network thread.
+        if self._mqtt is not None:
+            mqtt_client, self._mqtt = self._mqtt, None
+            # Drop the reconnect / token-refresh callback so the deliberate
+            # disconnect below does not trigger a fresh reconnect attempt.
+            mqtt_client.on_disconnect = None
+            mqtt_client.disconnect()
+            await self._hass.async_add_executor_job(mqtt_client.loop_stop)
+
+        # Close the shared aiohttp session.
+        await self.close_session()
+
     async def scheduled_tokens_refresh(self):
         self.reset_scheduled_tokens()
         await self.scheduled_oauth_token_refresh()
@@ -570,8 +641,12 @@ class StellantisVehicles(StellantisOauth):
         self.update_stored_config("oauth", new_config)
         _LOGGER.debug("---------- END refresh_token_request")
 
-    async def get_user_vehicles(self):
+    async def get_user_vehicles(self, force=False):
         _LOGGER.debug("---------- START get_user_vehicles")
+        if force:
+            # Drop the cache so the account vehicle list is fetched again, e.g. to
+            # confirm a vehicle was unpaired without restarting Home Assistant.
+            self._vehicles = []
         if not self._vehicles:
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_dict_params(CAR_API_HEADERS)
@@ -732,6 +807,11 @@ class StellantisVehicles(StellantisOauth):
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
+        if self._shutting_down:
+            # A coordinator refresh still in flight during unload must not
+            # recreate the MQTT client async_shutdown just tore down.
+            _LOGGER.debug("---------- END connect_mqtt")
+            return False
         if self._mqtt is None:
             self._mqtt = MqttClientMod(clean_session=True, protocol=mqtt.MQTTv311)
             # self._mqtt.enable_logger(logger=_LOGGER)
