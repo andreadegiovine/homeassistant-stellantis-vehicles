@@ -1,7 +1,7 @@
 import os
 import json
 
-from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfEnergy, UnitOfSpeed, UnitOfVolume )
+from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfEnergy, UnitOfSpeed, UnitOfVolume, EntityCategory )
 from homeassistant.components.sensor.const import ( SensorDeviceClass, SensorStateClass )
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
@@ -9,6 +9,8 @@ DOMAIN = "stellantis_vehicles"
 
 with open(os.path.dirname(os.path.abspath(__file__)) + "/manifest.json", "r") as f:
     manifest = json.load(f)
+    # A pre-release manifest version carries a "-beta.N" suffix (e.g. "2026.8.1-beta.3").
+    INTEGRATION_IS_BETA = "-beta" in manifest["version"]
     versions = manifest["version"].split("-beta")[0].split(".")
     minor = int(versions[1])
     if minor < 10:
@@ -123,6 +125,10 @@ PLATFORMS = [
 ]
 
 UPDATE_INTERVAL = 60 # seconds
+
+# Consecutive empty vehicle-status responses before the account vehicle list is
+# re-fetched to check whether the vehicle was unpaired.
+EMPTY_STATUS_LIMIT = 3
 
 VEHICLE_TYPE_ELECTRIC = "Electric"
 VEHICLE_TYPE_HYBRID = "Hybrid"
@@ -410,11 +416,11 @@ BINARY_SENSORS_DEFAULT = {
         "on_value": "Active"
     },
     "privacy" : {
-        "icon" : "mdi:alarm-light",
+        "icon" : "mdi:eye-off",
         "value_map" : ["privacy", "state"],
         "updated_at_map" : ["privacy", "createdAt"],
-        "device_class" : BinarySensorDeviceClass.LOCK,
-        "on_value": "None"
+        "entity_category" : EntityCategory.DIAGNOSTIC,
+        "on_value": "Full"
     },
     "daylight" : {
         "icon" : "mdi:weather-sunny",

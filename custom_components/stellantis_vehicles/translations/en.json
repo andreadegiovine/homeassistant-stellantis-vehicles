@@ -340,7 +340,24 @@
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Vehicle"
+        "name": "Vehicle",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude"
+          },
+          "fix_status": {
+            "name": "Fix status"
+          },
+          "signal_quality": {
+            "name": "Signal quality"
+          },
+          "position_updated_at": {
+            "name": "Updated at"
+          },
+          "entity_picture": {
+            "name": "Entity picture"
+          }
+        }
       }
     },
     "number": {
@@ -382,6 +399,12 @@
     "no_vehicles_found_message": "No connected vehicles available on this account",
     "command_error_title": "Command",
     "command_error_message": "The command was not sent correctly"
+  },
+  "issues": {
+    "vehicle_removed": {
+      "title": "Vehicle {vin} was removed from your account",
+      "description": "Home Assistant can no longer reach vehicle `{vin}` through the Stellantis API, and it is no longer listed on your Stellantis account. This usually means the vehicle was sold or unpaired.\n\n**Warning:** Deleting the device also permanently deletes **all of its entities**, and with them **all short- and long-term statistics** collected for this vehicle (for example energy, mileage, and battery history). This data cannot be recovered. If you want to keep it, export or back it up before you continue.\n\nTo resolve this:\n1. Open **Settings > Devices & services > Stellantis Vehicles**.\n2. Open the device for this vehicle and select **Delete**.\n3. Restart Home Assistant.\n\nThis warning disappears once the vehicle is removed."
+    }
   },
   "selector": {
     "reconfigure": {

@@ -17,6 +17,7 @@ from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit )
 
@@ -26,6 +27,7 @@ from .const import (
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
     UPDATE_INTERVAL,
+    EMPTY_STATUS_LIMIT,
     KWH_CORRECTION
 )
 
@@ -47,6 +49,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._last_trip = None
 #        self._total_trip = None
         self._manage_charge_limit_sent = False
+        self._phase_offset = 0
+        self._privacy_full_logged = False
+        self._empty_status_count = 0
+        self._vehicle_removed = False
 
         if self._stellantis.logger_filter:
             _LOGGER.addFilter(self._stellantis.logger_filter)
@@ -55,6 +61,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("---------- START _async_update_data")
         _LOGGER.debug(self._config)
+
+        if self._phase_offset:
+            # The one-time startup stagger has been consumed, go back to the
+            # normal cadence (a number_refresh_interval override, if any, is
+            # re-applied just below).
+            self._phase_offset = 0
+            self.update_interval = timedelta(seconds=UPDATE_INTERVAL)
 
         refresh_interval = self._sensors.get("number_refresh_interval")
         if refresh_interval and refresh_interval > 0 and refresh_interval != self.update_interval.total_seconds():
@@ -69,6 +82,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("Error communicating with Stellantis API: %s", err)
             _LOGGER.debug("---------- END _async_update_data")
             raise UpdateFailed("Error communicating with Stellantis API") from err
+
+        if not new_data:
+            self._empty_status_count += 1
+            if self._empty_status_count >= EMPTY_STATUS_LIMIT and not self._vehicle_removed:
+                await self._reconcile_vehicle()
+        else:
+            self._empty_status_count = 0
+            self._clear_vehicle_removed()
+            self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
 
         if "updatedAt" in new_data and "updatedAt" in self._data:
             try:
@@ -89,6 +111,58 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._data = new_data
         await self.after_async_update_data()
         _LOGGER.debug("---------- END _async_update_data")
+
+    def stagger_first_poll(self, offset_seconds):
+        """ Push this vehicle's next poll back once so several vehicles do not all
+        poll at the same instant after a restart. """
+        offset_seconds = int(offset_seconds)
+        if offset_seconds <= 0:
+            return
+        self._phase_offset = offset_seconds
+        self.update_interval = timedelta(seconds=UPDATE_INTERVAL + offset_seconds)
+
+    def _log_privacy_mode(self, state):
+        """ Log once when Stellantis private mode starts or stops pausing live data. """
+        active = state == "Full"
+        if active and not self._privacy_full_logged:
+            self._privacy_full_logged = True
+            _LOGGER.info("Private mode is enabled on vehicle %s, Stellantis has paused live data updates", self._vehicle["vin"])
+        elif not active and self._privacy_full_logged:
+            self._privacy_full_logged = False
+            _LOGGER.info("Private mode is disabled on vehicle %s, live data updates resumed", self._vehicle["vin"])
+
+    async def _reconcile_vehicle(self):
+        """ Re-fetch the account vehicle list to check whether this vehicle was unpaired. """
+        vin = self._vehicle["vin"]
+        try:
+            live = await self._stellantis.get_user_vehicles(force=True)
+        except Exception as err:
+            _LOGGER.debug("Could not refresh the vehicle list for %s: %s", vin, err)
+            return
+        live_vins = {vehicle.get("vin") for vehicle in live}
+        if not live_vins or vin in live_vins:
+            # List unavailable or the vehicle is still there: keep polling.
+            self._empty_status_count = 0
+            return
+        self._vehicle_removed = True
+        _LOGGER.warning("Vehicle %s is no longer linked to this Stellantis account", vin)
+        ir.async_create_issue(
+            self._hass,
+            DOMAIN,
+            f"vehicle_removed_{vin}",
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="vehicle_removed",
+            translation_placeholders={"vin": vin},
+        )
+
+    def _clear_vehicle_removed(self):
+        """ Vehicle answered again: drop the repair issue and log the recovery once. """
+        if not self._vehicle_removed:
+            return
+        self._vehicle_removed = False
+        _LOGGER.info("Vehicle %s is reachable again", self._vehicle["vin"])
+        ir.async_delete_issue(self._hass, DOMAIN, f"vehicle_removed_{self._vehicle['vin']}")
 
     def get_translation(self, path, default = None):
         """ Get translation from path. """
@@ -288,8 +362,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if new_engine_status == "Stop" and current_engine_status not in (None, "Stop"):
             _LOGGER.debug("Engine status changed from %s to %s, fetching last trip data", current_engine_status, new_engine_status)
             await self.get_vehicle_last_trip()
-        else:
-            _LOGGER.debug("Engine status unchanged or not relevant for trip data fetch: %s vs %s", current_engine_status, new_engine_status)
+        elif new_engine_status == "Stop":
+            _LOGGER.debug("No last-trip fetch needed (engine %s -> Stop)", current_engine_status)
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """
@@ -534,30 +608,55 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
         return False
 
     @property
+    def _last_position(self):
+        """ Last known position feature. """
+        last_position = self._coordinator._data.get("lastPosition")
+        return last_position if isinstance(last_position, dict) else {}
+
+    @property
+    def _coordinates(self):
+        """ GPS coordinates [lon, lat, alt] of the last known position. """
+        geometry = self._last_position.get("geometry") or {}
+        coordinates = geometry.get("coordinates")
+        return coordinates if isinstance(coordinates, list) else []
+
+    @property
+    def _position_properties(self):
+        """ Properties of the last known position. """
+        properties = self._last_position.get("properties")
+        return properties if isinstance(properties, dict) else {}
+
+    @property
     def latitude(self):
         """ Latitude. """
-        if "lastPosition" in self._coordinator._data:
-            return float(self._coordinator._data["lastPosition"]["geometry"]["coordinates"][1])
-        return None
+        return float(self._coordinates[1]) if len(self._coordinates) >= 2 else None
 
     @property
     def longitude(self):
         """ Longitude. """
-        if "lastPosition" in self._coordinator._data:
-            return float(self._coordinator._data["lastPosition"]["geometry"]["coordinates"][0])
-        return None
+        return float(self._coordinates[0]) if len(self._coordinates) >= 2 else None
 
     @property
     def location_accuracy(self):
         """ Location accuracy. """
-        if "lastPosition" in self._coordinator._data:
-            return 10
-        return None
+        return 10 if len(self._coordinates) >= 2 else None
 
     @property
     def source_type(self):
         """ Source type. """
         return SourceType.GPS
+
+    @property
+    def extra_state_attributes(self):
+        """ Extra state attributes. """
+        attributes = dict(self._attr_extra_state_attributes)
+        coordinates = self._coordinates
+        properties = self._position_properties
+        attributes["altitude"] = float(coordinates[2]) if len(coordinates) == 3 else None
+        attributes["fix_status"] = properties.get("fixStatus")
+        attributes["signal_quality"] = properties.get("signalQuality")
+        attributes["position_updated_at"] = properties.get("createdAt")
+        return attributes
 
     def coordinator_update(self):
         """ Coordinator update. """
