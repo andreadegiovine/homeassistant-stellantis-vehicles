@@ -377,10 +377,13 @@ class StellantisOauth(StellantisBase):
             if self.otp.activation_start():
                 finalyze = self.otp.activation_finalyze()
                 if finalyze != 0:
-                    raise Exception(finalyze)
+                    raise ConfigException(finalyze)
+        except ConfigException as e:
+            _LOGGER.error(str(e))
+            raise
         except Exception as e:
             _LOGGER.error(str(e))
-            raise Exception(str(e))
+            raise ConfigException(str(e)) from e
 
     async def get_otp_sms(self):
         _LOGGER.debug("---------- START get_otp_sms")
