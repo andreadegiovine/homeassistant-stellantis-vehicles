@@ -51,13 +51,24 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         # platform or entity is set up yet, so Home Assistant retries the whole
         # entry cleanly. Entities are also created already holding the data from
         # the first poll, instead of briefly existing with an empty coordinator.
-        for index, vehicle in enumerate(vehicles):
-            coordinator = await stellantis.async_get_coordinator(vehicle)
-            await coordinator.async_config_entry_first_refresh()
-            if index and len(vehicles) > 1:
-                # Spread the periodic polls of multiple vehicles across the
-                # interval instead of hitting the API for all of them at once.
-                coordinator.stagger_first_poll(index * UPDATE_INTERVAL / len(vehicles))
+        try:
+            for index, vehicle in enumerate(vehicles):
+                coordinator = await stellantis.async_get_coordinator(vehicle)
+                await coordinator.async_config_entry_first_refresh()
+                if index and len(vehicles) > 1:
+                    # Spread the periodic polls of multiple vehicles across the
+                    # interval instead of hitting the API for all of them at once.
+                    coordinator.stagger_first_poll(index * UPDATE_INTERVAL / len(vehicles))
+        except Exception:
+            # First refresh failed (ConfigEntryNotReady / ConfigEntryAuthFailed /
+            # ...). Home Assistant does not call async_unload_entry when
+            # async_setup_entry raises, so drop this attempt's state here: the
+            # retry then starts from a clean slate and the scheduled
+            # token-refresh jobs from this attempt do not leak.
+            stellantis.reset_scheduled_tokens()
+            await stellantis.close_session()
+            hass.data[DOMAIN].pop(config.entry_id, None)
+            raise
 
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
     else:
