@@ -10,7 +10,7 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
 from .stellantis import StellantisVehicles
-from .exceptions import ComunicationError
+from .exceptions import CommunicationError
 from .config_flow import StellantisVehiclesConfigFlow
 
 from .const import (
@@ -37,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     try:
         vehicles = await stellantis.get_user_vehicles()
-    except (ConfigEntryAuthFailed, ComunicationError):
+    except (ConfigEntryAuthFailed, CommunicationError):
         raise
     except Exception:
         vehicles = {}
