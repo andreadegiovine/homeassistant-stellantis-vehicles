@@ -359,12 +359,10 @@ class StellantisOauth(StellantisBase):
         headers = self.apply_dict_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
         user_request = await self.make_http_request(url, 'GET', headers)
-        if "customer" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["customer"])
-        if "vehicle" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["vehicle"])
-        if "car_association_id" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["car_association_id"])
+        user_info = user_request[0] if isinstance(user_request, list) and user_request else {}
+        for key in ("customer", "vehicle", "car_association_id"):
+            if key in user_info:
+                self.logger_filter.add_custom_value(user_info[key])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(user_request)
