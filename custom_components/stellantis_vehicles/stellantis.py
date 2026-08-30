@@ -367,7 +367,10 @@ class StellantisOauth(StellantisBase):
         _LOGGER.debug(headers)
         _LOGGER.debug(user_request)
         _LOGGER.debug("---------- END get_user_info")
-        return user_request
+        # Always hand back a list so callers can safely index [0]; a non-list
+        # body (error object, changed shape) becomes an empty list, which the
+        # config flow reports as missing user info.
+        return user_request if isinstance(user_request, list) else []
 
     def new_otp(self, sms_code, pin_code):
         try:
