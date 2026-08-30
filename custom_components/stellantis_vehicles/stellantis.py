@@ -121,6 +121,8 @@ class StellantisBase:
         self._config = {}
         self._session = None
         self.otp = None
+        self._shutting_down = False
+        self._pending_tasks: set[asyncio.Task] = set()
 
         self.logger_filter = SensitiveDataFilter()
         _LOGGER.addFilter(self.logger_filter)
@@ -273,10 +275,29 @@ class StellantisBase:
             raise
 
     def do_async(self, async_func, delay=0, wait=True):
+        if self._shutting_down:
+            # The config entry is being unloaded - drop the coroutine instead of
+            # scheduling work that would resurrect the MQTT client or hit an
+            # already closed aiohttp session.
+            async_func.close()
+            return None
+
         async def delayed_execution():
-            if delay > 0:
-                await asyncio.sleep(delay)
-            return await async_func
+            task = asyncio.current_task()
+            self._pending_tasks.add(task)
+            try:
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                if self._shutting_down:
+                    async_func.close()
+                    return None
+                return await async_func
+            except asyncio.CancelledError:
+                async_func.close()
+                raise
+            finally:
+                self._pending_tasks.discard(task)
+
         future = asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop)
         return future.result() if wait else None
 
@@ -541,6 +562,39 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt_token_scheduled()
             self._mqtt_token_scheduled = None
 
+    # TODO: once bugfix/first-refresh-before-platforms is merged, route its
+    # setup-failure cleanup block through async_shutdown() instead of calling
+    # reset_scheduled_tokens() + close_session() separately.
+    async def async_shutdown(self) -> None:
+        """Tear down everything created for this config entry.
+
+        Called from async_unload_entry so a reload does not leak the paho-mqtt
+        network thread, the delayed do_async reconnect tasks, the scheduled
+        token-refresh callbacks or the aiohttp session.
+        """
+        self._shutting_down = True
+
+        # Stop the scheduled oauth/mqtt token-refresh callbacks.
+        self.reset_scheduled_tokens()
+
+        # Cancel any pending (possibly still sleeping) do_async coroutines,
+        # e.g. the 300s MQTT reconnect scheduled from _on_mqtt_subscribe.
+        for task in list(self._pending_tasks):
+            task.cancel()
+        self._pending_tasks.clear()
+
+        # Tear down the MQTT client and join its network thread.
+        if self._mqtt is not None:
+            mqtt_client, self._mqtt = self._mqtt, None
+            # Drop the reconnect / token-refresh callback so the deliberate
+            # disconnect below does not trigger a fresh reconnect attempt.
+            mqtt_client.on_disconnect = None
+            mqtt_client.disconnect()
+            await self._hass.async_add_executor_job(mqtt_client.loop_stop)
+
+        # Close the shared aiohttp session.
+        await self.close_session()
+
     async def scheduled_tokens_refresh(self):
         self.reset_scheduled_tokens()
         await self.scheduled_oauth_token_refresh()
@@ -755,6 +809,11 @@ class StellantisVehicles(StellantisOauth):
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
+        if self._shutting_down:
+            # A coordinator refresh still in flight during unload must not
+            # recreate the MQTT client async_shutdown just tore down.
+            _LOGGER.debug("---------- END connect_mqtt")
+            return False
         if self._mqtt is None:
             self._mqtt = MqttClientMod(clean_session=True, protocol=mqtt.MQTTv311)
             # self._mqtt.enable_logger(logger=_LOGGER)

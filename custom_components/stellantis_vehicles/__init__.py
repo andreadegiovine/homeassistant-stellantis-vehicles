@@ -71,11 +71,7 @@ async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     stellantis = hass.data[DOMAIN][config.entry_id]
 
     if unload_ok := await hass.config_entries.async_unload_platforms(config, PLATFORMS):
-        if stellantis.remote_commands and stellantis._mqtt:
-            stellantis._mqtt.disconnect()
-
-        stellantis.reset_scheduled_tokens()
-
+        await stellantis.async_shutdown()
         hass.data[DOMAIN].pop(config.entry_id)
 
     return unload_ok
