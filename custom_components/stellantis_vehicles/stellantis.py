@@ -651,6 +651,11 @@ class StellantisVehicles(StellantisOauth):
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_dict_params(CAR_API_HEADERS)
             vehicles_request = await self.make_http_request(url, 'GET', headers)
+            if not isinstance(vehicles_request, dict) or not vehicles_request:
+                # An empty or non-object body on a 2xx response is not a valid
+                # vehicle list. Treat it as a transient API problem instead of
+                # reporting the account as having no vehicles.
+                raise CommunicationError("Empty or invalid response from the vehicles endpoint")
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
                     for vehicle in vehicles_request["_embedded"]["vehicles"]:
