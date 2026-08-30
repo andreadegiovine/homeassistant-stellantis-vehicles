@@ -392,8 +392,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if "_embedded" in trips and "trips" in trips["_embedded"] and trips["_embedded"]["trips"]:
                 if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
                     self._last_trip = trips["_embedded"]["trips"][-1]
-        except Exception:
-            pass
+        except Exception as e:
+            _LOGGER.warning("Failed to fetch last trip data: %s", e)
 
 #     def parse_trips_page_data(self, data):
 #         result = []

@@ -851,7 +851,7 @@ class StellantisVehicles(StellantisOauth):
         try:
             if result_code == 11: # MQTT_ERR_AUTH
                 self.do_async(self.scheduled_mqtt_token_refresh(force=True))
-        except:
+        except Exception:
             pass  # refresh_mqtt_token already logs the exception, and raising would halt the Paho reconnect loop
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
@@ -924,7 +924,7 @@ class StellantisVehicles(StellantisOauth):
 #                 if programs:
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
                 _LOGGER.debug("Update data from mqtt?!?")
-        except (KeyError, Exception) as e:
+        except Exception as e:
             _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END _on_mqtt_message")
 
@@ -976,6 +976,6 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug(abrp_request)
             if "status" not in abrp_request or abrp_request["status"] != "ok":
                 _LOGGER.warning(abrp_request)
-        except Exception:
-            pass
+        except Exception as e:
+            _LOGGER.warning("Failed to send ABRP data: %s", e)
         _LOGGER.debug("---------- END send_abrp_data")
