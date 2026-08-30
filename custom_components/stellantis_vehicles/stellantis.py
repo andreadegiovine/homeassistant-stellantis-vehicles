@@ -961,7 +961,8 @@ class StellantisVehicles(StellantisOauth):
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             _LOGGER.debug("---------- END send_mqtt_message")
-            pass
+            # Re-raise so the caller can trigger Home Assistant's reauth flow.
+            raise
         except Exception as e:
             _LOGGER.error(f"Unexpected error during MQTT message sending: {e}")
             _LOGGER.debug("---------- END send_mqtt_message")
