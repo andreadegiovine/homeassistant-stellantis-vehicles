@@ -225,7 +225,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
             _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
-            self._stellantis._entry.async_start_reauth(self._hass)
+            self.config_entry.async_start_reauth(self.hass)
         except Exception as e:
             _LOGGER.error("Failed to send command %s: %s", name, str(e))
             raise
