@@ -13,6 +13,9 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Read-only platform, all state is provided by the coordinator.
+PARALLEL_UPDATES = 0
+
 async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
