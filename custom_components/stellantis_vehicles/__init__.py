@@ -10,7 +10,7 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
 from .stellantis import StellantisVehicles
-from .exceptions import ComunicationError
+from .exceptions import CommunicationError
 from .config_flow import StellantisVehiclesConfigFlow
 
 from .const import (
@@ -37,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     try:
         vehicles = await stellantis.get_user_vehicles()
-    except (ConfigEntryAuthFailed, ComunicationError):
+    except (ConfigEntryAuthFailed, CommunicationError):
         raise
     except Exception:
         vehicles = {}
@@ -63,10 +63,10 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
             # First refresh failed (ConfigEntryNotReady / ConfigEntryAuthFailed /
             # ...). Home Assistant does not call async_unload_entry when
             # async_setup_entry raises, so drop this attempt's state here: the
-            # retry then starts from a clean slate and the scheduled
-            # token-refresh jobs from this attempt do not leak.
-            stellantis.reset_scheduled_tokens()
-            await stellantis.close_session()
+            # retry then starts from a clean slate and the MQTT client, pending
+            # tasks, scheduled token-refresh jobs and aiohttp session from this
+            # attempt do not leak.
+            await stellantis.async_shutdown()
             hass.data[DOMAIN].pop(config.entry_id, None)
             raise
 

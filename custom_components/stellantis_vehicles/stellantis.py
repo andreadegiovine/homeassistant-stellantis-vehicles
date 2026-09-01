@@ -23,7 +23,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from .utils import ( get_datetime, rate_limit, SensitiveDataFilter, replace_string_placeholders )
-from .exceptions import ( ComunicationError, RateLimitException )
+from .exceptions import ( CommunicationError, RateLimitException )
 
 from .const import (
     DOMAIN,
@@ -237,18 +237,18 @@ class StellantisBase:
                     if str(resp.status) == "500" and str(result.get("code")) == "50000":
                         # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
                         # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
-                        raise ComunicationError(error)
+                        raise CommunicationError(error)
                     if str(resp.status) == "400" and result.get("error") == "invalid_grant":
                         # Token expiration
                         raise ConfigEntryAuthFailed(error)
                     if str(resp.status) == "401":
                         # Oauth token seem expired, refresh request blocked by server/connection error
-                        raise ComunicationError(error)
+                        raise CommunicationError(error)
                     if str(resp.status).startswith("50"):
                         # Internal error
-                        raise ComunicationError(error)
+                        raise CommunicationError(error)
                     # Any other non-2xx response we don't have a specific case for
-                    raise ComunicationError(error or f"Unexpected HTTP status {resp.status}")
+                    raise CommunicationError(error or f"Unexpected HTTP status {resp.status}")
 
                 _LOGGER.debug("---------- END make_http_request")
                 return result
@@ -257,14 +257,14 @@ class StellantisBase:
             _LOGGER.warning(f"Error: {e}")
             _LOGGER.debug("---------- END make_http_request")
             # Connection error
-            raise ComunicationError("Request timeout") from e
+            raise CommunicationError("Request timeout") from e
         except aiohttp.client_exceptions.ClientError as e:
             await self.close_session()
             _LOGGER.warning(f"Error: {e}")
             _LOGGER.debug("---------- END make_http_request")
             # Connection error
-            raise ComunicationError(e) from e
-        except (ConfigEntryAuthFailed, ComunicationError):
+            raise CommunicationError(e) from e
+        except (ConfigEntryAuthFailed, CommunicationError):
             await self.close_session()
             _LOGGER.debug("---------- END make_http_request")
             raise
@@ -560,9 +560,6 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt_token_scheduled()
             self._mqtt_token_scheduled = None
 
-    # TODO: once bugfix/first-refresh-before-platforms is merged, route its
-    # setup-failure cleanup block through async_shutdown() instead of calling
-    # reset_scheduled_tokens() + close_session() separately.
     async def async_shutdown(self) -> None:
         """Tear down everything created for this config entry.
 
@@ -610,7 +607,7 @@ class StellantisVehicles(StellantisOauth):
             elif get_datetime() > get_next_run():
                 await self.refresh_token_request()
             next_run = get_next_run()
-        except ComunicationError:
+        except CommunicationError:
             next_run = get_datetime() + timedelta(minutes=5)
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
@@ -752,7 +749,7 @@ class StellantisVehicles(StellantisOauth):
             if force or get_datetime() > get_next_run():
                 await self.refresh_mqtt_token_request()
             next_run = get_next_run()
-        except ComunicationError:
+        except CommunicationError:
             next_run = get_datetime() + timedelta(minutes=1)
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 1 day or check logs and restart integration")

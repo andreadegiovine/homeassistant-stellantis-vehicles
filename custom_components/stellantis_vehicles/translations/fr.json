@@ -346,7 +346,7 @@
             "name": "Altitude"
           },
           "fix_status": {
-            "name": "État du fix"
+            "name": "Statut du fix"
           },
           "signal_quality": {
             "name": "Qualité du signal"
@@ -399,6 +399,12 @@
     "no_vehicles_found_message": "Aucun véhicule connecté disponible sur ce compte",
     "command_error_title": "Commande",
     "command_error_message": "La commande n'a pas été envoyée correctement"
+  },
+  "issues": {
+    "vehicle_removed": {
+      "title": "Le véhicle {vin} a été supprimé de votre compte",
+      "description": "Home Assistant ne peut plus atteindre le véhicule `{vin}` via l'API Stellantis, et il n'est plus répertorié sur votre compte Stellantis. Cela signifie généralement que le véhicule a été vendu ou dissocié. Pour résoudre ce problème, il faut supprimer le véhicule de l'intégration.\n\n**Avertissement:** La suppression du véhicule supprime également de manière permanente **toutes ses entités**, et avec elles **toutes les statistiques à court et à long terme** collectées pour ce véhicule (par exemple l'énergie, le kilométrage, et l'historique de la batterie). Ces données ne peuvent pas être récupérées. Si vous souhaitez les conserver, exportez-les ou sauvegardez-les avant de continuer.\n\nPour supprimer le véhicule:\n1. Ouvrez **Paramètres > Appareils & services > Stellantis Vehicles **.\n2. Ouvrez le menu du véhicule (trois points verticaux à l'extrémité droite de la ligne du véhicule) et sélectionnez **Supprimer l'appareil**.\n3. Redémarrez Home Assistant.\n\nCet avertissement disparaît une fois que le véhicule a été supprimé."
+    }
   },
   "selector": {
     "reconfigure": {

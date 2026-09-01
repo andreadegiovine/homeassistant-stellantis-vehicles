@@ -84,13 +84,30 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             raise UpdateFailed("Error communicating with Stellantis API") from err
 
         if not new_data:
+            # Keep the last known data instead of blanking every entity on a
+            # single empty response (404 / empty body).
             self._empty_status_count += 1
-            if self._empty_status_count >= EMPTY_STATUS_LIMIT and not self._vehicle_removed:
+            _LOGGER.debug(
+                "Empty vehicle status response (%s in a row), keeping last known data",
+                self._empty_status_count,
+            )
+
+            if self._empty_status_count < EMPTY_STATUS_LIMIT:
+                # Short gap: keep the last known data.
+                _LOGGER.debug("---------- END _async_update_data")
+                return
+
+            if self._empty_status_count % EMPTY_STATUS_LIMIT == 0 and not self._vehicle_removed:
+                # Periodically check whether the vehicle was unpaired.
                 await self._reconcile_vehicle()
-        else:
-            self._empty_status_count = 0
-            self._clear_vehicle_removed()
-            self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
+
+            # Sustained outage: surface it so entities go unavailable.
+            _LOGGER.debug("---------- END _async_update_data")
+            raise UpdateFailed("Empty vehicle status response")
+
+        self._empty_status_count = 0
+        self._clear_vehicle_removed()
+        self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
 
         if "updatedAt" in new_data and "updatedAt" in self._data:
             try:
@@ -132,7 +149,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.info("Private mode is disabled on vehicle %s, live data updates resumed", self._vehicle["vin"])
 
     async def _reconcile_vehicle(self):
-        """ Re-fetch the account vehicle list to check whether this vehicle was unpaired. """
+        """ Re-fetch the account vehicle list to check whether this vehicle was unpaired.
+
+        Sets ``self._vehicle_removed`` and raises a repair issue only when the
+        vehicle is confirmed gone from the account.
+        """
         vin = self._vehicle["vin"]
         try:
             live = await self._stellantis.get_user_vehicles(force=True)
@@ -142,7 +163,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         live_vins = {vehicle.get("vin") for vehicle in live}
         if not live_vins or vin in live_vins:
             # List unavailable or the vehicle is still there: keep polling.
-            self._empty_status_count = 0
             return
         self._vehicle_removed = True
         _LOGGER.warning("Vehicle %s is no longer linked to this Stellantis account", vin)
@@ -225,7 +245,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
             _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
-            self._stellantis._entry.async_start_reauth(self._hass)
+            self.config_entry.async_start_reauth(self.hass)
         except Exception as e:
             _LOGGER.error("Failed to send command %s: %s", name, str(e))
             raise
