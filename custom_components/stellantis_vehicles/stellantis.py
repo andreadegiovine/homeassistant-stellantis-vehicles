@@ -275,9 +275,9 @@ class StellantisBase:
         except (ConfigEntryAuthFailed, CommunicationError):
             await self.close_session()
             raise
-        except Exception as e:
+        except Exception:
             await self.close_session()
-            _LOGGER.warning(f"Error: {e}")
+            _LOGGER.exception("Unexpected error during request to %s", url)
             raise
 
     def do_async(self, async_func, delay=0, wait=True):
@@ -819,8 +819,8 @@ class StellantisVehicles(StellantisOauth):
             for topic in topics:
                 client.subscribe(topic, qos=MQTT_QOS)
                 _LOGGER.debug("Subscribed to MQTT topic %s", topic)
-        except Exception as e:
-            _LOGGER.warning(f"Error: {str(e)}")
+        except Exception:
+            _LOGGER.exception("Error while subscribing to MQTT topics")
 
     @log_call
     def _on_mqtt_disconnect(self, client, userdata, result_code):
@@ -842,8 +842,8 @@ class StellantisVehicles(StellantisOauth):
                 self.do_async(self.connect_mqtt(), 300, wait=False)
             else:
                 _LOGGER.debug("MQTT subscription completed (QoS: %s)", granted_qos)
-        except Exception as e:
-            _LOGGER.warning(f"Error: {str(e)}")
+        except Exception:
+            _LOGGER.exception("Error in MQTT subscribe callback")
 
     @log_call
     def _on_mqtt_message(self, client, userdata, msg):
@@ -902,8 +902,8 @@ class StellantisVehicles(StellantisOauth):
 #                 if programs:
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
                 _LOGGER.debug("Update data from mqtt?!?")
-        except Exception as e:
-            _LOGGER.warning(f"Error: {str(e)}")
+        except Exception:
+            _LOGGER.exception("Error while handling MQTT message")
 
     @log_call
     async def send_mqtt_message(self, service, message, vehicle, store=True, action_id=None):
@@ -937,8 +937,8 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             # Re-raise so the caller can trigger Home Assistant's reauth flow.
             raise
-        except Exception as e:
-            _LOGGER.error(f"Unexpected error during MQTT message sending: {e}")
+        except Exception:
+            _LOGGER.exception("Unexpected error during MQTT message sending")
             raise
 
     @log_call
