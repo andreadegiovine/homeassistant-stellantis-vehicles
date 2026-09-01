@@ -50,7 +50,7 @@
         }
       },
       "reauth_confirm": {
-        "description": "Vou devez vous ré-authentifier pour utiliser cette intégration"
+        "description": "Vous devez vous ré-authentifier pour utiliser cette intégration"
       },
       "reconfigure": {
         "data": {
@@ -139,7 +139,7 @@
       "command_status": {
         "name": "Statut de la commande",
         "state": {
-          "rate_limit": "Limite de requêtes dépassée (6 par 20 minutes)",
+          "rate_limit": "Nombre maximum de requêtes dépassé (6 par 20 minutes)",
           "not_compatible": "Non compatible",
           "failed": "Échouée",
           "900": "Acceptée",
@@ -346,7 +346,7 @@
             "name": "Altitude"
           },
           "fix_status": {
-            "name": "Statut du fix"
+            "name": "Statut du positionnement"
           },
           "signal_quality": {
             "name": "Qualité du signal"
