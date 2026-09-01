@@ -11,7 +11,7 @@ from homeassistant.const import (
     CONF_EMAIL
 )
 
-from .utils import get_datetime
+from .utils import get_datetime, log_call
 from .stellantis import StellantisOauth
 from .const import (
     DOMAIN,
@@ -312,12 +312,11 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self.async_step_options()
 
 
+    @log_call
     async def async_step_reauth(self, entry_data):
-        _LOGGER.debug("---------- START async_step_reauth")
         self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP], FIELD_COUNTRY_CODE: entry_data[FIELD_COUNTRY_CODE]})
         if FIELD_OAUTH_CODE_URL in entry_data:
             self.data.update({FIELD_OAUTH_CODE_URL: entry_data[FIELD_OAUTH_CODE_URL]})
-        _LOGGER.debug("---------- END async_step_reauth")
         return await self.async_step_reauth_confirm()
 
 

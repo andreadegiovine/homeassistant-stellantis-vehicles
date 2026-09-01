@@ -19,7 +19,7 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call )
 
 from .const import (
     DOMAIN,
@@ -57,9 +57,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if self._stellantis.logger_filter:
             _LOGGER.addFilter(self._stellantis.logger_filter)
 
+    @log_call
     async def _async_update_data(self):
         """ Update vehicle data from Stellantis. """
-        _LOGGER.debug("---------- START _async_update_data")
         _LOGGER.debug(self._config)
 
         if self._phase_offset:
@@ -76,11 +76,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
         except ConfigEntryAuthFailed:
-            _LOGGER.debug("---------- END _async_update_data")
             raise
         except Exception as err:
             _LOGGER.debug("Error communicating with Stellantis API: %s", err)
-            _LOGGER.debug("---------- END _async_update_data")
             raise UpdateFailed("Error communicating with Stellantis API") from err
 
         if not new_data:
@@ -94,7 +92,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
             if self._empty_status_count < EMPTY_STATUS_LIMIT:
                 # Short gap: keep the last known data.
-                _LOGGER.debug("---------- END _async_update_data")
                 return
 
             if self._empty_status_count % EMPTY_STATUS_LIMIT == 0 and not self._vehicle_removed:
@@ -102,7 +99,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 await self._reconcile_vehicle()
 
             # Sustained outage: surface it so entities go unavailable.
-            _LOGGER.debug("---------- END _async_update_data")
             raise UpdateFailed("Empty vehicle status response")
 
         self._empty_status_count = 0
@@ -122,12 +118,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             else:
                 if new_dt <= current_dt:
                     _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
-                    _LOGGER.debug("---------- END _async_update_data")
                     return
 
         self._data = new_data
         await self.after_async_update_data()
-        _LOGGER.debug("---------- END _async_update_data")
 
     def stagger_first_poll(self, offset_seconds):
         """ Push this vehicle's next poll back once so several vehicles do not all
