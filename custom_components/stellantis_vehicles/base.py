@@ -60,7 +60,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     @log_call
     async def _async_update_data(self):
         """ Update vehicle data from Stellantis. """
-        _LOGGER.debug(self._config)
+        _LOGGER.debug("Coordinator config: %s", self._config)
 
         if self._phase_offset:
             # The one-time startup stagger has been consumed, go back to the

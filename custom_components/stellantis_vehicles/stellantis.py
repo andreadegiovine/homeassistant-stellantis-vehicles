@@ -70,6 +70,17 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+def _log_http_exchange(url, headers, response, **extra):
+    """Debug-log an HTTP request and its decoded response as a single record."""
+    if not _LOGGER.isEnabledFor(logging.DEBUG):
+        return
+    details = "".join(f" {key}={value!r}" for key, value in extra.items())
+    _LOGGER.debug(
+        "HTTP exchange | url=%s headers=%s%s | response=%s",
+        url, headers, details, response,
+    )
+
+
 # Some Stellantis MQTT servers drop packets with a TCP payload greater than 1456 bytes
 # which causes the TLS handshake to fail and later a "Connnection reset by peer" error.
 # As a workaround, we modify the MQTT client to reduce the MSS before connecting the TCP socket
@@ -218,12 +229,10 @@ class StellantisBase:
                     elif "message" in result and "code" in result:
                         error = result["message"] + " - " + str(result["code"])
 
-                    _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
-                    _LOGGER.debug(headers)
-                    _LOGGER.debug(params)
-                    _LOGGER.debug(json_data)
-                    _LOGGER.debug(data)
-                    _LOGGER.debug(result)
+                    _LOGGER.debug(
+                        "HTTP %s %s failed with status %s | headers=%s params=%s json=%s data=%s | response=%s",
+                        method, resp.url, resp.status, headers, params, json_data, data, result,
+                    )
 
                     if str(resp.status) == "404" and str(result.get("code")) == "40400":
                         # Not Found: We didn't find the status for this vehicle. - 40400
@@ -329,7 +338,7 @@ class StellantisOauth(StellantisBase):
         oauth_code_request = await self.make_http_request(code_url or OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
         if "code" in oauth_code_request:
             self.logger_filter.add_custom_value(oauth_code_request["code"])
-        _LOGGER.debug(oauth_code_request)
+        _LOGGER.debug("OAuth code response: %s", oauth_code_request)
         return oauth_code_request
 
     @log_call
@@ -343,9 +352,7 @@ class StellantisOauth(StellantisBase):
             self.logger_filter.add_custom_value(token_request["refresh_token"])
         if "id_token" in token_request:
             self.logger_filter.add_custom_value(token_request["id_token"])
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(token_request)
+        _log_http_exchange(url, headers, token_request)
         return token_request
 
     @log_call
@@ -358,9 +365,7 @@ class StellantisOauth(StellantisBase):
         for key in ("customer", "vehicle", "car_association_id"):
             if key in user_info:
                 self.logger_filter.add_custom_value(user_info[key])
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(user_request)
+        _log_http_exchange(url, headers, user_request)
         # Always hand back a list so callers can safely index [0]; a non-list
         # body (error object, changed shape) becomes an empty list, which the
         # config flow reports as missing user info.
@@ -387,9 +392,7 @@ class StellantisOauth(StellantisBase):
         url = self.apply_query_params(GET_OTP_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_dict_params(GET_OTP_HEADERS)
         sms_request = await self.make_http_request(url, 'POST', headers)
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(sms_request)
+        _log_http_exchange(url, headers, sms_request)
         return sms_request
 
     @log_call
@@ -403,9 +406,7 @@ class StellantisOauth(StellantisBase):
                 self.logger_filter.add_custom_value(token_request["access_token"])
             if "refresh_token" in token_request:
                 self.logger_filter.add_custom_value(token_request["refresh_token"])
-            _LOGGER.debug(url)
-            _LOGGER.debug(headers)
-            _LOGGER.debug(token_request)
+            _log_http_exchange(url, headers, token_request)
         except ConfigException as e:
             raise ConfigEntryAuthFailed(str(e)) from e
         return token_request
@@ -615,9 +616,7 @@ class StellantisVehicles(StellantisOauth):
         token_request = await self.make_http_request(url, 'POST', headers)
         self.logger_filter.add_custom_value(token_request["access_token"])
         self.logger_filter.add_custom_value(token_request["refresh_token"])
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(token_request)
+        _log_http_exchange(url, headers, token_request)
         new_config = {
             "access_token": token_request["access_token"],
             "refresh_token": token_request["refresh_token"],
@@ -646,9 +645,7 @@ class StellantisVehicles(StellantisOauth):
                     for vehicle in vehicles_request["_embedded"]["vehicles"]:
                         self.logger_filter.add_custom_value(vehicle["vin"])
                         self.logger_filter.add_custom_value(vehicle["id"])
-            _LOGGER.debug(url)
-            _LOGGER.debug(headers)
-            _LOGGER.debug(vehicles_request)
+            _log_http_exchange(url, headers, vehicles_request)
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
                     for vehicle in vehicles_request["_embedded"]["vehicles"]:
@@ -685,9 +682,7 @@ class StellantisVehicles(StellantisOauth):
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(vehicle_status_request)
+        _log_http_exchange(url, headers, vehicle_status_request)
         return vehicle_status_request
 
     @log_call
@@ -699,9 +694,7 @@ class StellantisVehicles(StellantisOauth):
         if page_token is not None:
             url += "&pageToken=" + page_token
         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(vehicle_trips_request)
+        _log_http_exchange(url, headers, vehicle_trips_request)
         links = vehicle_trips_request.get("_links", {})
         last_href = links.get("last", {}).get("href")
         self_href = links.get("self", {}).get("href")
@@ -772,9 +765,7 @@ class StellantisVehicles(StellantisOauth):
             self.logger_filter.add_custom_value(token_request["access_token"])
         if "refresh_token" in token_request:
             self.logger_filter.add_custom_value(token_request["refresh_token"])
-        _LOGGER.debug(url)
-        _LOGGER.debug(headers)
-        _LOGGER.debug(token_request)
+        _log_http_exchange(url, headers, token_request)
         if not "access_token" in token_request:
             _LOGGER.warning("Refreshing mqtt access_token failed (no access_token in response)")
             return None
@@ -932,8 +923,7 @@ class StellantisVehicles(StellantisOauth):
                 "vin": vehicle["vin"],
                 "req_parameters": message
             })
-            _LOGGER.debug(topic)
-            _LOGGER.debug(data)
+            _LOGGER.debug("Publishing MQTT message to %s: %s", topic, data)
             message_info = self._mqtt.publish(topic, data, qos=MQTT_QOS, retain=False)
             if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
                 _LOGGER.warning("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
@@ -954,11 +944,11 @@ class StellantisVehicles(StellantisOauth):
     @log_call
     async def send_abrp_data(self, params):
         params["api_key"] = ABRP_API_KEY
-        _LOGGER.debug(params)
+        _LOGGER.debug("ABRP request params: %s", params)
         try:
             abrp_request = await self.make_http_request(ABRP_URL, "POST", None, params)
-            _LOGGER.debug(abrp_request)
+            _LOGGER.debug("ABRP response: %s", abrp_request)
             if "status" not in abrp_request or abrp_request["status"] != "ok":
-                _LOGGER.warning(abrp_request)
+                _LOGGER.warning("Unexpected ABRP response: %s", abrp_request)
         except Exception as e:
             _LOGGER.warning("Failed to send ABRP data: %s", e)
