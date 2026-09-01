@@ -146,24 +146,24 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
 
         # Remove OTP file if it exists
         if os.path.isfile(otp_file_path):
-            _LOGGER.debug(f"Deleting OTP-File: {otp_file_path}")
+            _LOGGER.debug("Deleting OTP file: %s", otp_file_path)
             os.remove(otp_file_path)
 
         # Remove storage folder if empty
         if os.path.exists(storage_path) and os.path.isdir(storage_path) and not os.listdir(storage_path):
-            _LOGGER.debug(f"Deleting empty Stellantis storage folder: {storage_path}")
+            _LOGGER.debug("Deleting empty Stellantis storage folder: %s", storage_path)
             shutil.rmtree(storage_path)
 
         # Remove Stellantis image folder of this entry
         entry_image_path = os.path.join(hass_config_path, "www", DOMAIN, config.unique_id)
         if os.path.exists(entry_image_path) and os.path.isdir(entry_image_path):
-            _LOGGER.debug(f"Deleting Stellantis entry image folder: {entry_image_path}")
+            _LOGGER.debug("Deleting Stellantis entry image folder: %s", entry_image_path)
             shutil.rmtree(entry_image_path)
 
         # Remove Stellantis image folder if empty
         image_path = os.path.join(hass_config_path, "www", DOMAIN)
         if os.path.exists(image_path) and os.path.isdir(image_path) and not os.listdir(image_path):
-            _LOGGER.debug(f"Deleting Stellantis image folder: {image_path}")
+            _LOGGER.debug("Deleting Stellantis image folder: %s", image_path)
             shutil.rmtree(image_path)
 
 
@@ -176,7 +176,7 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
         # update unique_id with customer_id - used to be data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5])
         new_unique_id = config.data.get("customer_id")
         if config.unique_id != new_unique_id:
-            _LOGGER.debug(f"Migrating unique_id from {config.unique_id} to {new_unique_id}")
+            _LOGGER.debug("Migrating unique_id from %s to %s", config.unique_id, new_unique_id)
             hass.config_entries.async_update_entry(config, unique_id=new_unique_id)
         # Migrate to new file structure - Generate path to storage folder and move OTP file
         hass_config_path = hass.config.path()
@@ -188,7 +188,7 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             if not os.path.isdir(new_storage_path):
                 os.mkdir(new_storage_path)
             if not os.path.isfile(new_otp_file_path):
-                _LOGGER.debug(f"Migrating OTP file to new storage path from {old_otp_file_path} to {new_otp_file_path}")
+                _LOGGER.debug("Migrating OTP file to new storage path from %s to %s", old_otp_file_path, new_otp_file_path)
                 os.rename(old_otp_file_path, new_otp_file_path)
             else:
                 os.remove(old_otp_file_path)
@@ -203,7 +203,7 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
         public_path = hass.config.path("www")
         old_image_path = f"{public_path}/stellantis-vehicles"
         if os.path.isdir(old_image_path):
-            _LOGGER.debug(f"Deleting Stellantis old image folder: {old_image_path}")
+            _LOGGER.debug("Deleting Stellantis old image folder: %s", old_image_path)
             shutil.rmtree(old_image_path)
         hass.config_entries.async_update_entry(config, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)

@@ -99,7 +99,7 @@ class MqttClientMod(mqtt.Client):
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1460 - 4)
                 sock.settimeout(self._connect_timeout)
                 sock.bind((self._bind_address, self._bind_port))
-                _LOGGER.debug(f"Connecting to MQTT socket: {sa}")
+                _LOGGER.debug("Connecting to MQTT socket: %s", sa)
                 sock.connect(sa)
                 return sock
 
@@ -255,12 +255,12 @@ class StellantisBase:
                 return result
         except asyncio.TimeoutError as e:
             await self.close_session()
-            _LOGGER.warning(f"Error: {e}")
+            _LOGGER.warning("Request to %s timed out: %s", url, e)
             # Connection error
             raise CommunicationError("Request timeout") from e
         except aiohttp.client_exceptions.ClientError as e:
             await self.close_session()
-            _LOGGER.warning(f"Error: {e}")
+            _LOGGER.warning("Request to %s failed: %s", url, e)
             # Connection error
             raise CommunicationError(e) from e
         except (ConfigEntryAuthFailed, CommunicationError):
@@ -424,13 +424,13 @@ class StellantisOauth(StellantisBase):
         # Check if OTP object is already loaded, if not load it
         if self.otp is None:
             if not os.path.isfile(otp_file_path):
-                _LOGGER.error(f"Error: OTP file '{otp_file_path}' not found, please reauthenticate")
+                _LOGGER.error("OTP file '%s' not found, please reauthenticate", otp_file_path)
                 raise ConfigEntryAuthFailed("OTP file not found, please reauthenticate")
             self.otp = await self._hass.async_add_executor_job(load_otp, otp_file_path)
         # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
         otp_code = await self._hass.async_add_executor_job(self.otp.get_otp_code)
         if otp_code is None:
-            _LOGGER.error("Error: OTP code is empty, please reauthenticate")
+            _LOGGER.error("OTP code is empty, please reauthenticate")
             raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
         # Save updated OTP object to file
         await self._hass.async_add_executor_job(save_otp, self.otp, otp_file_path)
@@ -603,8 +603,7 @@ class StellantisVehicles(StellantisOauth):
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
             next_run = get_datetime() + timedelta(minutes=30)
-        _LOGGER.debug(f"Current time: {get_datetime()}")
-        _LOGGER.debug(f"Next refresh: {next_run}")
+        _LOGGER.debug("Next oauth token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_oauth_token_refresh, f"{DOMAIN} refresh oauth token: {next_run}", cancel_on_shutdown=True)
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
 
@@ -749,8 +748,7 @@ class StellantisVehicles(StellantisOauth):
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             return
-        _LOGGER.debug(f"Current time: {get_datetime()}")
-        _LOGGER.debug(f"Next refresh: {next_run}")
+        _LOGGER.debug("Next mqtt token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_mqtt_token_refresh, f"{DOMAIN} refresh mqtt token: {next_run}", cancel_on_shutdown=True)
         self._mqtt_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
 
@@ -817,25 +815,25 @@ class StellantisVehicles(StellantisOauth):
             )
             self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
         except Exception as e:
-            _LOGGER.warning(f"Error: {str(e)}")
+            _LOGGER.warning("Failed to connect to the MQTT broker: %s", e)
         return self._mqtt.is_connected()
 
     @log_call
     def _on_mqtt_connect(self, client, userdata, result_code, _):
-        _LOGGER.debug(f"Code: {result_code}")
+        _LOGGER.debug("MQTT connected (code %s)", result_code)
         try:
             topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
             for vehicle in self._vehicles:
                 topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
             for topic in topics:
                 client.subscribe(topic, qos=MQTT_QOS)
-                _LOGGER.debug(f"Topic: {topic}")
+                _LOGGER.debug("Subscribed to MQTT topic %s", topic)
         except Exception as e:
             _LOGGER.warning(f"Error: {str(e)}")
 
     @log_call
     def _on_mqtt_disconnect(self, client, userdata, result_code):
-        _LOGGER.debug(f"Code: {result_code} -> {mqtt.error_string(result_code)}")
+        _LOGGER.debug("MQTT disconnected (code %s: %s)", result_code, mqtt.error_string(result_code))
         if result_code == 11: # MQTT_ERR_AUTH
             # Runs on the paho network thread; wait=False keeps the reconnect loop
             # from blocking on the token refresh (network I/O, no timeout).
@@ -852,14 +850,14 @@ class StellantisVehicles(StellantisOauth):
                 # other callbacks)
                 self.do_async(self.connect_mqtt(), 300, wait=False)
             else:
-                _LOGGER.debug(f"Completed (QoS: {granted_qos})")
+                _LOGGER.debug("MQTT subscription completed (QoS: %s)", granted_qos)
         except Exception as e:
             _LOGGER.warning(f"Error: {str(e)}")
 
     @log_call
     def _on_mqtt_message(self, client, userdata, msg):
         try:
-            _LOGGER.debug(f"Message: {msg.topic} {msg.payload} {msg.qos}")
+            _LOGGER.debug("MQTT message on %s (qos %s): %s", msg.topic, msg.qos, msg.payload)
             data = json.loads(msg.payload)
             if msg.topic.startswith(MQTT_RESP_TOPIC):
                 if "vin" in data:
@@ -900,7 +898,7 @@ class StellantisVehicles(StellantisOauth):
                     if result_code in ["300", "500", "not_compatible", "failed"]:
                         self.do_async(self.hass_notify("command_error"), wait=False)
                     if result_code == "0":
-                        _LOGGER.debug(f"Fetch updates after code: {result_code}")
+                        _LOGGER.debug("Fetching updates after result code %s", result_code)
                         self.do_async(coordinator.async_refresh(), 10, wait=False)
 
                     self.do_async(coordinator.update_command_history(data["correlation_id"], result_code), wait=False)
@@ -938,7 +936,7 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug(data)
             message_info = self._mqtt.publish(topic, data, qos=MQTT_QOS, retain=False)
             if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
-                _LOGGER.warning(f"Failed to send MQTT message: {mqtt.error_string(message_info.rc)}")
+                _LOGGER.warning("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
                 action_id = None
             if store:
                 self._mqtt_last_request = [service, message]

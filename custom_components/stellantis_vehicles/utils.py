@@ -117,7 +117,7 @@ def rate_limit(limit: int, every: int):
             while calls and now - calls[0] >= every:
                 calls.popleft()
             if len(calls) >= limit:
-                _LOGGER.debug(f"Rate limit exceeded {func.__name__}: max {limit} per {every}s")
+                _LOGGER.debug("Rate limit exceeded %s: max %s per %ss", func.__name__, limit, every)
                 raise RateLimitException("rate_limit")
 
             calls.append(now)
