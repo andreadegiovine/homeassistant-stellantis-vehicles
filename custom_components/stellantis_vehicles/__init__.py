@@ -4,13 +4,12 @@ import os
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import issue_registry, device_registry as dr
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
 from .stellantis import StellantisVehicles
-from .exceptions import CommunicationError
 from .config_flow import StellantisVehiclesConfigFlow
 
 from .const import (
@@ -37,10 +36,17 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     try:
         vehicles = await stellantis.get_user_vehicles()
-    except (ConfigEntryAuthFailed, CommunicationError):
+    except ConfigEntryAuthFailed:
         raise
-    except Exception:
-        vehicles = {}
+    except Exception as err:
+        # Home Assistant does not call async_unload_entry when async_setup_entry
+        # raises, so drop this attempt's state (pending tasks, scheduled
+        # token-refresh jobs, aiohttp session) before bubbling up. Raising
+        # ConfigEntryNotReady makes Home Assistant retry with backoff instead of
+        # leaving a loaded but empty entry behind a misleading "no vehicles" notice.
+        await stellantis.async_shutdown()
+        hass.data[DOMAIN].pop(config.entry_id, None)
+        raise ConfigEntryNotReady(f"Could not fetch the vehicle list: {err}") from err
 
     if vehicles:
         stellantis.prune_stored_vehicle_configs({vehicle["vin"] for vehicle in vehicles})
