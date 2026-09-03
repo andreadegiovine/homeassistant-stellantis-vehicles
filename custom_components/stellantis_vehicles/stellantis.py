@@ -10,7 +10,6 @@ import json
 from uuid import uuid4
 import asyncio
 from datetime import ( datetime, timedelta )
-import ssl
 import socket
 import random
 
@@ -19,6 +18,11 @@ from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
 from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.util.ssl import client_context
+# If the Stellantis MQTT broker ever presents a certificate that fails
+# validation, import client_context_no_verify here as well and use it in
+# connect_mqtt() (see the commented line there).
+# from homeassistant.util.ssl import client_context, client_context_no_verify
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
@@ -106,14 +110,6 @@ class MqttClientMod(mqtt.Client):
                 if addr_cnt == 0:
                     raise
 
-
-def _create_ssl_context() -> ssl.SSLContext:
-    """Create a SSL context for the MQTT connection."""
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-    context.load_default_certs()
-    return context
-
-_SSL_CONTEXT = _create_ssl_context()
 
 class StellantisBase:
     def __init__(self, hass: HomeAssistant) -> None:
@@ -823,7 +819,12 @@ class StellantisVehicles(StellantisOauth):
         if self._mqtt is None:
             self._mqtt = MqttClientMod(clean_session=True, protocol=mqtt.MQTTv311)
             # self._mqtt.enable_logger(logger=_LOGGER)
-            self._mqtt.tls_set_context(_SSL_CONTEXT)
+            # Reuse Home Assistant's shared, pre-built client SSL context instead
+            # of building one here (which did blocking cert loading at import).
+            self._mqtt.tls_set_context(client_context())
+            # If the broker's certificate fails validation, swap the line above
+            # for the unverified context (and adjust the import at the top):
+            # self._mqtt.tls_set_context(client_context_no_verify())
             self._mqtt.on_connect = self._on_mqtt_connect
             self._mqtt.on_disconnect = self._on_mqtt_disconnect
             self._mqtt.on_message = self._on_mqtt_message
