@@ -4,21 +4,22 @@ import os
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers import issue_registry
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import issue_registry, device_registry as dr
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
 from .stellantis import StellantisVehicles
-from .exceptions import ComunicationError
 from .config_flow import StellantisVehiclesConfigFlow
 
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
+    INTEGRATION_IS_BETA,
     PLATFORMS,
     OTP_FILENAME,
-    FIELD_NOTIFICATIONS
+    FIELD_NOTIFICATIONS,
+    UPDATE_INTERVAL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,21 +36,51 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     try:
         vehicles = await stellantis.get_user_vehicles()
-    except (ConfigEntryAuthFailed, ComunicationError):
+    except ConfigEntryAuthFailed:
         raise
-    except Exception:
-        vehicles = {}
+    except Exception as err:
+        # Home Assistant does not call async_unload_entry when async_setup_entry
+        # raises, so drop this attempt's state (pending tasks, scheduled
+        # token-refresh jobs, aiohttp session) before bubbling up. Raising
+        # ConfigEntryNotReady makes Home Assistant retry with backoff instead of
+        # leaving a loaded but empty entry behind a misleading "no vehicles" notice.
+        await stellantis.async_shutdown()
+        hass.data[DOMAIN].pop(config.entry_id, None)
+        raise ConfigEntryNotReady(f"Could not fetch the vehicle list: {err}") from err
 
     if vehicles:
+        stellantis.prune_stored_vehicle_configs({vehicle["vin"] for vehicle in vehicles})
+
+        # Build every coordinator and run its first refresh BEFORE forwarding the
+        # platforms - the standard Home Assistant setup order. A failing first
+        # refresh then raises ConfigEntryNotReady / ConfigEntryAuthFailed while no
+        # platform or entity is set up yet, so Home Assistant retries the whole
+        # entry cleanly. Entities are also created already holding the data from
+        # the first poll, instead of briefly existing with an empty coordinator.
+        try:
+            for index, vehicle in enumerate(vehicles):
+                coordinator = await stellantis.async_get_coordinator(vehicle)
+                await coordinator.async_config_entry_first_refresh()
+                if index and len(vehicles) > 1:
+                    # Spread the periodic polls of multiple vehicles across the
+                    # interval instead of hitting the API for all of them at once.
+                    coordinator.stagger_first_poll(index * UPDATE_INTERVAL / len(vehicles))
+        except Exception:
+            # First refresh failed (ConfigEntryNotReady / ConfigEntryAuthFailed /
+            # ...). Home Assistant does not call async_unload_entry when
+            # async_setup_entry raises, so drop this attempt's state here: the
+            # retry then starts from a clean slate and the MQTT client, pending
+            # tasks, scheduled token-refresh jobs and aiohttp session from this
+            # attempt do not leak.
+            await stellantis.async_shutdown()
+            hass.data[DOMAIN].pop(config.entry_id, None)
+            raise
+
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
     else:
         _LOGGER.warning("No vehicles found for this account")
         await stellantis.hass_notify("no_vehicles_found")
         await stellantis.close_session()
-
-    for vehicle in vehicles:
-        coordinator = await stellantis.async_get_coordinator(vehicle)
-        await coordinator.async_config_entry_first_refresh()
 
     url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
     if url not in hass.data["frontend_extra_module_url"].urls:
@@ -64,14 +95,36 @@ async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     stellantis = hass.data[DOMAIN][config.entry_id]
 
     if unload_ok := await hass.config_entries.async_unload_platforms(config, PLATFORMS):
-        if stellantis.remote_commands and stellantis._mqtt:
-            stellantis._mqtt.disconnect()
-
-        stellantis.reset_scheduled_tokens()
-
+        await stellantis.async_shutdown()
         hass.data[DOMAIN].pop(config.entry_id)
 
     return unload_ok
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, config: ConfigEntry, device: dr.DeviceEntry
+) -> bool:
+    """Allow deleting a device only when its vehicle is no longer on the account.
+
+    Without this the UI offers no way to remove a vehicle's device, so the
+    device and its (now unavailable) entities linger after the vehicle is
+    unpaired. A device for a vehicle still returned by the account cannot be
+    deleted - it would just be recreated on the next refresh.
+    """
+    stellantis = hass.data.get(DOMAIN, {}).get(config.entry_id)
+    if stellantis is None:
+        return True
+    try:
+        known_vins = {
+            vehicle["vin"] for vehicle in await stellantis.get_user_vehicles()
+        }
+    except Exception as err:  # noqa: BLE001 - never block manual cleanup on an API error
+        _LOGGER.warning("Could not verify account vehicles before device removal: %s", err)
+        known_vins = set()
+    return not any(
+        identifier[0] == DOMAIN and identifier[1] in known_vins
+        for identifier in device.identifiers
+    )
 
 
 async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
@@ -115,8 +168,10 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
 
 
 async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
-    # Migrate config prior 1.2 to 1.2 - unique_id and file structure
-    if config.version == 1 and config.minor_version < 2:
+
+    target_version = 1
+    target_minor_version = 2    # Migrate config prior 1.2 to 1.2 - unique_id and file structure
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         # update unique_id with customer_id - used to be data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5])
         new_unique_id = config.data.get("customer_id")
@@ -138,20 +193,24 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             else:
                 os.remove(old_otp_file_path)
         # Update config entry object
-        hass.config_entries.async_update_entry(config, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    if config.version == 1 and config.minor_version < 3:
+    target_version = 1
+    target_minor_version = 3
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         public_path = hass.config.path("www")
         old_image_path = f"{public_path}/stellantis-vehicles"
         if os.path.isdir(old_image_path):
             _LOGGER.debug(f"Deleting Stellantis old image folder: {old_image_path}")
             shutil.rmtree(old_image_path)
-        hass.config_entries.async_update_entry(config, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    if config.version == 1 and config.minor_version < 4:
+    target_version = 1
+    target_minor_version = 4
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         data = dict(config.data)
         data["oauth"] = {
@@ -162,10 +221,12 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
         data.pop("access_token", None)
         data.pop("refresh_token", None)
         data.pop("expires_in", None)
-        hass.config_entries.async_update_entry(config, data=data, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, data=data, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    if config.version == 1 and config.minor_version < 5:
+    target_version = 1
+    target_minor_version = 5
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         data = dict(config.data)
 
@@ -203,10 +264,12 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             return data
 
         new_data = await hass.async_add_executor_job(update_data, data)
-        hass.config_entries.async_update_entry(config, data=new_data, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    if config.version == 1 and config.minor_version < 6:
+    target_version = 1
+    target_minor_version = 6
+    if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         data = dict(config.data)
 
@@ -225,11 +288,64 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
             return data
 
         new_data = await hass.async_add_executor_job(update_data, data)
-        hass.config_entries.async_update_entry(config, data=new_data, version=StellantisVehiclesConfigFlow.VERSION, minor_version=StellantisVehiclesConfigFlow.MINOR_VERSION)
+        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=target_minor_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    # Global update of versions
-    if config.version < INTEGRATION_VERSION:
+    # Bumped past the current INTEGRATION_VERSION (20260801) on purpose: betas
+    # already shipped as 20260801, so this migration must still trigger for
+    # entries already sitting at that version. Aligns with INTEGRATION_VERSION
+    # once the 2026.8.2 stable ships.
+    target_version = 20260802
+    if config.version < target_version or "vehicles" not in config.data:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+        data = dict(config.data)
+
+        def update_data(data):
+            # Move all flat per-vehicle nodes under a dedicated "vehicles" sub-node
+            # so the stale-vehicle prune process can no longer touch other config data.
+            vehicles = dict(data.get("vehicles", {}))
+            reserved = ("oauth", "mqtt", "vehicles")
+            for key in list(data.keys()):
+                value = data[key]
+                if key in reserved or not isinstance(value, dict):
+                    continue
+                # Extra safety: only treat entries that look like a VIN (17 alphanumeric chars).
+                if len(key) == 17 and key.isalnum():
+                    moved = data.pop(key)
+                    # A "vehicles" entry written by a newer build before this
+                    # migration ran wins per key over the older flat data.
+                    vehicles[key] = {**moved, **vehicles.get(key, {})}
+            data["vehicles"] = vehicles
+            return data
+
+        new_data = await hass.async_add_executor_job(update_data, data)
+        if INTEGRATION_IS_BETA:
+            # Leave the entry version alone on beta (see the global update below)
+            hass.config_entries.async_update_entry(config, data=new_data)
+        else:
+            hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
+    # template for future migration steps
+    target_version = 20260702   # to be updated with the next version number
+    if config.version < target_version:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+        data = dict(config.data)
+        def update_data(data):
+            # migration logic here
+            return data
+        new_data = await hass.async_add_executor_job(update_data, data)
+        if INTEGRATION_IS_BETA:
+            # Leave the entry version alone on beta (see the global update below)
+            hass.config_entries.async_update_entry(config, data=new_data)
+        else:
+            hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
+    # Global update of versions - only pull the entry version forward on real
+    # (non-beta) releases, so beta iterations that share a version number keep
+    # re-triggering their own migration steps until the stable release ships.
+    if config.version < INTEGRATION_VERSION and not INTEGRATION_IS_BETA:
         _LOGGER.debug("Entry version updated from %s.%s to %s.1", config.version, config.minor_version, INTEGRATION_VERSION)
         hass.config_entries.async_update_entry(config, version=INTEGRATION_VERSION, minor_version=1)
 

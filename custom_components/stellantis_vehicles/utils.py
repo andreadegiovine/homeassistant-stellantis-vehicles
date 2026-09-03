@@ -1,7 +1,7 @@
 import logging
-import asyncio
+from collections import deque
 from datetime import UTC, datetime, timedelta
-from asyncio import Semaphore
+from time import monotonic
 from functools import wraps
 import re
 from typing import Any, Dict
@@ -67,25 +67,30 @@ def sort_dict(items, ordered_keys=None):
     return result
 
 def rate_limit(limit: int, every: int):
+    """Reject calls once `limit` of them have run within the last `every` seconds.
+
+    Timestamps of the recent successful calls are kept in a deque and pruned on
+    each call once they fall outside the window. No background tasks are
+    involved, so there is nothing to cancel on unload.
+    """
     def limit_decorator(func):
-        semaphore = Semaphore(limit)
-        
-        async def release_after_delay():
-            await asyncio.sleep(every)
-            semaphore.release()
-        
+        # Monotonic timestamps of the last (up to `limit`) successful calls.
+        calls: deque[float] = deque()
+
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            if semaphore._value <= 0:
+            now = monotonic()
+            while calls and now - calls[0] >= every:
+                calls.popleft()
+            if len(calls) >= limit:
                 _LOGGER.debug(f"Rate limit exceeded {func.__name__}: max {limit} per {every}s")
                 raise RateLimitException("rate_limit")
 
-            await semaphore.acquire()
-            asyncio.create_task(release_after_delay())
+            calls.append(now)
             return await func(*args, **kwargs)
-        
+
         return async_wrapper
-    
+
     return limit_decorator
 
 class SensitiveDataFilter(logging.Filter):

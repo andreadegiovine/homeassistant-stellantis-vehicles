@@ -93,10 +93,10 @@
         "state": {
           "not_compatible": "Ikke kompatibel",
           "900": "Accepteret",
-          "901": "Køretøjet er i dvaletilstand",
+          "901": "Vækker køretøjet",
           "903": "Videresendt",
           "0": "Udført",
-          "300": "Annuleret",
+          "300": "Tidsudløb",
           "500": "Fejl",
           "502": "Gentagelse",
           "422": "Privatlivstilstand slået til"

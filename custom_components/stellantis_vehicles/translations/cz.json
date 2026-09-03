@@ -84,10 +84,10 @@
         "state": {
           "not_compatible": "Nekompatibilní",
           "900": "Přijato",
-          "901": "Vozidlo spí",
+          "901": "Probuzení vozidla",
           "903": "Předáno",
           "0": "Dokončeno",
-          "300": "Zrušeno",
+          "300": "Časový limit vypršel",
           "500": "Chyba"
         }
       },

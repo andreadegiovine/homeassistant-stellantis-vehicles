@@ -142,10 +142,10 @@
           "not_compatible": "Non compatibile",
           "failed": "Fallito",
           "900": "Accettato",
-          "901": "Il veicolo dorme",
+          "901": "Risveglio del veicolo",
           "903": "Inoltrato",
           "0": "Completato",
-          "300": "Annullato",
+          "300": "Timeout",
           "500": "Errore",
           "502": "Duplicato",
           "422": "Privacy attiva"
@@ -171,6 +171,9 @@
       },
       "air_temperature": {
         "name": "Temperatura aria"
+      },
+      "driving_behavior": {
+        "name": "Modalità di guida"
       },
       "last_trip": {
         "name": "Ultimo viaggio",
@@ -256,6 +259,27 @@
       "doors": {
         "name": "Portiere"
       },
+      "door_trunk": {
+        "name": "Bagagliaio"
+      },
+      "door_driver": {
+        "name": "Sportello conducente"
+      },
+      "door_passenger": {
+        "name": "Sportello passeggero"
+      },
+      "door_rear_left": {
+        "name": "Sportello posteriore sinistro"
+      },
+      "door_rear_right": {
+        "name": "Sportello posteriore destro"
+      },
+      "belt_driver": {
+        "name": "Cintura di sicurezza guidatore"
+      },
+      "belt_passenger": {
+        "name": "Cintura di sicurezza passeggero"
+      },
       "battery_plugged": {
         "name": "Batteria collegata"
       },
@@ -312,7 +336,24 @@
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Veicolo"
+        "name": "Veicolo",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitudine"
+          },
+          "fix_status": {
+            "name": "Stato del fix"
+          },
+          "signal_quality": {
+            "name": "Qualità del segnale"
+          },
+          "position_updated_at": {
+            "name": "Aggiornato il"
+          },
+          "entity_picture": {
+            "name": "Immagine entità"
+          }
+        }
       }
     },
     "number": {

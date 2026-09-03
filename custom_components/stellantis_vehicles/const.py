@@ -1,7 +1,7 @@
 import os
 import json
 
-from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfEnergy, UnitOfSpeed, UnitOfVolume )
+from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfEnergy, UnitOfSpeed, UnitOfVolume, EntityCategory )
 from homeassistant.components.sensor.const import ( SensorDeviceClass, SensorStateClass )
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
@@ -9,6 +9,8 @@ DOMAIN = "stellantis_vehicles"
 
 with open(os.path.dirname(os.path.abspath(__file__)) + "/manifest.json", "r") as f:
     manifest = json.load(f)
+    # A pre-release manifest version carries a "-beta.N" suffix (e.g. "2026.8.1-beta.3").
+    INTEGRATION_IS_BETA = "-beta" in manifest["version"]
     versions = manifest["version"].split("-beta")[0].split(".")
     minor = int(versions[1])
     if minor < 10:
@@ -103,6 +105,7 @@ FIELD_MOBILE_APP = "mobile_app"
 FIELD_COUNTRY_CODE = "country_code"
 FIELD_OAUTH_MANUAL_MODE = "oauth_manual_mode"
 FIELD_OAUTH_CODE = "oauth_code"
+FIELD_OAUTH_CODE_URL = "oauth_code_url"
 FIELD_REMOTE_COMMANDS = "remote_commands"
 FIELD_SMS_CODE = "sms_code"
 FIELD_PIN_CODE = "pin_code"
@@ -122,6 +125,10 @@ PLATFORMS = [
 ]
 
 UPDATE_INTERVAL = 60 # seconds
+
+# Consecutive empty vehicle-status responses before the account vehicle list is
+# re-fetched to check whether the vehicle was unpaired.
+EMPTY_STATUS_LIMIT = 3
 
 VEHICLE_TYPE_ELECTRIC = "Electric"
 VEHICLE_TYPE_HYBRID = "Hybrid"
@@ -299,6 +306,11 @@ SENSORS_DEFAULT = {
         "value_map" : ["engines", 0, "extension", "thermic", "air", "temp"],
         "updated_at_map" : ["engines", 0, "createdAt"],
         "engine": [VEHICLE_TYPE_THERMIC, VEHICLE_TYPE_HYBRID]
+    },
+    "driving_behavior" : {
+        "icon": "mdi:steering",
+        "value_map" : ["drivingBehavior", "mode"],
+        "updated_at_map" : ["drivingBehavior", "createdAt"]
     }
 }
 
@@ -316,6 +328,55 @@ BINARY_SENSORS_DEFAULT = {
         "updated_at_map" : ["doorsState", "createdAt"],
         "device_class" : BinarySensorDeviceClass.LOCK,
         "on_value": "Unlocked"
+    },
+    "door_trunk" : {
+        "icon" : "mdi:car-back",
+        "value_map" : ["doorsState", "opening", {"identifier":"Trunk"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "door_driver" : {
+        "icon" : "mdi:car-door",
+        "value_map" : ["doorsState", "opening", {"identifier":"Driver"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "door_passenger" : {
+        "icon" : "mdi:car-door",
+        "value_map" : ["doorsState", "opening", {"identifier":"Passenger"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "door_rear_left" : {
+        "icon" : "mdi:car-door",
+        "value_map" : ["doorsState", "opening", {"identifier":"RearLeft"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "door_rear_right" : {
+        "icon" : "mdi:car-door",
+        "value_map" : ["doorsState", "opening", {"identifier":"RearRight"}, "state"],
+        "updated_at_map" : ["doorsState", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.DOOR,
+        "on_value": "Open"
+    },
+    "belt_driver" : {
+        "icon" : "mdi:seatbelt",
+        "value_map" : ["safety", "beltStatus", {"id":"Driver"}, "belt"],
+        "updated_at_map" : ["safety", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.SAFETY,
+        "on_value": "Omission"
+    },
+    "belt_passenger" : {
+        "icon" : "mdi:seatbelt",
+        "value_map" : ["safety", "beltStatus", {"id":"Passenger"}, "belt"],
+        "updated_at_map" : ["safety", "createdAt"],
+        "device_class" : BinarySensorDeviceClass.SAFETY,
+        "on_value": "Omission"
     },
     "battery_plugged" : {
         "icon" : "mdi:power-plug-battery",
@@ -355,11 +416,11 @@ BINARY_SENSORS_DEFAULT = {
         "on_value": "Active"
     },
     "privacy" : {
-        "icon" : "mdi:alarm-light",
+        "icon" : "mdi:eye-off",
         "value_map" : ["privacy", "state"],
         "updated_at_map" : ["privacy", "createdAt"],
-        "device_class" : BinarySensorDeviceClass.LOCK,
-        "on_value": "None"
+        "entity_category" : EntityCategory.DIAGNOSTIC,
+        "on_value": "Full"
     },
     "daylight" : {
         "icon" : "mdi:weather-sunny",

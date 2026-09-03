@@ -10,7 +10,6 @@ import json
 from uuid import uuid4
 import asyncio
 from datetime import ( datetime, timedelta )
-import ssl
 import socket
 import random
 
@@ -19,11 +18,16 @@ from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
 from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.util.ssl import client_context
+# If the Stellantis MQTT broker ever presents a certificate that fails
+# validation, import client_context_no_verify here as well and use it in
+# connect_mqtt() (see the commented line there).
+# from homeassistant.util.ssl import client_context, client_context_no_verify
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from .utils import ( get_datetime, rate_limit, SensitiveDataFilter, replace_string_placeholders )
-from .exceptions import ( ComunicationError, RateLimitException )
+from .exceptions import ( CommunicationError, RateLimitException )
 
 from .const import (
     DOMAIN,
@@ -72,11 +76,11 @@ _LOGGER = logging.getLogger(__name__)
 class MqttClientMod(mqtt.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    
+
     def _create_socket_connection(self) -> socket.socket:
         if self._get_proxy():
             return super()._create_socket_connection()  # SOCKS will reduce MSS by itself
-        
+
         addr_infos = socket.getaddrinfo(self._host, self._port, 0, socket.SOCK_STREAM)
         addr_cnt = len(addr_infos)
         if addr_cnt == 0:
@@ -107,20 +111,14 @@ class MqttClientMod(mqtt.Client):
                     raise
 
 
-def _create_ssl_context() -> ssl.SSLContext:
-    """Create a SSL context for the MQTT connection."""
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-    context.load_default_certs()
-    return context
-
-_SSL_CONTEXT = _create_ssl_context()
-
 class StellantisBase:
     def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
         self._config = {}
         self._session = None
         self.otp = None
+        self._shutting_down = False
+        self._pending_tasks: set[asyncio.Task] = set()
 
         self.logger_filter = SensitiveDataFilter()
         _LOGGER.addFilter(self.logger_filter)
@@ -173,6 +171,10 @@ class StellantisBase:
         for key in vehicle:
             string = string.replace("{#" + key + "#}", str(vehicle[key]))
         for key, value in self._config.items():
+            # Per-vehicle stored config is never a placeholder source and its
+            # nested dict-of-dicts shape would not stringify usefully here.
+            if key == "vehicles":
+                continue
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
                     string = string.replace("{#" + key + "|" + subkey + "#}", str(subvalue))
@@ -197,22 +199,18 @@ class StellantisBase:
         return self.replace_placeholders(f"{url}?{query_params}", vehicle)
 
     async def make_http_request(self, url, method='GET', headers=None, params=None, json_data=None, data=None, timeout=60):
+        """Perform an HTTP request and return the decoded JSON response."""
         _LOGGER.debug("---------- START make_http_request")
         self.start_session()
         try:
             _timeout = aiohttp.ClientTimeout(total=timeout)
             async with self._session.request(method, url, params=params, json=json_data, data=data, headers=headers, timeout=_timeout) as resp:
                 result = {}
-                error = None
                 if method != "DELETE" and (await resp.text()):
                     result = await resp.json()
+
                 if not str(resp.status).startswith("20"):
-                    _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
-                    _LOGGER.debug(headers)
-                    _LOGGER.debug(params)
-                    _LOGGER.debug(json_data)
-                    _LOGGER.debug(data)
-                    _LOGGER.debug(result)
+                    error = None
                     if "httpMessage" in result and "moreInformation" in result:
                         error = result["httpMessage"] + " - " + result["moreInformation"]
                     elif "error" in result and "error_description" in result:
@@ -220,26 +218,42 @@ class StellantisBase:
                     elif "message" in result and "code" in result:
                         error = result["message"] + " - " + str(result["code"])
 
-                if str(resp.status) == "404" and str(result["code"]) == "40400":
-                    # Not Found: We didn't find the status for this vehicle. - 40400
-                    _LOGGER.warning(error)
-                    result = {}
-                elif str(resp.status) == "500" and result.get("code", None) == "50000":
-                    # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
-                    # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
-                    raise ComunicationError(error)
-                elif str(resp.status) == "400" and result.get("error", None) == "invalid_grant":
-                    # Token expiration
-                    raise ConfigEntryAuthFailed(error)
-                elif str(resp.status) == "401":
-                    # Oauth token seem expired, refresh request blocked by server/connection error
-                    raise ComunicationError(error)
-                elif str(resp.status).startswith("50"):
-                    # Internal error
-                    raise ComunicationError(error)
-                if error is not None:
-                    # Generic error
-                    raise Exception(error)
+                    _LOGGER.debug(f"{method} request error {str(resp.status)}: {resp.url}")
+                    _LOGGER.debug(headers)
+                    _LOGGER.debug(params)
+                    _LOGGER.debug(json_data)
+                    _LOGGER.debug(data)
+                    _LOGGER.debug(result)
+
+                    if str(resp.status) == "404" and str(result.get("code")) == "40400":
+                        # Not Found: We didn't find the status for this vehicle. - 40400
+                        _LOGGER.warning(error)
+                        _LOGGER.debug("---------- END make_http_request")
+                        return {}
+                    if str(resp.status).startswith("500") and str(result.get("code")) == "50038":
+                        # CVS error/user-vins - 50038: a transient Stellantis backend
+                        # failure while resolving the account's VIN list. Treat it like
+                        # an empty status so the coordinator keeps the last known data
+                        # for a few cycles instead of dropping every entity.
+                        _LOGGER.warning(error)
+                        _LOGGER.debug("---------- END make_http_request")
+                        return {}
+                    if str(resp.status) == "500" and str(result.get("code")) == "50000":
+                        # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
+                        # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
+                        raise CommunicationError(error)
+                    if str(resp.status) == "400" and result.get("error") == "invalid_grant":
+                        # Token expiration
+                        raise ConfigEntryAuthFailed(error)
+                    if str(resp.status) == "401":
+                        # Oauth token seem expired, refresh request blocked by server/connection error
+                        raise CommunicationError(error)
+                    if str(resp.status).startswith("50"):
+                        # Internal error
+                        raise CommunicationError(error)
+                    # Any other non-2xx response we don't have a specific case for
+                    raise CommunicationError(error or f"Unexpected HTTP status {resp.status}")
+
                 _LOGGER.debug("---------- END make_http_request")
                 return result
         except asyncio.TimeoutError as e:
@@ -247,25 +261,49 @@ class StellantisBase:
             _LOGGER.warning(f"Error: {e}")
             _LOGGER.debug("---------- END make_http_request")
             # Connection error
-            raise ComunicationError("Request timeout")
+            raise CommunicationError("Request timeout") from e
         except aiohttp.client_exceptions.ClientError as e:
             await self.close_session()
             _LOGGER.warning(f"Error: {e}")
             _LOGGER.debug("---------- END make_http_request")
             # Connection error
-            raise ComunicationError(e)
+            raise CommunicationError(e) from e
+        except (ConfigEntryAuthFailed, CommunicationError):
+            await self.close_session()
+            _LOGGER.debug("---------- END make_http_request")
+            raise
         except Exception as e:
             await self.close_session()
             _LOGGER.warning(f"Error: {e}")
             _LOGGER.debug("---------- END make_http_request")
             raise
 
-    def do_async(self, async_func, delay=0):
+    def do_async(self, async_func, delay=0, wait=True):
+        if self._shutting_down:
+            # The config entry is being unloaded - drop the coroutine instead of
+            # scheduling work that would resurrect the MQTT client or hit an
+            # already closed aiohttp session.
+            async_func.close()
+            return None
+
         async def delayed_execution():
-            if delay > 0:
-                await asyncio.sleep(delay)
-            return await async_func
-        return asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop).result()
+            task = asyncio.current_task()
+            self._pending_tasks.add(task)
+            try:
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                if self._shutting_down:
+                    async_func.close()
+                    return None
+                return await async_func
+            except asyncio.CancelledError:
+                async_func.close()
+                raise
+            finally:
+                self._pending_tasks.discard(task)
+
+        future = asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop)
+        return future.result() if wait else None
 
     async def hass_notify(self, translation_key):
         """Create a persistent notification."""
@@ -293,9 +331,9 @@ class StellantisOauth(StellantisBase):
     def get_oauth_url(self):
         return self.apply_query_params(OAUTH_AUTHORIZE_URL, OAUTH_AUTHORIZE_QUERY_PARAMS)
 
-    async def get_oauth_code(self, email, password):
+    async def get_oauth_code(self, email, password, code_url=None):
         _LOGGER.debug("---------- START get_oauth_code")
-        oauth_code_request = await self.make_http_request(OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
+        oauth_code_request = await self.make_http_request(code_url or OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
         if "code" in oauth_code_request:
             self.logger_filter.add_custom_value(oauth_code_request["code"])
         _LOGGER.debug(oauth_code_request)
@@ -325,17 +363,18 @@ class StellantisOauth(StellantisBase):
         headers = self.apply_dict_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
         user_request = await self.make_http_request(url, 'GET', headers)
-        if "customer" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["customer"])
-        if "vehicle" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["vehicle"])
-        if "car_association_id" in user_request[0]:
-            self.logger_filter.add_custom_value(user_request[0]["car_association_id"])
+        user_info = user_request[0] if isinstance(user_request, list) and user_request else {}
+        for key in ("customer", "vehicle", "car_association_id"):
+            if key in user_info:
+                self.logger_filter.add_custom_value(user_info[key])
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(user_request)
         _LOGGER.debug("---------- END get_user_info")
-        return user_request
+        # Always hand back a list so callers can safely index [0]; a non-list
+        # body (error object, changed shape) becomes an empty list, which the
+        # config flow reports as missing user info.
+        return user_request if isinstance(user_request, list) else []
 
     def new_otp(self, sms_code, pin_code):
         try:
@@ -345,10 +384,13 @@ class StellantisOauth(StellantisBase):
             if self.otp.activation_start():
                 finalyze = self.otp.activation_finalyze()
                 if finalyze != 0:
-                    raise Exception(finalyze)
+                    raise ConfigException(finalyze)
+        except ConfigException as e:
+            _LOGGER.error(str(e))
+            raise
         except Exception as e:
             _LOGGER.error(str(e))
-            raise Exception(str(e))
+            raise ConfigException(str(e)) from e
 
     async def get_otp_sms(self):
         _LOGGER.debug("---------- START get_otp_sms")
@@ -377,7 +419,7 @@ class StellantisOauth(StellantisBase):
             _LOGGER.debug(token_request)
         except ConfigException as e:
             _LOGGER.debug("---------- END get_mqtt_access_token")
-            raise ConfigEntryAuthFailed(str(e))
+            raise ConfigEntryAuthFailed(str(e)) from e
         except Exception:
             _LOGGER.debug("---------- END get_mqtt_access_token")
             raise
@@ -447,18 +489,33 @@ class StellantisVehicles(StellantisOauth):
             return self._entry.data[config]
         return None
 
+    def get_vehicles_stored_config(self):
+        """Return the per-vehicle stored config sub-node, keyed by VIN."""
+        return self.get_stored_config("vehicles") or {}
+
     def update_vehicle_stored_config(self, vin, key, value):
-        data = self.get_stored_config(vin)
-        if not data:
-            data = {}
-        data[key] = value
-        self.update_stored_config(vin, data)
+        vehicles = deepcopy(self.get_vehicles_stored_config())
+        vehicles.setdefault(vin, {})[key] = value
+        self.update_stored_config("vehicles", vehicles)
+        self._config["vehicles"] = deepcopy(vehicles)
 
     def get_vehicle_stored_config(self, vin, key):
-        data = self.get_stored_config(vin)
-        if data and key in data:
-            return data[key]
+        vehicle = self.get_vehicles_stored_config().get(vin)
+        if vehicle and key in vehicle:
+            return vehicle[key]
         return None
+
+    def prune_stored_vehicle_configs(self, live_vins):
+        """Drop per-vehicle stored config for vehicles no longer on the account."""
+        vehicles = self.get_vehicles_stored_config()
+        stale = [vin for vin in vehicles if vin not in live_vins]
+        if not stale:
+            return []
+        new_vehicles = {vin: deepcopy(value) for vin, value in vehicles.items() if vin not in stale}
+        self.update_stored_config("vehicles", new_vehicles)
+        self._config["vehicles"] = deepcopy(new_vehicles)
+        _LOGGER.info("Removed stored config for vehicles no longer on the account: %s", ", ".join(stale))
+        return stale
 
     def async_get_coordinator_by_vin(self, vin):
         if vin in self._coordinator_dict:
@@ -513,6 +570,36 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt_token_scheduled()
             self._mqtt_token_scheduled = None
 
+    async def async_shutdown(self) -> None:
+        """Tear down everything created for this config entry.
+
+        Called from async_unload_entry so a reload does not leak the paho-mqtt
+        network thread, the delayed do_async reconnect tasks, the scheduled
+        token-refresh callbacks or the aiohttp session.
+        """
+        self._shutting_down = True
+
+        # Stop the scheduled oauth/mqtt token-refresh callbacks.
+        self.reset_scheduled_tokens()
+
+        # Cancel any pending (possibly still sleeping) do_async coroutines,
+        # e.g. the 300s MQTT reconnect scheduled from _on_mqtt_subscribe.
+        for task in list(self._pending_tasks):
+            task.cancel()
+        self._pending_tasks.clear()
+
+        # Tear down the MQTT client and join its network thread.
+        if self._mqtt is not None:
+            mqtt_client, self._mqtt = self._mqtt, None
+            # Drop the reconnect / token-refresh callback so the deliberate
+            # disconnect below does not trigger a fresh reconnect attempt.
+            mqtt_client.on_disconnect = None
+            mqtt_client.disconnect()
+            await self._hass.async_add_executor_job(mqtt_client.loop_stop)
+
+        # Close the shared aiohttp session.
+        await self.close_session()
+
     async def scheduled_tokens_refresh(self):
         self.reset_scheduled_tokens()
         await self.scheduled_oauth_token_refresh()
@@ -530,7 +617,7 @@ class StellantisVehicles(StellantisOauth):
             elif get_datetime() > get_next_run():
                 await self.refresh_token_request()
             next_run = get_next_run()
-        except ComunicationError:
+        except CommunicationError:
             next_run = get_datetime() + timedelta(minutes=5)
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
@@ -561,12 +648,21 @@ class StellantisVehicles(StellantisOauth):
         self.update_stored_config("oauth", new_config)
         _LOGGER.debug("---------- END refresh_token_request")
 
-    async def get_user_vehicles(self):
+    async def get_user_vehicles(self, force=False):
         _LOGGER.debug("---------- START get_user_vehicles")
+        if force:
+            # Drop the cache so the account vehicle list is fetched again, e.g. to
+            # confirm a vehicle was unpaired without restarting Home Assistant.
+            self._vehicles = []
         if not self._vehicles:
             url = self.apply_query_params(CAR_API_VEHICLES_URL, CLIENT_ID_QUERY_PARAMS)
             headers = self.apply_dict_params(CAR_API_HEADERS)
             vehicles_request = await self.make_http_request(url, 'GET', headers)
+            if not isinstance(vehicles_request, dict) or not vehicles_request:
+                # An empty or non-object body on a 2xx response is not a valid
+                # vehicle list. Treat it as a transient API problem instead of
+                # reporting the account as having no vehicles.
+                raise CommunicationError("Empty or invalid response from the vehicles endpoint")
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
                     for vehicle in vehicles_request["_embedded"]["vehicles"]:
@@ -587,7 +683,13 @@ class StellantisVehicles(StellantisOauth):
                             picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
                             vehicle_data["picture"] = picture
                         except Exception as e:
-                            _LOGGER.warning(str(e))
+                            pictures = vehicle.get("pictures") or []
+                            _LOGGER.warning(
+                                "Unable to download and save the vehicle picture for VIN %s from %s: %s",
+                                vehicle["vin"],
+                                pictures[0] if pictures else "<no picture URL>",
+                                e,
+                            )
                         self._vehicles.append(vehicle_data)
                 else:
                     _LOGGER.warning("No vehicles found in vehicles_request['_embedded']")
@@ -612,24 +714,26 @@ class StellantisVehicles(StellantisOauth):
         _LOGGER.debug("---------- END get_vehicle_status")
         return vehicle_status_request
 
-    async def get_vehicle_last_trip(self, vehicle, page_token=False):
+    async def get_vehicle_last_trip(self, vehicle, page_token=None):
         _LOGGER.debug("---------- START get_vehicle_last_trip")
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
-        limit_date = (get_datetime() - timedelta(days=1)).isoformat()
-        limit_date = limit_date.split(".")[0] + "+" + limit_date.split(".")[1].split("+")[1]
-        url = url + "&timestamps=" + limit_date + "/&distance=0.1-"
-        if page_token:
-            url = url + "&pageToken=" + page_token
+        limit_date = (get_datetime() - timedelta(days=1)).isoformat(timespec="seconds")
+        url += "&timestamps=" + limit_date + "/" + "&distance=0.1-" #+ "&pageSize=60"
+        if page_token is not None:
+            url += "&pageToken=" + page_token
         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
         _LOGGER.debug(url)
         _LOGGER.debug(headers)
         _LOGGER.debug(vehicle_trips_request)
-        if "total" in vehicle_trips_request and int(vehicle_trips_request["total"]) > 60 and not page_token:
-            last_page_url = vehicle_trips_request["_links"]["last"]["href"]
-            page_token = last_page_url.split("pageToken=")[1]
-            _LOGGER.debug("---------- END get_vehicle_last_trip")
-            return await self.get_vehicle_last_trip(page_token)
+        links = vehicle_trips_request.get("_links", {})
+        last_href = links.get("last", {}).get("href")
+        self_href = links.get("self", {}).get("href")
+        if last_href and last_href != self_href:
+            next_page_token = last_href.split("pageToken=")[-1]
+            if next_page_token != page_token:
+                _LOGGER.debug("---------- END get_vehicle_last_trip")
+                return await self.get_vehicle_last_trip(vehicle, next_page_token)
         _LOGGER.debug("---------- END get_vehicle_last_trip")
         return vehicle_trips_request
 
@@ -656,13 +760,11 @@ class StellantisVehicles(StellantisOauth):
             expires_in = mqtt_config["expires_in"]
             return datetime.fromisoformat(expires_in) - timedelta(minutes=3)
         try:
-            if self._mqtt_token_scheduled is not None or force:
-                self.reset_scheduled_mqtt_token()
-                await self.refresh_mqtt_token_request()
-            elif get_datetime() > get_next_run():
+            self.reset_scheduled_mqtt_token()
+            if force or get_datetime() > get_next_run():
                 await self.refresh_mqtt_token_request()
             next_run = get_next_run()
-        except ComunicationError:
+        except CommunicationError:
             next_run = get_datetime() + timedelta(minutes=1)
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 1 day or check logs and restart integration")
@@ -717,10 +819,20 @@ class StellantisVehicles(StellantisOauth):
 
     async def connect_mqtt(self):
         _LOGGER.debug("---------- START connect_mqtt")
+        if self._shutting_down:
+            # A coordinator refresh still in flight during unload must not
+            # recreate the MQTT client async_shutdown just tore down.
+            _LOGGER.debug("---------- END connect_mqtt")
+            return False
         if self._mqtt is None:
             self._mqtt = MqttClientMod(clean_session=True, protocol=mqtt.MQTTv311)
             # self._mqtt.enable_logger(logger=_LOGGER)
-            self._mqtt.tls_set_context(_SSL_CONTEXT)
+            # Reuse Home Assistant's shared, pre-built client SSL context instead
+            # of building one here (which did blocking cert loading at import).
+            self._mqtt.tls_set_context(client_context())
+            # If the broker's certificate fails validation, swap the line above
+            # for the unverified context (and adjust the import at the top):
+            # self._mqtt.tls_set_context(client_context_no_verify())
             self._mqtt.on_connect = self._on_mqtt_connect
             self._mqtt.on_disconnect = self._on_mqtt_disconnect
             self._mqtt.on_message = self._on_mqtt_message
@@ -729,7 +841,10 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.disconnect()
         self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
         try:
-            self._mqtt.connect(MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S)
+            # paho's connect() does blocking DNS + TCP + TLS handshake, so run it in the executor to keep the event loop responsive.
+            await self._hass.async_add_executor_job(
+                self._mqtt.connect, MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S
+            )
             self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
         except Exception as e:
             _LOGGER.warning(f"Error: {str(e)}")
@@ -753,20 +868,26 @@ class StellantisVehicles(StellantisOauth):
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("---------- START _on_mqtt_disconnect")
         _LOGGER.debug(f"Code: {result_code} -> {mqtt.error_string(result_code)}")
-        try:
-            if result_code == 11: # MQTT_ERR_AUTH
-                self.do_async(self.scheduled_mqtt_token_refresh(force=True))
-        except:
-            pass  # refresh_mqtt_token already logs the exception, and raising would halt the Paho reconnect loop
+        if result_code == 11: # MQTT_ERR_AUTH
+            # Runs on the paho network thread; wait=False keeps the reconnect loop
+            # from blocking on the token refresh (network I/O, no timeout).
+            # do_async already guards shutdown and the coroutine logs its own errors.
+            self.do_async(self.scheduled_mqtt_token_refresh(force=True), wait=False)
         _LOGGER.debug("---------- END _on_mqtt_disconnect")
 
     def _on_mqtt_subscribe(self, client, userdata, mid, granted_qos):
         _LOGGER.debug("---------- START _on_mqtt_subscribe")
-        for i, qos in enumerate(granted_qos):
-            if qos == 0x80:
-                _LOGGER.debug("Failed")
+        try:
+            if any(qos == 0x80 for qos in granted_qos):
+                _LOGGER.warning("Subscription failed, will try to reconnect MQTT in 300 seconds")
+                # wait=False: this callback runs on the paho-mqtt network thread, so
+                # blocking it for 300s here would stall the loop (pings, reconnects,
+                # other callbacks)
+                self.do_async(self.connect_mqtt(), 300, wait=False)
             else:
-                _LOGGER.debug(f"Completed (QoS: {qos})")
+                _LOGGER.debug(f"Completed (QoS: {granted_qos})")
+        except Exception as e:
+            _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END _on_mqtt_subscribe")
 
     def _on_mqtt_message(self, client, userdata, msg):
@@ -799,7 +920,10 @@ class StellantisVehicles(StellantisOauth):
                             _LOGGER.debug("The mqtt token seems invalid, refresh the token and try sending the request again")
                             last_request = self._mqtt_last_request
                             self._mqtt_last_request = None
-                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, False, data["correlation_id"]))
+                            # wait=False: don't block the paho network thread while the
+                            # retry forces a token refresh; the result comes back as a
+                            # fresh MQTT response and send_mqtt_message logs its own errors
+                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, False, data["correlation_id"]), wait=False)
                             _LOGGER.debug("---------- END _on_mqtt_message")
                             return
                         else:
@@ -807,14 +931,15 @@ class StellantisVehicles(StellantisOauth):
                             result_code = "failed"
                     if result_code == "113":  # Error: vin (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
                         result_code = "failed"
+                    # wait=False: fire-and-forget so the paho network thread isn't
+                    # blocked (the results aren't used here anyway)
                     if result_code in ["300", "500", "not_compatible", "failed"]:
-                        self.do_async(self.hass_notify("command_error"))
+                        self.do_async(self.hass_notify("command_error"), wait=False)
                     if result_code == "0":
                         _LOGGER.debug(f"Fetch updates after code: {result_code}")
-                        self.do_async(coordinator.async_refresh(), 10)
+                        self.do_async(coordinator.async_refresh(), 10, wait=False)
 
-                    if result_code != "901":  # Not store "Vehicle as sleep" event
-                        self.do_async(coordinator.update_command_history(data["correlation_id"], result_code))
+                    self.do_async(coordinator.update_command_history(data["correlation_id"], result_code), wait=False)
                 else:
                     _LOGGER.error("No result code")
 
@@ -824,7 +949,7 @@ class StellantisVehicles(StellantisOauth):
 #                 if programs:
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
                 _LOGGER.debug("Update data from mqtt?!?")
-        except (KeyError, Exception) as e:
+        except Exception as e:
             _LOGGER.warning(f"Error: {str(e)}")
         _LOGGER.debug("---------- END _on_mqtt_message")
 
@@ -861,7 +986,8 @@ class StellantisVehicles(StellantisOauth):
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             _LOGGER.debug("---------- END send_mqtt_message")
-            pass
+            # Re-raise so the caller can trigger Home Assistant's reauth flow.
+            raise
         except Exception as e:
             _LOGGER.error(f"Unexpected error during MQTT message sending: {e}")
             _LOGGER.debug("---------- END send_mqtt_message")
@@ -876,6 +1002,6 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.debug(abrp_request)
             if "status" not in abrp_request or abrp_request["status"] != "ok":
                 _LOGGER.warning(abrp_request)
-        except Exception:
-            pass
+        except Exception as e:
+            _LOGGER.warning("Failed to send ABRP data: %s", e)
         _LOGGER.debug("---------- END send_abrp_data")

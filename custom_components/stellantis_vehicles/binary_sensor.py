@@ -13,6 +13,9 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Read-only platform, all state is provided by the coordinator.
+PARALLEL_UPDATES = 0
+
 async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
     stellantis = hass.data[DOMAIN][entry.entry_id]
     entities = []
@@ -32,7 +35,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                         key = key,
                         translation_key = key,
                         icon = default_value.get("icon", None),
-                        device_class = default_value.get("device_class", None)
+                        device_class = default_value.get("device_class", None),
+                        entity_category = default_value.get("entity_category", None)
                     )
                     entities.extend([StellantisBaseBinarySensor(coordinator, description, default_value.get("value_map"), default_value.get("updated_at_map"), default_value.get("on_value", None))])
 

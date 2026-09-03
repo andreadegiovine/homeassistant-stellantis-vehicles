@@ -11,10 +11,30 @@
           "country_code": "Votre code pays"
         }
       },
+      "oauth_mode": {
+        "description": "Pour identifier votre compte, un service distant est utilisé qui ne conserve aucun de vos identifiants. De manière alternative, vous pouvez utiliser la méthode manuelle",
+        "data": {
+          "oauth_manual_mode": "Utiliser la méthode manuelle"
+        }
+      },
+      "oauth_remote": {
+        "description": "Ce [remote service]({oauth_remote_link}) est utilisé pour simuler une connexion sur le site officiel STELLANTIS. Vous pouvez utiliser ce service hébergé par défaut ou pointer vers votre propre service auto-hébergé.",
+        "data": {
+          "email": "Email",
+          "password": "Mot de passe",
+          "oauth_code_url": "URL de votre service hébergé"
+        }
+      },
       "oauth_manual": {
         "description": "Suivez ces étapes depuis un **navigateur sur votre ordinateur**:\n\n1. Allez sur la page d'authentification {oauth_link}\n2. Dans le navigateur, ouvrez les **DevTools** (F12) et allez sur l'onglet **Réseau**\n3. Identifiez-vous et cliquez sur le dernier bouton de confirmation\n4. Sur l'onglet **Réseau** cherchez la requête ci-dessous et copiez le **{oauth_label}**{oauth_devtools}",
         "data": {
           "oauth_code": "Code OAuth"
+        }
+      },
+      "get_access_token": {
+        "description": "**Authentification terminée**.\nPour utiliser les commandes à distance, cochez l'option ci-dessous et complétez l'étape OTP",
+        "data": {
+          "remote_commands": "Configurer les commandes à distance (E-remote ou Connect Plus requis)"
         }
       },
       "otp": {
@@ -22,18 +42,38 @@
           "sms_code": "Code SMS reçu de Stellantis",
           "pin_code": "Code PIN de votre application mobile du véhicule"
         }
+      },
+      "options": {
+        "data": {
+          "notifications": "Activer les notifications persistantes",
+          "anonymize_logs": "Anonymiser les données personnelles dans les journaux"
+        }
+      },
+      "reauth_confirm": {
+        "description": "Vous devez vous ré-authentifier pour utiliser cette intégration"
+      },
+      "reconfigure": {
+        "data": {
+          "reconfigure": "Reconfigurer l'intégration"
+        }
       }
     },
     "error": {
+      "get_oauth_code": "Erreur lors de la récupération du code OAuth",
       "get_access_token": "Erreur lors de la récupération du jeton d'accès",
       "get_user_info": "Erreur lors de la récupération des informations utilisateur",
       "missing_user_info": "Erreur informations utilisateur manquantes",
       "get_otp_sms": "Erreur lors de la récupération du code OTP SMS",
-      "get_mqtt_access_token": "Erreur lors de la récupération du jeton accès MQTT"
+      "get_mqtt_access_token": "Erreur lors de la récupération du jeton accès MQTT",
+      "get_mqtt_access_token_nok_access": "Code SMS ou code Pin invalide",
+      "get_mqtt_access_token_nok_maxnbtools": "Limite atteinte nombre d'équipements associés ou nombre de SMS. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
+      "get_mqtt_access_token_nok_nok_blocked": "Limite atteinte nombre de code PIN incorrects. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
+      "get_mqtt_access_token_rate_limit": "Limite atteinte nombre de requêtes du jeton d'accès MQTT (6 par jour)"
     },
     "abort": {
       "already_configured": "Compte déjà configuré",
-      "reauth_successful": "Ré-authentification réussie"
+      "reauth_successful": "Ré-authentification réussie",
+      "reconfigure_successful": "Re-configuration réussie"
     }
   },
   "entity": {
@@ -54,7 +94,12 @@
         "name": "Température"
       },
       "mileage": {
-        "name": "Kilométrage"
+        "name": "Kilométrage",
+        "state_attributes": {
+          "last_updated": {
+            "name": "Dernière mise à jour"
+          }
+        }
       },
       "speed": {
         "name": "Vitesse"
@@ -65,8 +110,11 @@
       "battery": {
         "name": "Niveau batterie"
       },
-      "battery_soh": {
-        "name": "SOH batterie"
+      "battery_health_resistance": {
+        "name": "Résistance SOH batterie"
+      },
+      "battery_health_capacity": {
+        "name": "Capacité SOH batterie"
       },
       "battery_charging_rate": {
         "name": "Vitesse de charge batterie"
@@ -91,14 +139,17 @@
       "command_status": {
         "name": "Statut de la commande",
         "state": {
+          "rate_limit": "Limite atteinte nombre de commandes passées (6 par 20 minutes)",
           "not_compatible": "Non compatible",
+          "failed": "Échouée",
           "900": "Acceptée",
-          "901": "Véhicule en veille",
+          "901": "Réveil du véhicule",
           "903": "Transmise",
           "0": "Terminée",
-          "300": "Annulée",
+          "300": "Délai d'attente dépassé",
           "500": "Erreur",
-          "502": "Dupliquée"
+          "502": "Dupliquée",
+          "422": "Confidentialité activée"
         }
       },
       "fuel": {
@@ -121,6 +172,9 @@
       },
       "air_temperature": {
         "name": "Température air"
+      },
+      "driving_behavior": {
+        "name": "Comportement de conduite"
       },
       "last_trip": {
         "name": "Dernier trajet",
@@ -150,6 +204,56 @@
             "name": "Consommation carburant moyenne"
           }
         }
+      },
+      "last_charge": {
+        "name": "Dernière recharge",
+        "state_attributes": {
+          "in_progress": {
+            "name": "En cours",
+            "state": {
+              "true": "Oui"
+            }
+          },
+          "mileage": {
+            "name": "Kilométrage"
+          },
+          "initial_percentage": {
+            "name": "Pourcentage initial"
+          },
+          "initial_energy": {
+            "name": "Énergie initiale"
+          },
+          "initial_autonomy": {
+            "name": "Autonomie initiale"
+          },
+          "final_time": {
+            "name": "Heure de fin"
+          },
+          "final_percentage": {
+            "name": "Pourcentage final"
+          },
+          "final_energy": {
+            "name": "Énergie finale"
+          },
+          "final_autonomy": {
+            "name": "Autonomie finale"
+          },
+          "duration": {
+            "name": "Durée"
+          },
+          "recharged_percent": {
+            "name": "Pourcentage rechargé"
+          },
+          "recharged_energy": {
+            "name": "Énergie rechargée"
+          },
+          "recharged_autonomy": {
+            "name": "Autonomie rechargée"
+          },
+          "avg_power": {
+            "name": "Puissance moyenne"
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -158,6 +262,27 @@
       },
       "doors": {
         "name": "Portes"
+      },
+      "door_trunk": {
+        "name": "Coffre"
+      },
+      "door_driver": {
+        "name": "Porte conducteur"
+      },
+      "door_passenger": {
+        "name": "Porte passager"
+      },
+      "door_rear_left": {
+        "name": "Porte arrière gauche"
+      },
+      "door_rear_right": {
+        "name": "Porte arrière droite"
+      },
+      "belt_driver": {
+        "name": "Ceinture sécurité conducteur"
+      },
+      "belt_passenger": {
+        "name": "Ceinture sécurité passager"
       },
       "battery_plugged": {
         "name": "Batterie branchée"
@@ -179,6 +304,9 @@
       },
       "remote_commands": {
         "name": "Commandes à distance"
+      },
+      "daylight": {
+        "name": "Lumière du jour"
       }
     },
     "button": {
@@ -192,10 +320,10 @@
         "name": "Déverrouiller portes"
       },
       "horn": {
-        "name": "Klaxon"
+        "name": "Activer klaxon"
       },
       "lights": {
-        "name": "Phares"
+        "name": "Allumer phares"
       },
       "charge_start": {
         "name": "Démarrer recharge"
@@ -212,7 +340,24 @@
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Véhicule"
+        "name": "Véhicule",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitude"
+          },
+          "fix_status": {
+            "name": "Statut du positionnement"
+          },
+          "signal_quality": {
+            "name": "Qualité du signal"
+          },
+          "position_updated_at": {
+            "name": "Mis à jour à"
+          },
+          "entity_picture": {
+            "name": "Image de l'entité"
+          }
+        }
       }
     },
     "number": {
@@ -229,6 +374,9 @@
       },
       "abrp_sync": {
         "name": "Synchronisation avec ABRP"
+      },
+      "battery_values_correction": {
+        "name": "Correction des valeurs de la batterie"
       }
     },
     "text": {
@@ -238,12 +386,12 @@
     },
     "time": {
       "battery_charging_start": {
-        "name": "Recharge batterie démarée"
+        "name": "Début recharge batterie"
       }
     }
   },
   "common": {
-    "access_token_error_title": "Erreur Access token",
+    "access_token_error_title": "Erreur jeton d'accès",
     "access_token_error_message": "Vérifier la documentation officielle dans la section [OAuth2 Code]({oauth_token_doc_link})",
     "otp_error_title": "Erreur OTP",
     "otp_error_message": "Vérifier la documentation officielle dans la section [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link})",
@@ -251,5 +399,20 @@
     "no_vehicles_found_message": "Aucun véhicule connecté disponible sur ce compte",
     "command_error_title": "Commande",
     "command_error_message": "La commande n'a pas été envoyée correctement"
+  },
+  "issues": {
+    "vehicle_removed": {
+      "title": "Le véhicle {vin} a été supprimé de votre compte",
+      "description": "Home Assistant ne peut plus atteindre le véhicule `{vin}` via l'API Stellantis, et il n'est plus répertorié sur votre compte Stellantis. Cela signifie généralement que le véhicule a été vendu ou dissocié. Pour résoudre ce problème, il faut supprimer le véhicule de l'intégration.\n\n**Avertissement:** La suppression du véhicule supprime également de manière permanente **toutes ses entités**, et avec elles **toutes les statistiques à court et à long terme** collectées pour ce véhicule (par exemple l'énergie, le kilométrage, et l'historique de la batterie). Ces données ne peuvent pas être récupérées. Si vous souhaitez les conserver, exportez-les ou sauvegardez-les avant de continuer.\n\nPour supprimer le véhicule:\n1. Ouvrez **Paramètres > Appareils & services > Stellantis Vehicles **.\n2. Ouvrez le menu du véhicule (trois points verticaux à l'extrémité droite de la ligne du véhicule) et sélectionnez **Supprimer l'appareil**.\n3. Redémarrez Home Assistant.\n\nCet avertissement disparaît une fois que le véhicule a été supprimé."
+    }
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "Ré-authentification de votre compte Stellantis",
+        "remote_commands": "Configuration des commandes à distance (E-remote ou Connect Plus requis) ",
+        "options": "Préférences globales"
+      }
+    }
   }
 }
