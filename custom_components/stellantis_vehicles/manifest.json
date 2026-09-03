@@ -6,8 +6,9 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "webhook",
-    "http"
+    "frontend",
+    "http",
+    "webhook"
   ],
   "documentation": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles",
   "iot_class": "cloud_polling",
