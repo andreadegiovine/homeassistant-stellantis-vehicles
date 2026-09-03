@@ -50,7 +50,7 @@
         }
       },
       "reauth_confirm": {
-        "description": "Vou devez vous ré-authentifier pour utiliser cette intégration"
+        "description": "Vous devez vous ré-authentifier pour utiliser cette intégration"
       },
       "reconfigure": {
         "data": {
@@ -66,9 +66,9 @@
       "get_otp_sms": "Erreur lors de la récupération du code OTP SMS",
       "get_mqtt_access_token": "Erreur lors de la récupération du jeton accès MQTT",
       "get_mqtt_access_token_nok_access": "Code SMS ou code Pin invalide",
-      "get_mqtt_access_token_nok_maxnbtools": "Limite atteinte nombre d'équipement associés ou nombre de SMS. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
+      "get_mqtt_access_token_nok_maxnbtools": "Limite atteinte nombre d'équipements associés ou nombre de SMS. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
       "get_mqtt_access_token_nok_nok_blocked": "Limite atteinte nombre de code PIN incorrects. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
-      "get_mqtt_access_token_rate_limit": "Limite de requêtes du jeton d'accès MQTT dépassée (6 par jour)"
+      "get_mqtt_access_token_rate_limit": "Limite atteinte nombre de requêtes du jeton d'accès MQTT (6 par jour)"
     },
     "abort": {
       "already_configured": "Compte déjà configuré",
@@ -139,7 +139,7 @@
       "command_status": {
         "name": "Statut de la commande",
         "state": {
-          "rate_limit": "Limite de requêtes dépassée (6 par 20 minutes)",
+          "rate_limit": "Limite atteinte nombre de commandes passées (6 par 20 minutes)",
           "not_compatible": "Non compatible",
           "failed": "Échouée",
           "900": "Acceptée",
@@ -346,7 +346,7 @@
             "name": "Altitude"
           },
           "fix_status": {
-            "name": "Statut du fix"
+            "name": "Statut du positionnement"
           },
           "signal_quality": {
             "name": "Qualité du signal"
