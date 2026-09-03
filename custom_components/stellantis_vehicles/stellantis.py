@@ -821,7 +821,10 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.disconnect()
         self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
         try:
-            self._mqtt.connect(MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S)
+            # paho's connect() does blocking DNS + TCP + TLS handshake, so run it in the executor to keep the event loop responsive.
+            await self._hass.async_add_executor_job(
+                self._mqtt.connect, MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S
+            )
             self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
         except Exception as e:
             _LOGGER.warning(f"Error: {str(e)}")
