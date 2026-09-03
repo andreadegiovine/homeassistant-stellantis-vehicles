@@ -230,6 +230,14 @@ class StellantisBase:
                         _LOGGER.warning(error)
                         _LOGGER.debug("---------- END make_http_request")
                         return {}
+                    if str(resp.status).startswith("500") and str(result.get("code")) == "50038":
+                        # CVS error/user-vins - 50038: a transient Stellantis backend
+                        # failure while resolving the account's VIN list. Treat it like
+                        # an empty status so the coordinator keeps the last known data
+                        # for a few cycles instead of dropping every entity.
+                        _LOGGER.warning(error)
+                        _LOGGER.debug("---------- END make_http_request")
+                        return {}
                     if str(resp.status) == "500" and str(result.get("code")) == "50000":
                         # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
                         # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
