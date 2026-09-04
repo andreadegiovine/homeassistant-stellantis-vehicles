@@ -1,7 +1,7 @@
 import os
 import json
 
-from homeassistant.const import ( UnitOfTemperature, UnitOfLength, PERCENTAGE, UnitOfEnergy, UnitOfSpeed, UnitOfVolume, EntityCategory )
+from homeassistant.const import ( UnitOfTemperature, UnitOfLength, UnitOfTime, PERCENTAGE, UnitOfEnergy, UnitOfSpeed, UnitOfVolume, EntityCategory )
 from homeassistant.components.sensor.const import ( SensorDeviceClass, SensorStateClass )
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
@@ -40,6 +40,7 @@ CAR_API_BASE_URL = API_BASE_URL + "/connectedcar/v4/user"
 CAR_API_VEHICLES_URL = CAR_API_BASE_URL + "/vehicles"
 CAR_API_GET_VEHICLE_STATUS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/status"
 CAR_API_GET_VEHICLE_TRIPS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/trips"
+CAR_API_GET_VEHICLE_MAINTENANCE_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/maintenance"
 
 MQTT_SERVER = "mwa.mpsa.com"
 MQTT_PORT = 8885
@@ -311,6 +312,22 @@ SENSORS_DEFAULT = {
         "icon": "mdi:steering",
         "value_map" : ["drivingBehavior", "mode"],
         "updated_at_map" : ["drivingBehavior", "createdAt"]
+    },
+    "mileage_before_maintenance" : {
+        "icon" : "mdi:car-wrench",
+        "unit_of_measurement" : UnitOfLength.KILOMETERS,
+        "device_class": SensorDeviceClass.DISTANCE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "value_map" : ["maintenance", "mileageBeforeMaintenance"],
+        "updated_at_map" : ["maintenance", "updatedAt"]
+    },
+    "days_before_maintenance" : {
+        "icon" : "mdi:calendar-clock",
+        "unit_of_measurement" : UnitOfTime.DAYS,
+        "device_class": SensorDeviceClass.DURATION,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "value_map" : ["maintenance", "daysBeforeMaintenance"],
+        "updated_at_map" : ["maintenance", "updatedAt"]
     }
 }
 

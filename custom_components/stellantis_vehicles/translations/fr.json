@@ -107,6 +107,12 @@
       "autonomy": {
         "name": "Autonomie batterie"
       },
+      "mileage_before_maintenance": {
+        "name": "Kilométrage avant entretien"
+      },
+      "days_before_maintenance": {
+        "name": "Jours avant entretien"
+      },
       "battery": {
         "name": "Niveau batterie"
       },
