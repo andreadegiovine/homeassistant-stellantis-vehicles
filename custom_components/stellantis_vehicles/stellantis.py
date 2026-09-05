@@ -64,7 +64,8 @@ from .const import (
     OTP_FILENAME,
     ABRP_URL,
     ABRP_API_KEY,
-    TRANSLATION_PLACEHOLDERS
+    TRANSLATION_PLACEHOLDERS,
+    CAR_API_GET_VEHICLE_MAINTENANCE_URL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -703,6 +704,15 @@ class StellantisVehicles(StellantisOauth):
             if next_page_token != page_token:
                 return await self.get_vehicle_last_trip(vehicle, next_page_token)
         return vehicle_trips_request
+
+    @log_call
+    async def get_vehicle_maintenance(self, vehicle):
+        """ Fetch upcoming maintenance data (mileage/days remaining) for the vehicle. """
+        url = self.apply_query_params(CAR_API_GET_VEHICLE_MAINTENANCE_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
+        headers = self.apply_dict_params(CAR_API_HEADERS)
+        vehicle_maintenance_request = await self.make_http_request(url, 'GET', headers)
+        _log_http_exchange(url, headers, vehicle_maintenance_request)
+        return vehicle_maintenance_request
 
 #     async def get_vehicle_trips(self, page_token=False):
 #         _LOGGER.debug("---------- START get_vehicle_trips")

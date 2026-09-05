@@ -106,6 +106,12 @@
       "autonomy": {
         "name": "Autonomia"
       },
+      "mileage_before_maintenance": {
+        "name": "Chilometri al prossimo tagliando"
+      },
+      "days_before_maintenance": {
+        "name": "Giorni al prossimo tagliando"
+      },
       "battery": {
         "name": "Batteria"
       },
