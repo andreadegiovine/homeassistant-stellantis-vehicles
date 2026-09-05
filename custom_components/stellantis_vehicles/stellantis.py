@@ -677,7 +677,8 @@ class StellantisVehicles(StellantisOauth):
                         vehicle_data = {
                             "vehicle_id": vehicle["id"],
                             "vin": vehicle["vin"],
-                            "type": vehicle["motorization"]
+                            "type": vehicle["motorization"],
+                            "brand": vehicle.get("brand")
                         }
                         try:
                             picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
