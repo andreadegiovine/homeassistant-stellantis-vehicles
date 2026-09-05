@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections import deque
 from datetime import UTC, datetime, timedelta
@@ -66,6 +67,39 @@ def sort_dict(items, ordered_keys=None):
             result[key] = items[key]
     return result
 
+def log_call(func):
+    """Log entry and exit of a function at debug level.
+
+    Replaces the hand-written ``---------- START`` / ``---------- END`` markers.
+    Works on coroutine functions and plain functions alike (the latter for the
+    synchronous paho-mqtt callbacks). The exit line runs from a ``finally``
+    block, so it also covers the paths that return early or raise. Entry/exit
+    are logged under the decorated function's own module logger, so the lines
+    stay next to that module's other logging.
+    """
+    logger = logging.getLogger(func.__module__)
+    name = func.__name__
+
+    if asyncio.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            logger.debug("---------- START %s", name)
+            try:
+                return await func(*args, **kwargs)
+            finally:
+                logger.debug("---------- END %s", name)
+    else:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            logger.debug("---------- START %s", name)
+            try:
+                return func(*args, **kwargs)
+            finally:
+                logger.debug("---------- END %s", name)
+
+    return wrapper
+
+
 def rate_limit(limit: int, every: int):
     """Reject calls once `limit` of them have run within the last `every` seconds.
 
@@ -83,7 +117,7 @@ def rate_limit(limit: int, every: int):
             while calls and now - calls[0] >= every:
                 calls.popleft()
             if len(calls) >= limit:
-                _LOGGER.debug(f"Rate limit exceeded {func.__name__}: max {limit} per {every}s")
+                _LOGGER.debug("Rate limit exceeded %s: max %s per %ss", func.__name__, limit, every)
                 raise RateLimitException("rate_limit")
 
             calls.append(now)
