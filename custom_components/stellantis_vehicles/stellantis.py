@@ -3,7 +3,7 @@ import aiohttp
 import base64
 from PIL import Image, ImageOps
 import os
-from urllib.request import urlopen
+from io import BytesIO
 from copy import deepcopy
 import paho.mqtt.client as mqtt
 import json
@@ -18,6 +18,7 @@ from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
 from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util.ssl import client_context
 # If the Stellantis MQTT broker ever presents a certificate that fails
 # validation, import client_context_no_verify here as well and use it in
@@ -532,10 +533,17 @@ class StellantisVehicles(StellantisOauth):
         image_url = image_path.replace(public_path, "/local")
         if os.path.isfile(image_path):
             return image_url
-        image = await self._hass.async_add_executor_job(urlopen, url)
-        with Image.open(image) as im:
-            im = ImageOps.pad(im, (400, 400))
-        await self._hass.async_add_executor_job(im.save, image_path)
+        session = async_get_clientsession(self._hass)
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+            resp.raise_for_status()
+            image_data = await resp.read()
+
+        def _resize_and_save() -> None:
+            with Image.open(BytesIO(image_data)) as im:
+                im = ImageOps.pad(im, (400, 400))
+                im.save(image_path)
+
+        await self._hass.async_add_executor_job(_resize_and_save)
         return image_url
 
     def reset_scheduled_tokens(self):
