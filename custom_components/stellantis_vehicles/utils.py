@@ -132,48 +132,102 @@ def rate_limit(limit: int, every: int):
     return limit_decorator
 
 class SensitiveDataFilter(logging.Filter):
-    def __init__(self):
+    """Mask sensitive strings (tokens, VINs, customer ids) in log records.
+
+    A single shared instance sits on each of this integration's module loggers
+    (attached once, at import time). It therefore has to hold the sensitive
+    values of *every* loaded config entry at once, and it must not let that set
+    grow without bound over the process lifetime - both points were behind the
+    runaway CPU use in issue #414.
+
+    Design:
+    - ``_entry_values`` keeps, per ``entry_id``, the set of sensitive strings
+      extracted from that entry's stored config. It is *replaced* wholesale on
+      every ``set_entry_values`` call (the integration wires that to every
+      ``save_config``), so a rotated oauth/mqtt token supersedes the previous
+      one instead of piling up. Keyed by ``entry_id`` so several accounts do
+      not overwrite each other's tokens.
+    - ``_custom_values`` is a bounded, insertion-ordered set for values seen
+      outside the stored config (the OAuth code / id_token during the auth
+      flow, vehicle ids from API responses). It is capped because those values
+      rotate; anything that must stay masked for an entry's lifetime lives in
+      ``_entry_values``.
+    - Every mutating method rebinds its container instead of mutating it in
+      place, so the filter can be read from the paho-mqtt network thread while
+      the event loop updates it, without a "changed size during iteration".
+    """
+
+    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id")
+    CUSTOM_VALUES_LIMIT = 128
+
+    def __init__(self) -> None:
         super().__init__()
-        # Set instead of list: the same token is registered from several code
-        # paths, and the shared instance accumulates values for the whole
-        # process lifetime - deduping keeps the compiled pattern small and stops
-        # needless cache invalidations.
-        self.custom_values = set()
-        self.entry_data = {}
-        self.masked_entry_keys = ["access_token", "refresh_token", "oauth_code", "customer_id"]
-        self._pattern_cache = None
+        self._entry_values: dict[str, set[str]] = {}
+        self._entry_anonymize: dict[str, bool] = {}
+        self._custom_values: dict[str, None] = {}
+        self._pattern_cache: re.Pattern[str] | None = None
 
-    def add_custom_value(self, value):
-        if not value:
-            return
-        text = str(value)
-        if text not in self.custom_values:
-            self.custom_values.add(text)
-            self._pattern_cache = None
-
-    def add_entry_values(self, entry_data):
-        # Merge rather than replace: the single shared filter instance serves
-        # every config entry, so a second entry's setup must not drop the first
-        # entry's masked values or its anonymize flag.
-        self.entry_data = {**self.entry_data, **(entry_data or {})}
-        self._pattern_cache = None
-
-    def get_masked_values(self, data, result=None):
+    def get_masked_values(self, data:dict[str, Any], result:list[Any] | None = None) -> list[Any]:
         if result is None:
             result = []
         for key, value in data.items():
-            if isinstance(data[key], dict):
-                self.get_masked_values(data[key], result)
-            if key in self.masked_entry_keys:
+            if isinstance(value, dict):
+                self.get_masked_values(value, result)
+            if key in self.MASKED_ENTRY_KEYS:
                 result.append(value)
         return result
 
+    def set_entry_values(self, entry_id:str, entry_data:dict[str, Any] | None) -> None:
+        """Store (replacing any previous snapshot) one config entry's sensitive
+        values and its anonymize flag."""
+        entry_data = entry_data or {}
+        values = {str(v) for v in self.get_masked_values(entry_data) if v}
+        # VINs are the *keys* of the per-vehicle config node, not values, so
+        # get_masked_values() does not see them.
+        values |= {str(vin) for vin in (entry_data.get("vehicles") or {}) if vin}
+        self._entry_values = {**self._entry_values, entry_id: values}
+        self._entry_anonymize = {
+            **self._entry_anonymize,
+            entry_id: bool(entry_data.get(FIELD_ANONYMIZE_LOGS, False)),
+        }
+        self._pattern_cache = None
+
+    def remove_entry_values(self, entry_id:str) -> None:
+        """Forget a config entry on unload so its (now invalid) tokens stop
+        being masked and the compiled pattern shrinks back."""
+        if entry_id not in self._entry_values:
+            return
+        self._entry_values = {k: v for k, v in self._entry_values.items() if k != entry_id}
+        self._entry_anonymize = {k: v for k, v in self._entry_anonymize.items() if k != entry_id}
+        # Nothing loaded any more -> drop the process-global extras too.
+        if not self._entry_values:
+            self._custom_values = {}
+        self._pattern_cache = None
+
+    def add_custom_value(self, value:Any) -> None:
+        if not value:
+            return
+        text = str(value)
+        if text in self._custom_values:
+            return
+        updated = dict(self._custom_values)
+        updated[text] = None
+        while len(updated) > self.CUSTOM_VALUES_LIMIT:
+            del updated[next(iter(updated))]
+        self._custom_values = updated
+        self._pattern_cache = None
+
     @property
-    def compiled_patterns(self):
+    def compiled_patterns(self) -> re.Pattern[str] | None:
         if self._pattern_cache is not None:
             return self._pattern_cache
-        sensitive_values = [*self.get_masked_values(self.entry_data), *self.custom_values]
-        valid_values = {str(v) for v in sensitive_values if v}
+        # Snapshot the container references once - they may be rebound from
+        # another thread while this runs.
+        entry_values = self._entry_values
+        valid_values = set(self._custom_values)
+        for values in entry_values.values():
+            valid_values |= values
+        valid_values = {v for v in valid_values if v}
         if not valid_values:
             self._pattern_cache = None
             return None
@@ -183,7 +237,7 @@ class SensitiveDataFilter(logging.Filter):
         return self._pattern_cache
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if self.entry_data.get(FIELD_ANONYMIZE_LOGS, False):
+        if any(self._entry_anonymize.values()):
             record.msg = self._mask_value(record.msg)
             if record.args:
                 if isinstance(record.args, dict):
@@ -192,11 +246,6 @@ class SensitiveDataFilter(logging.Filter):
                     record.args = tuple(self._mask_value(arg) for arg in record.args)
                 else:
                     record.args = self._mask_value(record.args)
-
-            # record.msg = self._mask_value(record.msg)
-            # if hasattr(record, 'msg') and record.args:
-            #     record.msg = record.getMessage()
-            #     record.args = None
 
         return True
 
@@ -237,8 +286,11 @@ class SensitiveDataFilter(logging.Filter):
         return f"{value_str[:5]}###"
 
 
-# One shared filter instance. It holds process-wide sensitive values (tokens,
-# VINs, credentials) and must sit on each module logger exactly once.
+# One shared filter instance, attached to each module logger exactly once (at
+# import time). Its sensitive values are keyed by config entry, added via
+# set_entry_values() on every save_config() and dropped via remove_entry_values()
+# on unload, so it stays correct with several accounts loaded and its compiled
+# pattern does not grow over the process lifetime.
 # Previously StellantisBase.__init__ built a new one and attached it to the
 # stellantis logger, and the coordinator attached it to base's logger too;
 # nothing removed them, so every config-flow attempt and every entry reload left
