@@ -75,6 +75,13 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
+            if new_data:
+                maintenance = await self._stellantis.get_vehicle_maintenance(self._vehicle)
+                new_data["maintenance"] = {
+                    "mileageBeforeMaintenance": maintenance.get("mileageBeforeMaintenance"),
+                    "daysBeforeMaintenance": maintenance.get("daysBeforeMaintenance"),
+                    "updatedAt": maintenance.get("updatedAt")
+                }
         except ConfigEntryAuthFailed:
             raise
         except Exception as err:

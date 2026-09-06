@@ -107,6 +107,12 @@
       "autonomy": {
         "name": "Autonomy"
       },
+      "mileage_before_maintenance": {
+        "name": "Mileage before maintenance"
+      },
+      "days_before_maintenance": {
+        "name": "Days before maintenance"
+      },
       "battery": {
         "name": "Battery"
       },

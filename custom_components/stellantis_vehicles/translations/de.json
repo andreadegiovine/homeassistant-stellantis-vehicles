@@ -106,6 +106,12 @@
       "autonomy": {
         "name": "Reichweite"
       },
+      "mileage_before_maintenance": {
+        "name": "Kilometer bis zur nächsten Wartung"
+      },
+      "days_before_maintenance": {
+        "name": "Tage bis zur nächsten Wartung"
+      },
       "battery": {
         "name": "Batterie"
       },
