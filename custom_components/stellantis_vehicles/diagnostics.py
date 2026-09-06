@@ -10,7 +10,6 @@ from homeassistant.core import HomeAssistant
 
 from .base import StellantisVehicleCoordinator
 from .const import (
-    DOMAIN,
     FIELD_ANONYMIZE_LOGS,
     FIELD_COUNTRY_CODE,
     FIELD_MOBILE_APP,
@@ -52,7 +51,7 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+    stellantis = entry.runtime_data
 
     oauth_config = stellantis.get_config("oauth") or {}
     mqtt_config = stellantis.get_config("mqtt") or {}

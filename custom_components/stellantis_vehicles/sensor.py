@@ -12,7 +12,6 @@ from .base import ( StellantisBaseSensor, StellantisRestoreSensor )
 from .utils import ( get_datetime, sort_dict )
 
 from .const import (
-    DOMAIN,
     SENSORS_DEFAULT,
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
@@ -26,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+    stellantis = entry.runtime_data
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()
