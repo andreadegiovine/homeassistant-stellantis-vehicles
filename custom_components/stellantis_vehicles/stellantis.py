@@ -27,7 +27,7 @@ from homeassistant.util.ssl import client_context
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit, SensitiveDataFilter, replace_string_placeholders, log_call )
+from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call )
 from .exceptions import ( CommunicationError, RateLimitException )
 
 from .const import (
@@ -71,6 +71,7 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
 
 def _log_http_exchange(url, headers, response, **extra):
@@ -134,8 +135,8 @@ class StellantisBase:
         self._shutting_down = False
         self._pending_tasks: set[asyncio.Task] = set()
 
-        self.logger_filter = SensitiveDataFilter()
-        _LOGGER.addFilter(self.logger_filter)
+        # Shared instance, already attached to the module loggers at import time.
+        self.logger_filter = SENSITIVE_DATA_FILTER
 
     def start_session(self):
         if not self._session:

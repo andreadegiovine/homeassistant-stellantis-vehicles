@@ -134,17 +134,28 @@ def rate_limit(limit: int, every: int):
 class SensitiveDataFilter(logging.Filter):
     def __init__(self):
         super().__init__()
-        self.custom_values = []
+        # Set instead of list: the same token is registered from several code
+        # paths, and the shared instance accumulates values for the whole
+        # process lifetime - deduping keeps the compiled pattern small and stops
+        # needless cache invalidations.
+        self.custom_values = set()
         self.entry_data = {}
         self.masked_entry_keys = ["access_token", "refresh_token", "oauth_code", "customer_id"]
         self._pattern_cache = None
 
     def add_custom_value(self, value):
-        self.custom_values.append(value)
-        self._pattern_cache = None
+        if not value:
+            return
+        text = str(value)
+        if text not in self.custom_values:
+            self.custom_values.add(text)
+            self._pattern_cache = None
 
     def add_entry_values(self, entry_data):
-        self.entry_data = entry_data
+        # Merge rather than replace: the single shared filter instance serves
+        # every config entry, so a second entry's setup must not drop the first
+        # entry's masked values or its anonymize flag.
+        self.entry_data = {**self.entry_data, **(entry_data or {})}
         self._pattern_cache = None
 
     def get_masked_values(self, data, result=None):
@@ -161,7 +172,7 @@ class SensitiveDataFilter(logging.Filter):
     def compiled_patterns(self):
         if self._pattern_cache is not None:
             return self._pattern_cache
-        sensitive_values = self.get_masked_values(self.entry_data) + self.custom_values
+        sensitive_values = [*self.get_masked_values(self.entry_data), *self.custom_values]
         valid_values = {str(v) for v in sensitive_values if v}
         if not valid_values:
             self._pattern_cache = None
@@ -224,3 +235,12 @@ class SensitiveDataFilter(logging.Filter):
             return '###'
 
         return f"{value_str[:5]}###"
+
+
+# One shared filter instance. It holds process-wide sensitive values (tokens,
+# VINs, credentials) and must sit on each module logger exactly once.
+# Previously StellantisBase.__init__ built a new one and attached it to the
+# stellantis logger, and the coordinator attached it to base's logger too;
+# nothing removed them, so every config-flow attempt and every entry reload left
+# another filter stacked on those loggers.
+SENSITIVE_DATA_FILTER = SensitiveDataFilter()
