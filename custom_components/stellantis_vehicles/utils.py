@@ -37,7 +37,11 @@ def time_from_pt_string(pt_string):
     return datetime.strptime(pt_string, regex).time()
 
 def time_from_string(string):
-    return datetime.strptime(string, "%H:%M:%S").time()
+    try:
+        return datetime.strptime(string, "%H:%M:%S").time()
+    except (AttributeError, TypeError, ValueError) as e:
+        _LOGGER.warning("Could not parse time '%s': %s", string, e)
+        return None
 
 def date_from_pt_string(pt_string, start_date=None):
     if not start_date:
