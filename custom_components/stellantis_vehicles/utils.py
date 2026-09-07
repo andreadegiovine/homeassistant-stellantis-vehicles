@@ -163,6 +163,12 @@ class SensitiveDataFilter(logging.Filter):
     def __init__(self) -> None:
         super().__init__()
         self._entry_values: dict[str, set[str]] = {}
+        # Extra always-mask values per entry (the account's VINs and vehicle ids
+        # from the live API). Kept separate from _entry_values so a later
+        # set_entry_values() config snapshot cannot drop them, and out of the
+        # bounded _custom_values FIFO so they are never evicted while the entry
+        # is loaded.
+        self._entry_extra: dict[str, set[str]] = {}
         self._entry_anonymize: dict[str, bool] = {}
         self._custom_values: dict[str, None] = {}
         self._pattern_cache: re.Pattern[str] | None = None
@@ -192,15 +198,26 @@ class SensitiveDataFilter(logging.Filter):
         }
         self._pattern_cache = None
 
+    def set_entry_extra_values(self, entry_id:str, values:set[str]) -> None:
+        """Register extra always-mask values for an entry (its account's VINs
+        and vehicle ids from the live vehicle list). Replaces the previous set
+        for that entry."""
+        self._entry_extra = {
+            **self._entry_extra,
+            entry_id: {str(v) for v in values if v},
+        }
+        self._pattern_cache = None
+
     def remove_entry_values(self, entry_id:str) -> None:
         """Forget a config entry on unload so its (now invalid) tokens stop
         being masked and the compiled pattern shrinks back."""
-        if entry_id not in self._entry_values:
+        if entry_id not in self._entry_values and entry_id not in self._entry_extra:
             return
         self._entry_values = {k: v for k, v in self._entry_values.items() if k != entry_id}
+        self._entry_extra = {k: v for k, v in self._entry_extra.items() if k != entry_id}
         self._entry_anonymize = {k: v for k, v in self._entry_anonymize.items() if k != entry_id}
         # Nothing loaded any more -> drop the process-global extras too.
-        if not self._entry_values:
+        if not self._entry_values and not self._entry_extra:
             self._custom_values = {}
         self._pattern_cache = None
 
@@ -224,9 +241,11 @@ class SensitiveDataFilter(logging.Filter):
         # Snapshot the container references once - they may be rebound from
         # another thread while this runs.
         entry_values = self._entry_values
+        entry_extra = self._entry_extra
         valid_values = set(self._custom_values)
-        for values in entry_values.values():
-            valid_values |= values
+        for group in (entry_values, entry_extra):
+            for values in group.values():
+                valid_values |= values
         valid_values = {v for v in valid_values if v}
         if not valid_values:
             self._pattern_cache = None
@@ -259,6 +278,12 @@ class SensitiveDataFilter(logging.Filter):
             return type(value)(self._mask_value(item) for item in value)
         elif isinstance(value, str):
             return self._mask_string(value)
+        elif isinstance(value, (bytes, bytearray)):
+            # MQTT payloads are logged as raw bytes; mask the decoded text so a
+            # VIN or token inside the JSON payload is still redacted.
+            text = value.decode("utf-8", "replace")
+            masked = self._mask_string(text)
+            return value if masked == text else masked.encode("utf-8", "replace")
 
         return value
 

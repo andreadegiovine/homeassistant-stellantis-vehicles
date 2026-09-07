@@ -512,7 +512,8 @@ class StellantisVehicles(StellantisOauth):
         vehicles = deepcopy(self.get_vehicles_stored_config())
         vehicles.setdefault(vin, {})[key] = value
         self.update_stored_config("vehicles", vehicles)
-        self._config["vehicles"] = deepcopy(vehicles)
+        # Through save_config() so the log filter's snapshot picks up the VIN.
+        self.save_config({"vehicles": deepcopy(vehicles)})
 
     def get_vehicle_stored_config(self, vin, key):
         vehicle = self.get_vehicles_stored_config().get(vin)
@@ -528,7 +529,8 @@ class StellantisVehicles(StellantisOauth):
             return []
         new_vehicles = {vin: deepcopy(value) for vin, value in vehicles.items() if vin not in stale}
         self.update_stored_config("vehicles", new_vehicles)
-        self._config["vehicles"] = deepcopy(new_vehicles)
+        # Through save_config() so the log filter's snapshot drops the stale VINs.
+        self.save_config({"vehicles": deepcopy(new_vehicles)})
         _LOGGER.info("Removed stored config for vehicles no longer on the account: %s", ", ".join(stale))
         return stale
 
@@ -689,9 +691,20 @@ class StellantisVehicles(StellantisOauth):
                 raise CommunicationError("Empty or invalid response from the vehicles endpoint")
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
+                    account_ids = set()
                     for vehicle in vehicles_request["_embedded"]["vehicles"]:
-                        self.logger_filter.add_custom_value(vehicle["vin"])
-                        self.logger_filter.add_custom_value(vehicle["id"])
+                        account_ids.add(vehicle["vin"])
+                        account_ids.add(vehicle["id"])
+                    # Register the account's VINs / ids for the entry's lifetime
+                    # so they stay masked even for a vehicle with no stored
+                    # per-vehicle config. During the config flow there is no
+                    # entry yet, so fall back to the bounded FIFO.
+                    entry = getattr(self, "_entry", None)
+                    if entry is not None:
+                        self.logger_filter.set_entry_extra_values(entry.entry_id, account_ids)
+                    else:
+                        for value in account_ids:
+                            self.logger_filter.add_custom_value(value)
             _log_http_exchange(url, headers, vehicles_request)
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
