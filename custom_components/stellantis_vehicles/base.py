@@ -484,7 +484,7 @@ class StellantisBaseEntity(CoordinatorEntity):
             },
             "name": self._vehicle["vin"],
             "model": self._coordinator.get_translation(f"component.stellantis_vehicles.entity.sensor.type.state.{self._vehicle["type"].lower()}", self._vehicle["type"]) + " - " + self._vehicle["vin"],
-            "manufacturer": self._config[FIELD_MOBILE_APP]
+            "manufacturer": self._vehicle.get("brand") or self._config[FIELD_MOBILE_APP]
         }
 
     def value_was_updated(self):
