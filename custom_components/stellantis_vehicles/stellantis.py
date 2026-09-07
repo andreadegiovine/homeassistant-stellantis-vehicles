@@ -596,9 +596,9 @@ class StellantisVehicles(StellantisOauth):
         try:
             if self._oauth_token_scheduled is not None:
                 self.reset_scheduled_oauth_token()
-                await self.refresh_token_request()
+                await self.refresh_oauth_token_request()
             elif get_datetime() > get_next_run():
-                await self.refresh_token_request()
+                await self.refresh_oauth_token_request()
             next_run = get_next_run()
         except CommunicationError:
             next_run = get_datetime() + timedelta(minutes=5)
@@ -611,7 +611,7 @@ class StellantisVehicles(StellantisOauth):
 
     @log_call
     @rate_limit(6, 1800) # 6 per 30 min
-    async def refresh_token_request(self):
+    async def refresh_oauth_token_request(self):
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
         headers = self.apply_dict_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
