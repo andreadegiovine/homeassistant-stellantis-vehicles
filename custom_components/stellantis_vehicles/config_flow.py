@@ -300,7 +300,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA)
 
         await self.init_translations()
-        self.stellantis = self.hass.data[DOMAIN][self._reconfigure_entry_id]
+        self.stellantis = self._get_reconfigure_entry().runtime_data
         self.data = dict(self.stellantis._entry.data)
 
         if user_input[FIELD_RECONFIGURE] == FIELD_REMOTE_COMMANDS:

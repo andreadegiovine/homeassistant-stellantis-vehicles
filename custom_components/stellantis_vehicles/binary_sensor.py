@@ -7,7 +7,6 @@ from homeassistant.const import EntityCategory
 from .base import ( StellantisBaseBinarySensor, StellantisBaseEntity )
 
 from .const import (
-    DOMAIN,
     BINARY_SENSORS_DEFAULT
 )
 
@@ -17,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+    stellantis = entry.runtime_data
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()

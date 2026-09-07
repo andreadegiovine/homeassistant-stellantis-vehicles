@@ -31,8 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     stellantis.set_entry(config)
     await stellantis.scheduled_tokens_refresh()
 
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][config.entry_id] = stellantis
+    config.runtime_data = stellantis
 
     try:
         vehicles = await stellantis.get_user_vehicles()
@@ -45,7 +44,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         # ConfigEntryNotReady makes Home Assistant retry with backoff instead of
         # leaving a loaded but empty entry behind a misleading "no vehicles" notice.
         await stellantis.async_shutdown()
-        hass.data[DOMAIN].pop(config.entry_id, None)
+        config.runtime_data = None
         raise ConfigEntryNotReady(f"Could not fetch the vehicle list: {err}") from err
 
     if vehicles:
@@ -73,7 +72,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
             # tasks, scheduled token-refresh jobs and aiohttp session from this
             # attempt do not leak.
             await stellantis.async_shutdown()
-            hass.data[DOMAIN].pop(config.entry_id, None)
+            config.runtime_data = None
             raise
 
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
@@ -92,11 +91,10 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
 
 async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
-    stellantis = hass.data[DOMAIN][config.entry_id]
+    stellantis = config.runtime_data
 
     if unload_ok := await hass.config_entries.async_unload_platforms(config, PLATFORMS):
         await stellantis.async_shutdown()
-        hass.data[DOMAIN].pop(config.entry_id)
 
     return unload_ok
 
@@ -111,7 +109,11 @@ async def async_remove_config_entry_device(
     unpaired. A device for a vehicle still returned by the account cannot be
     deleted - it would just be recreated on the next refresh.
     """
-    stellantis = hass.data.get(DOMAIN, {}).get(config.entry_id)
+    # This callback can fire while the entry is not loaded (disabled, failed
+    # setup, or already unloaded). Home Assistant deletes runtime_data after a
+    # successful unload and never sets it before setup, so read it defensively:
+    # a missing or None value means "not loaded", and there is nothing to block.
+    stellantis = getattr(config, "runtime_data", None)
     if stellantis is None:
         return True
     try:
