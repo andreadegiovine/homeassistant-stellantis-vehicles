@@ -335,6 +335,8 @@ class StellantisOauth(StellantisBase):
 
     @log_call
     async def get_oauth_code(self, email, password, code_url=None):
+        self.logger_filter.add_custom_value(email)
+        self.logger_filter.add_custom_value(password)
         oauth_code_request = await self.make_http_request(code_url or OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
         if "code" in oauth_code_request:
             self.logger_filter.add_custom_value(oauth_code_request["code"])
