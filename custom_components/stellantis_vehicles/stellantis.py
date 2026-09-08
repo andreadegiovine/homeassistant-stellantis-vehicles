@@ -66,7 +66,8 @@ from .const import (
     ABRP_URL,
     ABRP_API_KEY,
     TRANSLATION_PLACEHOLDERS,
-    CAR_API_GET_VEHICLE_MAINTENANCE_URL
+    CAR_API_GET_VEHICLE_MAINTENANCE_URL,
+    MQTT_TOKEN_RETRY_BACKOFF
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -454,6 +455,7 @@ class StellantisVehicles(StellantisOauth):
 
         self._oauth_token_scheduled = None
         self._mqtt_token_scheduled = None
+        self._mqtt_token_retry = 0
 
     def set_entry(self, entry):
         self._entry = entry
@@ -750,13 +752,24 @@ class StellantisVehicles(StellantisOauth):
             self.reset_scheduled_mqtt_token()
             if force or get_datetime() > get_next_run():
                 await self.refresh_mqtt_token_request()
+            self._mqtt_token_retry = 0
             next_run = get_next_run()
-        except CommunicationError:
-            next_run = get_datetime() + timedelta(minutes=1)
+        except CommunicationError as err:
+            self._mqtt_token_retry += 1
+            idx = min(self._mqtt_token_retry - 1, len(MQTT_TOKEN_RETRY_BACKOFF) - 1)
+            delay = MQTT_TOKEN_RETRY_BACKOFF[idx]
+            delay += random.uniform(0, delay * 0.1)
+            next_run = get_datetime() + timedelta(seconds=delay)
+            _LOGGER.warning(
+                "MQTT token refresh failed (attempt %s), next retry at %s: %s",
+                self._mqtt_token_retry, next_run, err,
+            )
         except RateLimitException:
+            self._mqtt_token_retry = 0
             _LOGGER.warning("Rate limit exceeded, retry after 1 day or check logs and restart integration")
             next_run = get_datetime() + timedelta(days=1)
         except ConfigException:
+            self._mqtt_token_retry = 0
             self.disable_remote_commands()
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
