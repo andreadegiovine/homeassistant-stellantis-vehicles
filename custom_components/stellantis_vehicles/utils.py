@@ -174,6 +174,7 @@ class SensitiveDataFilter(logging.Filter):
         self._pattern_cache: re.Pattern[str] | None = None
 
     def get_masked_values(self, data:dict[str, Any], result:list[Any] | None = None) -> list[Any]:
+        """Collect the values of any MASKED_ENTRY_KEYS key found anywhere in a (possibly nested) config dict."""
         if result is None:
             result = []
         for key, value in data.items():
@@ -222,6 +223,7 @@ class SensitiveDataFilter(logging.Filter):
         self._pattern_cache = None
 
     def add_custom_value(self, value:Any) -> None:
+        """Add one value to the bounded FIFO of extra masked strings, dropping the oldest once CUSTOM_VALUES_LIMIT is exceeded."""
         if not value:
             return
         text = str(value)
@@ -236,6 +238,7 @@ class SensitiveDataFilter(logging.Filter):
 
     @property
     def compiled_patterns(self) -> re.Pattern[str] | None:
+        """Return (and cache) a compiled regex matching every value currently masked for any loaded entry, or None when there is nothing to mask."""
         if self._pattern_cache is not None:
             return self._pattern_cache
         # Snapshot the container references once - they may be rebound from
@@ -256,6 +259,7 @@ class SensitiveDataFilter(logging.Filter):
         return self._pattern_cache
 
     def filter(self, record: logging.LogRecord) -> bool:
+        """Redact masked values in the record's message and args when any loaded entry enabled anonymization; always returns True, so no record is ever dropped."""
         if any(self._entry_anonymize.values()):
             record.msg = self._mask_value(record.msg)
             if record.args:
@@ -269,6 +273,7 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
     def _mask_value(self, value: Any) -> Any:
+        """Return the value with masked strings redacted, recursing into dict / list / tuple and decoding bytes / bytearray."""
         if value is None:
             return value
 
@@ -288,6 +293,7 @@ class SensitiveDataFilter(logging.Filter):
         return value
 
     def _mask_dict(self, data: Dict) -> Dict:
+        """Return a new dict with every key and value passed through _mask_value."""
         masked = {}
         for key, value in data.items():
             masked_key = self._mask_value(key)
@@ -295,12 +301,14 @@ class SensitiveDataFilter(logging.Filter):
         return masked
 
     def _mask_string(self, value: str) -> str:
+        """Return the string with every occurrence of a masked value replaced by its redacted form."""
         pattern = self.compiled_patterns
         if pattern:
             return pattern.sub(lambda m: self._mask_sensitive_value(m.group(0)), value)
         return value
 
     def _mask_sensitive_value(self, value: Any) -> str:
+        """Redact one matched value: '###' when empty or five characters or shorter, otherwise its first five characters followed by '###'."""
         if value is None or value == '':
             return '###'
 
