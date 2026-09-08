@@ -19,7 +19,7 @@ from .const import (
 
 # Keys whose value is a secret or personal data. async_redact_data walks nested
 # dicts/lists and replaces every matching value with "**REDACTED**", so only this
-# list needs maintaining. It overlaps with SensitiveDataFilter.masked_entry_keys
+# list needs maintaining. It overlaps with SensitiveDataFilter.MASKED_ENTRY_KEYS
 # in utils.py; the extra entries here cover the raw API payload (GPS position,
 # VIN) that never reaches the log filter.
 TO_REDACT = {
