@@ -597,17 +597,11 @@ class StellantisVehicles(StellantisOauth):
     async def async_shutdown(self) -> None:
         """Tear down everything created for this config entry.
 
-        Called from async_unload_entry so a reload does not leak the paho-mqtt
-        network thread, the delayed do_async reconnect tasks, the scheduled
-        token-refresh callbacks or the aiohttp session.
+        Called from async_unload_entry on a normal unload or reload, and from
+        the setup-failure paths in async_setup_entry (Home Assistant does not
+        call async_unload_entry when async_setup_entry raises).
         """
         self._shutting_down = True
-
-        # Drop this entry's sensitive values from the shared log filter, so the
-        # compiled mask pattern shrinks back and this entry's (now invalid)
-        # tokens stop being masked. No-op if set_entry() never ran.
-        if self._entry is not None:
-            self.logger_filter.remove_entry_values(self._entry.entry_id)
 
         # Stop the scheduled oauth/mqtt token-refresh callbacks.
         self.reset_scheduled_tokens()
@@ -629,6 +623,12 @@ class StellantisVehicles(StellantisOauth):
 
         # Close the shared aiohttp session.
         await self.close_session()
+
+        # Now that the paho thread is joined and nothing can still log for this
+        # entry, drop its values from the shared log filter so the compiled mask
+        # pattern shrinks back. No-op if set_entry() never ran.
+        if self._entry is not None:
+            self.logger_filter.remove_entry_values(self._entry.entry_id)
 
     async def scheduled_tokens_refresh(self):
         self.reset_scheduled_tokens()
