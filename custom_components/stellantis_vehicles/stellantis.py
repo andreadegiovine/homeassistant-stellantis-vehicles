@@ -238,22 +238,22 @@ class StellantisBase:
 
                     if str(resp.status) == "404" and str(result.get("code")) == "40400":
                         # Not Found: We didn't find the status for this vehicle. - 40400
-                        _LOGGER.warning(error)
+                        _LOGGER.warning(error or "Vehicle status not found (HTTP 404)")
                         return {}
                     if str(resp.status).startswith("500") and str(result.get("code")) == "50038":
                         # CVS error/user-vins - 50038: a transient Stellantis backend
                         # failure while resolving the account's VIN list. Treat it like
                         # an empty status so the coordinator keeps the last known data
                         # for a few cycles instead of dropping every entity.
-                        _LOGGER.warning(error)
+                        _LOGGER.warning(error or "Transient CVS user-vins error (HTTP 500)")
                         return {}
                     if str(resp.status) == "500" and str(result.get("code")) == "50000":
                         # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
                         # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/475
-                        raise CommunicationError(error)
+                        raise CommunicationError(error or "Stellantis connection module error (HTTP 500)")
                     if str(resp.status) == "400" and result.get("error") == "invalid_grant":
                         # Token expiration
-                        raise ConfigEntryAuthFailed(error)
+                        raise ConfigEntryAuthFailed(error or "Stellantis rejected the request (invalid_grant)")
                     if str(resp.status) == "401":
                         # The OAuth access token was rejected. This is usually a
                         # short-lived blip right after a token rotation, so
@@ -275,7 +275,7 @@ class StellantisBase:
                         raise CommunicationError("Stellantis rejected the access token (HTTP 401)")
                     if str(resp.status).startswith("50"):
                         # Internal error
-                        raise CommunicationError(error)
+                        raise CommunicationError(error or f"Stellantis internal server error (HTTP {resp.status})")
                     # Any other non-2xx response we don't have a specific case for
                     raise CommunicationError(error or f"Unexpected HTTP status {resp.status}")
 
