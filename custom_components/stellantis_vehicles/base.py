@@ -19,7 +19,7 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, SENSITIVE_DATA_FILTER )
 
 from .const import (
     DOMAIN,
@@ -32,6 +32,7 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations, config_entry) -> None:
@@ -53,9 +54,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._privacy_full_logged = False
         self._empty_status_count = 0
         self._vehicle_removed = False
-
-        if self._stellantis.logger_filter:
-            _LOGGER.addFilter(self._stellantis.logger_filter)
 
     @log_call
     async def _async_update_data(self):

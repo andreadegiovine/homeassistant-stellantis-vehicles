@@ -126,7 +126,9 @@ class Otp:
 
         R0 = self.challenge + ";" + iw + ";" + self.get_serial()
         R1 = self.challenge + ";" + iw + ";" + self.data.iwK1
-        logger.debug("%s\n%s\n%s", R0, R1, R2)
+        # R2 ends with the raw PIN on the synchro action; keep it out of the log.
+        R2_log = R2.replace(self.codepin, "###") if self.action == "synchro" and self.codepin else R2
+        logger.debug("%s\n%s\n%s", R0, R1, R2_log)
         return {"R0": hashlib.sha256(R0.encode("utf-8")).hexdigest(),
                 "R1": hashlib.sha256(R1.encode("utf-8")).hexdigest(),
                 "R2": hashlib.sha256(R2.encode("utf-8")).hexdigest()}

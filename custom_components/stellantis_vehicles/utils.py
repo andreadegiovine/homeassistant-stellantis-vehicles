@@ -132,37 +132,124 @@ def rate_limit(limit: int, every: int):
     return limit_decorator
 
 class SensitiveDataFilter(logging.Filter):
-    def __init__(self):
+    """Mask sensitive strings (tokens, VINs, customer ids) in log records.
+
+    A single shared instance sits on each of this integration's module loggers
+    (attached once, at import time). It therefore has to hold the sensitive
+    values of *every* loaded config entry at once, and it must not let that set
+    grow without bound over the process lifetime - both points were behind the
+    runaway CPU use in issue #414.
+
+    Design:
+    - ``_entry_values`` keeps, per ``entry_id``, the set of sensitive strings
+      extracted from that entry's stored config. It is *replaced* wholesale on
+      every ``set_entry_values`` call (the integration wires that to every
+      ``save_config``), so a rotated oauth/mqtt token supersedes the previous
+      one instead of piling up. Keyed by ``entry_id`` so several accounts do
+      not overwrite each other's tokens.
+    - ``_custom_values`` is a bounded, insertion-ordered set for values seen
+      outside the stored config (the OAuth code / id_token during the auth
+      flow, vehicle ids from API responses). It is capped because those values
+      rotate; anything that must stay masked for an entry's lifetime lives in
+      ``_entry_values``.
+    - Every mutating method rebinds its container instead of mutating it in
+      place, so the filter can be read from the paho-mqtt network thread while
+      the event loop updates it, without a "changed size during iteration".
+    """
+
+    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id")
+    CUSTOM_VALUES_LIMIT = 128
+
+    def __init__(self) -> None:
         super().__init__()
-        self.custom_values = []
-        self.entry_data = {}
-        self.masked_entry_keys = ["access_token", "refresh_token", "oauth_code", "customer_id"]
-        self._pattern_cache = None
+        self._entry_values: dict[str, set[str]] = {}
+        # Extra always-mask values per entry (the account's VINs and vehicle ids
+        # from the live API). Kept separate from _entry_values so a later
+        # set_entry_values() config snapshot cannot drop them, and out of the
+        # bounded _custom_values FIFO so they are never evicted while the entry
+        # is loaded.
+        self._entry_extra: dict[str, set[str]] = {}
+        self._entry_anonymize: dict[str, bool] = {}
+        self._custom_values: dict[str, None] = {}
+        self._pattern_cache: re.Pattern[str] | None = None
 
-    def add_custom_value(self, value):
-        self.custom_values.append(value)
-        self._pattern_cache = None
-
-    def add_entry_values(self, entry_data):
-        self.entry_data = entry_data
-        self._pattern_cache = None
-
-    def get_masked_values(self, data, result=None):
+    def get_masked_values(self, data:dict[str, Any], result:list[Any] | None = None) -> list[Any]:
+        """Collect the values of any MASKED_ENTRY_KEYS key found anywhere in a (possibly nested) config dict."""
         if result is None:
             result = []
         for key, value in data.items():
-            if isinstance(data[key], dict):
-                self.get_masked_values(data[key], result)
-            if key in self.masked_entry_keys:
+            if isinstance(value, dict):
+                self.get_masked_values(value, result)
+            if key in self.MASKED_ENTRY_KEYS:
                 result.append(value)
         return result
 
+    def set_entry_values(self, entry_id:str, entry_data:dict[str, Any] | None) -> None:
+        """Store (replacing any previous snapshot) one config entry's sensitive
+        values and its anonymize flag."""
+        entry_data = entry_data or {}
+        values = {str(v) for v in self.get_masked_values(entry_data) if v}
+        # VINs are the *keys* of the per-vehicle config node, not values, so
+        # get_masked_values() does not see them.
+        values |= {str(vin) for vin in (entry_data.get("vehicles") or {}) if vin}
+        self._entry_values = {**self._entry_values, entry_id: values}
+        self._entry_anonymize = {
+            **self._entry_anonymize,
+            entry_id: bool(entry_data.get(FIELD_ANONYMIZE_LOGS, False)),
+        }
+        self._pattern_cache = None
+
+    def set_entry_extra_values(self, entry_id:str, values:set[str]) -> None:
+        """Register extra always-mask values for an entry (its account's VINs
+        and vehicle ids from the live vehicle list). Replaces the previous set
+        for that entry."""
+        self._entry_extra = {
+            **self._entry_extra,
+            entry_id: {str(v) for v in values if v},
+        }
+        self._pattern_cache = None
+
+    def remove_entry_values(self, entry_id:str) -> None:
+        """Forget a config entry on unload so its (now invalid) tokens stop
+        being masked and the compiled pattern shrinks back."""
+        if entry_id not in self._entry_values and entry_id not in self._entry_extra:
+            return
+        self._entry_values = {k: v for k, v in self._entry_values.items() if k != entry_id}
+        self._entry_extra = {k: v for k, v in self._entry_extra.items() if k != entry_id}
+        self._entry_anonymize = {k: v for k, v in self._entry_anonymize.items() if k != entry_id}
+        # Nothing loaded any more -> drop the process-global extras too.
+        if not self._entry_values and not self._entry_extra:
+            self._custom_values = {}
+        self._pattern_cache = None
+
+    def add_custom_value(self, value:Any) -> None:
+        """Add one value to the bounded FIFO of extra masked strings, dropping the oldest once CUSTOM_VALUES_LIMIT is exceeded."""
+        if not value:
+            return
+        text = str(value)
+        if text in self._custom_values:
+            return
+        updated = dict(self._custom_values)
+        updated[text] = None
+        while len(updated) > self.CUSTOM_VALUES_LIMIT:
+            del updated[next(iter(updated))]
+        self._custom_values = updated
+        self._pattern_cache = None
+
     @property
-    def compiled_patterns(self):
+    def compiled_patterns(self) -> re.Pattern[str] | None:
+        """Return (and cache) a compiled regex matching every value currently masked for any loaded entry, or None when there is nothing to mask."""
         if self._pattern_cache is not None:
             return self._pattern_cache
-        sensitive_values = self.get_masked_values(self.entry_data) + self.custom_values
-        valid_values = {str(v) for v in sensitive_values if v}
+        # Snapshot the container references once - they may be rebound from
+        # another thread while this runs.
+        entry_values = self._entry_values
+        entry_extra = self._entry_extra
+        valid_values = set(self._custom_values)
+        for group in (entry_values, entry_extra):
+            for values in group.values():
+                valid_values |= values
+        valid_values = {v for v in valid_values if v}
         if not valid_values:
             self._pattern_cache = None
             return None
@@ -172,7 +259,8 @@ class SensitiveDataFilter(logging.Filter):
         return self._pattern_cache
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if self.entry_data.get(FIELD_ANONYMIZE_LOGS, False):
+        """Redact masked values in the record's message and args when any loaded entry enabled anonymization; always returns True, so no record is ever dropped."""
+        if any(self._entry_anonymize.values()):
             record.msg = self._mask_value(record.msg)
             if record.args:
                 if isinstance(record.args, dict):
@@ -182,14 +270,10 @@ class SensitiveDataFilter(logging.Filter):
                 else:
                     record.args = self._mask_value(record.args)
 
-            # record.msg = self._mask_value(record.msg)
-            # if hasattr(record, 'msg') and record.args:
-            #     record.msg = record.getMessage()
-            #     record.args = None
-
         return True
 
     def _mask_value(self, value: Any) -> Any:
+        """Return the value with masked strings redacted, recursing into dict / list / tuple and decoding bytes / bytearray."""
         if value is None:
             return value
 
@@ -199,10 +283,17 @@ class SensitiveDataFilter(logging.Filter):
             return type(value)(self._mask_value(item) for item in value)
         elif isinstance(value, str):
             return self._mask_string(value)
+        elif isinstance(value, (bytes, bytearray)):
+            # MQTT payloads are logged as raw bytes; mask the decoded text so a
+            # VIN or token inside the JSON payload is still redacted.
+            text = value.decode("utf-8", "replace")
+            masked = self._mask_string(text)
+            return value if masked == text else masked.encode("utf-8", "replace")
 
         return value
 
     def _mask_dict(self, data: Dict) -> Dict:
+        """Return a new dict with every key and value passed through _mask_value."""
         masked = {}
         for key, value in data.items():
             masked_key = self._mask_value(key)
@@ -210,12 +301,14 @@ class SensitiveDataFilter(logging.Filter):
         return masked
 
     def _mask_string(self, value: str) -> str:
+        """Return the string with every occurrence of a masked value replaced by its redacted form."""
         pattern = self.compiled_patterns
         if pattern:
             return pattern.sub(lambda m: self._mask_sensitive_value(m.group(0)), value)
         return value
 
     def _mask_sensitive_value(self, value: Any) -> str:
+        """Redact one matched value: '###' when empty or five characters or shorter, otherwise its first five characters followed by '###'."""
         if value is None or value == '':
             return '###'
 
@@ -224,3 +317,15 @@ class SensitiveDataFilter(logging.Filter):
             return '###'
 
         return f"{value_str[:5]}###"
+
+
+# One shared filter instance, attached to each module logger exactly once (at
+# import time). Its sensitive values are keyed by config entry, added via
+# set_entry_values() on every save_config() and dropped via remove_entry_values()
+# on unload, so it stays correct with several accounts loaded and its compiled
+# pattern does not grow over the process lifetime.
+# Previously StellantisBase.__init__ built a new one and attached it to the
+# stellantis logger, and the coordinator attached it to base's logger too;
+# nothing removed them, so every config-flow attempt and every entry reload left
+# another filter stacked on those loggers.
+SENSITIVE_DATA_FILTER = SensitiveDataFilter()
