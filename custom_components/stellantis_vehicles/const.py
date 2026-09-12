@@ -131,6 +131,11 @@ UPDATE_INTERVAL = 60 # seconds
 # re-fetched to check whether the vehicle was unpaired.
 EMPTY_STATUS_LIMIT = 3
 
+# Maximum number of entries kept in a coordinator's command history. Without a
+# cap, every sent command would stay in memory (and be re-sorted on every
+# coordinator update) for as long as the coordinator lives.
+COMMAND_HISTORY_LIMIT = 50
+
 # Backoff schedule (seconds) for the MQTT token refresh after a transient
 # Stellantis backend failure. Capped at the last step so a prolonged outage is
 # retried every ~15 min instead of once a minute.
