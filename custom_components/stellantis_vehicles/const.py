@@ -131,6 +131,11 @@ UPDATE_INTERVAL = 60 # seconds
 # re-fetched to check whether the vehicle was unpaired.
 EMPTY_STATUS_LIMIT = 3
 
+# Backoff schedule (seconds) for the MQTT token refresh after a transient
+# Stellantis backend failure. Capped at the last step so a prolonged outage is
+# retried every ~15 min instead of once a minute.
+MQTT_TOKEN_RETRY_BACKOFF = (60, 120, 300, 600, 900)
+
 VEHICLE_TYPE_ELECTRIC = "Electric"
 VEHICLE_TYPE_HYBRID = "Hybrid"
 VEHICLE_TYPE_THERMIC = "Thermic"
