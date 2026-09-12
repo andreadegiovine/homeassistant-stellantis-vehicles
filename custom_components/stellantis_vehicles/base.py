@@ -28,6 +28,7 @@ from .const import (
     VEHICLE_TYPE_HYBRID,
     UPDATE_INTERVAL,
     EMPTY_STATUS_LIMIT,
+    COMMAND_HISTORY_LIMIT,
     KWH_CORRECTION
 )
 
@@ -224,6 +225,18 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         last_action_id = list(self._commands_history.keys())[-1]
         return not self._commands_history[last_action_id]["updates"]
 
+    def _prune_command_history(self):
+        """ Drop the oldest command-history entries beyond COMMAND_HISTORY_LIMIT.
+
+        Every sent command adds an entry that would otherwise never be
+        removed, growing this dict (and the linear sort in command_history)
+        for as long as the coordinator lives.
+        """
+        excess = len(self._commands_history) - COMMAND_HISTORY_LIMIT
+        for _ in range(max(0, excess)):
+            oldest_id = next(iter(self._commands_history))
+            del self._commands_history[oldest_id]
+
     async def update_command_history(self, action_id, update = None):
         """ Update command history. """
         if action_id not in self._commands_history:
@@ -231,12 +244,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if update:
             self._commands_history[action_id]["updates"].append({"info": update, "date": get_datetime()})
             if update == "not_compatible":
-                self._disabled_commands.append(self._commands_history[action_id]["name"])
+                disabled_name = self._commands_history[action_id]["name"]
+                if disabled_name not in self._disabled_commands:
+                    self._disabled_commands.append(disabled_name)
         self.async_update_listeners()
 
     def update_command_history_rate_limit(self, name):
         current_datetime = get_datetime()
         self._commands_history.update({current_datetime.time(): {"name": name, "updates": [{"info": "rate_limit", "date": current_datetime}]}})
+        self._prune_command_history()
         self.async_update_listeners()
 
     async def send_command(self, name, service, message):
@@ -245,6 +261,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
             if action_id is not None:
                 self._commands_history.update({action_id: {"name": name, "updates": []}})
+                self._prune_command_history()
                 self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
             _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
