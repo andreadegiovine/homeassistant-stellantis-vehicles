@@ -175,141 +175,215 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
         await hass.async_add_executor_job(cleanup_files)
 
 
-async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
+async def _migrate_to_1_2(hass: HomeAssistant, config: ConfigEntry) -> None:
+    """Migrate the unique_id to customer_id and move the OTP file to its new storage path."""
+    # update unique_id with customer_id - used to be data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5])
+    new_unique_id = config.data.get("customer_id")
+    if config.unique_id != new_unique_id:
+        _LOGGER.debug("Migrating unique_id from %s to %s", config.unique_id, new_unique_id)
+        hass.config_entries.async_update_entry(config, unique_id=new_unique_id)
+
+    # Migrate to new file structure - generate path to storage folder and move OTP file
+    hass_config_path = hass.config.path()
+    old_otp_file_path = os.path.join(hass_config_path, ".storage/stellantis_vehicles_otp.pickle")
+
+    def migrate_otp_file() -> None:
+        # Run the blocking filesystem work on an executor thread so it never
+        # stalls the event loop - matches the other migration steps.
+        if not os.path.isfile(old_otp_file_path):
+            return
+        new_storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
+        new_otp_file_path = os.path.join(new_storage_path, OTP_FILENAME)
+        new_otp_file_path = new_otp_file_path.replace("{#customer_id#}", new_unique_id)
+        if not os.path.isdir(new_storage_path):
+            os.mkdir(new_storage_path)
+        if not os.path.isfile(new_otp_file_path):
+            _LOGGER.debug("Migrating OTP file to new storage path from %s to %s", old_otp_file_path, new_otp_file_path)
+            os.rename(old_otp_file_path, new_otp_file_path)
+        else:
+            os.remove(old_otp_file_path)
+
+    await hass.async_add_executor_job(migrate_otp_file)
+    hass.config_entries.async_update_entry(config, version=1, minor_version=2)
+
+
+async def _migrate_to_1_3(hass: HomeAssistant, config: ConfigEntry) -> None:
+    """Remove the pre-1.3 image folder that lived directly under www/."""
+    public_path = hass.config.path("www")
+    old_image_path = f"{public_path}/stellantis-vehicles"
+
+    def remove_old_image_folder() -> None:
+        # Run the blocking filesystem work on an executor thread so it never
+        # stalls the event loop - matches the other migration steps.
+        if os.path.isdir(old_image_path):
+            _LOGGER.debug("Deleting Stellantis old image folder: %s", old_image_path)
+            shutil.rmtree(old_image_path)
+
+    await hass.async_add_executor_job(remove_old_image_folder)
+    hass.config_entries.async_update_entry(config, version=1, minor_version=3)
+
+
+async def _migrate_to_1_4(hass: HomeAssistant, config: ConfigEntry) -> None:
+    """Move the OAuth tokens into a dedicated oauth sub-node."""
+    data = dict(config.data)
+    data["oauth"] = {
+        "access_token": data["access_token"],
+        "refresh_token": data["refresh_token"],
+        "expires_in": data["expires_in"]
+    }
+    data.pop("access_token", None)
+    data.pop("refresh_token", None)
+    data.pop("expires_in", None)
+    hass.config_entries.async_update_entry(config, data=data, version=1, minor_version=4)
+
+
+async def _migrate_to_1_5(hass: HomeAssistant, config: ConfigEntry) -> None:
+    """Move per-vehicle options (ABRP token, charging limit, ...) under their VIN."""
+    data = dict(config.data)
+
+    def update_data(data: dict) -> dict:
+        public_path = hass.config.path("www")
+        customer_id = data["customer_id"]
+        entry_path = f"{public_path}/{DOMAIN}/{customer_id}"
+        if os.path.isdir(entry_path):
+            for vin in os.listdir(entry_path):
+                vin_path = os.path.join(entry_path, vin)
+                if os.path.isfile(vin_path):
+                    vin = os.path.splitext(vin)[0]
+                    data[vin] = {}
+                    if "text_abrp_token" in data:
+                        data[vin]["text_abrp_token"] = data["text_abrp_token"]
+                    if "number_battery_charging_limit" in data:
+                        data[vin]["number_battery_charging_limit"] = data["number_battery_charging_limit"]
+                    if "number_refresh_interval" in data:
+                        data[vin]["number_refresh_interval"] = data["number_refresh_interval"]
+                    if "switch_battery_charging_limit" in data:
+                        data[vin]["switch_battery_charging_limit"] = data["switch_battery_charging_limit"]
+                    if "switch_abrp_sync" in data:
+                        data[vin]["switch_abrp_sync"] = data["switch_abrp_sync"]
+                    if "switch_battery_values_correction" in data:
+                        data[vin]["switch_battery_values_correction"] = data["switch_battery_values_correction"]
+                    if "switch_notifications" in data:
+                        data[vin]["switch_notifications"] = data["switch_notifications"]
+        data.pop("text_abrp_token", None)
+        data.pop("number_battery_charging_limit", None)
+        data.pop("number_refresh_interval", None)
+        data.pop("switch_battery_charging_limit", None)
+        data.pop("switch_abrp_sync", None)
+        data.pop("switch_battery_values_correction", None)
+        data.pop("switch_notifications", None)
+        return data
+
+    new_data = await hass.async_add_executor_job(update_data, data)
+    hass.config_entries.async_update_entry(config, data=new_data, version=1, minor_version=5)
+
+
+async def _migrate_to_1_6(hass: HomeAssistant, config: ConfigEntry) -> None:
+    """Move the per-vehicle notifications switch to the shared FIELD_NOTIFICATIONS key."""
+    data = dict(config.data)
+
+    def update_data(data: dict) -> dict:
+        public_path = hass.config.path("www")
+        customer_id = data["customer_id"]
+        entry_path = f"{public_path}/{DOMAIN}/{customer_id}"
+        if os.path.isdir(entry_path):
+            for vin in os.listdir(entry_path):
+                vin_path = os.path.join(entry_path, vin)
+                if os.path.isfile(vin_path):
+                    vin = os.path.splitext(vin)[0]
+                    if vin in data and "switch_notifications" in data[vin]:
+                        data[FIELD_NOTIFICATIONS] = data[vin]["switch_notifications"]
+                        data[vin].pop("switch_notifications", None)
+        return data
+
+    new_data = await hass.async_add_executor_job(update_data, data)
+    hass.config_entries.async_update_entry(config, data=new_data, version=1, minor_version=6)
+
+
+async def _migrate_to_20260802(hass: HomeAssistant, config: ConfigEntry) -> None:
+    """Move all flat per-vehicle nodes under a dedicated vehicles sub-node."""
+    data = dict(config.data)
+
+    def update_data(data: dict) -> dict:
+        vehicles = dict(data.get("vehicles", {}))
+        reserved = ("oauth", "mqtt", "vehicles")
+        for key in list(data.keys()):
+            value = data[key]
+            if key in reserved or not isinstance(value, dict):
+                continue
+            # Extra safety: only treat entries that look like a VIN (17 alphanumeric chars).
+            if len(key) == 17 and key.isalnum():
+                moved = data.pop(key)
+                # A "vehicles" entry written by a newer build before this
+                # migration ran wins per key over the older flat data.
+                vehicles[key] = {**moved, **vehicles.get(key, {})}
+        data["vehicles"] = vehicles
+        return data
+
+    new_data = await hass.async_add_executor_job(update_data, data)
+    if INTEGRATION_IS_BETA:
+        # Leave the entry version alone on beta (see the global update in async_migrate_entry)
+        hass.config_entries.async_update_entry(config, data=new_data)
+    else:
+        hass.config_entries.async_update_entry(config, data=new_data, version=20260802, minor_version=1)
+
+
+# Template for the next migration step - not live code, just copy-paste
+# fodder so a new step follows the same pattern as the ones above. Give the
+# function a name matching its target version and fill in the migration logic:
+#
+# async def _migrate_to_<version>(hass: HomeAssistant, config: ConfigEntry) -> None:
+#     """Describe what this migration step does."""
+#     data = dict(config.data)
+#
+#     def update_data(data: dict) -> dict:
+#         # migration logic here
+#         return data
+#
+#     new_data = await hass.async_add_executor_job(update_data, data)
+#     if INTEGRATION_IS_BETA:
+#         # Leave the entry version alone on beta (see the global update in async_migrate_entry)
+#         hass.config_entries.async_update_entry(config, data=new_data)
+#     else:
+#         hass.config_entries.async_update_entry(config, data=new_data, version=<version>, minor_version=1)
+
+
+async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
+    """Migrate an old config entry to the current version."""
 
     target_version = 1
     target_minor_version = 2    # Migrate config prior 1.2 to 1.2 - unique_id and file structure
     if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        # update unique_id with customer_id - used to be data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5])
-        new_unique_id = config.data.get("customer_id")
-        if config.unique_id != new_unique_id:
-            _LOGGER.debug("Migrating unique_id from %s to %s", config.unique_id, new_unique_id)
-            hass.config_entries.async_update_entry(config, unique_id=new_unique_id)
-        # Migrate to new file structure - generate path to storage folder and move OTP file
-        hass_config_path = hass.config.path()
-        old_otp_file_path = os.path.join(hass_config_path, ".storage/stellantis_vehicles_otp.pickle")
-
-        def migrate_otp_file():
-            # Run the blocking filesystem work on an executor thread so it never
-            # stalls the event loop - matches the later migration steps.
-            if not os.path.isfile(old_otp_file_path):
-                return
-            new_storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
-            new_otp_file_path = os.path.join(new_storage_path, OTP_FILENAME)
-            new_otp_file_path = new_otp_file_path.replace("{#customer_id#}", new_unique_id)
-            if not os.path.isdir(new_storage_path):
-                os.mkdir(new_storage_path)
-            if not os.path.isfile(new_otp_file_path):
-                _LOGGER.debug("Migrating OTP file to new storage path from %s to %s", old_otp_file_path, new_otp_file_path)
-                os.rename(old_otp_file_path, new_otp_file_path)
-            else:
-                os.remove(old_otp_file_path)
-
-        await hass.async_add_executor_job(migrate_otp_file)
-        # Update config entry object
-        hass.config_entries.async_update_entry(config, version=target_version, minor_version=target_minor_version)
+        await _migrate_to_1_2(hass, config)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     target_version = 1
     target_minor_version = 3
     if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        public_path = hass.config.path("www")
-        old_image_path = f"{public_path}/stellantis-vehicles"
-
-        def remove_old_image_folder():
-            # Run the blocking filesystem work on an executor thread so it never
-            # stalls the event loop - matches the later migration steps.
-            if os.path.isdir(old_image_path):
-                _LOGGER.debug("Deleting Stellantis old image folder: %s", old_image_path)
-                shutil.rmtree(old_image_path)
-
-        await hass.async_add_executor_job(remove_old_image_folder)
-        hass.config_entries.async_update_entry(config, version=target_version, minor_version=target_minor_version)
+        await _migrate_to_1_3(hass, config)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     target_version = 1
     target_minor_version = 4
     if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        data = dict(config.data)
-        data["oauth"] = {
-            "access_token": data["access_token"],
-            "refresh_token": data["refresh_token"],
-            "expires_in": data["expires_in"]
-        }
-        data.pop("access_token", None)
-        data.pop("refresh_token", None)
-        data.pop("expires_in", None)
-        hass.config_entries.async_update_entry(config, data=data, version=target_version, minor_version=target_minor_version)
+        await _migrate_to_1_4(hass, config)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     target_version = 1
     target_minor_version = 5
     if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        data = dict(config.data)
-
-        def update_data(data):
-            public_path = hass.config.path("www")
-            customer_id = data["customer_id"]
-            entry_path = f"{public_path}/{DOMAIN}/{customer_id}"
-            if os.path.isdir(entry_path):
-                for vin in os.listdir(entry_path):
-                    vin_path = os.path.join(entry_path, vin)
-                    if os.path.isfile(vin_path):
-                        vin = os.path.splitext(vin)[0]
-                        data[vin] = {}
-                        if "text_abrp_token" in data:
-                            data[vin]["text_abrp_token"] = data["text_abrp_token"]
-                        if "number_battery_charging_limit" in data:
-                            data[vin]["number_battery_charging_limit"] = data["number_battery_charging_limit"]
-                        if "number_refresh_interval" in data:
-                            data[vin]["number_refresh_interval"] = data["number_refresh_interval"]
-                        if "switch_battery_charging_limit" in data:
-                            data[vin]["switch_battery_charging_limit"] = data["switch_battery_charging_limit"]
-                        if "switch_abrp_sync" in data:
-                            data[vin]["switch_abrp_sync"] = data["switch_abrp_sync"]
-                        if "switch_battery_values_correction" in data:
-                            data[vin]["switch_battery_values_correction"] = data["switch_battery_values_correction"]
-                        if "switch_notifications" in data:
-                            data[vin]["switch_notifications"] = data["switch_notifications"]
-            data.pop("text_abrp_token", None)
-            data.pop("number_battery_charging_limit", None)
-            data.pop("number_refresh_interval", None)
-            data.pop("switch_battery_charging_limit", None)
-            data.pop("switch_abrp_sync", None)
-            data.pop("switch_battery_values_correction", None)
-            data.pop("switch_notifications", None)
-            return data
-
-        new_data = await hass.async_add_executor_job(update_data, data)
-        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=target_minor_version)
+        await _migrate_to_1_5(hass, config)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     target_version = 1
     target_minor_version = 6
     if config.version == target_version and config.minor_version < target_minor_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        data = dict(config.data)
-
-        def update_data(data):
-            public_path = hass.config.path("www")
-            customer_id = data["customer_id"]
-            entry_path = f"{public_path}/{DOMAIN}/{customer_id}"
-            if os.path.isdir(entry_path):
-                for vin in os.listdir(entry_path):
-                    vin_path = os.path.join(entry_path, vin)
-                    if os.path.isfile(vin_path):
-                        vin = os.path.splitext(vin)[0]
-                        if vin in data and "switch_notifications" in data[vin]:
-                            data[FIELD_NOTIFICATIONS] = data[vin]["switch_notifications"]
-                            data[vin].pop("switch_notifications", None)
-            return data
-
-        new_data = await hass.async_add_executor_job(update_data, data)
-        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=target_minor_version)
+        await _migrate_to_1_6(hass, config)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     # Bumped past the current INTEGRATION_VERSION (20260801) on purpose: betas
@@ -319,49 +393,18 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry):
     target_version = 20260802
     if config.version < target_version or "vehicles" not in config.data:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        data = dict(config.data)
-
-        def update_data(data):
-            # Move all flat per-vehicle nodes under a dedicated "vehicles" sub-node
-            # so the stale-vehicle prune process can no longer touch other config data.
-            vehicles = dict(data.get("vehicles", {}))
-            reserved = ("oauth", "mqtt", "vehicles")
-            for key in list(data.keys()):
-                value = data[key]
-                if key in reserved or not isinstance(value, dict):
-                    continue
-                # Extra safety: only treat entries that look like a VIN (17 alphanumeric chars).
-                if len(key) == 17 and key.isalnum():
-                    moved = data.pop(key)
-                    # A "vehicles" entry written by a newer build before this
-                    # migration ran wins per key over the older flat data.
-                    vehicles[key] = {**moved, **vehicles.get(key, {})}
-            data["vehicles"] = vehicles
-            return data
-
-        new_data = await hass.async_add_executor_job(update_data, data)
-        if INTEGRATION_IS_BETA:
-            # Leave the entry version alone on beta (see the global update below)
-            hass.config_entries.async_update_entry(config, data=new_data)
-        else:
-            hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
+        await _migrate_to_20260802(hass, config)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
-    # template for future migration steps
-    target_version = 20260702   # to be updated with the next version number
-    if config.version < target_version:
-        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        data = dict(config.data)
-        def update_data(data):
-            # migration logic here
-            return data
-        new_data = await hass.async_add_executor_job(update_data, data)
-        if INTEGRATION_IS_BETA:
-            # Leave the entry version alone on beta (see the global update below)
-            hass.config_entries.async_update_entry(config, data=new_data)
-        else:
-            hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
-        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+    # Template for the next migration step's call site - not live code, just
+    # copy-paste fodder matching the private function template defined above
+    # _migrate_to_20260802. Update the version number and function name:
+    #
+    # target_version = <version>   # to be updated with the next version number
+    # if config.version < target_version:
+    #     _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+    #     await _migrate_to_<version>(hass, config)
+    #     _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     # Global update of versions - only pull the entry version forward on real
     # (non-beta) releases, so beta iterations that share a version number keep
