@@ -343,6 +343,12 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     async def send_abrp_data(self, new_data: dict[str, Any]) -> None:
         """ Send vehicle data to ABRP. """
+        last_position = new_data.get("lastPosition")
+        if not isinstance(last_position, dict):
+            last_position = {}
+        coordinates = last_position.get("geometry", {}).get("coordinates") or []
+        heading = last_position.get("properties", {}).get("heading")
+
         tlm = {
             "utc": int(get_datetime().astimezone(UTC).timestamp()),
             "soc": None,
@@ -359,9 +365,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["soc"] = self._sensors.get("battery")
         if self._sensors.get("speed") is not None:
             tlm["speed"] = self._sensors.get("speed")
-        if new_data.get("lastPosition") is not None:
-            tlm["lat"] = float(new_data["lastPosition"]["geometry"]["coordinates"][1])
-            tlm["lon"] = float(new_data["lastPosition"]["geometry"]["coordinates"][0])
+        if len(coordinates) >= 2:
+            tlm["lat"] = float(coordinates[1])
+            tlm["lon"] = float(coordinates[0])
         if self._sensors.get("battery_charging") is not None:
             tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
         if self._sensors.get("battery_charging_type") is not None:
@@ -370,10 +376,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["soh"] = float(self._sensors.get("battery_health_resistance"))
         if self._sensors.get("battery_health_capacity") is not None:
             tlm["soh"] = float(self._sensors.get("battery_health_capacity"))
-        if new_data.get("lastPosition", {}).get("properties", {}).get("heading") is not None:
-            tlm["heading"] = float(new_data.get("lastPosition").get("properties").get("heading"))
-        if len(new_data.get("lastPosition", {}).get("geometry", {}).get("coordinates", [])) == 3:
-            tlm["elevation"] = float(new_data.get("lastPosition").get("geometry").get("coordinates")[2])
+        if heading is not None:
+            tlm["heading"] = float(heading)
+        if len(coordinates) == 3:
+            tlm["elevation"] = float(coordinates[2])
         if self._sensors.get("temperature") is not None:
             tlm["ext_temp"] = self._sensors.get("temperature")
         if self._sensors.get("mileage") is not None:
