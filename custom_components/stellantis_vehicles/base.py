@@ -389,6 +389,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
         if self._sensors.get("battery_charging_type") is not None:
             tlm["is_dcfc"] = tlm["is_charging"] and self._sensors.get("battery_charging_type") == "Quick"
+        if self._sensors.get("engine") is not None:
+            tlm["is_parked"] = self._sensors.get("engine") == "Stop"
         if self._sensors.get("battery_health_resistance") is not None:
             tlm["soh"] = float(self._sensors.get("battery_health_resistance"))
         if self._sensors.get("battery_health_capacity") is not None:
