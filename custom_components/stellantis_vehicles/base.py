@@ -418,29 +418,51 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         independently by the entities, is read the normal way via ``self``.
         """
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
-            if "battery_charging" in self._sensors and self._sensors.get("battery_charging_limit", None) != "Partial":
-                if self._sensors.get("battery_charging") == "InProgress" and not self._manage_charge_limit_sent:
-                    charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
-                    charge_limit = self._sensors.get("number_battery_charging_limit", None)
-                    if charge_limit_on and charge_limit and "battery" in self._sensors:
-                        current_battery = self._sensors.get("battery")
-                        if int(float(current_battery)) >= int(charge_limit):
-                            button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_stop.name")
-                            await self.send_charge_command(button_name, False, "delayed")
-                            self._manage_charge_limit_sent = True
-                elif self._sensors.get("battery_charging") != "InProgress" and self._manage_charge_limit_sent:
-                    self._manage_charge_limit_sent = False
+            await self._auto_stop_charge_at_limit()
+            await self._sync_abrp_if_enabled(new_data)
+        await self._fetch_last_trip_on_engine_stop(new_data)
 
-            if "switch_abrp_sync" in self._sensors and self._sensors.get("switch_abrp_sync") and "text_abrp_token" in self._sensors and len(self._sensors.get("text_abrp_token")) == 36:
-                await self.send_abrp_data(new_data)
+    async def _auto_stop_charge_at_limit(self) -> None:
+        """ Send a delayed charge-stop command once the configured limit is reached. """
+        if "battery_charging" not in self._sensors:
+            return
+        if self._sensors.get("battery_charging_limit") == "Partial":
+            return
+        if self._sensors.get("battery_charging") != "InProgress":
+            self._manage_charge_limit_sent = False
+            return
+        if self._manage_charge_limit_sent:
+            return
+        charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
+        charge_limit = self._sensors.get("number_battery_charging_limit")
+        if not (charge_limit_on and charge_limit and "battery" in self._sensors):
+            return
+        if int(float(self._sensors.get("battery"))) < int(charge_limit):
+            return
+        button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_stop.name")
+        await self.send_charge_command(button_name, False, "delayed")
+        self._manage_charge_limit_sent = True
 
+    async def _sync_abrp_if_enabled(self, new_data: dict[str, Any]) -> None:
+        """ Push the current status to ABRP if sync is enabled with a valid token. """
+        if not self._sensors.get("switch_abrp_sync"):
+            return
+        token = self._sensors.get("text_abrp_token")
+        if not token or len(token) != 36:
+            return
+        await self.send_abrp_data(new_data)
+
+    async def _fetch_last_trip_on_engine_stop(self, new_data: dict[str, Any]) -> None:
+        """ Fetch the last trip once the engine transitions from running to Stop. """
         current_engine_status = self._sensors.get("engine")
         new_engine_status = new_data.get("ignition", {}).get("type")
-        if new_engine_status == "Stop" and current_engine_status not in (None, "Stop"):
-            _LOGGER.debug("Engine status changed from %s to %s, fetching last trip data", current_engine_status, new_engine_status)
-            await self.get_vehicle_last_trip()
-        elif new_engine_status == "Stop":
+        if new_engine_status != "Stop":
+            return
+        if current_engine_status in (None, "Stop"):
             _LOGGER.debug("No last-trip fetch needed (engine %s -> Stop)", current_engine_status)
+            return
+        _LOGGER.debug("Engine status changed from %s to %s, fetching last trip data", current_engine_status, new_engine_status)
+        await self.get_vehicle_last_trip()
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """
