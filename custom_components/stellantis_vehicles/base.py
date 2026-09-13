@@ -62,7 +62,24 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict[str, Any] | None:
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("Coordinator config: %s", self._config)
+        self._apply_refresh_interval_override()
 
+        new_data = await self._fetch_new_data()
+        if not new_data:
+            return await self._handle_empty_status()
+
+        self._empty_status_count = 0
+        self._clear_vehicle_removed()
+        self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
+
+        if self._is_stale(new_data):
+            return self.data
+
+        await self.after_async_update_data(new_data)
+        return new_data
+
+    def _apply_refresh_interval_override(self) -> None:
+        """ Consume the startup stagger and apply a user-configured refresh interval, if any. """
         if self._phase_offset:
             # The one-time startup stagger has been consumed, go back to the
             # normal cadence (a number_refresh_interval override, if any, is
@@ -74,6 +91,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if refresh_interval and refresh_interval > 0 and refresh_interval != self.update_interval.total_seconds():
             self.update_interval = timedelta(seconds=refresh_interval)
 
+    async def _fetch_new_data(self) -> dict[str, Any] | None:
+        """ Fetch the vehicle status and maintenance info, translating API errors. """
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
             if new_data:
@@ -83,6 +102,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     "daysBeforeMaintenance": maintenance.get("daysBeforeMaintenance"),
                     "updatedAt": maintenance.get("updatedAt")
                 }
+            return new_data
         except ConfigEntryAuthFailed:
             raise
         except Exception as err:
@@ -91,50 +111,48 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 "Error communicating with Stellantis API, enable debug logging for details"
             ) from err
 
-        if not new_data:
-            # Keep the last known data instead of blanking every entity on a
-            # single empty response (404 / empty body).
-            self._empty_status_count += 1
-            _LOGGER.debug(
-                "Empty vehicle status response (%s in a row), keeping last known data",
-                self._empty_status_count,
-            )
+    async def _handle_empty_status(self) -> dict[str, Any] | None:
+        """ Handle an empty status response: tolerate a short gap, fail on a sustained outage. """
+        # Keep the last known data instead of blanking every entity on a
+        # single empty response (404 / empty body).
+        self._empty_status_count += 1
+        _LOGGER.debug(
+            "Empty vehicle status response (%s in a row), keeping last known data",
+            self._empty_status_count,
+        )
 
-            if self._empty_status_count < EMPTY_STATUS_LIMIT:
-                # Short gap: keep the last known data. ``self.data`` is still None
-                # if this is the very first refresh, so fall back to an empty
-                # dict - coordinator.data must never be None once entities exist,
-                # several of them subscript it directly.
-                return self.data or {}
+        if self._empty_status_count < EMPTY_STATUS_LIMIT:
+            # Short gap: keep the last known data. ``self.data`` is still None
+            # if this is the very first refresh, so fall back to an empty
+            # dict - coordinator.data must never be None once entities exist,
+            # several of them subscript it directly.
+            return self.data or {}
 
-            if self._empty_status_count % EMPTY_STATUS_LIMIT == 0 and not self._vehicle_removed:
-                # Periodically check whether the vehicle was unpaired.
-                await self._reconcile_vehicle()
+        if self._empty_status_count % EMPTY_STATUS_LIMIT == 0 and not self._vehicle_removed:
+            # Periodically check whether the vehicle was unpaired.
+            await self._reconcile_vehicle()
 
-            # Sustained outage: surface it so entities go unavailable.
-            raise UpdateFailed("Empty vehicle status response")
+        # Sustained outage: surface it so entities go unavailable.
+        raise UpdateFailed("Empty vehicle status response")
 
-        self._empty_status_count = 0
-        self._clear_vehicle_removed()
-        self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
-
-        if "updatedAt" in new_data and self.data and "updatedAt" in self.data:
-            try:
-                current_dt = datetime.fromisoformat(self.data["updatedAt"])
-                new_dt = datetime.fromisoformat(new_data["updatedAt"])
-                if current_dt.tzinfo is None:
-                    current_dt = current_dt.replace(tzinfo=UTC)
-                if new_dt.tzinfo is None:
-                    new_dt = new_dt.replace(tzinfo=UTC)
-            except (ValueError, TypeError):
-                _LOGGER.debug("Invalid updatedAt values, proceeding with update without timestamp comparison")
-            else:
-                if new_dt <= current_dt:
-                    _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
-                    return self.data
-
-        await self.after_async_update_data(new_data)
-        return new_data
+    def _is_stale(self, new_data: dict[str, Any]) -> bool:
+        """ Whether new_data's updatedAt is not newer than the currently held data. """
+        if "updatedAt" not in new_data or not self.data or "updatedAt" not in self.data:
+            return False
+        try:
+            current_dt = datetime.fromisoformat(self.data["updatedAt"])
+            new_dt = datetime.fromisoformat(new_data["updatedAt"])
+        except (ValueError, TypeError):
+            _LOGGER.debug("Invalid updatedAt values, proceeding with update without timestamp comparison")
+            return False
+        if current_dt.tzinfo is None:
+            current_dt = current_dt.replace(tzinfo=UTC)
+        if new_dt.tzinfo is None:
+            new_dt = new_dt.replace(tzinfo=UTC)
+        if new_dt <= current_dt:
+            _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
+            return True
+        return False
 
     def stagger_first_poll(self, offset_seconds):
         """ Push this vehicle's next poll back once so several vehicles do not all
