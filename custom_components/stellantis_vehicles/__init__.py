@@ -328,6 +328,23 @@ async def _migrate_to_20260802(hass: HomeAssistant, config: ConfigEntry) -> None
         hass.config_entries.async_update_entry(config, data=new_data, version=20260802, minor_version=1)
 
 
+async def _migrate_to_20260902(hass: HomeAssistant, config: ConfigEntry) -> None:
+    """Improve unique_id for multi brand account."""
+    data = dict(config.data)
+    unique_id = config.unique_id
+    new_unique_id = f"{str(data["customer_id"])}_{str(data["mobile_app"])}_{str(data["country_code"])}"
+
+    if unique_id == new_unique_id:
+        _LOGGER.debug("unique_id already match new pattern %s = %s", unique_id, new_unique_id)
+        return
+
+    if INTEGRATION_IS_BETA:
+        # Leave the entry version alone on beta (see the global update in async_migrate_entry)
+        hass.config_entries.async_update_entry(config, unique_id=new_unique_id)
+    else:
+        hass.config_entries.async_update_entry(config, unique_id=new_unique_id, version=20260802, minor_version=1)
+
+
 # Template for the next migration step - not live code, just copy-paste
 # fodder so a new step follows the same pattern as the ones above. Give the
 # function a name matching its target version and fill in the migration logic:
@@ -394,6 +411,12 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     if config.version < target_version or "vehicles" not in config.data:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
         await _migrate_to_20260802(hass, config)
+        _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
+
+    target_version = 20260902
+    if config.version < target_version:
+        _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
+        await _migrate_to_20260902(hass, config)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     # Template for the next migration step's call site - not live code, just

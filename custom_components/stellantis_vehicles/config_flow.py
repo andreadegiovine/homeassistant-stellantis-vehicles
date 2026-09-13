@@ -280,17 +280,19 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_final(self, user_input=None):
+        unique_id = f"{str(self.data["customer_id"])}_{str(self.data["mobile_app"])}_{str(self.data["country_code"])}"
+
         if self.source == SOURCE_REAUTH:
             return self.async_update_reload_and_abort(self._get_reauth_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
         if self.source == SOURCE_RECONFIGURE:
-            if self._get_reconfigure_entry().unique_id != str(self.data["customer_id"]):
-                await self.async_set_unique_id(str(self.data["customer_id"]))
+            if self._get_reconfigure_entry().unique_id != unique_id:
+                await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
             if self._enable_remote_commands:
                 self.data.update({FIELD_REMOTE_COMMANDS: True})
-            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False, unique_id=str(self.data["customer_id"]))
+            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False, unique_id=unique_id)
 
-        await self.async_set_unique_id(str(self.data["customer_id"]))
+        await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()
         return self.async_create_entry(title=self.data[FIELD_MOBILE_APP], data=self.data)
 
