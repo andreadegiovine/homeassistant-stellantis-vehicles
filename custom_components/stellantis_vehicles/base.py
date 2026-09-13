@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timedelta, UTC
 import json
 from copy import deepcopy
+from typing import Any
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator, UpdateFailed )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -43,7 +44,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._config = config
         self._vehicle = vehicle
         self._stellantis = stellantis
-        self._data = {}
         self._sensors = {}
         self._commands_history = {}
         self._disabled_commands = []
@@ -59,7 +59,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.addFilter(self._stellantis.logger_filter)
 
     @log_call
-    async def _async_update_data(self):
+    async def _async_update_data(self) -> dict[str, Any] | None:
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("Coordinator config: %s", self._config)
 
@@ -101,8 +101,11 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             )
 
             if self._empty_status_count < EMPTY_STATUS_LIMIT:
-                # Short gap: keep the last known data.
-                return
+                # Short gap: keep the last known data. ``self.data`` is still None
+                # if this is the very first refresh, so fall back to an empty
+                # dict - coordinator.data must never be None once entities exist,
+                # several of them subscript it directly.
+                return self.data or {}
 
             if self._empty_status_count % EMPTY_STATUS_LIMIT == 0 and not self._vehicle_removed:
                 # Periodically check whether the vehicle was unpaired.
@@ -115,9 +118,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._clear_vehicle_removed()
         self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
 
-        if "updatedAt" in new_data and "updatedAt" in self._data:
+        if "updatedAt" in new_data and self.data and "updatedAt" in self.data:
             try:
-                current_dt = datetime.fromisoformat(self._data["updatedAt"])
+                current_dt = datetime.fromisoformat(self.data["updatedAt"])
                 new_dt = datetime.fromisoformat(new_data["updatedAt"])
                 if current_dt.tzinfo is None:
                     current_dt = current_dt.replace(tzinfo=UTC)
@@ -128,10 +131,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             else:
                 if new_dt <= current_dt:
                     _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
-                    return
+                    return self.data
 
-        self._data = new_data
-        await self.after_async_update_data()
+        await self.after_async_update_data(new_data)
+        return new_data
 
     def stagger_first_poll(self, offset_seconds):
         """ Push this vehicle's next poll back once so several vehicles do not all
@@ -309,8 +312,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
            "program4": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0}
         }
         active_programs = None
-        if "programs" in self._data["preconditionning"]["airConditioning"]:
-            current_programs = self._data["preconditionning"]["airConditioning"]["programs"]
+        if "programs" in self.data["preconditionning"]["airConditioning"]:
+            current_programs = self.data["preconditionning"]["airConditioning"]["programs"]
             if current_programs:
                 for program in current_programs:
                     if program:
@@ -338,7 +341,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Send preconditioning command to the vehicle. """
         await self.send_command(button_name, "/ThermalPrecond", {"asap": action, "programs": self.get_programs()})
 
-    async def send_abrp_data(self):
+    async def send_abrp_data(self, new_data: dict[str, Any]) -> None:
         """ Send vehicle data to ABRP. """
         tlm = {
             "utc": int(get_datetime().astimezone(UTC).timestamp()),
@@ -356,9 +359,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["soc"] = self._sensors.get("battery")
         if self._sensors.get("speed") is not None:
             tlm["speed"] = self._sensors.get("speed")
-        if self._data.get("lastPosition") is not None:
-            tlm["lat"] = float(self._data["lastPosition"]["geometry"]["coordinates"][1])
-            tlm["lon"] = float(self._data["lastPosition"]["geometry"]["coordinates"][0])
+        if new_data.get("lastPosition") is not None:
+            tlm["lat"] = float(new_data["lastPosition"]["geometry"]["coordinates"][1])
+            tlm["lon"] = float(new_data["lastPosition"]["geometry"]["coordinates"][0])
         if self._sensors.get("battery_charging") is not None:
             tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
         if self._sensors.get("battery_charging_type") is not None:
@@ -367,10 +370,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["soh"] = float(self._sensors.get("battery_health_resistance"))
         if self._sensors.get("battery_health_capacity") is not None:
             tlm["soh"] = float(self._sensors.get("battery_health_capacity"))
-        if self._data.get("lastPosition", {}).get("properties", {}).get("heading") is not None:
-            tlm["heading"] = float(self._data.get("lastPosition").get("properties").get("heading"))
-        if len(self._data.get("lastPosition", {}).get("geometry", {}).get("coordinates", [])) == 3:
-            tlm["elevation"] = float(self._data.get("lastPosition").get("geometry").get("coordinates")[2])
+        if new_data.get("lastPosition", {}).get("properties", {}).get("heading") is not None:
+            tlm["heading"] = float(new_data.get("lastPosition").get("properties").get("heading"))
+        if len(new_data.get("lastPosition", {}).get("geometry", {}).get("coordinates", [])) == 3:
+            tlm["elevation"] = float(new_data.get("lastPosition").get("geometry").get("coordinates")[2])
         if self._sensors.get("temperature") is not None:
             tlm["ext_temp"] = self._sensors.get("temperature")
         if self._sensors.get("mileage") is not None:
@@ -382,8 +385,14 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         await self._stellantis.send_abrp_data(params)
 
 
-    async def after_async_update_data(self):
-        """ Apply changes and do actions after vehicle data update. """
+    async def after_async_update_data(self, new_data: dict[str, Any]) -> None:
+        """ Apply changes and do actions after vehicle data update.
+
+        ``new_data`` is passed explicitly (here and in the methods called from
+        here) because ``self.data`` is not updated by the framework until this
+        whole update cycle returns. ``self._sensors``, kept up to date
+        independently by the entities, is read the normal way via ``self``.
+        """
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             if "battery_charging" in self._sensors and self._sensors.get("battery_charging_limit", None) != "Partial":
                 if self._sensors.get("battery_charging") == "InProgress" and not self._manage_charge_limit_sent:
@@ -399,10 +408,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     self._manage_charge_limit_sent = False
 
             if "switch_abrp_sync" in self._sensors and self._sensors.get("switch_abrp_sync") and "text_abrp_token" in self._sensors and len(self._sensors.get("text_abrp_token")) == 36:
-                await self.send_abrp_data()
+                await self.send_abrp_data(new_data)
 
         current_engine_status = self._sensors.get("engine")
-        new_engine_status = self._data.get("ignition", {}).get("type")
+        new_engine_status = new_data.get("ignition", {}).get("type")
         if new_engine_status == "Stop" and current_engine_status not in (None, "Stop"):
             _LOGGER.debug("Engine status changed from %s to %s, fetching last trip data", current_engine_status, new_engine_status)
             await self.get_vehicle_last_trip()
@@ -523,7 +532,7 @@ class StellantisBaseEntity(CoordinatorEntity):
 
     def get_value_from_map(self, value_map):
         """ Get data value from map. """
-        vehicle_data = self._coordinator._data
+        vehicle_data = self._coordinator.data
         value = None
         for key in value_map:
             if value is None: # first key in the map
@@ -628,8 +637,6 @@ class StellantisBaseEntity(CoordinatorEntity):
     @callback
     def _handle_coordinator_update(self):
         """ Coordinator handler. """
-        if self._coordinator.data is False:
-            return
         self.coordinator_update()
         self.async_write_ha_state()
 
@@ -654,7 +661,7 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def _last_position(self):
         """ Last known position feature. """
-        last_position = self._coordinator._data.get("lastPosition")
+        last_position = self._coordinator.data.get("lastPosition")
         return last_position if isinstance(last_position, dict) else {}
 
     @property
