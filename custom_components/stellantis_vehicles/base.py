@@ -329,30 +329,29 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
            "program3": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
            "program4": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0}
         }
-        active_programs = None
-        if "programs" in self.data["preconditionning"]["airConditioning"]:
-            current_programs = self.data["preconditionning"]["airConditioning"]["programs"]
-            if current_programs:
-                for program in current_programs:
-                    if program:
-                        occurence = program.get("occurence")
-                        if occurence and occurence.get("day") and program.get("start"):
-                            date = time_from_pt_string(program["start"])
-                            config = {
-                                "day": [
-                                    int("Mon" in occurence["day"]),
-                                    int("Tue" in occurence["day"]),
-                                    int("Wed" in occurence["day"]),
-                                    int("Thu" in occurence["day"]),
-                                    int("Fri" in occurence["day"]),
-                                    int("Sat" in occurence["day"]),
-                                    int("Sun" in occurence["day"])
-                                ],
-                                "hour": date.hour,
-                                "minute": date.minute,
-                                "on": int(program["enabled"])
-                            }
-                            default_programs["program" + str(program["slot"])] = config
+        air_conditioning = (self.data.get("preconditionning") or {}).get("airConditioning") or {}
+        current_programs = air_conditioning.get("programs")
+        if current_programs:
+            for program in current_programs:
+                if program:
+                    occurence = program.get("occurence")
+                    if occurence and occurence.get("day") and program.get("start"):
+                        date = time_from_pt_string(program["start"])
+                        config = {
+                            "day": [
+                                int("Mon" in occurence["day"]),
+                                int("Tue" in occurence["day"]),
+                                int("Wed" in occurence["day"]),
+                                int("Thu" in occurence["day"]),
+                                int("Fri" in occurence["day"]),
+                                int("Sat" in occurence["day"]),
+                                int("Sun" in occurence["day"])
+                            ],
+                            "hour": date.hour,
+                            "minute": date.minute,
+                            "on": int(program["enabled"])
+                        }
+                        default_programs["program" + str(program["slot"])] = config
         return default_programs
 
     async def send_preconditioning_command(self, button_name, action):
