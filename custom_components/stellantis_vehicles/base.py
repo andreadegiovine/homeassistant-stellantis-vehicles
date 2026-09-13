@@ -296,6 +296,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     action = "delayed"
         await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": action})
 
+    async def send_charge_limit_command(self, button_name, action):
+        """ Send charge limit command to the vehicle. """
+        await self.send_command(button_name, "/VehCharge/limit", {"action": action})
+
     def get_programs(self):
         """ Get current preconditioning programs. """
         default_programs = {
@@ -381,7 +385,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def after_async_update_data(self):
         """ Apply changes and do actions after vehicle data update. """
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
-            if "battery_charging" in self._sensors:
+            if "battery_charging" in self._sensors and self._sensors.get("battery_charging_limit", None) != "Partial":
                 if self._sensors.get("battery_charging") == "InProgress" and not self._manage_charge_limit_sent:
                     charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
                     charge_limit = self._sensors.get("number_battery_charging_limit", None)

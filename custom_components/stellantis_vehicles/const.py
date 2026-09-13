@@ -421,6 +421,13 @@ BINARY_SENSORS_DEFAULT = {
         "on_value": "InProgress",
         "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
     },
+    "battery_charging_limit" : {
+        "icon" : "mdi:battery-lock",
+        "value_map" : ["energies", {"type":"Electric"}, "extension", "electric", "charging", "type"],
+        "updated_at_map" : ["energy", {"type":"Electric"}, "updatedAt"],
+        "on_value": "Partial",
+        "engine": [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]
+    },
     "engine" : {
         "icon" : "mdi:power",
         "value_map" : ["ignition", "type"],

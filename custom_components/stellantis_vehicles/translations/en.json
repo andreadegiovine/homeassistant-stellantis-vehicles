@@ -296,6 +296,9 @@
       "battery_charging": {
         "name": "Battery charging"
       },
+      "battery_charging_limit": {
+        "name": "Battery charging limit 80%"
+      },
       "engine": {
         "name": "Engine"
       },
@@ -336,6 +339,12 @@
       },
       "charge_stop": {
         "name": "Charge stop"
+      },
+      "charge_limit_on": {
+        "name": "Charge limit 80% on"
+      },
+      "charge_limit_off": {
+        "name": "Charge limit 80% off"
       },
       "preconditioning_start": {
         "name": "Preconditioning start"

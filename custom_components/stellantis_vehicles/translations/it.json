@@ -292,6 +292,9 @@
       "battery_charging": {
         "name": "Batteria in ricarica"
       },
+      "battery_charging_limit": {
+        "name": "Ricarica limitata 80%"
+      },
       "engine": {
         "name": "Motore"
       },
@@ -332,6 +335,12 @@
       },
       "charge_stop": {
         "name": "Stop ricarica"
+      },
+      "charge_limit_on": {
+        "name": "Attiva ricarica limitata 80%"
+      },
+      "charge_limit_off": {
+        "name": "Disattiva ricarica limitata 80%"
       },
       "preconditioning_start": {
         "name": "Start precondizionamento"

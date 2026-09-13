@@ -59,7 +59,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 class StellantisBatteryChargingLimitSwitch(StellantisBaseSwitch):
     @property
     def available(self):
-        return super().available and self._coordinator._sensors.get("number_battery_charging_limit", False)
+        return super().available and self._coordinator._sensors.get("number_battery_charging_limit", False) and self._coordinator._sensors.get("battery_charging_limit", None) != "Partial"
+
 
 class StellantisAbrpSyncSwitch(StellantisBaseSwitch):
     @property
