@@ -157,7 +157,7 @@ class SensitiveDataFilter(logging.Filter):
       the event loop updates it, without a "changed size during iteration".
     """
 
-    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id")
+    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token")
     CUSTOM_VALUES_LIMIT = 128
 
     def __init__(self) -> None:
