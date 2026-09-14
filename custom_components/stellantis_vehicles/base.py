@@ -19,7 +19,7 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call )
 
 from .const import (
     DOMAIN,
@@ -28,6 +28,7 @@ from .const import (
     VEHICLE_TYPE_HYBRID,
     UPDATE_INTERVAL,
     EMPTY_STATUS_LIMIT,
+    COMMAND_HISTORY_LIMIT,
     KWH_CORRECTION
 )
 
@@ -57,10 +58,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if self._stellantis.logger_filter:
             _LOGGER.addFilter(self._stellantis.logger_filter)
 
+    @log_call
     async def _async_update_data(self):
         """ Update vehicle data from Stellantis. """
-        _LOGGER.debug("---------- START _async_update_data")
-        _LOGGER.debug(self._config)
+        _LOGGER.debug("Coordinator config: %s", self._config)
 
         if self._phase_offset:
             # The one-time startup stagger has been consumed, go back to the
@@ -75,13 +76,20 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
+            if new_data:
+                maintenance = await self._stellantis.get_vehicle_maintenance(self._vehicle)
+                new_data["maintenance"] = {
+                    "mileageBeforeMaintenance": maintenance.get("mileageBeforeMaintenance"),
+                    "daysBeforeMaintenance": maintenance.get("daysBeforeMaintenance"),
+                    "updatedAt": maintenance.get("updatedAt")
+                }
         except ConfigEntryAuthFailed:
-            _LOGGER.debug("---------- END _async_update_data")
             raise
         except Exception as err:
             _LOGGER.debug("Error communicating with Stellantis API: %s", err)
-            _LOGGER.debug("---------- END _async_update_data")
-            raise UpdateFailed("Error communicating with Stellantis API") from err
+            raise UpdateFailed(
+                "Error communicating with Stellantis API, enable debug logging for details"
+            ) from err
 
         if not new_data:
             # Keep the last known data instead of blanking every entity on a
@@ -94,7 +102,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
             if self._empty_status_count < EMPTY_STATUS_LIMIT:
                 # Short gap: keep the last known data.
-                _LOGGER.debug("---------- END _async_update_data")
                 return
 
             if self._empty_status_count % EMPTY_STATUS_LIMIT == 0 and not self._vehicle_removed:
@@ -102,7 +109,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 await self._reconcile_vehicle()
 
             # Sustained outage: surface it so entities go unavailable.
-            _LOGGER.debug("---------- END _async_update_data")
             raise UpdateFailed("Empty vehicle status response")
 
         self._empty_status_count = 0
@@ -122,12 +128,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             else:
                 if new_dt <= current_dt:
                     _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
-                    _LOGGER.debug("---------- END _async_update_data")
                     return
 
         self._data = new_data
         await self.after_async_update_data()
-        _LOGGER.debug("---------- END _async_update_data")
 
     def stagger_first_poll(self, offset_seconds):
         """ Push this vehicle's next poll back once so several vehicles do not all
@@ -221,6 +225,18 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         last_action_id = list(self._commands_history.keys())[-1]
         return not self._commands_history[last_action_id]["updates"]
 
+    def _prune_command_history(self):
+        """ Drop the oldest command-history entries beyond COMMAND_HISTORY_LIMIT.
+
+        Every sent command adds an entry that would otherwise never be
+        removed, growing this dict (and the linear sort in command_history)
+        for as long as the coordinator lives.
+        """
+        excess = len(self._commands_history) - COMMAND_HISTORY_LIMIT
+        for _ in range(max(0, excess)):
+            oldest_id = next(iter(self._commands_history))
+            del self._commands_history[oldest_id]
+
     async def update_command_history(self, action_id, update = None):
         """ Update command history. """
         if action_id not in self._commands_history:
@@ -228,12 +244,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if update:
             self._commands_history[action_id]["updates"].append({"info": update, "date": get_datetime()})
             if update == "not_compatible":
-                self._disabled_commands.append(self._commands_history[action_id]["name"])
+                disabled_name = self._commands_history[action_id]["name"]
+                if disabled_name not in self._disabled_commands:
+                    self._disabled_commands.append(disabled_name)
         self.async_update_listeners()
 
     def update_command_history_rate_limit(self, name):
         current_datetime = get_datetime()
         self._commands_history.update({current_datetime.time(): {"name": name, "updates": [{"info": "rate_limit", "date": current_datetime}]}})
+        self._prune_command_history()
         self.async_update_listeners()
 
     async def send_command(self, name, service, message):
@@ -242,6 +261,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
             if action_id is not None:
                 self._commands_history.update({action_id: {"name": name, "updates": []}})
+                self._prune_command_history()
                 self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
             _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
@@ -275,6 +295,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             if current_status != "InProgress":
                     action = "delayed"
         await self.send_command(button_name, "/VehCharge", {"program": {"hour": current_hour.hour, "minute": current_hour.minute}, "type": action})
+
+    async def send_charge_limit_command(self, button_name, action):
+        """ Send charge limit command to the vehicle. """
+        await self.send_command(button_name, "/VehCharge/limit", {"action": action})
 
     def get_programs(self):
         """ Get current preconditioning programs. """
@@ -361,7 +385,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     async def after_async_update_data(self):
         """ Apply changes and do actions after vehicle data update. """
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
-            if "battery_charging" in self._sensors:
+            if "battery_charging" in self._sensors and self._sensors.get("battery_charging_limit", None) != "Partial":
                 if self._sensors.get("battery_charging") == "InProgress" and not self._manage_charge_limit_sent:
                     charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
                     charge_limit = self._sensors.get("number_battery_charging_limit", None)
@@ -483,7 +507,7 @@ class StellantisBaseEntity(CoordinatorEntity):
             },
             "name": self._vehicle["vin"],
             "model": self._coordinator.get_translation(f"component.stellantis_vehicles.entity.sensor.type.state.{self._vehicle["type"].lower()}", self._vehicle["type"]) + " - " + self._vehicle["vin"],
-            "manufacturer": self._config[FIELD_MOBILE_APP]
+            "manufacturer": self._vehicle.get("brand") or self._config[FIELD_MOBILE_APP]
         }
 
     def value_was_updated(self):

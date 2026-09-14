@@ -8,7 +8,6 @@ from homeassistant.const import EntityCategory
 from .base import StellantisBaseNumber
 
 from .const import (
-    DOMAIN,
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
     UPDATE_INTERVAL
@@ -20,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 1
 
 async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+    stellantis = entry.runtime_data
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()
@@ -40,7 +39,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 mode = NumberMode.SLIDER,
                 entity_category = EntityCategory.CONFIG
             )
-            entities.extend([StellantisBaseNumber(coordinator, description)])
+            entities.extend([StellantisChargingLimitNumber(coordinator, description)])
 
         description = NumberEntityDescription(
             name = "refresh_interval",
@@ -57,3 +56,9 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
         entities.extend([StellantisBaseNumber(coordinator, description, UPDATE_INTERVAL)])
 
     async_add_entities(entities)
+
+
+class StellantisChargingLimitNumber(StellantisBaseNumber):
+    @property
+    def available(self):
+        return super().available and self._coordinator._sensors.get("battery_charging_limit", None) != "Partial"

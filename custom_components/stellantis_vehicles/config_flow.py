@@ -11,7 +11,7 @@ from homeassistant.const import (
     CONF_EMAIL
 )
 
-from .utils import get_datetime
+from .utils import get_datetime, log_call
 from .stellantis import StellantisOauth
 from .const import (
     DOMAIN,
@@ -280,17 +280,19 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_final(self, user_input=None):
+        unique_id = f"{str(self.data["customer_id"])}_{str(self.data["mobile_app"])}_{str(self.data["country_code"])}"
+
         if self.source == SOURCE_REAUTH:
             return self.async_update_reload_and_abort(self._get_reauth_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False)
         if self.source == SOURCE_RECONFIGURE:
-            if self._get_reconfigure_entry().unique_id != str(self.data["customer_id"]):
-                await self.async_set_unique_id(str(self.data["customer_id"]))
+            if self._get_reconfigure_entry().unique_id != unique_id:
+                await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
             if self._enable_remote_commands:
                 self.data.update({FIELD_REMOTE_COMMANDS: True})
-            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False, unique_id=str(self.data["customer_id"]))
+            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data_updates=self.data, reload_even_if_entry_is_unchanged=False, unique_id=unique_id)
 
-        await self.async_set_unique_id(str(self.data["customer_id"]))
+        await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()
         return self.async_create_entry(title=self.data[FIELD_MOBILE_APP], data=self.data)
 
@@ -300,7 +302,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA)
 
         await self.init_translations()
-        self.stellantis = self.hass.data[DOMAIN][self._reconfigure_entry_id]
+        self.stellantis = self._get_reconfigure_entry().runtime_data
         self.data = dict(self.stellantis._entry.data)
 
         if user_input[FIELD_RECONFIGURE] == FIELD_REMOTE_COMMANDS:
@@ -312,12 +314,11 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self.async_step_options()
 
 
+    @log_call
     async def async_step_reauth(self, entry_data):
-        _LOGGER.debug("---------- START async_step_reauth")
         self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP], FIELD_COUNTRY_CODE: entry_data[FIELD_COUNTRY_CODE]})
         if FIELD_OAUTH_CODE_URL in entry_data:
             self.data.update({FIELD_OAUTH_CODE_URL: entry_data[FIELD_OAUTH_CODE_URL]})
-        _LOGGER.debug("---------- END async_step_reauth")
         return await self.async_step_reauth_confirm()
 
 

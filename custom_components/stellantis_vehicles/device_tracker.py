@@ -6,7 +6,6 @@ from homeassistant.helpers.entity import EntityDescription
 from .base import StellantisBaseDevice
 
 from .const import (
-    DOMAIN,
     SENSORS_DEFAULT
 )
 
@@ -16,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+    stellantis = entry.runtime_data
     entities = []
 
     vehicles = await stellantis.get_user_vehicles()

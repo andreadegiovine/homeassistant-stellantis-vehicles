@@ -7,7 +7,6 @@ from .base import ( StellantisBaseButton, StellantisBaseActionButton )
 from .utils import RateLimitException
 
 from .const import (
-    DOMAIN,
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID
 )
@@ -18,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 1
 
 async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> None:
-    stellantis = hass.data[DOMAIN][entry.entry_id]
+    stellantis = entry.runtime_data
 
     if not stellantis.remote_commands:
         return
@@ -103,6 +102,22 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             )
             entities.extend([StellantisChargingStartStopButton(coordinator, description, "delayed")])
 
+            description = ButtonEntityDescription(
+                name = "charge_limit_on",
+                key = "charge_limit_on",
+                translation_key = "charge_limit_on",
+                icon = "mdi:battery-lock"
+            )
+            entities.extend([StellantisChargingLimitButton(coordinator, description, "daily")])
+
+            description = ButtonEntityDescription(
+                name = "charge_limit_off",
+                key = "charge_limit_off",
+                translation_key = "charge_limit_off",
+                icon = "mdi:battery-lock-open"
+            )
+            entities.extend([StellantisChargingLimitButton(coordinator, description, "trip")])
+
     async_add_entities(entities)
 
 
@@ -160,3 +175,7 @@ class StellantisPreconditioningButton(StellantisBaseActionButton):
 
     async def async_press(self):
         await self._coordinator.send_preconditioning_command(self.name, self._action)
+
+class StellantisChargingLimitButton(StellantisBaseActionButton):
+    async def async_press(self):
+        await self._coordinator.send_charge_limit_command(self.name, self._action)

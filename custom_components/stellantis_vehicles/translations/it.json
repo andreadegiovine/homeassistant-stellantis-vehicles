@@ -21,7 +21,8 @@
         "description": "Questo [servizio remoto]({oauth_remote_link}) viene utilizzato per simulare un browser ed effettuare l'accesso sul sito web ufficiale",
         "data": {
           "email": "Email",
-          "password": "Password"
+          "password": "Password",
+          "oauth_code_url": "URL servizio remoto di login"
         }
       },
       "oauth_manual": {
@@ -105,6 +106,12 @@
       },
       "autonomy": {
         "name": "Autonomia"
+      },
+      "mileage_before_maintenance": {
+        "name": "Chilometri al prossimo tagliando"
+      },
+      "days_before_maintenance": {
+        "name": "Giorni al prossimo tagliando"
       },
       "battery": {
         "name": "Batteria"
@@ -213,6 +220,9 @@
               "true": "Si"
             }
           },
+          "mileage": {
+            "name": "Kilometraggio"
+          },
           "initial_percentage": {
             "name": "Percentuale iniziale"
           },
@@ -286,6 +296,9 @@
       "battery_charging": {
         "name": "Batteria in ricarica"
       },
+      "battery_charging_limit": {
+        "name": "Ricarica limitata 80%"
+      },
       "engine": {
         "name": "Motore"
       },
@@ -326,6 +339,12 @@
       },
       "charge_stop": {
         "name": "Stop ricarica"
+      },
+      "charge_limit_on": {
+        "name": "Attiva ricarica limitata 80%"
+      },
+      "charge_limit_off": {
+        "name": "Disattiva ricarica limitata 80%"
       },
       "preconditioning_start": {
         "name": "Start precondizionamento"
@@ -395,6 +414,12 @@
     "no_vehicles_found_message": "Nessun veicolo connesso disponibile in questo account",
     "command_error_title": "Comando",
     "command_error_message": "Il comando non è stato inviato correttamente"
+  },
+  "issues": {
+    "vehicle_removed": {
+      "title": "Il veicolo {vin} è stato rimosso dal tuo account",
+      "description": "Home Assistant non può più recuperare i dati del veicolo `{vin}` dalle API Stellantis, il veicolo non risulta collegato al tuo account Stellantis. Questo potrebbe indicare che il veicolo è stato venduto o ceduto a terzi. Rimuovi il veicolo dall'integrazione.\n\n**Importante:** Rimuovendo il veicolo verranno rimosse **tutte le sue entità** e **tutte le statistiche delle entità** registrate per il veicolo (es: energie, chilometri, storico batteria, ecc...). I dati non possono essere recuperati. Se vuoi mantenerli esportali o effettua un backup.\n\nPer rimuovere il veicolo:\n1. Vai su **Impostazioni > Dispositivi e servizi > Stellantis Vehicles**.\n2. Clicca sul menu nella riga del veicolo (tre puntini verticali) e clicca su **Rimuovi dispositivo**.\n3. Riavvia Home Assistant.\n\nQuesta notifica non apparirà dopo la rimozione del veicolo."
+    }
   },
   "selector": {
     "reconfigure": {
