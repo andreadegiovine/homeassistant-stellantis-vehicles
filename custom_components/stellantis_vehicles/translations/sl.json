@@ -18,10 +18,11 @@
         }
       },
       "oauth_remote": {
-        "description": "Ta [oddaljena storitev]({oauth_remote_link}) se uporablja za simulacijo prijave v brskalniku na uradni strani",
+        "description": "Ta [oddaljena storitev]({oauth_remote_link}) se uporablja za simulacijo prijave v brskalniku na uradni strani. Uporabite lahko privzeto gostovano storitev ali pa jo usmerite na lastno postavitev",
         "data": {
           "email": "E-pošta",
-          "password": "Geslo"
+          "password": "Geslo",
+          "oauth_code_url": "URL storitve za prijavo"
         }
       },
       "oauth_manual": {
@@ -106,11 +107,23 @@
       "autonomy": {
         "name": "Doseg"
       },
+      "mileage_before_maintenance": {
+        "name": "Kilometri do servisa"
+      },
+      "days_before_maintenance": {
+        "name": "Dni do servisa"
+      },
       "battery": {
         "name": "Baterija"
       },
       "battery_soh": {
         "name": "Zdravje baterije (SOH)"
+      },
+      "battery_health_resistance": {
+        "name": "Zdravje baterije (notranja upornost)"
+      },
+      "battery_health_capacity": {
+        "name": "Zdravje baterije (kapaciteta)"
       },
       "battery_charging_rate": {
         "name": "Hitrost polnjenja baterije"
@@ -139,10 +152,10 @@
           "not_compatible": "Ni združljivo",
           "failed": "Neuspešno",
           "900": "Sprejeto",
-          "901": "Vozilo spi",
+          "901": "Zbujanje vozila",
           "903": "Posredovano",
           "0": "Zaključeno",
-          "300": "Preklicano",
+          "300": "Časovna prekoračitev",
           "500": "Napaka",
           "502": "Podvojeno",
           "422": "Zasebnost omogočena"
@@ -168,6 +181,9 @@
       },
       "air_temperature": {
         "name": "Temperatura zraka"
+      },
+      "driving_behavior": {
+        "name": "Način vožnje"
       },
       "last_trip": {
         "name": "Zadnja vožnja",
@@ -206,6 +222,9 @@
             "state": {
               "true": "Da"
             }
+          },
+          "mileage": {
+            "name": "Kilometrina"
           },
           "initial_percentage": {
             "name": "Začetni odstotek"
@@ -249,8 +268,16 @@
     "binary_sensor": {
       "moving": { "name": "Premikanje" },
       "doors": { "name": "Vrata" },
+      "door_trunk": { "name": "Prtlažnik" },
+      "door_driver": { "name": "Voznikova vrata" },
+      "door_passenger": { "name": "Sopotnikova vrata" },
+      "door_rear_left": { "name": "Zadnja leva vrata" },
+      "door_rear_right": { "name": "Zadnja desna vrata" },
+      "belt_driver": { "name": "Voznikov varnostni pas" },
+      "belt_passenger": { "name": "Sopotnikov varnostni pas" },
       "battery_plugged": { "name": "Baterija priklopljena" },
       "battery_charging": { "name": "Polnjenje baterije" },
+      "battery_charging_limit": { "name": "Omejitev polnjenja baterije 80%" },
       "engine": { "name": "Motor" },
       "preconditioning": { "name": "Predpriprava" },
       "alarm": { "name": "Alarm" },
@@ -266,12 +293,31 @@
       "lights": { "name": "Luči" },
       "charge_start": { "name": "Začni polnjenje" },
       "charge_stop": { "name": "Ustavi polnjenje" },
+      "charge_limit_on": { "name": "Omejitev polnjenja 80% vključena" },
+      "charge_limit_off": { "name": "Omejitev polnjenja 80% izključena" },
       "preconditioning_start": { "name": "Začni predpripravo" },
       "preconditioning_stop": { "name": "Ustavi predpripravo" }
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Vozilo"
+        "name": "Vozilo",
+        "state_attributes": {
+          "altitude": {
+            "name": "Nadmorska višine"
+          },
+          "fix_status": {
+            "name": "Status GPS lokacije"
+          },
+          "signal_quality": {
+            "name": "Kakovost signala"
+          },
+          "position_updated_at": {
+            "name": "Posodobljeno ob"
+          },
+          "entity_picture": {
+            "name": "Slika entitete"
+          }
+        }
       }
     },
     "number": {
@@ -313,6 +359,12 @@
     "no_vehicles_found_message": "Na tem računu ni povezanih vozil",
     "command_error_title": "Ukaz",
     "command_error_message": "Ukaz ni bil pravilno poslan"
+  },
+  "issues": {
+    "vehicle_removed": {
+      "title": "Vozilo {vin} je bilo odstranjeno z vašega računa",
+      "description": "Home Assistant prek Stellantis API-ja ne more več dostopati do vozila `{vin}` in to vozilo ni več navedeno na vašem Stellantis računu. To običajno pomeni, da je bilo vozilo prodano ali preklicano iz povezave. Če želite odpraviti to težavo, morate vozilo odstraniti iz integracije.\\n\\n**Opozorilo:** Odstranitev vozila bo trajno izbrisala tudi **vse njegove entitete** in z njimi **vso kratkoročno ter dolgoročno statistiko**, zbrano za to vozilo (npr. zgodovino energije, kilometrine in baterije). Teh podatkov ni mogoče obnoviti. Če jih želite obdržati, jih pred nadaljevanjem izvozite ali ustvarite varnostno kopijo.\\n\\nZa odstranitev vozila:\\n1. Odprite **Nastavitve > Naprave in storitve > Stellantis Vehicles**.\\n2. Odprite meni vozila (tri navpične pike na krajnem desnem robu vrstice vozila) in izberite **Izbriši napravo**.\\n3. Ponovno zaženite Home Assistant.\\n\\nTo opozorilo bo izginilo, ko bo vozilo odstranjeno."
+    }
   },
   "selector": {
     "reconfigure": {
