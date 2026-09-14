@@ -110,7 +110,7 @@
         "name": "Baterija"
       },
       "battery_soh": {
-        "name": "SOH baterije"
+        "name": "Zdravje baterije (SOH)"
       },
       "battery_charging_rate": {
         "name": "Hitrost polnjenja baterije"
@@ -118,7 +118,7 @@
       "battery_charging_type": {
         "name": "Vrsta polnjenja baterije",
         "state": {
-          "no": "Ne",
+          "no": "Ni na voljo",
           "slow": "Počasno",
           "quick": "Hitro"
         }
@@ -252,7 +252,7 @@
       "battery_plugged": { "name": "Baterija priklopljena" },
       "battery_charging": { "name": "Polnjenje baterije" },
       "engine": { "name": "Motor" },
-      "preconditioning": { "name": "Priprava (predkondicioniranje)" },
+      "preconditioning": { "name": "Predpriprava" },
       "alarm": { "name": "Alarm" },
       "privacy": { "name": "Zasebnost" },
       "remote_commands": { "name": "Oddaljeni ukazi" },
@@ -266,8 +266,8 @@
       "lights": { "name": "Luči" },
       "charge_start": { "name": "Začni polnjenje" },
       "charge_stop": { "name": "Ustavi polnjenje" },
-      "preconditioning_start": { "name": "Začni pripravo" },
-      "preconditioning_stop": { "name": "Ustavi pripravo" }
+      "preconditioning_start": { "name": "Začni predpripravo" },
+      "preconditioning_stop": { "name": "Ustavi predpripravo" }
     },
     "device_tracker": {
       "vehicle": {
