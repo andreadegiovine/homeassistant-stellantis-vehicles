@@ -3,12 +3,12 @@
     "step": {
       "user": {
         "data": {
-          "mobile_app": "Mobilna aplikacija vozila"
+          "mobile_app": "Mobilna aplikacija"
         }
       },
       "country": {
         "data": {
-          "country_code": "Koda vaše države"
+          "country_code": "Koda države"
         }
       },
       "oauth_mode": {
@@ -39,8 +39,8 @@
       },
       "otp": {
         "data": {
-          "sms_code": "SMS koda od Stellantis",
-          "pin_code": "PIN koda iz mobilne aplikacije vozila"
+          "sms_code": "SMS koda podjetja Stellantis",
+          "pin_code": "PIN mobilne aplikacije vozila"
         }
       },
       "options": {
@@ -143,12 +143,12 @@
         "name": "Kapaciteta baterije"
       },
       "battery_residual": {
-        "name": "Preostanek baterije"
+        "name": "Preostala energija baterije"
       },
       "command_status": {
-        "name": "Status ukaza",
+        "name": "Stanje ukaza",
         "state": {
-          "rate_limit": "Omejitev zahtev presežena (6 na 20 minut)",
+          "rate_limit": "Preseženo dovoljeno število ukazom (6 na 20 minut)",
           "not_compatible": "Ni združljivo",
           "failed": "Neuspešno",
           "900": "Sprejeto",
@@ -275,9 +275,9 @@
       "door_rear_right": { "name": "Zadnja desna vrata" },
       "belt_driver": { "name": "Voznikov varnostni pas" },
       "belt_passenger": { "name": "Sopotnikov varnostni pas" },
-      "battery_plugged": { "name": "Baterija priklopljena" },
+      "battery_plugged": { "name": "Polnilni kabel" },
       "battery_charging": { "name": "Polnjenje baterije" },
-      "battery_charging_limit": { "name": "Omejitev polnjenja baterije 80%" },
+      "battery_charging_limit": { "name": "Omejitev polnjenja na 80 %" },
       "engine": { "name": "Motor" },
       "preconditioning": { "name": "Predpriprava" },
       "alarm": { "name": "Alarm" },
@@ -293,8 +293,8 @@
       "lights": { "name": "Luči" },
       "charge_start": { "name": "Začni polnjenje" },
       "charge_stop": { "name": "Ustavi polnjenje" },
-      "charge_limit_on": { "name": "Omejitev polnjenja 80% vključena" },
-      "charge_limit_off": { "name": "Omejitev polnjenja 80% izključena" },
+      "charge_limit_on": { "name": "Vključi omejitev polnjenja na 80 %" },
+      "charge_limit_off": { "name": "Izključi omejitev polnjenja na 80 %" },
       "preconditioning_start": { "name": "Začni predpripravo" },
       "preconditioning_stop": { "name": "Ustavi predpripravo" }
     },
