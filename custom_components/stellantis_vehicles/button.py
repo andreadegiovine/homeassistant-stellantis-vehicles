@@ -114,7 +114,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
                 name = "charge_limit_off",
                 key = "charge_limit_off",
                 translation_key = "charge_limit_off",
-                icon = "mdi:battery-unlock"
+                icon = "mdi:battery-lock-open"
             )
             entities.extend([StellantisChargingLimitButton(coordinator, description, "trip")])
 
