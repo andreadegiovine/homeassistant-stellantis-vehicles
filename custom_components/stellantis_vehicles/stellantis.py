@@ -940,6 +940,9 @@ class StellantisVehicles(StellantisOauth):
                     if result_code == "0":
                         _LOGGER.debug("Fetching updates after result code %s", result_code)
                         self.do_async(coordinator.async_refresh(), 10, wait=False)
+                    if result_code == "901":
+                        _LOGGER.debug("Skip vehicle as sleep mqtt message")
+                        return
 
                     self.do_async(coordinator.update_command_history(data["correlation_id"], result_code), wait=False)
                 else:
