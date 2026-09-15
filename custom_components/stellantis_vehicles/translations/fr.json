@@ -296,6 +296,9 @@
       "battery_charging": {
         "name": "Batterie en charge"
       },
+      "battery_charging_limit": {
+        "name": "Limite de recharge batterie 80%"
+      },
       "engine": {
         "name": "Moteur"
       },
@@ -336,6 +339,12 @@
       },
       "charge_stop": {
         "name": "Arrêter recharge"
+      },
+      "charge_limit_on": {
+        "name": "Activer limite de recharge 80%"
+      },
+      "charge_limit_off": {
+        "name": "Désactiver limite de recharge 80%"
       },
       "preconditioning_start": {
         "name": "Démarrer pré-conditionnement"
