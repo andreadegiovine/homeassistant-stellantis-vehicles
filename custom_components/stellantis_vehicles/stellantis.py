@@ -632,6 +632,24 @@ class StellantisVehicles(StellantisOauth):
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
             next_run = get_datetime() + timedelta(minutes=30)
+        except ConfigEntryAuthFailed as err:
+            # The refresh token was rejected by the server: start the reauth
+            # flow now instead of waiting for a later poll to trip over it, and
+            # keep the timer alive with a slow retry in case it was transient.
+            _LOGGER.error("OAuth refresh token rejected, starting the reauth flow: %s", err)
+            try:
+                if self._entry is not None:
+                    self._entry.async_start_reauth(self._hass)
+            except Exception:
+                _LOGGER.exception("Could not start the reauth flow")
+            next_run = get_datetime() + timedelta(minutes=30)
+        except Exception:
+            # reset_scheduled_oauth_token() already cleared the timer above and
+            # it is only re-armed below: any exception escaping here would end
+            # the refresh chain until a restart. Retries stay bounded by
+            # @rate_limit(6, 1800) on refresh_oauth_token_request.
+            _LOGGER.exception("Unexpected error during the OAuth token refresh, retrying in 5 minutes")
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug("Next oauth token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_oauth_token_refresh, f"{DOMAIN} refresh oauth token: {next_run}", cancel_on_shutdown=True)
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
@@ -790,6 +808,24 @@ class StellantisVehicles(StellantisOauth):
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             return
+        except ConfigEntryAuthFailed as err:
+            # OTP material missing or rejected (get_otp_code, the OTP token
+            # request): nothing to retry, the entry has to be reconfigured.
+            self._mqtt_token_retry = 0
+            self.disable_remote_commands()
+            await self.hass_notify("reconfigure_otp")
+            _LOGGER.error("MQTT authentication failed, starting the reauth flow: %s", err)
+            try:
+                if self._entry is not None:
+                    self._entry.async_start_reauth(self._hass)
+            except Exception:
+                _LOGGER.exception("Could not start the reauth flow")
+            return
+        except Exception:
+            # Same shape as scheduled_oauth_token_refresh: the timer was cleared
+            # inside the try and is only re-armed below.
+            _LOGGER.exception("Unexpected error during the MQTT token refresh, retrying in 5 minutes")
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug("Next mqtt token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_mqtt_token_refresh, f"{DOMAIN} refresh mqtt token: {next_run}", cancel_on_shutdown=True)
         self._mqtt_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
