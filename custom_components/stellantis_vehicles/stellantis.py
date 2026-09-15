@@ -68,7 +68,6 @@ from .const import (
     TRANSLATION_PLACEHOLDERS,
     CAR_API_GET_VEHICLE_MAINTENANCE_URL,
     MQTT_TOKEN_RETRY_BACKOFF,
-    OAUTH_TOKEN_REFRESH_MARGIN,
     OAUTH_TOKEN_RETRY_BACKOFF
 )
 
@@ -622,7 +621,7 @@ class StellantisVehicles(StellantisOauth):
     async def scheduled_oauth_token_refresh(self, now=None):
         def get_next_run():
             expires_in = self.get_config("oauth")["expires_in"]
-            return datetime.fromisoformat(expires_in) - timedelta(minutes=OAUTH_TOKEN_REFRESH_MARGIN)
+            return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
         try:
             if self._oauth_token_scheduled is not None:
                 self.reset_scheduled_oauth_token()
