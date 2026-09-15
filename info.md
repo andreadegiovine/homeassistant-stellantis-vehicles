@@ -315,8 +315,8 @@ Dave
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Tarboeuf  
 Harald  
-Someone  
 Someone  
 <sub>*and other heroes*</sub>
 
