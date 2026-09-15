@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timedelta, UTC
 import json
 from copy import deepcopy
+from typing import Any
 
 from homeassistant.helpers.update_coordinator import ( CoordinatorEntity, DataUpdateCoordinator, UpdateFailed )
 from homeassistant.components.device_tracker import ( SourceType, TrackerEntity )
@@ -43,7 +44,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._config = config
         self._vehicle = vehicle
         self._stellantis = stellantis
-        self._data = {}
         self._sensors = {}
         self._commands_history = {}
         self._disabled_commands = []
@@ -59,10 +59,27 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             _LOGGER.addFilter(self._stellantis.logger_filter)
 
     @log_call
-    async def _async_update_data(self):
+    async def _async_update_data(self) -> dict[str, Any] | None:
         """ Update vehicle data from Stellantis. """
         _LOGGER.debug("Coordinator config: %s", self._config)
+        self._apply_refresh_interval_override()
 
+        new_data = await self._fetch_new_data()
+        if not new_data:
+            return await self._handle_empty_status()
+
+        self._empty_status_count = 0
+        self._clear_vehicle_removed()
+        self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
+
+        if self._is_stale(new_data):
+            return self.data
+
+        await self.after_async_update_data(new_data)
+        return new_data
+
+    def _apply_refresh_interval_override(self) -> None:
+        """ Consume the startup stagger and apply a user-configured refresh interval, if any. """
         if self._phase_offset:
             # The one-time startup stagger has been consumed, go back to the
             # normal cadence (a number_refresh_interval override, if any, is
@@ -74,6 +91,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if refresh_interval and refresh_interval > 0 and refresh_interval != self.update_interval.total_seconds():
             self.update_interval = timedelta(seconds=refresh_interval)
 
+    async def _fetch_new_data(self) -> dict[str, Any] | None:
+        """ Fetch the vehicle status and maintenance info, translating API errors. """
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
             if new_data:
@@ -83,6 +102,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     "daysBeforeMaintenance": maintenance.get("daysBeforeMaintenance"),
                     "updatedAt": maintenance.get("updatedAt")
                 }
+            return new_data
         except ConfigEntryAuthFailed:
             raise
         except Exception as err:
@@ -91,47 +111,48 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 "Error communicating with Stellantis API, enable debug logging for details"
             ) from err
 
-        if not new_data:
-            # Keep the last known data instead of blanking every entity on a
-            # single empty response (404 / empty body).
-            self._empty_status_count += 1
-            _LOGGER.debug(
-                "Empty vehicle status response (%s in a row), keeping last known data",
-                self._empty_status_count,
-            )
+    async def _handle_empty_status(self) -> dict[str, Any] | None:
+        """ Handle an empty status response: tolerate a short gap, fail on a sustained outage. """
+        # Keep the last known data instead of blanking every entity on a
+        # single empty response (404 / empty body).
+        self._empty_status_count += 1
+        _LOGGER.debug(
+            "Empty vehicle status response (%s in a row), keeping last known data",
+            self._empty_status_count,
+        )
 
-            if self._empty_status_count < EMPTY_STATUS_LIMIT:
-                # Short gap: keep the last known data.
-                return
+        if self._empty_status_count < EMPTY_STATUS_LIMIT:
+            # Short gap: keep the last known data. ``self.data`` is still None
+            # if this is the very first refresh, so fall back to an empty
+            # dict - coordinator.data must never be None once entities exist,
+            # several of them subscript it directly.
+            return self.data or {}
 
-            if self._empty_status_count % EMPTY_STATUS_LIMIT == 0 and not self._vehicle_removed:
-                # Periodically check whether the vehicle was unpaired.
-                await self._reconcile_vehicle()
+        if self._empty_status_count % EMPTY_STATUS_LIMIT == 0 and not self._vehicle_removed:
+            # Periodically check whether the vehicle was unpaired.
+            await self._reconcile_vehicle()
 
-            # Sustained outage: surface it so entities go unavailable.
-            raise UpdateFailed("Empty vehicle status response")
+        # Sustained outage: surface it so entities go unavailable.
+        raise UpdateFailed("Empty vehicle status response")
 
-        self._empty_status_count = 0
-        self._clear_vehicle_removed()
-        self._log_privacy_mode(new_data.get("privacy", {}).get("state"))
-
-        if "updatedAt" in new_data and "updatedAt" in self._data:
-            try:
-                current_dt = datetime.fromisoformat(self._data["updatedAt"])
-                new_dt = datetime.fromisoformat(new_data["updatedAt"])
-                if current_dt.tzinfo is None:
-                    current_dt = current_dt.replace(tzinfo=UTC)
-                if new_dt.tzinfo is None:
-                    new_dt = new_dt.replace(tzinfo=UTC)
-            except (ValueError, TypeError):
-                _LOGGER.debug("Invalid updatedAt values, proceeding with update without timestamp comparison")
-            else:
-                if new_dt <= current_dt:
-                    _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
-                    return
-
-        self._data = new_data
-        await self.after_async_update_data()
+    def _is_stale(self, new_data: dict[str, Any]) -> bool:
+        """ Whether new_data's updatedAt is not newer than the currently held data. """
+        if "updatedAt" not in new_data or not self.data or "updatedAt" not in self.data:
+            return False
+        try:
+            current_dt = datetime.fromisoformat(self.data["updatedAt"])
+            new_dt = datetime.fromisoformat(new_data["updatedAt"])
+        except (ValueError, TypeError):
+            _LOGGER.debug("Invalid updatedAt values, proceeding with update without timestamp comparison")
+            return False
+        if current_dt.tzinfo is None:
+            current_dt = current_dt.replace(tzinfo=UTC)
+        if new_dt.tzinfo is None:
+            new_dt = new_dt.replace(tzinfo=UTC)
+        if new_dt <= current_dt:
+            _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
+            return True
+        return False
 
     def stagger_first_poll(self, offset_seconds):
         """ Push this vehicle's next poll back once so several vehicles do not all
@@ -308,38 +329,43 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
            "program3": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
            "program4": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0}
         }
-        active_programs = None
-        if "programs" in self._data["preconditionning"]["airConditioning"]:
-            current_programs = self._data["preconditionning"]["airConditioning"]["programs"]
-            if current_programs:
-                for program in current_programs:
-                    if program:
-                        occurence = program.get("occurence")
-                        if occurence and occurence.get("day") and program.get("start"):
-                            date = time_from_pt_string(program["start"])
-                            config = {
-                                "day": [
-                                    int("Mon" in occurence["day"]),
-                                    int("Tue" in occurence["day"]),
-                                    int("Wed" in occurence["day"]),
-                                    int("Thu" in occurence["day"]),
-                                    int("Fri" in occurence["day"]),
-                                    int("Sat" in occurence["day"]),
-                                    int("Sun" in occurence["day"])
-                                ],
-                                "hour": date.hour,
-                                "minute": date.minute,
-                                "on": int(program["enabled"])
-                            }
-                            default_programs["program" + str(program["slot"])] = config
+        air_conditioning = (self.data.get("preconditionning") or {}).get("airConditioning") or {}
+        current_programs = air_conditioning.get("programs")
+        if current_programs:
+            for program in current_programs:
+                if program:
+                    occurence = program.get("occurence")
+                    if occurence and occurence.get("day") and program.get("start"):
+                        date = time_from_pt_string(program["start"])
+                        config = {
+                            "day": [
+                                int("Mon" in occurence["day"]),
+                                int("Tue" in occurence["day"]),
+                                int("Wed" in occurence["day"]),
+                                int("Thu" in occurence["day"]),
+                                int("Fri" in occurence["day"]),
+                                int("Sat" in occurence["day"]),
+                                int("Sun" in occurence["day"])
+                            ],
+                            "hour": date.hour,
+                            "minute": date.minute,
+                            "on": int(program["enabled"])
+                        }
+                        default_programs["program" + str(program["slot"])] = config
         return default_programs
 
     async def send_preconditioning_command(self, button_name, action):
         """ Send preconditioning command to the vehicle. """
         await self.send_command(button_name, "/ThermalPrecond", {"asap": action, "programs": self.get_programs()})
 
-    async def send_abrp_data(self):
+    async def send_abrp_data(self, new_data: dict[str, Any]) -> None:
         """ Send vehicle data to ABRP. """
+        last_position = new_data.get("lastPosition")
+        if not isinstance(last_position, dict):
+            last_position = {}
+        coordinates = last_position.get("geometry", {}).get("coordinates") or []
+        heading = last_position.get("properties", {}).get("heading")
+
         tlm = {
             "utc": int(get_datetime().astimezone(UTC).timestamp()),
             "soc": None,
@@ -356,21 +382,23 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             tlm["soc"] = self._sensors.get("battery")
         if self._sensors.get("speed") is not None:
             tlm["speed"] = self._sensors.get("speed")
-        if self._data.get("lastPosition") is not None:
-            tlm["lat"] = float(self._data["lastPosition"]["geometry"]["coordinates"][1])
-            tlm["lon"] = float(self._data["lastPosition"]["geometry"]["coordinates"][0])
+        if len(coordinates) >= 2:
+            tlm["lat"] = float(coordinates[1])
+            tlm["lon"] = float(coordinates[0])
         if self._sensors.get("battery_charging") is not None:
             tlm["is_charging"] = self._sensors.get("battery_charging") == "InProgress"
         if self._sensors.get("battery_charging_type") is not None:
             tlm["is_dcfc"] = tlm["is_charging"] and self._sensors.get("battery_charging_type") == "Quick"
+        if self._sensors.get("engine") is not None:
+            tlm["is_parked"] = self._sensors.get("engine") == "Stop"
         if self._sensors.get("battery_health_resistance") is not None:
             tlm["soh"] = float(self._sensors.get("battery_health_resistance"))
         if self._sensors.get("battery_health_capacity") is not None:
             tlm["soh"] = float(self._sensors.get("battery_health_capacity"))
-        if self._data.get("lastPosition", {}).get("properties", {}).get("heading") is not None:
-            tlm["heading"] = float(self._data.get("lastPosition").get("properties").get("heading"))
-        if len(self._data.get("lastPosition", {}).get("geometry", {}).get("coordinates", [])) == 3:
-            tlm["elevation"] = float(self._data.get("lastPosition").get("geometry").get("coordinates")[2])
+        if heading is not None:
+            tlm["heading"] = float(heading)
+        if len(coordinates) == 3:
+            tlm["elevation"] = float(coordinates[2])
         if self._sensors.get("temperature") is not None:
             tlm["ext_temp"] = self._sensors.get("temperature")
         if self._sensors.get("mileage") is not None:
@@ -382,32 +410,60 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         await self._stellantis.send_abrp_data(params)
 
 
-    async def after_async_update_data(self):
-        """ Apply changes and do actions after vehicle data update. """
+    async def after_async_update_data(self, new_data: dict[str, Any]) -> None:
+        """ Apply changes and do actions after vehicle data update.
+
+        ``new_data`` is passed explicitly (here and in the methods called from
+        here) because ``self.data`` is not updated by the framework until this
+        whole update cycle returns. ``self._sensors``, kept up to date
+        independently by the entities, is read the normal way via ``self``.
+        """
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
-            if "battery_charging" in self._sensors and self._sensors.get("battery_charging_limit", None) != "Partial":
-                if self._sensors.get("battery_charging") == "InProgress" and not self._manage_charge_limit_sent:
-                    charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
-                    charge_limit = self._sensors.get("number_battery_charging_limit", None)
-                    if charge_limit_on and charge_limit and "battery" in self._sensors:
-                        current_battery = self._sensors.get("battery")
-                        if int(float(current_battery)) >= int(charge_limit):
-                            button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_stop.name")
-                            await self.send_charge_command(button_name, False, "delayed")
-                            self._manage_charge_limit_sent = True
-                elif self._sensors.get("battery_charging") != "InProgress" and self._manage_charge_limit_sent:
-                    self._manage_charge_limit_sent = False
+            await self._auto_stop_charge_at_limit()
+            await self._sync_abrp_if_enabled(new_data)
+        await self._fetch_last_trip_on_engine_stop(new_data)
 
-            if "switch_abrp_sync" in self._sensors and self._sensors.get("switch_abrp_sync") and "text_abrp_token" in self._sensors and len(self._sensors.get("text_abrp_token")) == 36:
-                await self.send_abrp_data()
+    async def _auto_stop_charge_at_limit(self) -> None:
+        """ Send a delayed charge-stop command once the configured limit is reached. """
+        if "battery_charging" not in self._sensors:
+            return
+        if self._sensors.get("battery_charging_limit") == "Partial":
+            return
+        if self._sensors.get("battery_charging") != "InProgress":
+            self._manage_charge_limit_sent = False
+            return
+        if self._manage_charge_limit_sent:
+            return
+        charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
+        charge_limit = self._sensors.get("number_battery_charging_limit")
+        if not (charge_limit_on and charge_limit and "battery" in self._sensors):
+            return
+        if int(float(self._sensors.get("battery"))) < int(charge_limit):
+            return
+        button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_stop.name")
+        await self.send_charge_command(button_name, False, "delayed")
+        self._manage_charge_limit_sent = True
 
+    async def _sync_abrp_if_enabled(self, new_data: dict[str, Any]) -> None:
+        """ Push the current status to ABRP if sync is enabled with a valid token. """
+        if not self._sensors.get("switch_abrp_sync"):
+            return
+        token = self._sensors.get("text_abrp_token")
+        if not token or len(token) != 36:
+            return
+        await self.send_abrp_data(new_data)
+
+    async def _fetch_last_trip_on_engine_stop(self, new_data: dict[str, Any]) -> None:
+        """ Fetch the last trip once the engine transitions from running to Stop. """
         current_engine_status = self._sensors.get("engine")
-        new_engine_status = self._data.get("ignition", {}).get("type")
-        if new_engine_status == "Stop" and current_engine_status not in (None, "Stop"):
-            _LOGGER.debug("Engine status changed from %s to %s, fetching last trip data", current_engine_status, new_engine_status)
-            await self.get_vehicle_last_trip()
-        elif new_engine_status == "Stop":
+        new_engine_status = new_data.get("ignition", {}).get("type")
+        if new_engine_status != "Stop":
+            return
+        if current_engine_status in (None, "Stop"):
             _LOGGER.debug("No last-trip fetch needed (engine %s -> Stop)", current_engine_status)
+            return
+        _LOGGER.debug("Engine status changed from %s to %s, fetching last trip data", current_engine_status, new_engine_status)
+        await self.get_vehicle_last_trip()
 
     async def get_vehicle_last_trip(self):
         """ Get last trip from Stellantis. """
@@ -523,7 +579,7 @@ class StellantisBaseEntity(CoordinatorEntity):
 
     def get_value_from_map(self, value_map):
         """ Get data value from map. """
-        vehicle_data = self._coordinator._data
+        vehicle_data = self._coordinator.data
         value = None
         for key in value_map:
             if value is None: # first key in the map
@@ -628,8 +684,6 @@ class StellantisBaseEntity(CoordinatorEntity):
     @callback
     def _handle_coordinator_update(self):
         """ Coordinator handler. """
-        if self._coordinator.data is False:
-            return
         self.coordinator_update()
         self.async_write_ha_state()
 
@@ -654,7 +708,7 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
     @property
     def _last_position(self):
         """ Last known position feature. """
-        last_position = self._coordinator._data.get("lastPosition")
+        last_position = self._coordinator.data.get("lastPosition")
         return last_position if isinstance(last_position, dict) else {}
 
     @property

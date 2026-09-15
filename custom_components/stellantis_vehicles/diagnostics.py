@@ -159,6 +159,6 @@ def _coordinator_diagnostics(
             async_redact_data(coordinator._sensors, TO_REDACT), secrets  # noqa: SLF001
         ),
         "raw_status": _scrub_substrings(
-            async_redact_data(coordinator._data, TO_REDACT), secrets  # noqa: SLF001
+            async_redact_data(coordinator.data, TO_REDACT), secrets
         ),
     }
