@@ -67,7 +67,9 @@ from .const import (
     ABRP_API_KEY,
     TRANSLATION_PLACEHOLDERS,
     CAR_API_GET_VEHICLE_MAINTENANCE_URL,
-    MQTT_TOKEN_RETRY_BACKOFF
+    MQTT_TOKEN_RETRY_BACKOFF,
+    OAUTH_TOKEN_REFRESH_MARGIN,
+    OAUTH_TOKEN_RETRY_BACKOFF
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -472,6 +474,7 @@ class StellantisVehicles(StellantisOauth):
         self._oauth_token_scheduled = None
         self._mqtt_token_scheduled = None
         self._mqtt_token_retry = 0
+        self._oauth_token_retry = 0
 
     def set_entry(self, entry):
         self._entry = entry
@@ -619,16 +622,25 @@ class StellantisVehicles(StellantisOauth):
     async def scheduled_oauth_token_refresh(self, now=None):
         def get_next_run():
             expires_in = self.get_config("oauth")["expires_in"]
-            return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
+            return datetime.fromisoformat(expires_in) - timedelta(minutes=OAUTH_TOKEN_REFRESH_MARGIN)
         try:
             if self._oauth_token_scheduled is not None:
                 self.reset_scheduled_oauth_token()
                 await self.refresh_oauth_token_request()
             elif get_datetime() > get_next_run():
                 await self.refresh_oauth_token_request()
+            self._oauth_token_retry = 0
             next_run = get_next_run()
-        except CommunicationError:
-            next_run = get_datetime() + timedelta(minutes=5)
+        except CommunicationError as err:
+            self._oauth_token_retry += 1
+            idx = min(self._oauth_token_retry - 1, len(OAUTH_TOKEN_RETRY_BACKOFF) - 1)
+            delay = OAUTH_TOKEN_RETRY_BACKOFF[idx]
+            delay += random.uniform(0, delay * 0.1)
+            next_run = get_datetime() + timedelta(seconds=delay)
+            _LOGGER.warning(
+                "OAuth token refresh failed (attempt %s), next retry at %s: %s",
+                self._oauth_token_retry, next_run, err,
+            )
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
             next_run = get_datetime() + timedelta(minutes=30)

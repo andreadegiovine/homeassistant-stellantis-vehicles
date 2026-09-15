@@ -141,6 +141,13 @@ COMMAND_HISTORY_LIMIT = 50
 # retried every ~15 min instead of once a minute.
 MQTT_TOKEN_RETRY_BACKOFF = (60, 120, 300, 600, 900)
 
+# The OAuth token refresh is attempted this many minutes before the token
+# expires, and retried on the schedule below (seconds, capped at the last
+# step). With a 15-minute margin the first retries all land before expiry, so
+# a transient failure does not turn into an invalid_grant at expiry.
+OAUTH_TOKEN_REFRESH_MARGIN = 15
+OAUTH_TOKEN_RETRY_BACKOFF = (60, 120, 300, 600, 900)
+
 VEHICLE_TYPE_ELECTRIC = "Electric"
 VEHICLE_TYPE_HYBRID = "Hybrid"
 VEHICLE_TYPE_THERMIC = "Thermic"
