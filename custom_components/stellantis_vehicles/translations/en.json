@@ -105,7 +105,7 @@
         "name": "Speed"
       },
       "autonomy": {
-        "name": "Autonomy"
+        "name": "Range"
       },
       "mileage_before_maintenance": {
         "name": "Mileage before maintenance"
@@ -162,7 +162,7 @@
         "name": "Fuel"
       },
       "fuel_autonomy": {
-        "name": "Fuel autonomy"
+        "name": "Fuel range"
       },
       "fuel_consumption_total": {
         "name": "Fuel consumption total"
@@ -230,7 +230,7 @@
             "name": "Initial energy"
           },
           "initial_autonomy": {
-            "name": "Initial autonomy"
+            "name": "Initial range"
           },
           "final_time": {
             "name": "Final time"
@@ -242,7 +242,7 @@
             "name": "Final energy"
           },
           "final_autonomy": {
-            "name": "Final autonomy"
+            "name": "Final range"
           },
           "duration": {
             "name": "Duration"
@@ -254,7 +254,7 @@
             "name": "Recharged energy"
           },
           "recharged_autonomy": {
-            "name": "Recharged autonomy"
+            "name": "Recharged range"
           },
           "avg_power": {
             "name": "Average power"
