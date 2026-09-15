@@ -141,6 +141,10 @@ COMMAND_HISTORY_LIMIT = 50
 # retried every ~15 min instead of once a minute.
 MQTT_TOKEN_RETRY_BACKOFF = (60, 120, 300, 600, 900)
 
+# Same schedule for the OAuth token refresh: retried on a capped backoff after a
+# transient failure instead of a flat 5-minute loop, and logged at WARNING.
+OAUTH_TOKEN_RETRY_BACKOFF = (60, 120, 300, 600, 900)
+
 VEHICLE_TYPE_ELECTRIC = "Electric"
 VEHICLE_TYPE_HYBRID = "Hybrid"
 VEHICLE_TYPE_THERMIC = "Thermic"
