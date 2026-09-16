@@ -734,6 +734,26 @@ class StellantisVehicles(StellantisOauth):
         return vehicle_trips_request
 
     @log_call
+    async def get_vehicle_trips(self, vehicle, since=None, page_token=None):
+        """Get one page of historical trips from Stellantis."""
+        url = self.apply_query_params(
+            CAR_API_GET_VEHICLE_TRIPS_URL,
+            CLIENT_ID_QUERY_PARAMS,
+            vehicle,
+        )
+        headers = self.apply_dict_params(CAR_API_HEADERS)
+        url += "&distance=0.1-"
+        if since is not None:
+            if isinstance(since, datetime):
+                since = since.isoformat(timespec="seconds")
+            url += "&timestamps=" + str(since) + "/"
+        if page_token is not None:
+            url += "&pageToken=" + str(page_token)
+        vehicle_trips_request = await self.make_http_request(url, "GET", headers)
+        _log_http_exchange(url, headers, vehicle_trips_request)
+        return vehicle_trips_request
+
+    @log_call
     async def get_vehicle_maintenance(self, vehicle):
         """ Fetch upcoming maintenance data (mileage/days remaining) for the vehicle. """
         url = self.apply_query_params(CAR_API_GET_VEHICLE_MAINTENANCE_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
@@ -741,20 +761,6 @@ class StellantisVehicles(StellantisOauth):
         vehicle_maintenance_request = await self.make_http_request(url, 'GET', headers)
         _log_http_exchange(url, headers, vehicle_maintenance_request)
         return vehicle_maintenance_request
-
-#     async def get_vehicle_trips(self, page_token=False):
-#         _LOGGER.debug("---------- START get_vehicle_trips")
-#         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
-#         headers = self.apply_dict_params(CAR_API_HEADERS)
-#         url = url + "&distance=0.1-"
-#         if page_token:
-#             url = url + "&pageToken=" + page_token
-#         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
-#         _LOGGER.debug(url)
-#         _LOGGER.debug(headers)
-#         _LOGGER.debug(vehicle_trips_request)
-#         _LOGGER.debug("---------- END get_vehicle_trips")
-#         return vehicle_trips_request
 
     @log_call
     async def scheduled_mqtt_token_refresh(self, now=None, force=False):
