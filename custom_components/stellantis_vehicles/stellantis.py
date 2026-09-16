@@ -663,6 +663,9 @@ class StellantisVehicles(StellantisOauth):
     @log_call
     @rate_limit(6, 1800) # 6 per 30 min
     async def refresh_oauth_token_request(self) -> None:
+        # save_config() below rotates this out of the masked set before it
+        # appears in the exchange log's request URL - register it separately.
+        self.logger_filter.add_custom_value((self.get_config("oauth") or {}).get("refresh_token"))
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
         headers = self.apply_dict_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
@@ -676,6 +679,8 @@ class StellantisVehicles(StellantisOauth):
         # the line below instead of being registered by hand every rotation.
         self.save_config({"oauth": new_config})
         self.update_stored_config("oauth", new_config)
+        if "id_token" in token_request:
+            self.logger_filter.add_custom_value(token_request["id_token"])
         _log_http_exchange(url, headers, token_request)
 
     @log_call

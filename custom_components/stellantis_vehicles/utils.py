@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from collections import deque
 from datetime import UTC, datetime, timedelta
@@ -162,10 +163,15 @@ class SensitiveDataFilter(logging.Filter):
     - Every mutating method rebinds its container instead of mutating it in
       place, so the filter can be read from the paho-mqtt network thread while
       the event loop updates it, without a "changed size during iteration".
+    - ``REDACT_KEYS`` is a different mechanism: a value under one of these keys
+      (GPS position, ABRP telemetry) is replaced wholesale regardless of its
+      content. Unlike the value-based masking above, these values change on
+      every read, so there is no specific string to register and match.
     """
 
-    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id")
+    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token")
     CUSTOM_VALUES_LIMIT = 128
+    REDACT_KEYS = ("lastPosition", "coordinates", "latitude", "longitude", "tlm")
 
     def __init__(self) -> None:
         super().__init__()
@@ -293,20 +299,40 @@ class SensitiveDataFilter(logging.Filter):
         elif isinstance(value, str):
             return self._mask_string(value)
         elif isinstance(value, (bytes, bytearray)):
-            # MQTT payloads are logged as raw bytes; mask the decoded text so a
-            # VIN or token inside the JSON payload is still redacted.
+            # MQTT payloads are logged as raw bytes. If they parse as JSON,
+            # mask the parsed structure (so REDACT_KEYS also applies there);
+            # otherwise fall back to substring-masking the decoded text.
             text = value.decode("utf-8", "replace")
+            try:
+                parsed = json.loads(text)
+            except ValueError:
+                parsed = None
+            if isinstance(parsed, (dict, list)):
+                masked_parsed = self._mask_value(parsed)
+                # Compare structurally, not the reformatted JSON string, so an
+                # untouched payload keeps its exact original bytes.
+                if masked_parsed == parsed:
+                    return value
+                return json.dumps(masked_parsed).encode("utf-8", "replace")
             masked = self._mask_string(text)
             return value if masked == text else masked.encode("utf-8", "replace")
 
         return value
 
     def _mask_dict(self, data: Dict) -> Dict:
-        """Return a new dict with every key and value passed through _mask_value."""
+        """Return a new dict with every key and value passed through _mask_value.
+
+        A key in REDACT_KEYS is the exception: when its value is truthy, that
+        value is replaced wholesale instead of being recursed into or
+        substring-matched (see REDACT_KEYS).
+        """
         masked = {}
         for key, value in data.items():
             masked_key = self._mask_value(key)
-            masked[masked_key] = self._mask_value(value)
+            if key in self.REDACT_KEYS and value:
+                masked[masked_key] = "###"
+            else:
+                masked[masked_key] = self._mask_value(value)
         return masked
 
     def _mask_string(self, value: str) -> str:
