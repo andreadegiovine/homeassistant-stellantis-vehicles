@@ -998,6 +998,14 @@ class StellantisVehicles(StellantisOauth):
         # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
         try:
             await self.scheduled_mqtt_token_refresh(force=(store == False))
+
+            # Ensure that the MQTT client is connected
+            if self._mqtt is None or not self._mqtt.is_connected():
+                _LOGGER.debug("MQTT client is not connected, try to connect it")
+                await self.connect_mqtt()
+            if self._mqtt is None or not self._mqtt.is_connected():
+                raise CommunicationError("MQTT client is not connected, cannot send command")
+
             customer_id = self.get_config("customer_id")
             topic = MQTT_REQ_TOPIC + customer_id + service
             date = get_datetime()
@@ -1024,6 +1032,9 @@ class StellantisVehicles(StellantisOauth):
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             # Re-raise so the caller can trigger Home Assistant's reauth flow.
+            raise
+        except CommunicationError:
+            _LOGGER.warning("Could not send MQTT message for %s: MQTT client is not connected", service)
             raise
         except Exception:
             _LOGGER.exception("Unexpected error during MQTT message sending")
