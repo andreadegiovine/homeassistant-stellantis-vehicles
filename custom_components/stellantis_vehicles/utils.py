@@ -167,11 +167,17 @@ class SensitiveDataFilter(logging.Filter):
       (GPS position, ABRP telemetry) is replaced wholesale regardless of its
       content. Unlike the value-based masking above, these values change on
       every read, so there is no specific string to register and match.
+    - ``_PAGE_TOKEN_RE`` masks a pagination token wherever it appears as
+      ``pageToken=...`` in a logged string, e.g. in the ``_links.*.href``
+      URLs the API echoes back. Those hrefs turn up in more than one
+      endpoint's response, so this is matched unconditionally instead of
+      registering every token value seen.
     """
 
     MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token")
     CUSTOM_VALUES_LIMIT = 128
     REDACT_KEYS = ("lastPosition", "coordinates", "latitude", "longitude", "tlm")
+    _PAGE_TOKEN_RE = re.compile(r"(pageToken=)[^&\"'\s]+")
 
     def __init__(self) -> None:
         super().__init__()
@@ -337,6 +343,7 @@ class SensitiveDataFilter(logging.Filter):
 
     def _mask_string(self, value: str) -> str:
         """Return the string with every occurrence of a masked value replaced by its redacted form."""
+        value = self._PAGE_TOKEN_RE.sub(r"\1###", value)
         pattern = self.compiled_patterns
         if pattern:
             return pattern.sub(lambda m: self._mask_sensitive_value(m.group(0)), value)
