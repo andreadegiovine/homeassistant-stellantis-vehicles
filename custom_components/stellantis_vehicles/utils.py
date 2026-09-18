@@ -27,14 +27,18 @@ def datetime_from_isoformat(string):
     return get_datetime(datetime.fromisoformat(string))
 
 def time_from_pt_string(pt_string):
-    regex = 'PT'
-    if pt_string.find("H") != -1:
-        regex = regex + "%HH"
-    if pt_string.find("M") != -1:
-        regex = regex + "%MM"
-    if pt_string.find("S") != -1:
-        regex = regex + "%SS"
-    return datetime.strptime(pt_string, regex).time()
+    try:
+        regex = 'PT'
+        if pt_string.find("H") != -1:
+            regex = regex + "%HH"
+        if pt_string.find("M") != -1:
+            regex = regex + "%MM"
+        if pt_string.find("S") != -1:
+            regex = regex + "%SS"
+        return datetime.strptime(pt_string, regex).time()
+    except (AttributeError, TypeError, ValueError) as e:
+        _LOGGER.warning("Could not parse duration '%s': %s", pt_string, e)
+        return None
 
 def time_from_string(string):
     try:

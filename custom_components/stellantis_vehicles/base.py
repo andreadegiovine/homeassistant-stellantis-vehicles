@@ -337,6 +337,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     occurence = program.get("occurence")
                     if occurence and occurence.get("day") and program.get("start"):
                         date = time_from_pt_string(program["start"])
+                        if date is None:
+                            continue
                         config = {
                             "day": [
                                 int("Mon" in occurence["day"]),
