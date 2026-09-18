@@ -664,7 +664,11 @@ class StellantisBaseEntity(CoordinatorEntity):
 
         if key == 'battery':
             value = int(value)
-            autonomy = self._coordinator._sensors.get("autonomy")
+            # Read the autonomy from the current payload rather than from the
+            # retained sensor cache: the cache keeps the previous value when the
+            # field is absent (sleeping car), so a stale 0 would zero a fresh
+            # battery level and freeze the sensor.
+            autonomy = self.get_value_from_map(["energies", {"type": "Electric"}, "autonomy"])
             if value > 90 and autonomy is not None and autonomy == 0:
                 # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/476
                 value = 0
