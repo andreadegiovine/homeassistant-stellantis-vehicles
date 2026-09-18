@@ -405,6 +405,11 @@
       }
     }
   },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "Impossible d'envoyer « {name} » : « {pending_name} » attend toujours une réponse du véhicule."
+    }
+  },
   "common": {
     "access_token_error_title": "Erreur jeton d'accès",
     "access_token_error_message": "Vérifier la documentation officielle dans la section [OAuth2 Code]({oauth_token_doc_link})",
