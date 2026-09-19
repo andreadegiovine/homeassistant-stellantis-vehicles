@@ -405,6 +405,11 @@
       }
     }
   },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "Impossibile inviare \"{name}\": \"{pending_name}\" è ancora in attesa di una risposta dal veicolo."
+    }
+  },
   "common": {
     "access_token_error_title": "Access token error",
     "access_token_error_message": "Consulta la documentazione ufficiale nella sezione [OAuth2 Code]({oauth_token_doc_link})",

@@ -395,6 +395,11 @@
       }
     }
   },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "\"{name}\" kann nicht gesendet werden: \"{pending_name}\" wartet noch auf eine Antwort vom Fahrzeug."
+    }
+  },
   "common": {
     "access_token_error_title": "Zugriffstoken-Fehler",
     "access_token_error_message": "Lesen Sie die offizielle Dokumentation im [OAuth2 Code]({oauth_token_doc_link}) Abschnitt",

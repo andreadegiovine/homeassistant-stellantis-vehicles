@@ -17,7 +17,7 @@ from homeassistant.components.time import TimeEntity
 from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ( ConfigEntryAuthFailed, ServiceValidationError )
 from homeassistant.helpers import issue_registry as ir
 
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, SENSITIVE_DATA_FILTER )
@@ -30,6 +30,8 @@ from .const import (
     UPDATE_INTERVAL,
     EMPTY_STATUS_LIMIT,
     COMMAND_HISTORY_LIMIT,
+    COMMAND_STATUS_STILL_IN_PROGRESS,
+    PENDING_ACTION_TIMEOUT,
     KWH_CORRECTION
 )
 
@@ -52,6 +54,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._sensors = {}
         self._commands_history = {}
         self._disabled_commands = []
+        # action_id of the command currently blocking further remote
+        # commands, or None while none is blocking. Set as soon as that
+        # command is sent and cleared once it reaches a final status.
+        self._pending_action_id: str | None = None
         self._last_trip = None
 #        self._total_trip = None
         self._manage_charge_limit_sent = False
@@ -241,12 +247,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         }
 
     @property
-    def pending_action(self):
+    def pending_action(self) -> bool:
         """ Pending action. """
-        if not self._commands_history:
+        if self._pending_action_id is None:
             return False
-        last_action_id = list(self._commands_history.keys())[-1]
-        return not self._commands_history[last_action_id]["updates"]
+        pending_command = self._commands_history.get(self._pending_action_id)
+        if not pending_command:
+            return False
+        last_activity_at = pending_command["updates"][-1]["date"] if pending_command["updates"] else pending_command["sent_at"]
+        return (get_datetime() - last_activity_at).total_seconds() < PENDING_ACTION_TIMEOUT
 
     def _prune_command_history(self):
         """ Drop the oldest command-history entries beyond COMMAND_HISTORY_LIMIT.
@@ -260,7 +269,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             oldest_id = next(iter(self._commands_history))
             del self._commands_history[oldest_id]
 
-    async def update_command_history(self, action_id, update = None):
+    async def update_command_history(self, action_id: str, update: str | None = None) -> None:
         """ Update command history. """
         if action_id not in self._commands_history:
             return
@@ -270,6 +279,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 disabled_name = self._commands_history[action_id]["name"]
                 if disabled_name not in self._disabled_commands:
                     self._disabled_commands.append(disabled_name)
+            if update not in COMMAND_STATUS_STILL_IN_PROGRESS and self._pending_action_id == action_id:
+                self._pending_action_id = None
         self.async_update_listeners()
 
     def update_command_history_rate_limit(self, name):
@@ -278,13 +289,21 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._prune_command_history()
         self.async_update_listeners()
 
-    async def send_command(self, name, service, message):
+    async def send_command(self, name: str, service: str, message: dict[str, Any]) -> None:
         """ Send a command to the vehicle. """
+        if self.pending_action:
+            pending_name = self._commands_history[self._pending_action_id]["name"]
+            raise ServiceValidationError(
+                translation_domain = DOMAIN,
+                translation_key = "command_already_pending",
+                translation_placeholders = {"name": name, "pending_name": pending_name}
+            )
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
             if action_id is not None:
-                self._commands_history.update({action_id: {"name": name, "updates": []}})
+                self._commands_history.update({action_id: {"name": name, "updates": [], "sent_at": get_datetime()}})
                 self._prune_command_history()
+                self._pending_action_id = action_id
                 self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
             _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
@@ -687,7 +706,7 @@ class StellantisBaseEntity(CoordinatorEntity):
         """ Base availability property for mqtt commands. """
         mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
         command_is_enabled = self.name not in self._coordinator._disabled_commands
-        return mqtt_is_connected and command_is_enabled and not self._coordinator.pending_action
+        return mqtt_is_connected and command_is_enabled
 
     @callback
     def _handle_coordinator_update(self):

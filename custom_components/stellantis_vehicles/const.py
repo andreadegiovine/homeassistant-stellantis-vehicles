@@ -136,6 +136,21 @@ EMPTY_STATUS_LIMIT = 3
 # coordinator update) for as long as the coordinator lives.
 COMMAND_HISTORY_LIMIT = 50
 
+# process_code values that report a step of a command's lifecycle without
+# resolving it ("accepted", "vehicle asleep", "forwarded to vehicle"): a
+# command sent to the vehicle keeps blocking further remote commands (see
+# pending_action) through these. "901" is currently filtered out before it
+# ever reaches the command history (see the "Skip vehicle as sleep mqtt
+# message" handling in stellantis.py), so listing it here has no effect yet;
+# kept as a safeguard in case that changes.
+COMMAND_STATUS_STILL_IN_PROGRESS = ("900", "901", "903")
+
+# Seconds since a sent command was last updated before it is treated as
+# stale and no longer blocks further commands (see pending_action), even
+# though no final status ever arrived for it (e.g. the MQTT connection
+# dropped before the vehicle's actual response could arrive).
+PENDING_ACTION_TIMEOUT = 60
+
 # Backoff schedule (seconds) for the MQTT token refresh after a transient
 # Stellantis backend failure. Capped at the last step so a prolonged outage is
 # retried every ~15 min instead of once a minute.
