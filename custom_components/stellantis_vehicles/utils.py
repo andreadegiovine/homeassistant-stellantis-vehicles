@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import deque
 from datetime import UTC, datetime, timedelta
-from time import monotonic
+from time import monotonic, process_time
 from functools import wraps
 import re
 from typing import Any, Dict
@@ -92,18 +92,32 @@ def log_call(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             logger.debug("---------- START %s", name)
+            start_time = monotonic()
+            process_start_time = process_time()
             try:
                 return await func(*args, **kwargs)
             finally:
-                logger.debug("---------- END %s", name)
+                duration = monotonic() - start_time
+                process_duration = process_time() - process_start_time
+                logger.debug(
+                    "---------- END %s (duration=%.3fs, cpu=%.3fs)",
+                    name, duration, process_duration
+                )
     else:
         @wraps(func)
         def wrapper(*args, **kwargs):
             logger.debug("---------- START %s", name)
+            start_time = monotonic()
+            process_start_time = process_time()
             try:
                 return func(*args, **kwargs)
             finally:
-                logger.debug("---------- END %s", name)
+                duration = monotonic() - start_time
+                process_duration = process_time() - process_start_time
+                logger.debug(
+                    "---------- END %s (duration=%.3fs, cpu=%.3fs)",
+                    name, duration, process_duration
+                )
 
     return wrapper
 
