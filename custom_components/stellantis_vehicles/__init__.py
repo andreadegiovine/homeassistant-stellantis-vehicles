@@ -140,12 +140,14 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
         for _entry in hass.config_entries.async_entries(DOMAIN):
             hass.async_create_task(hass.config_entries.async_remove(_entry.entry_id))
 
-        # Generate path to storage folder and OTP file
+        # Generate path to storage folder and OTP file. Both files are keyed by
+        # customer_id, not by unique_id (which also carries mobile_app/country_code).
         hass_config_path = hass.config.path()
         storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
+        customer_id = config.data.get("customer_id")
         otp_file_path = os.path.join(storage_path, OTP_FILENAME)
-        otp_file_path = otp_file_path.replace("{#customer_id#}", config.unique_id)
-        entry_image_path = os.path.join(hass_config_path, "www", DOMAIN, config.unique_id)
+        otp_file_path = otp_file_path.replace("{#customer_id#}", customer_id)
+        entry_image_path = os.path.join(hass_config_path, "www", DOMAIN, customer_id)
         image_path = os.path.join(hass_config_path, "www", DOMAIN)
 
         def cleanup_files():
