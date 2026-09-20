@@ -300,7 +300,7 @@ async def _migrate_to_1_6(hass: HomeAssistant, config: ConfigEntry) -> None:
     hass.config_entries.async_update_entry(config, data=new_data, version=1, minor_version=6)
 
 
-async def _migrate_to_20260802(hass: HomeAssistant, config: ConfigEntry) -> None:
+async def _migrate_to_20260802(hass: HomeAssistant, config: ConfigEntry, target_version: int) -> None:
     """Move all flat per-vehicle nodes under a dedicated vehicles sub-node."""
     data = dict(config.data)
 
@@ -325,10 +325,10 @@ async def _migrate_to_20260802(hass: HomeAssistant, config: ConfigEntry) -> None
         # Leave the entry version alone on beta (see the global update in async_migrate_entry)
         hass.config_entries.async_update_entry(config, data=new_data)
     else:
-        hass.config_entries.async_update_entry(config, data=new_data, version=20260802, minor_version=1)
+        hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
 
 
-async def _migrate_to_20260902(hass: HomeAssistant, config: ConfigEntry) -> None:
+async def _migrate_to_20260902(hass: HomeAssistant, config: ConfigEntry, target_version: int) -> None:
     """Improve unique_id for multi brand account."""
     data = dict(config.data)
     unique_id = config.unique_id
@@ -342,14 +342,14 @@ async def _migrate_to_20260902(hass: HomeAssistant, config: ConfigEntry) -> None
         # Leave the entry version alone on beta (see the global update in async_migrate_entry)
         hass.config_entries.async_update_entry(config, unique_id=new_unique_id)
     else:
-        hass.config_entries.async_update_entry(config, unique_id=new_unique_id, version=20260802, minor_version=1)
+        hass.config_entries.async_update_entry(config, unique_id=new_unique_id, version=target_version, minor_version=1)
 
 
 # Template for the next migration step - not live code, just copy-paste
 # fodder so a new step follows the same pattern as the ones above. Give the
 # function a name matching its target version and fill in the migration logic:
 #
-# async def _migrate_to_<version>(hass: HomeAssistant, config: ConfigEntry) -> None:
+# async def _migrate_to_<version>(hass: HomeAssistant, config: ConfigEntry, target_version: int) -> None:
 #     """Describe what this migration step does."""
 #     data = dict(config.data)
 #
@@ -362,7 +362,7 @@ async def _migrate_to_20260902(hass: HomeAssistant, config: ConfigEntry) -> None
 #         # Leave the entry version alone on beta (see the global update in async_migrate_entry)
 #         hass.config_entries.async_update_entry(config, data=new_data)
 #     else:
-#         hass.config_entries.async_update_entry(config, data=new_data, version=<version>, minor_version=1)
+#         hass.config_entries.async_update_entry(config, data=new_data, version=target_version, minor_version=1)
 
 
 async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
@@ -410,13 +410,13 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     target_version = 20260802
     if config.version < target_version or "vehicles" not in config.data:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        await _migrate_to_20260802(hass, config)
+        await _migrate_to_20260802(hass, config, target_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     target_version = 20260902
     if config.version < target_version:
         _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-        await _migrate_to_20260902(hass, config)
+        await _migrate_to_20260902(hass, config, target_version)
         _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     # Template for the next migration step's call site - not live code, just
@@ -426,7 +426,7 @@ async def async_migrate_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     # target_version = <version>   # to be updated with the next version number
     # if config.version < target_version:
     #     _LOGGER.debug("Migrating configuration from version %s.%s", config.version, config.minor_version)
-    #     await _migrate_to_<version>(hass, config)
+    #     await _migrate_to_<version>(hass, config, target_version)
     #     _LOGGER.debug("Migration to configuration version %s.%s successful", config.version, config.minor_version)
 
     # Global update of versions - only pull the entry version forward on real
