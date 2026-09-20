@@ -361,7 +361,7 @@
             "name": "Altitud"
           },
           "fix_status": {
-            "name": "Estado de fijación"
+            "name": "Estado de la corrección"
           },
           "signal_quality": {
             "name": "Calidad de la señal"
