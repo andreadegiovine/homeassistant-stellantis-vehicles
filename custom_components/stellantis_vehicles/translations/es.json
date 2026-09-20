@@ -18,14 +18,15 @@
         }
       },
       "oauth_remote": {
-        "description": "Este [servicio remoto]({oauth_remote_link}) se utiliza para simular el inicio de sesión del navegador en el sitio web oficial",
+        "description": "Este [servicio remoto]({oauth_remote_link}) se utiliza para simular el inicio de sesión del navegador en el sitio web oficial. Puedes usar el servicio alojado por defecto o apuntar a tu propio servicio autoalojado",
         "data": {
           "email": "Correo electrónico",
-          "password": "Contraseña"
+          "password": "Contraseña",
+          "oauth_code_url": "URL del servicio de inicio de sesión"
         }
       },
       "oauth_manual": {
-        "description": "Sigue estos pasos desde un **navegador de escritorio**:\n\n1. ve a la página de inicio de sesión {oauth_link};\n2. abre las **DevTools** del navegador (F12) y ve a la pestaña **Network**;\n3. inicia sesión en tu cuenta y haz clic en el último botón de confirmación;\n4. desde la pestaña **Network**, encuentra la solicitud anterior y copia el **{oauth_label}**;{oauth_devtools}",
+        "description": "Sigue estos pasos desde un **navegador de escritorio**:\n\n1. ve a la página de inicio de sesión {oauth_link};\n2. abre las **DevTools** del navegador (F12) y ve a la pestaña **Red**;\n3. inicia sesión en tu cuenta;\n4. busca la solicitud de `token` o `authorize` y copia el valor `code` del parámetro `code` de la respuesta;\n5. pega el valor aquí",
         "data": {
           "oauth_code": "Código OAuth"
         }
@@ -106,11 +107,20 @@
       "autonomy": {
         "name": "Autonomía"
       },
+      "mileage_before_maintenance": {
+        "name": "Kilómetros hasta la próxima revisión"
+      },
+      "days_before_maintenance": {
+        "name": "Días hasta la próxima revisión"
+      },
       "battery": {
         "name": "Batería"
       },
-      "battery_soh": {
-        "name": "Estado de salud de la batería"
+      "battery_health_resistance": {
+        "name": "Resistencia SOH de la batería"
+      },
+      "battery_health_capacity": {
+        "name": "Capacidad SOH de la batería"
       },
       "battery_charging_rate": {
         "name": "Tasa de carga de la batería"
@@ -169,6 +179,9 @@
       "air_temperature": {
         "name": "Temperatura del aire"
       },
+      "driving_behavior": {
+        "name": "Comportamiento de conducción"
+      },
       "last_trip": {
         "name": "Último viaje",
         "state_attributes": {
@@ -206,6 +219,9 @@
             "state": {
               "true": "Sí"
             }
+          },
+          "mileage": {
+            "name": "Kilometraje"
           },
           "initial_percentage": {
             "name": "Porcentaje inicial"
@@ -253,11 +269,35 @@
       "doors": {
         "name": "Puertas"
       },
+      "door_trunk": {
+        "name": "Maletero"
+      },
+      "door_driver": {
+        "name": "Puerta del conductor"
+      },
+      "door_passenger": {
+        "name": "Puerta del acompañante"
+      },
+      "door_rear_left": {
+        "name": "Puerta trasera izquierda"
+      },
+      "door_rear_right": {
+        "name": "Puerta trasera derecha"
+      },
+      "belt_driver": {
+        "name": "Cinturón del conductor"
+      },
+      "belt_passenger": {
+        "name": "Cinturón del acompañante"
+      },
       "battery_plugged": {
         "name": "Batería conectada"
       },
       "battery_charging": {
         "name": "Batería en carga"
+      },
+      "battery_charging_limit": {
+        "name": "Límite de carga de la batería al 80%"
       },
       "engine": {
         "name": "Motor"
@@ -300,6 +340,12 @@
       "charge_stop": {
         "name": "Detener carga"
       },
+      "charge_limit_on": {
+        "name": "Límite de carga al 80% activado"
+      },
+      "charge_limit_off": {
+        "name": "Límite de carga al 80% desactivado"
+      },
       "preconditioning_start": {
         "name": "Iniciar preacondicionamiento"
       },
@@ -309,7 +355,24 @@
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Vehículo"
+        "name": "Vehículo",
+        "state_attributes": {
+          "altitude": {
+            "name": "Altitud"
+          },
+          "fix_status": {
+            "name": "Estado de fijación"
+          },
+          "signal_quality": {
+            "name": "Calidad de la señal"
+          },
+          "position_updated_at": {
+            "name": "Actualizado a las"
+          },
+          "entity_picture": {
+            "name": "Imagen de la entidad"
+          }
+        }
       }
     },
     "number": {
@@ -351,6 +414,12 @@
     "no_vehicles_found_message": "No hay vehículos conectados disponibles en esta cuenta",
     "command_error_title": "Comando",
     "command_error_message": "El comando no se envió correctamente"
+  },
+  "issues": {
+    "vehicle_removed": {
+      "title": "El vehículo {vin} se eliminó de tu cuenta",
+      "description": "Home Assistant ya no puede acceder al vehículo `{vin}` a través de la API de Stellantis, y ya no aparece en tu cuenta de Stellantis. Esto normalmente significa que el vehículo ya no está disponible o se ha retirado de tu cuenta."
+    }
   },
   "selector": {
     "reconfigure": {
