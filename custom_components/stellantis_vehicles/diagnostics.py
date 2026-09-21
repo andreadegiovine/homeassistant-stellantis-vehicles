@@ -85,7 +85,6 @@ async def async_get_config_entry_diagnostics(
             "token_expires_at": mqtt_config.get("expires_in"),
             "refresh_token_expires_at": mqtt_config.get("refresh_token_expires_at"),
             "refresh_scheduled": stellantis._mqtt_token_scheduled is not None,  # noqa: SLF001
-            "request_pending_reconnect": stellantis._mqtt_last_request is not None,  # noqa: SLF001
         },
         "vehicles": [
             _coordinator_diagnostics(coordinator)

@@ -484,7 +484,6 @@ class StellantisVehicles(StellantisOauth):
         self._vehicles = []
         self._mqtt = None
         self._mqtt_lock = asyncio.Lock()
-        self._mqtt_last_request = None
 
         self._oauth_token_scheduled = None
         self._mqtt_token_scheduled = None
@@ -1056,16 +1055,22 @@ class StellantisVehicles(StellantisOauth):
                     if result_code == "400":
                         if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
                             result_code = "not_compatible"
-                        elif self._mqtt_last_request:
-                            _LOGGER.debug("The mqtt token seems invalid, refresh the token and try sending the request again")
-                            last_request = self._mqtt_last_request
-                            self._mqtt_last_request = None
-                            # wait=False: don't block the paho network thread while the
-                            # retry forces a token refresh; the result comes back as a
-                            # fresh MQTT response and send_mqtt_message logs its own errors
-                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, False, data["correlation_id"]), wait=False)
-                            return
                         else:
+                            # Look up this specific command's own service/message from
+                            # coordinator._commands_history instead of an account-wide
+                            # "last request sent" - with several vehicles, that could
+                            # otherwise resend a different vehicle's command here.
+                            pending_command = coordinator._commands_history.get(data["correlation_id"])
+                            service = pending_command.get("service") if pending_command else None
+                            message = pending_command.get("message") if pending_command else None
+                            if service and message and not pending_command.get("retried"):
+                                _LOGGER.debug("The mqtt token seems invalid, refresh the token and try sending the request again")
+                                pending_command["retried"] = True
+                                # wait=False: don't block the paho network thread while the
+                                # retry forces a token refresh; the result comes back as a
+                                # fresh MQTT response and send_mqtt_message logs its own errors
+                                self.do_async(self.send_mqtt_message(service, message, coordinator._vehicle, force_token_refresh=True, action_id=data["correlation_id"]), wait=False)
+                                return
                             _LOGGER.warning("Last request was sent twice without success")
                             result_code = "failed"
                     if result_code == "113":  # Error: vin (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
@@ -1095,10 +1100,10 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.exception("Error while handling MQTT message")
 
     @log_call
-    async def send_mqtt_message(self, service, message, vehicle, store=True, action_id=None):
+    async def send_mqtt_message(self, service, message, vehicle, force_token_refresh=False, action_id=None):
         # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
         try:
-            await self.scheduled_mqtt_token_refresh(force=(store == False))
+            await self.scheduled_mqtt_token_refresh(force=force_token_refresh)
 
             # Ensure that the MQTT client is connected
             if self._mqtt is None or not self._mqtt.is_connected():
@@ -1125,8 +1130,6 @@ class StellantisVehicles(StellantisOauth):
             if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
                 _LOGGER.warning("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
                 action_id = None
-            if store:
-                self._mqtt_last_request = [service, message]
             return action_id
         except ConfigEntryAuthFailed:
             self.disable_remote_commands()
