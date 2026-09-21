@@ -20,7 +20,7 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, SENSITIVE_DATA_FILTER )
 
 from .const import (
     DOMAIN,
@@ -34,6 +34,11 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+# Attached once, at import: the coordinator used to addFilter() a fresh
+# instance on every init (one per vehicle, on every setup and reload), and
+# nothing ever removed the old one, so filters stacked on this logger
+# (issue #414, PR #593).
+_LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations, config_entry) -> None:
@@ -54,9 +59,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._privacy_full_logged = False
         self._empty_status_count = 0
         self._vehicle_removed = False
-
-        if self._stellantis.logger_filter:
-            _LOGGER.addFilter(self._stellantis.logger_filter)
+        # Set once the maintenance endpoint has returned an empty result, so it
+        # is not polled again for the lifetime of this coordinator (issue #623:
+        # some vehicles 404 on every request and flooded the logs).
+        self._maintenance_unsupported = False
 
     @log_call
     async def _async_update_data(self) -> dict[str, Any] | None:
@@ -96,12 +102,16 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
             if new_data:
-                maintenance = await self._stellantis.get_vehicle_maintenance(self._vehicle)
-                new_data["maintenance"] = {
-                    "mileageBeforeMaintenance": maintenance.get("mileageBeforeMaintenance"),
-                    "daysBeforeMaintenance": maintenance.get("daysBeforeMaintenance"),
-                    "updatedAt": maintenance.get("updatedAt")
-                }
+                maintenance = {} if self._maintenance_unsupported else await self._stellantis.get_vehicle_maintenance(self._vehicle)
+                if maintenance:
+                    new_data["maintenance"] = {
+                        "mileageBeforeMaintenance": maintenance.get("mileageBeforeMaintenance"),
+                        "daysBeforeMaintenance": maintenance.get("daysBeforeMaintenance"),
+                        "updatedAt": maintenance.get("updatedAt")
+                    }
+                elif not self._maintenance_unsupported:
+                    _LOGGER.debug("Vehicle maintenance data not found - disabling further maintenance polling")
+                    self._maintenance_unsupported = True
             return new_data
         except ConfigEntryAuthFailed:
             raise
@@ -337,6 +347,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                     occurence = program.get("occurence")
                     if occurence and occurence.get("day") and program.get("start"):
                         date = time_from_pt_string(program["start"])
+                        if date is None:
+                            continue
                         config = {
                             "day": [
                                 int("Mon" in occurence["day"]),
@@ -664,7 +676,11 @@ class StellantisBaseEntity(CoordinatorEntity):
 
         if key == 'battery':
             value = int(value)
-            autonomy = self._coordinator._sensors.get("autonomy")
+            # Read the autonomy from the current payload rather than from the
+            # retained sensor cache: the cache keeps the previous value when the
+            # field is absent (sleeping car), so a stale 0 would zero a fresh
+            # battery level and freeze the sensor.
+            autonomy = self.get_value_from_map(["energies", {"type": "Electric"}, "autonomy"])
             if value > 90 and autonomy is not None and autonomy == 0:
                 # https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/pull/476
                 value = 0

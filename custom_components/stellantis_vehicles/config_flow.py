@@ -59,9 +59,10 @@ def OAUTH_REMOTE_SCHEMA(default_oauth_code_url=None):
         vol.Optional(FIELD_OAUTH_CODE_URL, default=default_oauth_code_url or OAUTH_CODE_URL): str
     })
 
-OTP_CONFIGURE_SCHEMA = vol.Schema({
-    vol.Required(FIELD_REMOTE_COMMANDS, default=False): bool
-})
+def OTP_CONFIGURE_SCHEMA(default_remote_commands=False):
+    return vol.Schema({
+        vol.Required(FIELD_REMOTE_COMMANDS, default=default_remote_commands): bool
+    })
 
 OTP_SCHEMA = vol.Schema({
     vol.Required(FIELD_SMS_CODE): str,
@@ -196,7 +197,12 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             }}
             self.data.update(oauth)
             self.stellantis.save_config(oauth)
-            return self.async_show_form(step_id="get_access_token", data_schema=OTP_CONFIGURE_SCHEMA)
+            # Default to the account's current setting (e.g. on reauth/reconfigure)
+            # instead of always showing the box unchecked, which would otherwise
+            # silently turn remote commands off for an account that already has
+            # them enabled if the form is submitted as-is.
+            default_remote_commands = self.data.get(FIELD_REMOTE_COMMANDS, False)
+            return self.async_show_form(step_id="get_access_token", data_schema=OTP_CONFIGURE_SCHEMA(default_remote_commands))
 
         self.data.update({FIELD_REMOTE_COMMANDS: user_input[FIELD_REMOTE_COMMANDS]})
         self.stellantis.save_config({FIELD_REMOTE_COMMANDS: self.data[FIELD_REMOTE_COMMANDS]})
@@ -206,7 +212,12 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         elif self.data[FIELD_REMOTE_COMMANDS]:
             return await self.async_step_otp()
         else:
-            self.data.update({"customer_id": "MN-" + str(uuid4()).replace("-", "")[:16]})
+            # Only fabricate a synthetic id on first setup - reauth already
+            # carried the account's existing one (real or synthetic) into
+            # self.data, and generating a new one here would needlessly orphan
+            # the vehicle image cache on every reauth.
+            if "customer_id" not in self.data:
+                self.data.update({"customer_id": "MN-" + str(uuid4()).replace("-", "")[:16]})
             return await self.async_step_options()
 
 
@@ -319,6 +330,14 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP], FIELD_COUNTRY_CODE: entry_data[FIELD_COUNTRY_CODE]})
         if FIELD_OAUTH_CODE_URL in entry_data:
             self.data.update({FIELD_OAUTH_CODE_URL: entry_data[FIELD_OAUTH_CODE_URL]})
+        # Carried over so a plain reauth (just refreshing the OAuth token) can't
+        # silently disable remote commands or replace the account's real
+        # customer_id with a freshly generated one - both get merged back onto
+        # the entry in async_step_final via data_updates.
+        if FIELD_REMOTE_COMMANDS in entry_data:
+            self.data.update({FIELD_REMOTE_COMMANDS: entry_data[FIELD_REMOTE_COMMANDS]})
+        if "customer_id" in entry_data:
+            self.data.update({"customer_id": entry_data["customer_id"]})
         return await self.async_step_reauth_confirm()
 
 

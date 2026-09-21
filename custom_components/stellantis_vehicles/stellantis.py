@@ -12,8 +12,10 @@ import asyncio
 from datetime import ( datetime, timedelta )
 import socket
 import random
+from typing import Any
 
 from homeassistant.core import ( HomeAssistant, HassJob)
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components import persistent_notification
@@ -27,7 +29,7 @@ from homeassistant.util.ssl import client_context
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit, SensitiveDataFilter, replace_string_placeholders, log_call )
+from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call )
 from .exceptions import ( CommunicationError, RateLimitException )
 
 from .const import (
@@ -66,11 +68,16 @@ from .const import (
     ABRP_URL,
     ABRP_API_KEY,
     TRANSLATION_PLACEHOLDERS,
-    CAR_API_GET_VEHICLE_MAINTENANCE_URL,
-    MQTT_TOKEN_RETRY_BACKOFF
+    MQTT_TOKEN_RETRY_BACKOFF,
+    OAUTH_TOKEN_RETRY_BACKOFF
 )
 
 _LOGGER = logging.getLogger(__name__)
+# Attached once, at import: StellantisBase.__init__ used to build and
+# addFilter() a fresh instance on every instantiation (every config-flow
+# attempt, every reload), and nothing ever removed the old one, so filters
+# stacked on this logger (issue #414, PR #593).
+_LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
 
 def _log_http_exchange(url, headers, response, **extra):
@@ -134,8 +141,8 @@ class StellantisBase:
         self._shutting_down = False
         self._pending_tasks: set[asyncio.Task] = set()
 
-        self.logger_filter = SensitiveDataFilter()
-        _LOGGER.addFilter(self.logger_filter)
+        # Shared instance, already attached to the module loggers at import time.
+        self.logger_filter = SENSITIVE_DATA_FILTER
 
     def start_session(self):
         if not self._session:
@@ -158,13 +165,22 @@ class StellantisBase:
                 "culture": country_code.lower()
             })
 
-    def save_config(self, data):
+    def save_config(self, data:dict[str, Any]) -> None:
         for key in data:
             self._config[key] = data[key]
             if key == FIELD_MOBILE_APP and FIELD_COUNTRY_CODE in self._config:
                 self.set_mobile_app(data[key], self._config[FIELD_COUNTRY_CODE])
             elif key == FIELD_COUNTRY_CODE and FIELD_MOBILE_APP in self._config:
                 self.set_mobile_app(self._config[FIELD_MOBILE_APP], data[key])
+        # save_config() is the single choke point through which oauth / mqtt
+        # token rotations and per-vehicle settings reach self._config. Refresh
+        # the log filter's snapshot for this entry here, so it always masks the
+        # current tokens - the token-refresh code no longer has to register each
+        # rotated value by hand, which used to grow the filter without bound
+        # (issue #414). No-op until set_entry() has run (config-flow phase).
+        entry = getattr(self, "_entry", None)
+        if entry is not None:
+            self.logger_filter.set_entry_values(entry.entry_id, self._config)
 
     def get_config(self, key):
         if key in self._config:
@@ -467,15 +483,17 @@ class StellantisVehicles(StellantisOauth):
         self._coordinator_dict = {}
         self._vehicles = []
         self._mqtt = None
+        self._mqtt_lock = asyncio.Lock()
         self._mqtt_last_request = None
 
         self._oauth_token_scheduled = None
         self._mqtt_token_scheduled = None
         self._mqtt_token_retry = 0
+        self._oauth_token_retry = 0
 
-    def set_entry(self, entry):
+    def set_entry(self, entry:ConfigEntry) -> None:
         self._entry = entry
-        self.logger_filter.add_entry_values(self._config)
+        self.logger_filter.set_entry_values(entry.entry_id, self._config)
 
     def update_stored_config(self, config, value):
         data = self._entry.data
@@ -500,7 +518,8 @@ class StellantisVehicles(StellantisOauth):
         vehicles = deepcopy(self.get_vehicles_stored_config())
         vehicles.setdefault(vin, {})[key] = value
         self.update_stored_config("vehicles", vehicles)
-        self._config["vehicles"] = deepcopy(vehicles)
+        # Through save_config() so the log filter's snapshot picks up the VIN.
+        self.save_config({"vehicles": deepcopy(vehicles)})
 
     def get_vehicle_stored_config(self, vin, key):
         vehicle = self.get_vehicles_stored_config().get(vin)
@@ -516,7 +535,8 @@ class StellantisVehicles(StellantisOauth):
             return []
         new_vehicles = {vin: deepcopy(value) for vin, value in vehicles.items() if vin not in stale}
         self.update_stored_config("vehicles", new_vehicles)
-        self._config["vehicles"] = deepcopy(new_vehicles)
+        # Through save_config() so the log filter's snapshot drops the stale VINs.
+        self.save_config({"vehicles": deepcopy(new_vehicles)})
         _LOGGER.info("Removed stored config for vehicles no longer on the account: %s", ", ".join(stale))
         return stale
 
@@ -583,9 +603,9 @@ class StellantisVehicles(StellantisOauth):
     async def async_shutdown(self) -> None:
         """Tear down everything created for this config entry.
 
-        Called from async_unload_entry so a reload does not leak the paho-mqtt
-        network thread, the delayed do_async reconnect tasks, the scheduled
-        token-refresh callbacks or the aiohttp session.
+        Called from async_unload_entry on a normal unload or reload, and from
+        the setup-failure paths in async_setup_entry (Home Assistant does not
+        call async_unload_entry when async_setup_entry raises).
         """
         self._shutting_down = True
 
@@ -598,17 +618,19 @@ class StellantisVehicles(StellantisOauth):
             task.cancel()
         self._pending_tasks.clear()
 
-        # Tear down the MQTT client and join its network thread.
-        if self._mqtt is not None:
-            mqtt_client, self._mqtt = self._mqtt, None
-            # Drop the reconnect / token-refresh callback so the deliberate
-            # disconnect below does not trigger a fresh reconnect attempt.
-            mqtt_client.on_disconnect = None
-            mqtt_client.disconnect()
-            await self._hass.async_add_executor_job(mqtt_client.loop_stop)
+        # Tear down the MQTT client and join its network thread. Guarded by the
+        # same lock as connect_mqtt() so we never race a connect in flight.
+        async with self._mqtt_lock:
+            await self._disconnect_mqtt_locked()
 
         # Close the shared aiohttp session.
         await self.close_session()
+
+        # Now that the paho thread is joined and nothing can still log for this
+        # entry, drop its values from the shared log filter so the compiled mask
+        # pattern shrinks back. No-op if set_entry() never ran.
+        if self._entry is not None:
+            self.logger_filter.remove_entry_values(self._entry.entry_id)
 
     async def scheduled_tokens_refresh(self):
         self.reset_scheduled_tokens()
@@ -626,32 +648,65 @@ class StellantisVehicles(StellantisOauth):
                 await self.refresh_oauth_token_request()
             elif get_datetime() > get_next_run():
                 await self.refresh_oauth_token_request()
+            self._oauth_token_retry = 0
             next_run = get_next_run()
-        except CommunicationError:
-            next_run = get_datetime() + timedelta(minutes=5)
+        except CommunicationError as err:
+            self._oauth_token_retry += 1
+            idx = min(self._oauth_token_retry - 1, len(OAUTH_TOKEN_RETRY_BACKOFF) - 1)
+            delay = OAUTH_TOKEN_RETRY_BACKOFF[idx]
+            delay += random.uniform(0, delay * 0.1)
+            next_run = get_datetime() + timedelta(seconds=delay)
+            _LOGGER.warning(
+                "OAuth token refresh failed (attempt %s), next retry at %s: %s",
+                self._oauth_token_retry, next_run, err,
+            )
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
             next_run = get_datetime() + timedelta(minutes=30)
+        except ConfigEntryAuthFailed as err:
+            # The refresh token was rejected by the server: start the reauth
+            # flow now instead of waiting for a later poll to trip over it, and
+            # keep the timer alive with a slow retry in case it was transient.
+            _LOGGER.error("OAuth refresh token rejected, starting the reauth flow: %s", err)
+            try:
+                if self._entry is not None:
+                    self._entry.async_start_reauth(self._hass)
+            except Exception:
+                _LOGGER.exception("Could not start the reauth flow")
+            next_run = get_datetime() + timedelta(minutes=30)
+        except Exception:
+            # reset_scheduled_oauth_token() already cleared the timer above and
+            # it is only re-armed below: any exception escaping here would end
+            # the refresh chain until a restart. Retries stay bounded by
+            # @rate_limit(6, 1800) on refresh_oauth_token_request.
+            _LOGGER.exception("Unexpected error during the OAuth token refresh, retrying in 5 minutes")
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug("Next oauth token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_oauth_token_refresh, f"{DOMAIN} refresh oauth token: {next_run}", cancel_on_shutdown=True)
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
 
     @log_call
     @rate_limit(6, 1800) # 6 per 30 min
-    async def refresh_oauth_token_request(self):
+    async def refresh_oauth_token_request(self) -> None:
+        # save_config() below rotates this out of the masked set before it
+        # appears in the exchange log's request URL - register it separately.
+        self.logger_filter.add_custom_value((self.get_config("oauth") or {}).get("refresh_token"))
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
         headers = self.apply_dict_params(OAUTH_TOKEN_HEADERS)
         token_request = await self.make_http_request(url, 'POST', headers)
-        self.logger_filter.add_custom_value(token_request["access_token"])
-        self.logger_filter.add_custom_value(token_request["refresh_token"])
-        _log_http_exchange(url, headers, token_request)
         new_config = {
             "access_token": token_request["access_token"],
             "refresh_token": token_request["refresh_token"],
             "expires_in": (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
         }
+        # Persist first (save_config refreshes the log filter's masked values),
+        # then log the raw response - so the freshly issued tokens are masked in
+        # the line below instead of being registered by hand every rotation.
         self.save_config({"oauth": new_config})
         self.update_stored_config("oauth", new_config)
+        if "id_token" in token_request:
+            self.logger_filter.add_custom_value(token_request["id_token"])
+        _log_http_exchange(url, headers, token_request)
 
     @log_call
     async def get_user_vehicles(self, force=False):
@@ -670,9 +725,20 @@ class StellantisVehicles(StellantisOauth):
                 raise CommunicationError("Empty or invalid response from the vehicles endpoint")
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
+                    account_ids = set()
                     for vehicle in vehicles_request["_embedded"]["vehicles"]:
-                        self.logger_filter.add_custom_value(vehicle["vin"])
-                        self.logger_filter.add_custom_value(vehicle["id"])
+                        account_ids.add(vehicle["vin"])
+                        account_ids.add(vehicle["id"])
+                    # Register the account's VINs / ids for the entry's lifetime
+                    # so they stay masked even for a vehicle with no stored
+                    # per-vehicle config. During the config flow there is no
+                    # entry yet, so fall back to the bounded FIFO.
+                    entry = getattr(self, "_entry", None)
+                    if entry is not None:
+                        self.logger_filter.set_entry_extra_values(entry.entry_id, account_ids)
+                    else:
+                        for value in account_ids:
+                            self.logger_filter.add_custom_value(value)
             _log_http_exchange(url, headers, vehicles_request)
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
@@ -681,7 +747,8 @@ class StellantisVehicles(StellantisOauth):
                             "vehicle_id": vehicle["id"],
                             "vin": vehicle["vin"],
                             "type": vehicle["motorization"],
-                            "brand": vehicle.get("brand")
+                            "brand": vehicle.get("brand"),
+                            "links": vehicle.get("_links", {})
                         }
                         try:
                             picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
@@ -734,27 +801,37 @@ class StellantisVehicles(StellantisOauth):
         return vehicle_trips_request
 
     @log_call
+    async def get_vehicle_trips(self, vehicle, since=None, page_token=None):
+        """Get one page of historical trips from Stellantis."""
+        url = self.apply_query_params(
+            CAR_API_GET_VEHICLE_TRIPS_URL,
+            CLIENT_ID_QUERY_PARAMS,
+            vehicle,
+        )
+        headers = self.apply_dict_params(CAR_API_HEADERS)
+        url += "&distance=0.1-"
+        if since is not None:
+            if isinstance(since, datetime):
+                since = since.isoformat(timespec="seconds")
+            url += "&timestamps=" + str(since) + "/"
+        if page_token is not None:
+            url += "&pageToken=" + str(page_token)
+        vehicle_trips_request = await self.make_http_request(url, "GET", headers)
+        _log_http_exchange(url, headers, vehicle_trips_request)
+        return vehicle_trips_request
+
+    @log_call
     async def get_vehicle_maintenance(self, vehicle):
         """ Fetch upcoming maintenance data (mileage/days remaining) for the vehicle. """
-        url = self.apply_query_params(CAR_API_GET_VEHICLE_MAINTENANCE_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
+        maintenance_href = vehicle.get("links", {}).get("maintenance", {}).get("href") if vehicle else None
+        if maintenance_href is None:
+            _LOGGER.debug("Vehicle maintenance link not found")
+            return {}
+        url = self.apply_query_params(maintenance_href, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
         vehicle_maintenance_request = await self.make_http_request(url, 'GET', headers)
         _log_http_exchange(url, headers, vehicle_maintenance_request)
         return vehicle_maintenance_request
-
-#     async def get_vehicle_trips(self, page_token=False):
-#         _LOGGER.debug("---------- START get_vehicle_trips")
-#         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS)
-#         headers = self.apply_dict_params(CAR_API_HEADERS)
-#         url = url + "&distance=0.1-"
-#         if page_token:
-#             url = url + "&pageToken=" + page_token
-#         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
-#         _LOGGER.debug(url)
-#         _LOGGER.debug(headers)
-#         _LOGGER.debug(vehicle_trips_request)
-#         _LOGGER.debug("---------- END get_vehicle_trips")
-#         return vehicle_trips_request
 
     @log_call
     async def scheduled_mqtt_token_refresh(self, now=None, force=False):
@@ -790,12 +867,30 @@ class StellantisVehicles(StellantisOauth):
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             return
+        except ConfigEntryAuthFailed as err:
+            # OTP material missing or rejected (get_otp_code, the OTP token
+            # request): nothing to retry, the entry has to be reconfigured.
+            self._mqtt_token_retry = 0
+            self.disable_remote_commands()
+            await self.hass_notify("reconfigure_otp")
+            _LOGGER.error("MQTT authentication failed, starting the reauth flow: %s", err)
+            try:
+                if self._entry is not None:
+                    self._entry.async_start_reauth(self._hass)
+            except Exception:
+                _LOGGER.exception("Could not start the reauth flow")
+            return
+        except Exception:
+            # Same shape as scheduled_oauth_token_refresh: the timer was cleared
+            # inside the try and is only re-armed below.
+            _LOGGER.exception("Unexpected error during the MQTT token refresh, retrying in 5 minutes")
+            next_run = get_datetime() + timedelta(minutes=5)
         _LOGGER.debug("Next mqtt token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_mqtt_token_refresh, f"{DOMAIN} refresh mqtt token: {next_run}", cancel_on_shutdown=True)
         self._mqtt_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
 
     @log_call
-    async def refresh_mqtt_token_request(self, access_token_only=False):
+    async def refresh_mqtt_token_request(self, access_token_only:bool = False) -> None:
         url = self.apply_query_params(GET_MQTT_TOKEN_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_dict_params(GET_OTP_HEADERS)
         mqtt_config = self.get_config("mqtt")
@@ -805,34 +900,60 @@ class StellantisVehicles(StellantisOauth):
             try:
                 token_request = await self.make_http_request(url, 'POST', headers, None, {"grant_type": "password", "password": otp_code})
             except ConfigEntryAuthFailed:
-                _LOGGER.warning("Attempt to refresh MQTT access_token/refresh_token failed. This is NOT an error as long as the following attempt to refresh only the access_token (using current refresh_token) succeeds.")
-                return await self.refresh_mqtt_token_request(True)
+                _LOGGER.warning("Attempt to refresh MQTT access_token/refresh_token failed. This is NOT an error as long as the following attempt to refresh only the access_token (using current refresh_token) succeeds")
+                return await self.refresh_mqtt_token_request(access_token_only=True)
         else:
             json_data = self.apply_dict_params(MQTT_REFRESH_TOKEN_JSON_DATA)
             token_request = await self.make_http_request(url, 'POST', headers, None, json_data)
-        if "access_token" in token_request:
-            self.logger_filter.add_custom_value(token_request["access_token"])
-        if "refresh_token" in token_request:
-            self.logger_filter.add_custom_value(token_request["refresh_token"])
-        _log_http_exchange(url, headers, token_request)
-        if not "access_token" in token_request:
+        if "access_token" not in token_request:
             _LOGGER.warning("Refreshing mqtt access_token failed (no access_token in response)")
+            # An error body should not carry a valid rotating secret, but mask a
+            # refresh_token if one is present before logging the exchange.
+            if isinstance(token_request, dict) and token_request.get("refresh_token"):
+                self.logger_filter.add_custom_value(token_request["refresh_token"])
+            _log_http_exchange(url, headers, token_request)
             return None
         mqtt_config["access_token"] = token_request["access_token"]
         mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
         if "refresh_token" in token_request:
             mqtt_config["refresh_token"] = token_request["refresh_token"]
             mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
+        # Persist first (save_config refreshes the log filter's masked values),
+        # then log the raw response - see refresh_oauth_token_request().
         self.save_config({"mqtt": mqtt_config})
         self.update_stored_config("mqtt", mqtt_config)
+        _log_http_exchange(url, headers, token_request)
 
     @log_call
     async def connect_mqtt(self):
-        if self._shutting_down:
-            # A coordinator refresh still in flight during unload must not
-            # recreate the MQTT client async_shutdown just tore down.
-            return False
-        if self._mqtt is None:
+        """Connect the MQTT client, reusing an already-connected one if possible."""
+        return await self._connect_mqtt(force=False)
+
+    @log_call
+    async def reconnect_mqtt(self):
+        """Force a full MQTT reconnect, even if the client currently looks connected."""
+        return await self._connect_mqtt(force=True)
+
+    async def _connect_mqtt(self, force: bool):
+        # Serialize against concurrent connect_mqtt()/reconnect_mqtt() calls
+        # (e.g. several vehicle coordinators noticing a dropped connection at
+        # once) and against async_shutdown(), so nobody operates on a client
+        # another task just tore down or replaced.
+        async with self._mqtt_lock:
+            if self._shutting_down:
+                # A coordinator refresh still in flight during unload must not
+                # recreate the MQTT client async_shutdown just tore down.
+                return False
+
+            if not force and self._mqtt is not None and self._mqtt.is_connected():
+                # A concurrent caller (e.g. another vehicle coordinator) already
+                # reconnected while we were waiting for the lock; tearing this
+                # client down again would kill a connection that never got a
+                # chance to settle and receive anything.
+                return True
+
+            await self._disconnect_mqtt_locked()
+
             self._mqtt = MqttClientMod(clean_session=True, protocol=mqtt.MQTTv311)
             # self._mqtt.enable_logger(logger=_LOGGER)
             # Reuse Home Assistant's shared, pre-built client SSL context instead
@@ -845,18 +966,31 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.on_disconnect = self._on_mqtt_disconnect
             self._mqtt.on_message = self._on_mqtt_message
             self._mqtt.on_subscribe = self._on_mqtt_subscribe
-        if self._mqtt.is_connected():
-            self._mqtt.disconnect()
-        self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
-        try:
-            # paho's connect() does blocking DNS + TCP + TLS handshake, so run it in the executor to keep the event loop responsive.
-            await self._hass.async_add_executor_job(
-                self._mqtt.connect, MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S
-            )
-            self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
-        except Exception as e:
-            _LOGGER.warning("Failed to connect to the MQTT broker: %s", e)
-        return self._mqtt.is_connected()
+
+            self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
+            try:
+                # paho's connect() does blocking DNS + TCP + TLS handshake, so run it in the executor to keep the event loop responsive.
+                await self._hass.async_add_executor_job(
+                    self._mqtt.connect, MQTT_SERVER, MQTT_PORT, MQTT_KEEP_ALIVE_S
+                )
+                self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
+            except Exception as e:
+                _LOGGER.warning("Failed to connect to the MQTT broker: %s", e)
+            return self._mqtt.is_connected()
+
+    async def _disconnect_mqtt_locked(self) -> None:
+        """Tear down the current MQTT client and join its network thread.
+
+        Caller must hold self._mqtt_lock. No-op if there is no client.
+        """
+        if self._mqtt is None:
+            return
+        mqtt_client, self._mqtt = self._mqtt, None
+        # Drop the callback so this deliberate disconnect does not trigger a
+        # fresh reconnect / token-refresh attempt.
+        mqtt_client.on_disconnect = None
+        mqtt_client.disconnect()
+        await self._hass.async_add_executor_job(mqtt_client.loop_stop)
 
     @log_call
     def _on_mqtt_connect(self, client, userdata, result_code, _):
@@ -887,8 +1021,11 @@ class StellantisVehicles(StellantisOauth):
                 _LOGGER.warning("Subscription failed, will try to reconnect MQTT in 300 seconds")
                 # wait=False: this callback runs on the paho-mqtt network thread, so
                 # blocking it for 300s here would stall the loop (pings, reconnects,
-                # other callbacks)
-                self.do_async(self.connect_mqtt(), 300, wait=False)
+                # other callbacks). reconnect_mqtt(): the transport can still look
+                # connected even though the broker refused this subscription, so
+                # connect_mqtt()'s "already connected, nothing to do" shortcut
+                # must not apply here.
+                self.do_async(self.reconnect_mqtt(), 300, wait=False)
             else:
                 _LOGGER.debug("MQTT subscription completed (QoS: %s)", granted_qos)
         except Exception:
@@ -962,6 +1099,14 @@ class StellantisVehicles(StellantisOauth):
         # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
         try:
             await self.scheduled_mqtt_token_refresh(force=(store == False))
+
+            # Ensure that the MQTT client is connected
+            if self._mqtt is None or not self._mqtt.is_connected():
+                _LOGGER.debug("MQTT client is not connected, try to connect it")
+                await self.connect_mqtt()
+            if self._mqtt is None or not self._mqtt.is_connected():
+                raise CommunicationError("MQTT client is not connected, cannot send command")
+
             customer_id = self.get_config("customer_id")
             topic = MQTT_REQ_TOPIC + customer_id + service
             date = get_datetime()
@@ -988,6 +1133,9 @@ class StellantisVehicles(StellantisOauth):
             await self.hass_notify("reconfigure_otp")
             _LOGGER.error("MQTT authentication error. To enable remote commands again please reconfigure the integration")
             # Re-raise so the caller can trigger Home Assistant's reauth flow.
+            raise
+        except CommunicationError:
+            _LOGGER.warning("Could not send MQTT message for %s: MQTT client is not connected", service)
             raise
         except Exception:
             _LOGGER.exception("Unexpected error during MQTT message sending")

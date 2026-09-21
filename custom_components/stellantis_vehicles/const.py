@@ -40,7 +40,6 @@ CAR_API_BASE_URL = API_BASE_URL + "/connectedcar/v4/user"
 CAR_API_VEHICLES_URL = CAR_API_BASE_URL + "/vehicles"
 CAR_API_GET_VEHICLE_STATUS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/status"
 CAR_API_GET_VEHICLE_TRIPS_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/trips"
-CAR_API_GET_VEHICLE_MAINTENANCE_URL = CAR_API_VEHICLES_URL + "/{#vehicle_id#}/maintenance"
 
 MQTT_SERVER = "mwa.mpsa.com"
 MQTT_PORT = 8885
@@ -140,6 +139,10 @@ COMMAND_HISTORY_LIMIT = 50
 # Stellantis backend failure. Capped at the last step so a prolonged outage is
 # retried every ~15 min instead of once a minute.
 MQTT_TOKEN_RETRY_BACKOFF = (60, 120, 300, 600, 900)
+
+# Same schedule for the OAuth token refresh: retried on a capped backoff after a
+# transient failure instead of a flat 5-minute loop, and logged at WARNING.
+OAUTH_TOKEN_RETRY_BACKOFF = (60, 120, 300, 600, 900)
 
 VEHICLE_TYPE_ELECTRIC = "Electric"
 VEHICLE_TYPE_HYBRID = "Hybrid"

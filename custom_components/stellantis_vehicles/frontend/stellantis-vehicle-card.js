@@ -290,6 +290,7 @@ class StellantisVehicleCard extends LitElement {
             "sensor_battery",
             "binary_sensor_battery_plugged",
             "binary_sensor_battery_charging",
+            "binary_sensor_battery_charging_limit",
             "sensor_battery_health_resistance",
             "sensor_battery_health_capacity"
         ];
@@ -365,7 +366,9 @@ class StellantisVehicleCard extends LitElement {
             "button_preconditioning_start",
             "button_preconditioning_stop",
             "button_charge_start",
-            "button_charge_stop"
+            "button_charge_stop",
+            "button_charge_limit_on",
+            "button_charge_limit_off"
         ];
         if (this._config[SELECTOR_KEY_COMMANDS] && this._config[SELECTOR_KEY_COMMANDS].length > 0) {
             defaults = false;
