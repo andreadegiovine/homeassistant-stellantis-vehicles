@@ -313,7 +313,15 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA)
 
         await self.init_translations()
-        self.stellantis = self._get_reconfigure_entry().runtime_data
+        # ConfigEntry.runtime_data is only a type annotation, not a real
+        # attribute with a default: HA deletes it on unload and never sets it
+        # before the first successful setup, so a plain `.runtime_data` here
+        # can raise AttributeError instead of just being None.
+        self.stellantis = getattr(self._get_reconfigure_entry(), "runtime_data", None)
+        if self.stellantis is None:
+            # Setup failed and is being retried (e.g. a Stellantis backend
+            # outage), so there is nothing to reconfigure yet.
+            return self.async_abort(reason=self.get_error_message("not_loaded"))
         self.data = dict(self.stellantis._entry.data)
 
         if user_input[FIELD_RECONFIGURE] == FIELD_REMOTE_COMMANDS:
