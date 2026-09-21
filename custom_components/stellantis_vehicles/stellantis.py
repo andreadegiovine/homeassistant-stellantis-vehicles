@@ -68,7 +68,6 @@ from .const import (
     ABRP_URL,
     ABRP_API_KEY,
     TRANSLATION_PLACEHOLDERS,
-    CAR_API_GET_VEHICLE_MAINTENANCE_URL,
     MQTT_TOKEN_RETRY_BACKOFF,
     OAUTH_TOKEN_RETRY_BACKOFF
 )
@@ -748,7 +747,8 @@ class StellantisVehicles(StellantisOauth):
                             "vehicle_id": vehicle["id"],
                             "vin": vehicle["vin"],
                             "type": vehicle["motorization"],
-                            "brand": vehicle.get("brand")
+                            "brand": vehicle.get("brand"),
+                            "links": vehicle.get("_links", {})
                         }
                         try:
                             picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
@@ -823,7 +823,11 @@ class StellantisVehicles(StellantisOauth):
     @log_call
     async def get_vehicle_maintenance(self, vehicle):
         """ Fetch upcoming maintenance data (mileage/days remaining) for the vehicle. """
-        url = self.apply_query_params(CAR_API_GET_VEHICLE_MAINTENANCE_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
+        maintenance_href = vehicle.get("links", {}).get("maintenance", {}).get("href") if vehicle else None
+        if maintenance_href is None:
+            _LOGGER.debug("Vehicle maintenance link not found")
+            return {}
+        url = self.apply_query_params(maintenance_href, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
         vehicle_maintenance_request = await self.make_http_request(url, 'GET', headers)
         _log_http_exchange(url, headers, vehicle_maintenance_request)
