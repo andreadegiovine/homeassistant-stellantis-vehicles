@@ -315,6 +315,9 @@
       "remote_commands": {
         "name": "Remote commands"
       },
+      "command_pending": {
+        "name": "Command pending"
+      },
       "daylight": {
         "name": "Daylight"
       }

@@ -310,6 +310,9 @@
       "remote_commands": {
         "name": "Fahrzeug aus der Entfernung bedienen"
       },
+      "command_pending": {
+        "name": "Befehl ausstehend"
+      },
       "daylight": {
         "name": "Tagesfahrlicht"
       }

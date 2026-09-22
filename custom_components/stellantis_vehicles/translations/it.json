@@ -314,6 +314,9 @@
       "remote_commands": {
         "name": "Comandi remoti"
       },
+      "command_pending": {
+        "name": "Comando in sospeso"
+      },
       "daylight": {
         "name": "Luce del giorno"
       }
