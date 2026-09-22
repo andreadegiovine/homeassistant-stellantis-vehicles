@@ -291,7 +291,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
             if action_id is not None:
-                self._commands_history.update({action_id: {"name": name, "updates": []}})
+                # service/message are kept so a 400 "invalid token" response for
+                # this action_id can be retried with its own payload instead of
+                # whatever command was sent last account-wide (see _on_mqtt_message).
+                self._commands_history.update({action_id: {"name": name, "updates": [], "service": service, "message": message, "retried": False}})
                 self._prune_command_history()
                 self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
