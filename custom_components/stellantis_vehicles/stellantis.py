@@ -315,13 +315,32 @@ class StellantisBase:
             _LOGGER.exception("Unexpected error during request to %s", url)
             raise
 
-    def do_async(self, async_func, delay=0, wait=True):
+    def do_async(self, async_func, delay=0, *, wait):
+        """Schedule a coroutine on self._hass.loop from any thread.
+
+        wait=True blocks for the result and is only safe from a thread
+        other than the one running self._hass.loop (e.g. paho-mqtt's
+        network thread) - called from that thread itself, this raises
+        instead of deadlocking Home Assistant. wait=False just schedules
+        the coroutine and returns None.
+        """
         if self._shutting_down:
             # The config entry is being unloaded - drop the coroutine instead of
             # scheduling work that would resurrect the MQTT client or hit an
             # already closed aiohttp session.
             async_func.close()
             return None
+
+        if wait:
+            try:
+                running_loop = asyncio.get_running_loop()
+            except RuntimeError:
+                running_loop = None
+            if running_loop is self._hass.loop:
+                async_func.close()
+                raise RuntimeError(
+                    "do_async(wait=True) called from the Home Assistant event loop thread - this would deadlock"
+                )
 
         async def delayed_execution():
             task = asyncio.current_task()
