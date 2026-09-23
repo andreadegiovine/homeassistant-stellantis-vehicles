@@ -93,12 +93,7 @@
         "name": "Temperatuur"
       },
       "mileage": {
-        "name": "Kilometerstand",
-        "state_attributes": {
-          "vehicle_reported_at": {
-            "name": "Laatst bijgewerkt"
-          }
-        }
+        "name": "Kilometerstand"
       },
       "speed": {
         "name": "Snelheid"

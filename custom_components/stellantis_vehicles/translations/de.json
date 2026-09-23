@@ -78,7 +78,12 @@
   "entity": {
     "sensor": {
       "service_battery_voltage": {
-        "name": "Service-Batterie"
+        "name": "Service-Batterie",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "type": {
         "name": "Typ",
@@ -90,39 +95,84 @@
         }
       },
       "temperature": {
-        "name": "Temperatur"
+        "name": "Temperatur",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "mileage": {
         "name": "Kilometer",
         "state_attributes": {
           "vehicle_reported_at": {
-            "name": "Zuletzt aktualisiert"
+            "name": "Vom Fahrzeug gemeldet"
           }
         }
       },
       "speed": {
-        "name": "Geschwindigkeit"
+        "name": "Geschwindigkeit",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "autonomy": {
-        "name": "Reichweite"
+        "name": "Reichweite",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "mileage_before_maintenance": {
-        "name": "Kilometer bis zur nächsten Wartung"
+        "name": "Kilometer bis zur nächsten Wartung",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "days_before_maintenance": {
-        "name": "Tage bis zur nächsten Wartung"
+        "name": "Tage bis zur nächsten Wartung",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery": {
-        "name": "Batterie"
+        "name": "Batterie",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery_health_resistance": {
-        "name": "Batterie-SOH (Widerstand)"
+        "name": "Batterie-SOH (Widerstand)",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery_health_capacity": {
-        "name": "Batterie-SOH (Kapazität)"
+        "name": "Batterie-SOH (Kapazität)",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery_charging_rate": {
-        "name": "Batterie Laderate"
+        "name": "Batterie Laderate",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery_charging_type": {
         "name": "Batterie Ladetyp",
@@ -130,16 +180,36 @@
           "no": "Kein Ladetyp",
           "slow": "Langsam",
           "quick": "Schnell"
+        },
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
         }
       },
       "battery_charging_end": {
-        "name": "Batterie Ladezeit-Ende"
+        "name": "Batterie Ladezeit-Ende",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery_capacity": {
-        "name": "Batteriekapazität"
+        "name": "Batteriekapazität",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery_residual": {
-        "name": "Batterierestwert"
+        "name": "Batterierestwert",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "command_status": {
         "name": "Befehlsstatus",
@@ -158,28 +228,68 @@
         }
       },
       "fuel": {
-        "name": "Füllstand im Tank"
+        "name": "Füllstand im Tank",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "fuel_autonomy": {
-        "name": "Mit dem Tank kommst du noch so weit"
+        "name": "Mit dem Tank kommst du noch so weit",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "fuel_consumption_total": {
-        "name": "Kraftstoffverbrauch insgesamt"
+        "name": "Kraftstoffverbrauch insgesamt",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "fuel_consumption_instant": {
-        "name": "Kraftstoffverbrauch momentan"
+        "name": "Kraftstoffverbrauch momentan",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "coolant_temperature": {
-        "name": "Kühlmitteltemperatur"
+        "name": "Kühlmitteltemperatur",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "oil_temperature": {
-        "name": "Öltemperatur"
+        "name": "Öltemperatur",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "air_temperature": {
-        "name": "Lufttemperatur"
+        "name": "Lufttemperatur",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "driving_behavior": {
-        "name": "Fahrverhalten"
+        "name": "Fahrverhalten",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "last_trip": {
         "name": "Letzte Fahrt",
@@ -263,55 +373,135 @@
     },
     "binary_sensor": {
       "moving": {
-        "name": "In Bewegung"
+        "name": "In Bewegung",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "doors": {
-        "name": "Türen"
+        "name": "Türen",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "door_trunk": {
-        "name": "Kofferraum"
+        "name": "Kofferraum",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "door_driver": {
-        "name": "Fahrertür"
+        "name": "Fahrertür",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "door_passenger": {
-        "name": "Beifahrertür"
+        "name": "Beifahrertür",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "door_rear_left": {
-        "name": "Hintere Tür links"
+        "name": "Hintere Tür links",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "door_rear_right": {
-        "name": "Hintere Tür rechts"
+        "name": "Hintere Tür rechts",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "belt_driver": {
-        "name": "Fahrer-Sicherheitsgurt"
+        "name": "Fahrer-Sicherheitsgurt",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "belt_passenger": {
-        "name": "Beifahrer-Sicherheitsgurt"
+        "name": "Beifahrer-Sicherheitsgurt",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery_plugged": {
-        "name": "Ladekabel angeschlossen"
+        "name": "Ladekabel angeschlossen",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "battery_charging": {
-        "name": "Batterie lädt"
+        "name": "Batterie lädt",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "engine": {
-        "name": "Motor"
+        "name": "Motor",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "preconditioning": {
-        "name": "Vorklimatisierung"
+        "name": "Vorklimatisierung",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "alarm": {
-        "name": "Alarm"
+        "name": "Alarm",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "privacy": {
-        "name": "Privatsphäre"
+        "name": "Privatsphäre",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       },
       "remote_commands": {
         "name": "Fahrzeug aus der Entfernung bedienen"
       },
       "daylight": {
-        "name": "Tagesfahrlicht"
+        "name": "Tagesfahrlicht",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       }
     },
     "button": {
@@ -391,7 +581,12 @@
     },
     "time": {
       "battery_charging_start": {
-        "name": "Start des Batterieladevorgangs"
+        "name": "Start des Batterieladevorgangs",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Vom Fahrzeug gemeldet"
+          }
+        }
       }
     }
   },
