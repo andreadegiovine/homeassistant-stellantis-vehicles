@@ -250,7 +250,7 @@ class StellantisBase:
 
                     _LOGGER.debug(
                         "HTTP %s %s failed with status %s | headers=%s params=%s json=%s data=%s | response=%s",
-                        method, resp.url, resp.status, headers, params, json_data, data, result,
+                        method, url, resp.status, headers, params, json_data, data, result,
                     )
 
                     if str(resp.status) == "404" and str(result.get("code")) == "40400":
