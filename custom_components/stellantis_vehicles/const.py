@@ -52,6 +52,27 @@ MQTT_QOS = 0
 KWH_CORRECTION = 1.343
 MS_TO_KMH_CONVERSION = 3.6
 
+ATTR_VEHICLE_REPORTED_AT = "vehicle_reported_at"
+# Every dict key this attribute has ever been stored under: the translated
+# "last_updated" label from each shipped locale (translations/*.json), plus
+# older label text that predates the current translations. Restored state
+# needs to migrate any of these back to the fixed key above.
+LEGACY_VEHICLE_REPORTED_AT_KEYS = [
+    "updated_at",
+    "last_updated",
+    "Updated at",
+    "Last updated",
+    "Aggiornato al",
+    "Ultimo aggiornamento",
+    "Zuletzt aktualisiert",
+    "Última actualización",
+    "Viimeksi päivitetty",
+    "Dernière mise à jour",
+    "Laatst bijgewerkt",
+    "Zadnja posodobitev",
+    "Senast uppdaterad",
+]
+
 ABRP_URL = "https://api.iternio.com/1/tlm/send"
 ABRP_API_KEY = "1e28ad14-df16-49f0-97da-364c9154b44a"
 

@@ -97,7 +97,7 @@
       "mileage": {
         "name": "Mileage",
         "state_attributes": {
-          "last_updated": {
+          "vehicle_reported_at": {
             "name": "Last updated"
           }
         }

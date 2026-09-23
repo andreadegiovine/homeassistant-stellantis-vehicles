@@ -96,7 +96,7 @@
       "mileage": {
         "name": "Kilometrina",
         "state_attributes": {
-          "last_updated": {
+          "vehicle_reported_at": {
             "name": "Zadnja posodobitev"
           }
         }

@@ -96,7 +96,7 @@
       "mileage": {
         "name": "Kilometraje",
         "state_attributes": {
-          "last_updated": {
+          "vehicle_reported_at": {
             "name": "Última actualización"
           }
         }

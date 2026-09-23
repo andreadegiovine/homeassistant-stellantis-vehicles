@@ -84,7 +84,7 @@
       "mileage": {
         "name": "Miltal",
         "state_attributes": {
-          "last_updated": {
+          "vehicle_reported_at": {
             "name": "Senast uppdaterad"
           }
         }
