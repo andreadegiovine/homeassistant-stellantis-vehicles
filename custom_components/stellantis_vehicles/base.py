@@ -861,8 +861,15 @@ class StellantisBaseSensor(StellantisRestoreSensor):
 
     def coordinator_update(self) -> None:
         """ Coordinator update. """
+        # Refresh regardless of value_was_updated(): the vehicle can re-report
+        # an unchanged value with a newer timestamp, and this attribute should
+        # track the freshest data the API has, not just the latest value change.
+        # Only overwrite when the API actually has a value for this poll -
+        # a transient gap in the payload must not blank out a good timestamp.
+        reported_at = self.get_updated_at_from_map(self._updated_at_map)
+        if reported_at is not None:
+            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = reported_at
         if self.value_was_updated():
-            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = self.get_updated_at_from_map(self._updated_at_map)
             self._attr_native_value = self.get_value(self._value_map)
 
 
@@ -886,8 +893,10 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 
     def coordinator_update(self) -> None:
         """ Coordinator update. """
+        reported_at = self.get_updated_at_from_map(self._updated_at_map)
+        if reported_at is not None:
+            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = reported_at
         if self.value_was_updated():
-            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = self.get_updated_at_from_map(self._updated_at_map)
             value = self.get_value(self._value_map)
             if value is None:
                 return

@@ -53,6 +53,8 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
         await self._coordinator.async_refresh()
 
     def coordinator_update(self) -> None:
+        reported_at = self.get_updated_at_from_map(self._updated_at_map)
+        if reported_at is not None:
+            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = reported_at
         if self.value_was_updated():
-            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = self.get_updated_at_from_map(self._updated_at_map)
             self._attr_native_value = self.get_value(self._value_map)
