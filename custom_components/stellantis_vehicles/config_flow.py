@@ -6,6 +6,7 @@ from uuid import uuid4
 from homeassistant.config_entries import ( ConfigFlow, SOURCE_REAUTH, SOURCE_RECONFIGURE )
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers import translation
+from homeassistant.helpers.service_info.hassio import HassioServiceInfo
 from homeassistant.const import (
     CONF_PASSWORD,
     CONF_EMAIL
@@ -96,6 +97,8 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         self.errors = {}
         self._translations = None
         self._enable_remote_commands = False
+        self._discovered_oauth_code_url = None
+        self._discovered_addon = None
 
 
     async def init_translations(self):
@@ -112,6 +115,15 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         if message:
             result = result + ": " + str(message)
         return result
+
+
+    def configured_oauth_code_url(self):
+        # A further account defaults to the login service the existing ones
+        # already use (e.g. a local add-on) instead of the shared instance.
+        for entry in self._async_current_entries(include_ignore=False):
+            if entry.data.get(FIELD_OAUTH_CODE_URL):
+                return entry.data[FIELD_OAUTH_CODE_URL]
+        return None
 
 
     async def async_step_user(self, user_input=None):
@@ -148,7 +160,8 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_oauth_remote(self, user_input=None):
         if user_input is None:
-            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA(self.data.get(FIELD_OAUTH_CODE_URL)), description_placeholders=TRANSLATION_PLACEHOLDERS)
+            default_oauth_code_url = self.data.get(FIELD_OAUTH_CODE_URL) or self.configured_oauth_code_url()
+            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA(default_oauth_code_url), description_placeholders=TRANSLATION_PLACEHOLDERS)
 
         try:
             code_request = await self.stellantis.get_oauth_code(user_input[CONF_EMAIL], user_input[CONF_PASSWORD], user_input.get(FIELD_OAUTH_CODE_URL, OAUTH_CODE_URL))
@@ -331,6 +344,48 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self.async_step_oauth_mode()
         else:
             return await self.async_step_options()
+
+
+    async def async_step_hassio(self, discovery_info: HassioServiceInfo):
+        # A Supervisor add-on (e.g. "Stellantis Login Worker") announced a
+        # local login service: {"host": <add-on hostname>, "port": <port>}.
+        host = discovery_info.config.get("host")
+        port = discovery_info.config.get("port")
+        if not host or not port:
+            return self.async_abort(reason="invalid_discovery_info")
+
+        # One flow per add-on; "Ignore" on the discovery card sticks.
+        await self.async_set_unique_id(discovery_info.uuid)
+        self._abort_if_unique_id_configured()
+
+        self._discovered_oauth_code_url = f"http://{host}:{port}"
+        self._discovered_addon = discovery_info.name
+
+        entries = self._async_current_entries(include_ignore=False)
+        if entries and all(entry.data.get(FIELD_OAUTH_CODE_URL) == self._discovered_oauth_code_url for entry in entries):
+            return self.async_abort(reason="already_configured")
+
+        self.context["title_placeholders"] = {"addon": self._discovered_addon}
+        return await self.async_step_hassio_confirm()
+
+
+    async def async_step_hassio_confirm(self, user_input=None):
+        placeholders = {"addon": self._discovered_addon, "url": self._discovered_oauth_code_url}
+        if user_input is None:
+            return self.async_show_form(step_id="hassio_confirm", description_placeholders=placeholders)
+
+        # The login service is only used for (re)authentication, so existing
+        # accounts just need the new URL in their entry data - no reload.
+        entries = self._async_current_entries(include_ignore=False)
+        if entries:
+            for entry in entries:
+                if entry.data.get(FIELD_OAUTH_CODE_URL) != self._discovered_oauth_code_url:
+                    self.hass.config_entries.async_update_entry(entry, data={**entry.data, FIELD_OAUTH_CODE_URL: self._discovered_oauth_code_url})
+            return self.async_abort(reason="login_service_updated", description_placeholders=placeholders)
+
+        # No account yet: regular setup, with the add-on as login service.
+        self.data.update({FIELD_OAUTH_CODE_URL: self._discovered_oauth_code_url})
+        return await self.async_step_user()
 
 
     @log_call

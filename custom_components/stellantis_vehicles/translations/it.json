@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{addon}",
     "step": {
       "user": {
         "data": {
@@ -49,6 +50,10 @@
           "anonymize_logs": "Nascondi i dati personali sui log"
         }
       },
+      "hassio_confirm": {
+        "title": "Servizio di login locale",
+        "description": "L'add-on **{addon}** fornisce un servizio di login locale all'indirizzo `{url}`.\n\nGli account già configurati lo useranno al prossimo accesso. Se non è ancora configurato alcun account, verrà avviata la configurazione con questo servizio di login già impostato."
+      },
       "reauth_confirm": {
         "description": "Devi effettuare nuovamente l'autenticazione per utilizzare quest'integrazione"
       },
@@ -73,7 +78,9 @@
     "abort": {
       "already_configured": "Account già configurato",
       "reauth_successful": "Autenticazione completata",
-      "reconfigure_successful": "Configurazione completata"
+      "reconfigure_successful": "Configurazione completata",
+      "invalid_discovery_info": "L'add-on ha inviato dati di connessione incompleti",
+      "login_service_updated": "Gli account esistenti ora usano il servizio di login di {addon}"
     }
   },
   "entity": {

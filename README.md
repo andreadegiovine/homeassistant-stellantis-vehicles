@@ -67,6 +67,16 @@ Send remote commands:
 4. Add this integration from the **Home Assistant** integrations.
 
 </details>
+<details><summary><b>As Home Assistant add-on (community)</b></summary>
+
+On Home Assistant OS or Supervised you can also use the community add-on **Stellantis Vehicles** from [taubenhorst/StellantisHAAddon](https://github.com/taubenhorst/StellantisHAAddon). It bundles this integration (unmodified, at a pinned version) together with a local login in one container, and publishes the vehicles to Home Assistant via MQTT discovery:
+
+1. Go to **Settings > Add-ons > Add-on Store > ⋮ > Repositories** and add `https://github.com/taubenhorst/StellantisHAAddon`;
+2. Install **Stellantis Vehicles** and follow its documentation.
+
+> Use either the add-on or this integration for the same account, not both. New releases of this integration reach the add-on only after it has been updated.
+
+</details>
 
 ## Screenshot
 ### Entities
@@ -91,6 +101,17 @@ If you'd rather not depend on the shared Render.com instance, you can self-host 
 [worker](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2) and enter
 its URL in the "Login service URL" field of the config flow's remote-login step instead of the
 default one.
+
+#### Local login service as Home Assistant add-on
+On Home Assistant OS or Supervised, the community add-on **Stellantis Login Worker** from
+[taubenhorst/StellantisHAAddon](https://github.com/taubenhorst/StellantisHAAddon) runs the login on
+your own hardware and speaks the same protocol as the remote service:
+
+1. Add the repository `https://github.com/taubenhorst/StellantisHAAddon` in the Add-on Store, install **Stellantis Login Worker** and start it;
+2. The add-on announces itself to Home Assistant: a **Discovered** card appears under **Settings > Devices & services**;
+3. Confirm it: accounts that are already set up use the add-on for their next login, otherwise the setup of a new account starts with the add-on preselected as "Login service URL".
+
+The add-on is only needed for the initial login and for re-authentication, so it can be stopped in between.
 
 ### Manual
 <details><summary><b>Using browser console</b></summary>

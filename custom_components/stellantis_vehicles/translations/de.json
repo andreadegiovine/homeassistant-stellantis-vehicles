@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{addon}",
     "step": {
       "user": {
         "data": {
@@ -48,6 +49,10 @@
           "anonymize_logs": "Persönliche Daten in Protokollen anonymisieren"
         }
       },
+      "hassio_confirm": {
+        "title": "Lokaler Login-Dienst",
+        "description": "Das Add-on **{addon}** stellt unter `{url}` einen lokalen Login-Dienst bereit.\n\nBereits eingerichtete Accounts verwenden ihn bei ihrer nächsten Anmeldung. Ist noch kein Account eingerichtet, startet die Einrichtung mit diesem Login-Dienst."
+      },
       "reauth_confirm": {
         "description": "Sie müssen sich erneut authentifizieren, um diese Integration zu verwenden"
       },
@@ -72,7 +77,9 @@
     "abort": {
       "already_configured": "Der Account ist bereits konfiguriert",
       "reauth_successful": "Die erneute Authentifizierung war erfolgreich",
-      "reconfigure_successful": "Die Konfiguration war erfolgreich"
+      "reconfigure_successful": "Die Konfiguration war erfolgreich",
+      "invalid_discovery_info": "Das Add-on hat unvollständige Verbindungsdaten gesendet",
+      "login_service_updated": "Bestehende Accounts verwenden jetzt den Login-Dienst von {addon}"
     }
   },
   "entity": {
