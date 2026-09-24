@@ -562,7 +562,7 @@
             "name": "Qualité du signal"
           },
           "position_updated_at": {
-            "name": "Mis à jour à"
+            "name": "Signalé par le véhicule"
           },
           "entity_picture": {
             "name": "Image de l'entité"
