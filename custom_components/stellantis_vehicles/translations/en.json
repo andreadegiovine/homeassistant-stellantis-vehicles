@@ -80,7 +80,12 @@
   "entity": {
     "sensor": {
       "service_battery_voltage": {
-        "name": "Service battery"
+        "name": "Service battery",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "type": {
         "name": "Type",
@@ -92,39 +97,84 @@
         }
       },
       "temperature": {
-        "name": "Temperature"
+        "name": "Temperature",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "mileage": {
         "name": "Mileage",
         "state_attributes": {
-          "last_updated": {
-            "name": "Last updated"
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
           }
         }
       },
       "speed": {
-        "name": "Speed"
+        "name": "Speed",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "autonomy": {
-        "name": "Range"
+        "name": "Range",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "mileage_before_maintenance": {
-        "name": "Mileage before maintenance"
+        "name": "Mileage before maintenance",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "days_before_maintenance": {
-        "name": "Days before maintenance"
+        "name": "Days before maintenance",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery": {
-        "name": "Battery"
+        "name": "Battery",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_health_resistance": {
-        "name": "Battery SOH resistance"
+        "name": "Battery SOH resistance",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_health_capacity": {
-        "name": "Battery SOH capacity"
+        "name": "Battery SOH capacity",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_charging_rate": {
-        "name": "Battery charging rate"
+        "name": "Battery charging rate",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_charging_type": {
         "name": "Battery charging type",
@@ -132,16 +182,36 @@
           "no": "No",
           "slow": "Slow",
           "quick": "Fast"
+        },
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
         }
       },
       "battery_charging_end": {
-        "name": "Battery charging end"
+        "name": "Battery charging end",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_capacity": {
-        "name": "Battery capacity"
+        "name": "Battery capacity",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_residual": {
-        "name": "Battery residual"
+        "name": "Battery residual",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "command_status": {
         "name": "Command status",
@@ -160,28 +230,68 @@
         }
       },
       "fuel": {
-        "name": "Fuel"
+        "name": "Fuel",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "fuel_autonomy": {
-        "name": "Fuel range"
+        "name": "Fuel range",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "fuel_consumption_total": {
-        "name": "Fuel consumption total"
+        "name": "Fuel consumption total",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "fuel_consumption_instant": {
-        "name": "Fuel consumption instant"
+        "name": "Fuel consumption instant",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "coolant_temperature": {
-        "name": "Coolant temperature"
+        "name": "Coolant temperature",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "oil_temperature": {
-        "name": "Oil temperature"
+        "name": "Oil temperature",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "air_temperature": {
-        "name": "Air temperature"
+        "name": "Air temperature",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "driving_behavior": {
-        "name": "Driving behavior"
+        "name": "Driving behavior",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "last_trip": {
         "name": "Last trip",
@@ -265,58 +375,143 @@
     },
     "binary_sensor": {
       "moving": {
-        "name": "Moving"
+        "name": "Moving",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "doors": {
-        "name": "Doors"
+        "name": "Doors",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "door_trunk": {
-        "name": "Trunk"
+        "name": "Trunk",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "door_driver": {
-        "name": "Driver door"
+        "name": "Driver door",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "door_passenger": {
-        "name": "Passenger door"
+        "name": "Passenger door",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "door_rear_left": {
-        "name": "Rear left door"
+        "name": "Rear left door",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "door_rear_right": {
-        "name": "Rear right door"
+        "name": "Rear right door",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "belt_driver": {
-        "name": "Driver seatbelt"
+        "name": "Driver seatbelt",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "belt_passenger": {
-        "name": "Passenger seatbelt"
+        "name": "Passenger seatbelt",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_plugged": {
-        "name": "Battery plugged"
+        "name": "Battery plugged",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_charging": {
-        "name": "Battery charging"
+        "name": "Battery charging",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "battery_charging_limit": {
-        "name": "Battery charging limit 80%"
+        "name": "Battery charging limit 80%",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "engine": {
-        "name": "Engine"
+        "name": "Engine",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "preconditioning": {
-        "name": "Preconditioning"
+        "name": "Preconditioning",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "alarm": {
-        "name": "Alarm"
+        "name": "Alarm",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "privacy": {
-        "name": "Privacy"
+        "name": "Privacy",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       },
       "remote_commands": {
         "name": "Remote commands"
       },
       "daylight": {
-        "name": "Daylight"
+        "name": "Daylight",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       }
     },
     "button": {
@@ -367,8 +562,8 @@
           "signal_quality": {
             "name": "Signal quality"
           },
-          "position_updated_at": {
-            "name": "Updated at"
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
           },
           "entity_picture": {
             "name": "Entity picture"
@@ -402,7 +597,12 @@
     },
     "time": {
       "battery_charging_start": {
-        "name": "Battery charging start"
+        "name": "Battery charging start",
+        "state_attributes": {
+          "vehicle_reported_at": {
+            "name": "Reported by vehicle"
+          }
+        }
       }
     }
   },

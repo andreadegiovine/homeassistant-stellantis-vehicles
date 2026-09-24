@@ -94,12 +94,7 @@
         "name": "Lämpötila"
       },
       "mileage": {
-        "name": "Mittarilukema",
-        "state_attributes": {
-          "last_updated": {
-            "name": "Viimeksi päivitetty"
-          }
-        }
+        "name": "Mittarilukema"
       },
       "speed": {
         "name": "Nopeus"

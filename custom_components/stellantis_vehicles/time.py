@@ -7,7 +7,8 @@ from .base import StellantisBaseTime
 
 from .const import (
     VEHICLE_TYPE_ELECTRIC,
-    VEHICLE_TYPE_HYBRID
+    VEHICLE_TYPE_HYBRID,
+    ATTR_VEHICLE_REPORTED_AT
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,8 +52,9 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
         await self._coordinator.send_charge_command(self.name, True)
         await self._coordinator.async_refresh()
 
-    def coordinator_update(self):
+    def coordinator_update(self) -> None:
+        reported_at = self.get_updated_at_from_map(self._updated_at_map)
+        if reported_at is not None:
+            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = reported_at
         if self.value_was_updated():
-            label = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.last_updated.name", "last_updated")
-            self._attr_extra_state_attributes[label] = self.get_updated_at_from_map(self._updated_at_map)
             self._attr_native_value = self.get_value(self._value_map)

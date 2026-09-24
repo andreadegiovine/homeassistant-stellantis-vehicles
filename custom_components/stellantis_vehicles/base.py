@@ -30,7 +30,9 @@ from .const import (
     UPDATE_INTERVAL,
     EMPTY_STATUS_LIMIT,
     COMMAND_HISTORY_LIMIT,
-    KWH_CORRECTION
+    KWH_CORRECTION,
+    ATTR_VEHICLE_REPORTED_AT,
+    LEGACY_VEHICLE_REPORTED_AT_KEYS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -772,7 +774,7 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
         attributes["altitude"] = float(coordinates[2]) if len(coordinates) == 3 else None
         attributes["fix_status"] = properties.get("fixStatus")
         attributes["signal_quality"] = properties.get("signalQuality")
-        attributes["position_updated_at"] = properties.get("createdAt")
+        attributes[ATTR_VEHICLE_REPORTED_AT] = properties.get("createdAt")
         return attributes
 
     def coordinator_update(self):
@@ -781,7 +783,7 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
 
 
 class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Restore entity data on system restart."""
         await super().async_added_to_hass()
 
@@ -813,9 +815,8 @@ class StellantisRestoreSensor(StellantisBaseEntity, RestoreSensor):
                 restored_state = await self.async_get_last_state()
             if restored_state:
                 for key, attr_val in restored_state.attributes.items():
-                    # TODO: remove this check on future release, need to rename the attribute
-                    if key in ["updated_at", "Updated at", "Aggiornato al"]:
-                        key = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.last_updated.name", "last_updated")
+                    if key in LEGACY_VEHICLE_REPORTED_AT_KEYS:
+                        key = ATTR_VEHICLE_REPORTED_AT
                     self._attr_extra_state_attributes[key] = attr_val
 
         self.coordinator_update()
@@ -858,11 +859,17 @@ class StellantisBaseSensor(StellantisRestoreSensor):
                         result = rule[key] == self._coordinator._sensors.get(key)
         return result
 
-    def coordinator_update(self):
+    def coordinator_update(self) -> None:
         """ Coordinator update. """
+        # Refresh regardless of value_was_updated(): the vehicle can re-report
+        # an unchanged value with a newer timestamp, and this attribute should
+        # track the freshest data the API has, not just the latest value change.
+        # Only overwrite when the API actually has a value for this poll -
+        # a transient gap in the payload must not blank out a good timestamp.
+        reported_at = self.get_updated_at_from_map(self._updated_at_map)
+        if reported_at is not None:
+            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = reported_at
         if self.value_was_updated():
-            label = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.last_updated.name", "last_updated")
-            self._attr_extra_state_attributes[label] = self.get_updated_at_from_map(self._updated_at_map)
             self._attr_native_value = self.get_value(self._value_map)
 
 
@@ -884,11 +891,12 @@ class StellantisBaseBinarySensor(StellantisBaseEntity, BinarySensorEntity):
 
         self.coordinator_update()
 
-    def coordinator_update(self):
+    def coordinator_update(self) -> None:
         """ Coordinator update. """
+        reported_at = self.get_updated_at_from_map(self._updated_at_map)
+        if reported_at is not None:
+            self._attr_extra_state_attributes[ATTR_VEHICLE_REPORTED_AT] = reported_at
         if self.value_was_updated():
-            label = self._coordinator.get_translation("component.stellantis_vehicles.entity.sensor.mileage.state_attributes.last_updated.name", "last_updated")
-            self._attr_extra_state_attributes[label] = self.get_updated_at_from_map(self._updated_at_map)
             value = self.get_value(self._value_map)
             if value is None:
                 return

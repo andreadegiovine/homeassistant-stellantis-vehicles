@@ -82,12 +82,7 @@
         "name": "Temperatur"
       },
       "mileage": {
-        "name": "Miltal",
-        "state_attributes": {
-          "last_updated": {
-            "name": "Senast uppdaterad"
-          }
-        }
+        "name": "Miltal"
       },
       "speed": {
         "name": "Hastighet"

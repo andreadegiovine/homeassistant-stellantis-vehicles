@@ -94,12 +94,7 @@
         "name": "Temperatura"
       },
       "mileage": {
-        "name": "Kilometraje",
-        "state_attributes": {
-          "last_updated": {
-            "name": "Última actualización"
-          }
-        }
+        "name": "Kilometraje"
       },
       "speed": {
         "name": "Velocidad"
@@ -366,8 +361,8 @@
           "signal_quality": {
             "name": "Calidad de la señal"
           },
-          "position_updated_at": {
-            "name": "Actualizado a las"
+          "vehicle_reported_at": {
+            "name": "Reportado por el vehículo"
           },
           "entity_picture": {
             "name": "Imagen de la entidad"
