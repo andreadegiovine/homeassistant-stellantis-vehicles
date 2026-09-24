@@ -774,7 +774,7 @@ class StellantisBaseDevice(StellantisBaseEntity, TrackerEntity):
         attributes["altitude"] = float(coordinates[2]) if len(coordinates) == 3 else None
         attributes["fix_status"] = properties.get("fixStatus")
         attributes["signal_quality"] = properties.get("signalQuality")
-        attributes["position_updated_at"] = properties.get("createdAt")
+        attributes[ATTR_VEHICLE_REPORTED_AT] = properties.get("createdAt")
         return attributes
 
     def coordinator_update(self):

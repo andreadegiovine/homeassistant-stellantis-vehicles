@@ -546,7 +546,7 @@
           "signal_quality": {
             "name": "Signalqualität"
           },
-          "position_updated_at": {
+          "vehicle_reported_at": {
             "name": "Vom Fahrzeug gemeldet"
           },
           "entity_picture": {

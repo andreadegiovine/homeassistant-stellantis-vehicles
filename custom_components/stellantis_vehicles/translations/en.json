@@ -562,7 +562,7 @@
           "signal_quality": {
             "name": "Signal quality"
           },
-          "position_updated_at": {
+          "vehicle_reported_at": {
             "name": "Reported by vehicle"
           },
           "entity_picture": {

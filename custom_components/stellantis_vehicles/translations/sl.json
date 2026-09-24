@@ -306,7 +306,7 @@
           "signal_quality": {
             "name": "Kakovost signala"
           },
-          "position_updated_at": {
+          "vehicle_reported_at": {
             "name": "Sporočilo vozila"
           },
           "entity_picture": {
