@@ -51,13 +51,32 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    stellantis = entry.runtime_data
+    # ConfigEntry.runtime_data is only a type annotation, not a real attribute
+    # with a default: HA deletes it on unload and never sets it before the
+    # first successful setup, so a plain `.runtime_data` here can raise
+    # AttributeError instead of just being None (see the same pattern in
+    # async_remove_config_entry_device in __init__.py).
+    stellantis = getattr(entry, "runtime_data", None)
+
+    if stellantis is None:
+        # Setup failed and is being retried (e.g. a Stellantis backend outage)
+        # or the entry is disabled/unloaded: there is no live StellantisVehicles
+        # instance to read from yet.
+        return {
+            "entry": {
+                "state": entry.state.value,
+                "version": entry.version,
+                "minor_version": entry.minor_version,
+                "data_keys": sorted(entry.data),
+            },
+        }
 
     oauth_config = stellantis.get_config("oauth") or {}
     mqtt_config = stellantis.get_config("mqtt") or {}
 
     return {
         "entry": {
+            "state": entry.state.value,
             "version": entry.version,
             "minor_version": entry.minor_version,
             # Structure only - the values may still hold tokens on entries that
@@ -85,7 +104,6 @@ async def async_get_config_entry_diagnostics(
             "token_expires_at": mqtt_config.get("expires_in"),
             "refresh_token_expires_at": mqtt_config.get("refresh_token_expires_at"),
             "refresh_scheduled": stellantis._mqtt_token_scheduled is not None,  # noqa: SLF001
-            "request_pending_reconnect": stellantis._mqtt_last_request is not None,  # noqa: SLF001
         },
         "vehicles": [
             _coordinator_diagnostics(coordinator)

@@ -59,6 +59,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._privacy_full_logged = False
         self._empty_status_count = 0
         self._vehicle_removed = False
+        # Set once the maintenance endpoint has returned an empty result, so it
+        # is not polled again for the lifetime of this coordinator (issue #623:
+        # some vehicles 404 on every request and flooded the logs).
+        self._maintenance_unsupported = False
 
     @log_call
     async def _async_update_data(self) -> dict[str, Any] | None:
@@ -98,12 +102,16 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             new_data = await self._stellantis.get_vehicle_status(self._vehicle)
             if new_data:
-                maintenance = await self._stellantis.get_vehicle_maintenance(self._vehicle)
-                new_data["maintenance"] = {
-                    "mileageBeforeMaintenance": maintenance.get("mileageBeforeMaintenance"),
-                    "daysBeforeMaintenance": maintenance.get("daysBeforeMaintenance"),
-                    "updatedAt": maintenance.get("updatedAt")
-                }
+                maintenance = {} if self._maintenance_unsupported else await self._stellantis.get_vehicle_maintenance(self._vehicle)
+                if maintenance:
+                    new_data["maintenance"] = {
+                        "mileageBeforeMaintenance": maintenance.get("mileageBeforeMaintenance"),
+                        "daysBeforeMaintenance": maintenance.get("daysBeforeMaintenance"),
+                        "updatedAt": maintenance.get("updatedAt")
+                    }
+                elif not self._maintenance_unsupported:
+                    _LOGGER.debug("Vehicle maintenance data not found - disabling further maintenance polling")
+                    self._maintenance_unsupported = True
             return new_data
         except ConfigEntryAuthFailed:
             raise
@@ -283,7 +291,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
             if action_id is not None:
-                self._commands_history.update({action_id: {"name": name, "updates": []}})
+                # service/message are kept so a 400 "invalid token" response for
+                # this action_id can be retried with its own payload instead of
+                # whatever command was sent last account-wide (see _on_mqtt_message).
+                self._commands_history.update({action_id: {"name": name, "updates": [], "service": service, "message": message, "retried": False}})
                 self._prune_command_history()
                 self.async_update_listeners()
         except ConfigEntryAuthFailed as e:

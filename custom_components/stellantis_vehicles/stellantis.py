@@ -68,7 +68,6 @@ from .const import (
     ABRP_URL,
     ABRP_API_KEY,
     TRANSLATION_PLACEHOLDERS,
-    CAR_API_GET_VEHICLE_MAINTENANCE_URL,
     MQTT_TOKEN_RETRY_BACKOFF,
     OAUTH_TOKEN_RETRY_BACKOFF
 )
@@ -316,13 +315,32 @@ class StellantisBase:
             _LOGGER.exception("Unexpected error during request to %s", url)
             raise
 
-    def do_async(self, async_func, delay=0, wait=True):
+    def do_async(self, async_func, delay=0, *, wait):
+        """Schedule a coroutine on self._hass.loop from any thread.
+
+        wait=True blocks for the result and is only safe from a thread
+        other than the one running self._hass.loop (e.g. paho-mqtt's
+        network thread) - called from that thread itself, this raises
+        instead of deadlocking Home Assistant. wait=False just schedules
+        the coroutine and returns None.
+        """
         if self._shutting_down:
             # The config entry is being unloaded - drop the coroutine instead of
             # scheduling work that would resurrect the MQTT client or hit an
             # already closed aiohttp session.
             async_func.close()
             return None
+
+        if wait:
+            try:
+                running_loop = asyncio.get_running_loop()
+            except RuntimeError:
+                running_loop = None
+            if running_loop is self._hass.loop:
+                async_func.close()
+                raise RuntimeError(
+                    "do_async(wait=True) called from the Home Assistant event loop thread - this would deadlock"
+                )
 
         async def delayed_execution():
             task = asyncio.current_task()
@@ -485,7 +503,6 @@ class StellantisVehicles(StellantisOauth):
         self._vehicles = []
         self._mqtt = None
         self._mqtt_lock = asyncio.Lock()
-        self._mqtt_last_request = None
 
         self._oauth_token_scheduled = None
         self._mqtt_token_scheduled = None
@@ -748,7 +765,8 @@ class StellantisVehicles(StellantisOauth):
                             "vehicle_id": vehicle["id"],
                             "vin": vehicle["vin"],
                             "type": vehicle["motorization"],
-                            "brand": vehicle.get("brand")
+                            "brand": vehicle.get("brand"),
+                            "links": vehicle.get("_links", {})
                         }
                         try:
                             picture = await self.resize_and_save_picture(vehicle["pictures"][0], vehicle["vin"])
@@ -823,7 +841,11 @@ class StellantisVehicles(StellantisOauth):
     @log_call
     async def get_vehicle_maintenance(self, vehicle):
         """ Fetch upcoming maintenance data (mileage/days remaining) for the vehicle. """
-        url = self.apply_query_params(CAR_API_GET_VEHICLE_MAINTENANCE_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
+        maintenance_href = vehicle.get("links", {}).get("maintenance", {}).get("href") if vehicle else None
+        if maintenance_href is None:
+            _LOGGER.debug("Vehicle maintenance link not found")
+            return {}
+        url = self.apply_query_params(maintenance_href, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
         vehicle_maintenance_request = await self.make_http_request(url, 'GET', headers)
         _log_http_exchange(url, headers, vehicle_maintenance_request)
@@ -1052,16 +1074,22 @@ class StellantisVehicles(StellantisOauth):
                     if result_code == "400":
                         if "reason" in data and data["reason"] == "[authorization.denied.cvs.response.no.matching.service.key]":
                             result_code = "not_compatible"
-                        elif self._mqtt_last_request:
-                            _LOGGER.debug("The mqtt token seems invalid, refresh the token and try sending the request again")
-                            last_request = self._mqtt_last_request
-                            self._mqtt_last_request = None
-                            # wait=False: don't block the paho network thread while the
-                            # retry forces a token refresh; the result comes back as a
-                            # fresh MQTT response and send_mqtt_message logs its own errors
-                            self.do_async(self.send_mqtt_message(last_request[0], last_request[1], coordinator._vehicle, False, data["correlation_id"]), wait=False)
-                            return
                         else:
+                            # Look up this specific command's own service/message from
+                            # coordinator._commands_history instead of an account-wide
+                            # "last request sent" - with several vehicles, that could
+                            # otherwise resend a different vehicle's command here.
+                            pending_command = coordinator._commands_history.get(data["correlation_id"])
+                            service = pending_command.get("service") if pending_command else None
+                            message = pending_command.get("message") if pending_command else None
+                            if service and message and not pending_command.get("retried"):
+                                _LOGGER.debug("The mqtt token seems invalid, refresh the token and try sending the request again")
+                                pending_command["retried"] = True
+                                # wait=False: don't block the paho network thread while the
+                                # retry forces a token refresh; the result comes back as a
+                                # fresh MQTT response and send_mqtt_message logs its own errors
+                                self.do_async(self.send_mqtt_message(service, message, coordinator._vehicle, force_token_refresh=True, action_id=data["correlation_id"]), wait=False)
+                                return
                             _LOGGER.warning("Last request was sent twice without success")
                             result_code = "failed"
                     if result_code == "113":  # Error: vin (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
@@ -1091,10 +1119,10 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.exception("Error while handling MQTT message")
 
     @log_call
-    async def send_mqtt_message(self, service, message, vehicle, store=True, action_id=None):
+    async def send_mqtt_message(self, service, message, vehicle, force_token_refresh=False, action_id=None):
         # we need to refresh the token if it is expired, either here upfront or in the mqtt callback '_on_mqtt_message' in case of result_code 400
         try:
-            await self.scheduled_mqtt_token_refresh(force=(store == False))
+            await self.scheduled_mqtt_token_refresh(force=force_token_refresh)
 
             # Ensure that the MQTT client is connected
             if self._mqtt is None or not self._mqtt.is_connected():
@@ -1121,8 +1149,6 @@ class StellantisVehicles(StellantisOauth):
             if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
                 _LOGGER.warning("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
                 action_id = None
-            if store:
-                self._mqtt_last_request = [service, message]
             return action_id
         except ConfigEntryAuthFailed:
             self.disable_remote_commands()
