@@ -18,7 +18,7 @@
         }
       },
       "oauth_remote": {
-        "description": "Este [servicio remoto]({oauth_remote_link}) se utiliza para simular el inicio de sesión del navegador en el sitio web oficial. Puedes usar el servicio alojado por defecto o apuntar a tu propio servicio autoalojado",
+        "description": "Este [servicio remoto]({oauth_remote_link}) se utiliza para simular el inicio de sesión del navegador en el sitio web oficial. Puedes usar el servicio alojado por defecto o apuntar a tu propio servicio. Si eliges utilizar tu propio servicio, asegúrate de que la URL del servicio de inicio de sesión sea pública y accesible. El servicio remoto no almacena tus credenciales.",
         "data": {
           "email": "Correo electrónico",
           "password": "Contraseña",
@@ -26,7 +26,7 @@
         }
       },
       "oauth_manual": {
-        "description": "Sigue estos pasos desde un **navegador de escritorio**:\n\n1. ve a la página de inicio de sesión {oauth_link};\n2. abre las **DevTools** del navegador (F12) y ve a la pestaña **Red**;\n3. inicia sesión en tu cuenta;\n4. busca la solicitud de `token` o `authorize` y copia el valor `code` del parámetro `code` de la respuesta;\n5. pega el valor aquí",
+        "description": "Sigue estos pasos desde un **navegador de escritorio**:\n\n1. ve a la página de inicio de sesión {oauth_link};\n2. abre las **DevTools** del navegador (F12) y ve a la pestaña **Red**;\n3. inicia sesión en tu cuenta y pulsa el último botón de confirmación;\n4. en la pestaña **Red**, busca la petición anterior y copia el **{oauth_label}**;\n5. pega el valor aquí{oauth_devtools}",
         "data": {
           "oauth_code": "Código OAuth"
         }
@@ -418,7 +418,7 @@
   "issues": {
     "vehicle_removed": {
       "title": "El vehículo {vin} se eliminó de tu cuenta",
-      "description": "Home Assistant ya no puede acceder al vehículo `{vin}` a través de la API de Stellantis, y ya no aparece en tu cuenta de Stellantis. Esto normalmente significa que el vehículo ya no está disponible o se ha retirado de tu cuenta."
+      "description": "Home Assistant ya no puede acceder al vehículo `{vin}` a través de la API de Stellantis, y ya no aparece en tu cuenta de Stellantis. Esto normalmente significa que el vehículo se ha dado de baja o se ha eliminado de la cuenta. Consulta la documentación de la aplicación móvil para más información."
     }
   },
   "selector": {
