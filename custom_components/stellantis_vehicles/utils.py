@@ -312,7 +312,7 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
     def _mask_value(self, value: Any) -> Any:
-        """Return the value with masked strings redacted, recursing into dict / list / tuple and decoding bytes / bytearray."""
+        """Return the value with masked strings redacted, recursing into dict / list / tuple, decoding bytes / bytearray, and stringifying exceptions."""
         if value is None:
             return value
 
@@ -340,6 +340,8 @@ class SensitiveDataFilter(logging.Filter):
                 return json.dumps(masked_parsed).encode("utf-8", "replace")
             masked = self._mask_string(text)
             return value if masked == text else masked.encode("utf-8", "replace")
+        elif isinstance(value, BaseException):
+            return self._mask_string(str(value))
 
         return value
 
