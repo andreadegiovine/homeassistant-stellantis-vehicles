@@ -92,6 +92,22 @@ If you'd rather not depend on the shared Render.com instance, you can self-host 
 its URL in the "Login service URL" field of the config flow's remote-login step instead of the
 default one.
 
+#### Local login service as Home Assistant add-on
+On Home Assistant OS or Supervised, you can run the login service on your own hardware
+with the community add-on **Stellantis Login Worker** from
+[taubenhorst/StellantisHAAddon](https://github.com/taubenhorst/StellantisHAAddon).
+It speaks the same protocol as the remote service, so the integration works as usual,
+only with a different "Login service URL":
+
+1. Go to **Settings > Add-ons > Add-on Store > ⋮ > Repositories** and add `https://github.com/taubenhorst/StellantisHAAddon`;
+2. Install **Stellantis Login Worker** and start it;
+3. Open the add-on's **Log** tab and copy the URL it prints on start, e.g. `http://0e0578fd-stellantis-login-worker:3000` (the prefix may differ on your system);
+4. Paste this URL into the "Login service URL" field of the remote-login step. For an account that is already set up, use **Reconfigure > Re-authenticate your account**.
+
+The add-on is only needed for the initial login and for re-authentication, so it can be stopped in between.
+
+> The same repository also offers the add-on **Stellantis Vehicles**, which bundles this integration (unmodified, at a pinned version) together with a local login and publishes the vehicles to Home Assistant via MQTT discovery. Use either that add-on or this integration for the same account, not both.
+
 ### Manual
 <details><summary><b>Using browser console</b></summary>
 
