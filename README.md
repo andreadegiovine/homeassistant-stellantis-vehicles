@@ -109,7 +109,7 @@ your own hardware and speaks the same protocol as the remote service:
 
 1. Add the repository `https://github.com/taubenhorst/StellantisHAAddon` in the Add-on Store, install **Stellantis Login Worker** and start it;
 2. The add-on announces itself to Home Assistant: a **Discovered** card appears under **Settings > Devices & services**;
-3. Confirm it: accounts that are already set up use the add-on for their next login, otherwise the setup of a new account starts with the add-on preselected as "Login service URL".
+3. Confirm it: accounts that use the default login service use the add-on for their next login (accounts with a custom "Login service URL" stay unchanged); if there is no account yet, the setup of a new one starts with the add-on preselected as "Login service URL".
 
 The add-on is only needed for the initial login and for re-authentication, so it can be stopped in between.
 

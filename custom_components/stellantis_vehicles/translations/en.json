@@ -1,6 +1,6 @@
 {
   "config": {
-    "flow_title": "{addon}",
+    "flow_title": "{name}",
     "step": {
       "user": {
         "data": {
@@ -52,7 +52,7 @@
       },
       "hassio_confirm": {
         "title": "Local login service",
-        "description": "The add-on **{addon}** provides a local login service at `{url}`.\n\nAccounts that are already set up will use it for their next login. If there is no account yet, the setup of a new one starts with this login service preselected."
+        "description": "The add-on **{addon}** provides a local login service at `{url}`.\n\nAccounts that use the default login service will use it for their next login; accounts with a custom login service stay unchanged. If there is no account yet, the setup of a new one starts with this login service preselected."
       },
       "reauth_confirm": {
         "description": "You need to re-authenticate to use this integration"
@@ -81,7 +81,7 @@
       "reauth_successful": "Re-authentication was successful",
       "reconfigure_successful": "Configuration was successful",
       "invalid_discovery_info": "The add-on sent incomplete connection data",
-      "login_service_updated": "Existing accounts now use the login service of {addon}"
+      "login_service_updated": "Accounts that used the default login service now use the login service of {addon}"
     }
   },
   "entity": {

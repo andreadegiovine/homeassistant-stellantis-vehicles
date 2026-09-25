@@ -126,6 +126,14 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         return None
 
 
+    def entries_to_switch(self):
+        # Only accounts on the default service; custom workers stay untouched.
+        return [
+            entry for entry in self._async_current_entries(include_ignore=False)
+            if entry.data.get(FIELD_OAUTH_CODE_URL) in (None, OAUTH_CODE_URL)
+        ]
+
+
     async def async_step_user(self, user_input=None):
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=MOBILE_APP_SCHEMA)
@@ -361,11 +369,14 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         self._discovered_oauth_code_url = f"http://{host}:{port}"
         self._discovered_addon = discovery_info.name
 
-        entries = self._async_current_entries(include_ignore=False)
-        if entries and all(entry.data.get(FIELD_OAUTH_CODE_URL) == self._discovered_oauth_code_url for entry in entries):
+        # Nothing left to switch (all accounts already use this add-on or a
+        # custom worker): no card, also not on the replay after a restart.
+        if self._async_current_entries(include_ignore=False) and not self.entries_to_switch():
             return self.async_abort(reason="already_configured")
 
-        self.context["title_placeholders"] = {"addon": self._discovered_addon}
+        # flow_title is shared with every flow of this domain (reauth only
+        # provides "name"), so the add-on goes into the same placeholder.
+        self.context["title_placeholders"] = {"name": self._discovered_addon}
         return await self.async_step_hassio_confirm()
 
 
@@ -376,11 +387,9 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # The login service is only used for (re)authentication, so existing
         # accounts just need the new URL in their entry data - no reload.
-        entries = self._async_current_entries(include_ignore=False)
-        if entries:
-            for entry in entries:
-                if entry.data.get(FIELD_OAUTH_CODE_URL) != self._discovered_oauth_code_url:
-                    self.hass.config_entries.async_update_entry(entry, data={**entry.data, FIELD_OAUTH_CODE_URL: self._discovered_oauth_code_url})
+        if self._async_current_entries(include_ignore=False):
+            for entry in self.entries_to_switch():
+                self.hass.config_entries.async_update_entry(entry, data={**entry.data, FIELD_OAUTH_CODE_URL: self._discovered_oauth_code_url})
             return self.async_abort(reason="login_service_updated", description_placeholders=placeholders)
 
         # No account yet: regular setup, with the add-on as login service.
