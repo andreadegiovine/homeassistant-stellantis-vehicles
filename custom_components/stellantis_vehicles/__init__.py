@@ -6,7 +6,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import issue_registry, device_registry as dr
-from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
 from .stellantis import StellantisVehicles
@@ -23,6 +24,17 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """ Set up the Stellantis Vehicles integration. """
+    # Registered here (once per HA process, regardless of how many entries or
+    # reloads follow) rather than in async_setup_entry - avoids re-registering
+    # the static path / JS module on every entry setup or entry reload.
+    url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
+    file_path = os.path.join(os.path.dirname(__file__), "frontend", "stellantis-vehicle-card.js")
+    await hass.http.async_register_static_paths([StaticPathConfig(url, str(file_path), False)])
+    add_extra_js_url(hass, url)
+    return True
 
 async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
@@ -81,12 +93,6 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         await stellantis.hass_notify("no_vehicles_found")
         await stellantis.close_session()
 
-    url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
-    if url not in hass.data["frontend_extra_module_url"].urls:
-        file_path = os.path.join(os.path.dirname(__file__), "frontend", "stellantis-vehicle-card.js")
-        await hass.http.async_register_static_paths([StaticPathConfig(url, str(file_path), False)])
-        add_extra_js_url(hass, url)
-
     return True
 
 
@@ -135,6 +141,14 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
         # Remove stale repairs (if any) - just in case this integration will use
         # the issue registry in the future
         issue_registry.async_delete_issue(hass, DOMAIN, DOMAIN)
+
+        # Stop announcing the vehicle card to the frontend once no entry is
+        # left to use it. The static path registered in async_setup cannot be
+        # deregistered (no public API for it, and it is harmless dead weight
+        # until the next restart), but removing the module URL stops the
+        # frontend from loading it.
+        url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
+        remove_extra_js_url(hass, url)
 
         # Remove any remaining disabled or ignored entries
         for _entry in hass.config_entries.async_entries(DOMAIN):
