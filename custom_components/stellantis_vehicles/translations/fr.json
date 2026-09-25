@@ -314,6 +314,9 @@
       "remote_commands": {
         "name": "Commandes à distance"
       },
+      "command_pending": {
+        "name": "Commande en attente"
+      },
       "daylight": {
         "name": "Lumière du jour"
       }
@@ -403,6 +406,11 @@
       "battery_charging_start": {
         "name": "Début recharge batterie"
       }
+    }
+  },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "Impossible d'envoyer « {name} » : « {pending_name} » attend toujours une réponse du véhicule."
     }
   },
   "common": {

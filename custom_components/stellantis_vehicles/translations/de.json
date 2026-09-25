@@ -310,6 +310,9 @@
       "remote_commands": {
         "name": "Fahrzeug aus der Entfernung bedienen"
       },
+      "command_pending": {
+        "name": "Befehl ausstehend"
+      },
       "daylight": {
         "name": "Tagesfahrlicht"
       }
@@ -393,6 +396,11 @@
       "battery_charging_start": {
         "name": "Start des Batterieladevorgangs"
       }
+    }
+  },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "\"{name}\" kann nicht gesendet werden: \"{pending_name}\" wartet noch auf eine Antwort vom Fahrzeug."
     }
   },
   "common": {
