@@ -206,10 +206,18 @@ class StellantisVehicleCard extends LitElement {
 
         this._hass = hass;
 
+        if (!this._hass.entities) {
+            return;
+        }
+
         const device_tracker_id = this._config.entity;
         const device_tracker = this._hass.entities[device_tracker_id];
 
-        if (!device_tracker || device_tracker.platform !== "stellantis_vehicles" || device_tracker.translation_key !== "vehicle") {
+        if (!device_tracker) {
+            return;
+        }
+
+        if (device_tracker.platform !== "stellantis_vehicles" || device_tracker.translation_key !== "vehicle") {
             throw new Error("Invalid entity: must be a Stellantis vehicle device_tracker");
         }
 
@@ -511,17 +519,17 @@ class StellantisVehicleCard extends LitElement {
     }
 
     _getAttributesBlock(entity) {
-        const props = this._hass.entities[entity.entity_id];
+        const props = this._hass.entities ? this._hass.entities[entity.entity_id] : null;
         const attributes = Object.entries(entity.attributes ?? {})
             .filter(([key]) => !["friendly_name", "icon", "unit_of_measurement", "device_class"].includes(key));
 
-        const translation_path = `component.${props.platform}.entity.${entity.entity_id.split('.')[0]}.${props.translation_key}`;
+        const translation_path = props ? `component.${props.platform}.entity.${entity.entity_id.split('.')[0]}.${props.translation_key}` : "";
 
         return html`
             <div class="sv-attributes sv-pb">
                 <div class="sv-row">
                     <div class="sv-col sv-fr" aria-label="${entity.attributes?.friendly_name}" title="${entity.attributes?.friendly_name}" @click=${() => this._openMoreInfo(entity.entity_id)}>
-                        <span>${this._hass.localize(`${translation_path}.name`)}</span>
+                        <span>${translation_path ? this._hass.localize(`${translation_path}.name`) : (entity.attributes?.friendly_name || entity.entity_id)}</span>
                         <span><state-display .stateObj=${entity} .hass=${this._hass}></state-display></span>
                     </div>
                 </div>
@@ -643,7 +651,8 @@ class StellantisVehicleCardEditor extends LitElement {
         const device_tracker_id = this._config.entity;
         if (device_tracker_id) {
             if (!this._entities || device_tracker_id !== this._device_tracker_id) {
-                const device_tracker = this._hass.entities[device_tracker_id];
+                const device_tracker = this._hass.entities ? this._hass.entities[device_tracker_id] : null;
+                if (!device_tracker) return;
                 const device_id = device_tracker.device_id;
                 this._entities = Object.values(this._hass.entities)
                     .filter(e => e.device_id === device_id)
