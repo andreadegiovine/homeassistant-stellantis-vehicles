@@ -2,8 +2,9 @@ import logging
 import shutil
 import os
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import issue_registry, device_registry as dr
 from homeassistant.helpers.typing import ConfigType
@@ -92,6 +93,20 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         _LOGGER.warning("No vehicles found for this account")
         await stellantis.hass_notify("no_vehicles_found")
         await stellantis.close_session()
+
+    async def async_shutdown_on_stop(event:Event | None = None) -> None:
+        await stellantis.async_shutdown()
+        _LOGGER.debug("Disconnected MQTT on Home Assistant stop")
+
+    # Home Assistant does not unload config entries on stop, so without this the
+    # paho thread outlives the event loop and its callbacks fail on the closed loop.
+    if hass.is_stopping:
+        # The stop event already fired while this setup was still running.
+        await async_shutdown_on_stop()
+    else:
+        config.async_on_unload(
+            hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_shutdown_on_stop)
+        )
 
     return True
 
