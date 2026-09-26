@@ -717,7 +717,7 @@ class StellantisBaseEntity(CoordinatorEntity):
     @property
     def available_command(self):
         """ Base availability property for mqtt commands. """
-        mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
+        mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected() and self._stellantis._mqtt_connected
         command_is_enabled = self.name not in self._coordinator._disabled_commands
         return mqtt_is_connected and command_is_enabled
 

@@ -502,6 +502,8 @@ class StellantisVehicles(StellantisOauth):
         self._coordinator_dict = {}
         self._vehicles = []
         self._mqtt = None
+        # paho still reports is_connected() while on_disconnect runs
+        self._mqtt_connected = False
         self._mqtt_lock = asyncio.Lock()
 
         self._oauth_token_scheduled = None
@@ -1010,9 +1012,15 @@ class StellantisVehicles(StellantisOauth):
         mqtt_client.disconnect()
         await self._hass.async_add_executor_job(mqtt_client.loop_stop)
 
+    def _update_all_listeners(self):
+        for coordinator in self._coordinator_dict.values():
+            coordinator.async_update_listeners()
+
     @log_call
     def _on_mqtt_connect(self, client, userdata, result_code, _):
         _LOGGER.debug("MQTT connected (code %s)", result_code)
+        self._mqtt_connected = True
+        self._hass.loop.call_soon_threadsafe(self._update_all_listeners)
         try:
             topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
             for vehicle in self._vehicles:
@@ -1026,6 +1034,8 @@ class StellantisVehicles(StellantisOauth):
     @log_call
     def _on_mqtt_disconnect(self, client, userdata, result_code):
         _LOGGER.debug("MQTT disconnected (code %s: %s)", result_code, mqtt.error_string(result_code))
+        self._mqtt_connected = False
+        self._hass.loop.call_soon_threadsafe(self._update_all_listeners)
         if result_code == 11: # MQTT_ERR_AUTH
             # Runs on the paho network thread; wait=False keeps the reconnect loop
             # from blocking on the token refresh (network I/O, no timeout).
