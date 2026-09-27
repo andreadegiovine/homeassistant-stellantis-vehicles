@@ -70,10 +70,13 @@ def parse_mqtt_event(payload:dict[str, Any]) -> dict[str, Any]:
         "vin": payload.get("vin"),
         "timestamp": payload.get("date"),
         # Increasing counter + trigger code for the event stream itself.
-        # reason 0 (always with counter 1) is the session-start snapshot.
+        # reason: 0 session-start snapshot (always counter 1), 2 ignition,
+        # 3/4 charging, 5 doors, 6 electrical network state; 1 is rare.
         "event_counter": payload.get("obj_counter"),
         "event_reason_code": payload.get("reason"),
         "signal_quality": payload.get("signal_quality"),
+        # 0 off, 3 briefly while switching on, 5 high-voltage network active;
+        # drops back to 0 minutes after switch-off and stays 0 while charging.
         "electric_network_state_code": payload.get("etat_res_elec"),
         # sev_state: 0 = off, 1 = on/ready, 2 = starting (lasts up to ~5s).
         # 88 of 96 on-cycles went 0 -> 1 -> 2 -> 1 -> 0, the rest skipped a step.
