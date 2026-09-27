@@ -302,10 +302,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         correctly. Don't special-case counter 1: it is always the
         session-start snapshot (reason 0), which often arrives after the
         session's next events while still holding the older state. A missing
-        timestamp or counter can't be placed in the sequence, so it is
-        accepted rather than silently dropped.
+        or unparsable timestamp or a missing counter can't be placed in the
+        sequence, so the event is accepted rather than silently dropped.
         """
-        timestamp = event.get("timestamp")
+        timestamp = parse_timestamp(event.get("timestamp"))
         counter = event.get("event_counter")
         if timestamp is None or counter is None:
             return True
