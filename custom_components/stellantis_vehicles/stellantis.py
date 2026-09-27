@@ -1017,8 +1017,13 @@ class StellantisVehicles(StellantisOauth):
             coordinator.async_update_listeners()
 
     @log_call
-    def _on_mqtt_connect(self, client, userdata, result_code, _):
-        _LOGGER.debug("MQTT connected (code %s)", result_code)
+    def _on_mqtt_connect(self, client, userdata, flags, result_code):
+        if result_code != 0:
+            # paho also calls on_connect for a refused connection; stay
+            # disconnected so commands aren't offered and nothing is subscribed.
+            _LOGGER.debug("MQTT connection refused (code %s: %s)", result_code, mqtt.connack_string(result_code))
+            return
+        _LOGGER.debug("MQTT connected (flags %s)", flags)
         self._mqtt_connected = True
         self._hass.loop.call_soon_threadsafe(self._update_all_listeners)
         try:
