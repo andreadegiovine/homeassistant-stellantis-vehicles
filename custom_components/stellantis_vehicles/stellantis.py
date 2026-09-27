@@ -1119,9 +1119,10 @@ class StellantisVehicles(StellantisOauth):
                 _LOGGER.debug("Parsed vehicle event: %s", event)
                 coordinator = self.async_get_coordinator_by_vin(event.get("vin"))
                 if coordinator:
-                    # wait=False: fire-and-forget so the paho network thread
-                    # isn't blocked; apply_mqtt_event notifies listeners itself.
-                    self.do_async(coordinator.apply_mqtt_event(event), wait=False)
+                    # Runs on the paho thread: hand the event to the event loop
+                    # without blocking; the loop logs any error it raises.
+                    if not self._shutting_down:
+                        self._hass.loop.call_soon_threadsafe(coordinator.apply_mqtt_event, event)
                 else:
                     _LOGGER.debug("No coordinator found for vehicle event (vin %s)", event.get("vin"))
         except Exception:

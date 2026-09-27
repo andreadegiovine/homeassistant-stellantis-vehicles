@@ -264,7 +264,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Last accepted MQTT vehicle event (see parse_mqtt_event), or {} before the first one. """
         return self._mqtt_state
 
-    async def apply_mqtt_event(self, event:dict[str, Any]) -> None:
+    @callback
+    def apply_mqtt_event(self, event:dict[str, Any]) -> None:
         """ Apply a parsed MQTT vehicle event (see parse_mqtt_event).
 
         Events for a given VIN are not guaranteed to arrive in order, so
