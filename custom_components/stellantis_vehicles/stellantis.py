@@ -658,7 +658,7 @@ class StellantisVehicles(StellantisOauth):
         await self.scheduled_mqtt_token_refresh()
 
     @log_call
-    async def scheduled_oauth_token_refresh(self, now=None):
+    async def scheduled_oauth_token_refresh(self, now:datetime | None = None) -> None:
         def get_next_run():
             expires_in = self.get_config("oauth")["expires_in"]
             return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
@@ -701,6 +701,9 @@ class StellantisVehicles(StellantisOauth):
             # @rate_limit(6, 1800) on refresh_oauth_token_request.
             _LOGGER.exception("Unexpected error during the OAuth token refresh, retrying in 5 minutes")
             next_run = get_datetime() + timedelta(minutes=5)
+        if self._shutting_down:
+            # Unloaded while the refresh was in flight: don't re-arm the timer.
+            return
         _LOGGER.debug("Next oauth token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_oauth_token_refresh, f"{DOMAIN} refresh oauth token: {next_run}", cancel_on_shutdown=True)
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
@@ -854,7 +857,7 @@ class StellantisVehicles(StellantisOauth):
         return vehicle_maintenance_request
 
     @log_call
-    async def scheduled_mqtt_token_refresh(self, now=None, force=False):
+    async def scheduled_mqtt_token_refresh(self, now:datetime | None = None, force:bool = False) -> None:
         if not self.remote_commands:
             return
         def get_next_run():
@@ -905,6 +908,9 @@ class StellantisVehicles(StellantisOauth):
             # inside the try and is only re-armed below.
             _LOGGER.exception("Unexpected error during the MQTT token refresh, retrying in 5 minutes")
             next_run = get_datetime() + timedelta(minutes=5)
+        if self._shutting_down:
+            # Unloaded while the refresh was in flight: don't re-arm the timer.
+            return
         _LOGGER.debug("Next mqtt token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_mqtt_token_refresh, f"{DOMAIN} refresh mqtt token: {next_run}", cancel_on_shutdown=True)
         self._mqtt_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)

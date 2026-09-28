@@ -37,7 +37,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     add_extra_js_url(hass, url)
     return True
 
-async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
+async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
 
     stellantis = StellantisVehicles(hass)
     stellantis.save_config(config.data)
@@ -49,6 +49,11 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
     try:
         vehicles = await stellantis.get_user_vehicles()
     except ConfigEntryAuthFailed:
+        # The token refresh above may have re-armed its timer; left running on
+        # this orphaned instance it would keep retrying a dead refresh token and
+        # restart reauth on the entry, even after a successful reauth.
+        await stellantis.async_shutdown()
+        config.runtime_data = None
         raise
     except Exception as err:
         # Home Assistant does not call async_unload_entry when async_setup_entry
