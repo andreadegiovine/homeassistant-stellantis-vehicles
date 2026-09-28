@@ -68,7 +68,8 @@
       "get_mqtt_access_token_nok_access": "Code SMS ou code Pin invalide",
       "get_mqtt_access_token_nok_maxnbtools": "Limite atteinte nombre d'équipements associés ou nombre de SMS. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
       "get_mqtt_access_token_nok_nok_blocked": "Limite atteinte nombre de code PIN incorrects. Réinitialisez votre compte Stellantis et recommencez le processus de configuration",
-      "get_mqtt_access_token_rate_limit": "Limite atteinte nombre de requêtes du jeton d'accès MQTT (6 par jour)"
+      "get_mqtt_access_token_rate_limit": "Limite atteinte nombre de requêtes du jeton d'accès MQTT (6 par jour)",
+      "not_loaded": "L'intégration n'est pas encore chargée, attendez la fin de la configuration et essayez à nouveau"
     },
     "abort": {
       "already_configured": "Compte déjà configuré",
@@ -421,7 +422,11 @@
     "no_vehicles_found_title": "Indisponible",
     "no_vehicles_found_message": "Aucun véhicule connecté disponible sur ce compte",
     "command_error_title": "Commande",
-    "command_error_message": "La commande n'a pas été envoyée correctement"
+    "command_error_message": "La commande n'a pas été envoyée correctement",
+    "get_oauth_code_title": "Erreur code OAuth",
+    "get_oauth_code_message": "Impossible de récupérer le code OAuth pour ce compte. Vérifiez votre adresse e-mail et votre mot de passe, ou essayez à nouveau plus tard si le service de connexion à distance est indisponible",
+    "reconfigure_otp_title": "Commandes à distance désactivées",
+    "reconfigure_otp_message": "L'authentification pour les commandes à distance a échoué, elles ont donc été désactivées. Reconfigurez l'intégration pour les réactiver"
   },
   "issues": {
     "vehicle_removed": {
