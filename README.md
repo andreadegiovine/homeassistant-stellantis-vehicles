@@ -306,9 +306,9 @@ SA Energy
 Al  
 
 **⭐ 3 BEERS**  
+Adam Szczerba  
 Hubert  
 Someone  
-Mark  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
