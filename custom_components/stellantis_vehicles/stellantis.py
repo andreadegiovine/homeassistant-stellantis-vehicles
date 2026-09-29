@@ -5,6 +5,7 @@ from PIL import Image, ImageOps
 import os
 from io import BytesIO
 from copy import deepcopy
+from urllib.parse import urlsplit
 import paho.mqtt.client as mqtt
 import json
 from uuid import uuid4
@@ -29,7 +30,7 @@ from homeassistant.util.ssl import client_context
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call )
+from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, sensitive_digest )
 from .exceptions import ( CommunicationError, RateLimitException )
 
 from .const import (
@@ -80,15 +81,18 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
 
-def _log_http_exchange(url, headers, response, **extra):
-    """Debug-log an HTTP request and its decoded response as a single record."""
-    if not _LOGGER.isEnabledFor(logging.DEBUG):
-        return
-    details = "".join(f" {key}={value!r}" for key, value in extra.items())
-    _LOGGER.debug(
-        "HTTP exchange | url=%s headers=%s%s | response=%s",
-        url, headers, details, response,
-    )
+def url_without_query(url) -> str:
+    """Return ``scheme://host/path`` for a URL, stripping any (possibly signed) query.
+
+    Signed URLs (e.g. vehicle pictures) must never have their query parameters
+    written to the log, as those parameters can grant access to the resource.
+    """
+    if not url:
+        return "<no url>"
+    parts = urlsplit(str(url))
+    if not parts.scheme and not parts.netloc:
+        return str(url).split("?", 1)[0]
+    return f"{parts.scheme}://{parts.netloc}{parts.path}"
 
 
 # Some Stellantis MQTT servers drop packets with a TCP payload greater than 1456 bytes
@@ -248,21 +252,18 @@ class StellantisBase:
                     elif "message" in result and "code" in result:
                         error = result["message"] + " - " + str(result["code"])
 
-                    _LOGGER.debug(
-                        "HTTP %s %s failed with status %s | headers=%s params=%s json=%s data=%s | response=%s",
-                        method, url, resp.status, headers, params, json_data, data, result,
-                    )
+                    _LOGGER.debug("%s request error %s: %s", method, resp.status, resp.url.path)
 
                     if str(resp.status) == "404" and str(result.get("code")) == "40400":
                         # Not Found: We didn't find the status for this vehicle. - 40400
-                        _LOGGER.warning(error or "Vehicle status not found (HTTP 404)")
+                        _LOGGER.warning("Vehicle status not found (status=%s, code=%s, message digest=%s)", resp.status, result.get("code"), sensitive_digest(error))
                         return {}
                     if str(resp.status).startswith("500") and str(result.get("code")) == "50038":
                         # CVS error/user-vins - 50038: a transient Stellantis backend
                         # failure while resolving the account's VIN list. Treat it like
                         # an empty status so the coordinator keeps the last known data
                         # for a few cycles instead of dropping every entity.
-                        _LOGGER.warning(error or "Transient CVS user-vins error (HTTP 500)")
+                        _LOGGER.warning("Transient Stellantis backend error while resolving the VIN list (status=%s, code=%s, message digest=%s)", resp.status, result.get("code"), sensitive_digest(error))
                         return {}
                     if str(resp.status) == "500" and str(result.get("code")) == "50000":
                         # Connection module replaced (https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/388)
@@ -270,7 +271,7 @@ class StellantisBase:
                         raise CommunicationError(error or "Stellantis connection module error (HTTP 500)")
                     if str(resp.status) == "400" and result.get("error") == "invalid_grant":
                         # Token expiration
-                        raise ConfigEntryAuthFailed(error or "Stellantis rejected the request (invalid_grant)")
+                        raise ConfigEntryAuthFailed("OAuth token expired (invalid_grant)")
                     if str(resp.status) == "401":
                         # The OAuth access token was rejected. This is usually a
                         # short-lived blip right after a token rotation, so
@@ -283,7 +284,7 @@ class StellantisBase:
                             except (CommunicationError, RateLimitException) as refresh_err:
                                 # ConfigEntryAuthFailed (dead refresh token) is left
                                 # to propagate so Home Assistant starts reauth.
-                                _LOGGER.debug("Token refresh before retry failed: %s", refresh_err)
+                                _LOGGER.debug("Token refresh before retry failed (%s)", type(refresh_err).__name__)
                             else:
                                 new_token = (self.get_config("oauth") or {}).get("access_token")
                                 if headers and "Authorization" in headers and new_token:
@@ -299,20 +300,20 @@ class StellantisBase:
                 return result
         except asyncio.TimeoutError as e:
             await self.close_session()
-            _LOGGER.warning("Request to %s timed out: %s", url, e)
+            _LOGGER.warning("Request timeout (%s)", type(e).__name__)
             # Connection error
             raise CommunicationError("Request timeout") from e
         except aiohttp.client_exceptions.ClientError as e:
             await self.close_session()
-            _LOGGER.warning("Request to %s failed: %s", url, e)
+            _LOGGER.warning("HTTP client error (%s)", type(e).__name__)
             # Connection error
             raise CommunicationError(e) from e
         except (ConfigEntryAuthFailed, CommunicationError):
             await self.close_session()
             raise
-        except Exception:
+        except Exception as e:
             await self.close_session()
-            _LOGGER.exception("Unexpected error during request to %s", url)
+            _LOGGER.warning("Unexpected error (%s)", type(e).__name__)
             raise
 
     def do_async(self, async_func, delay=0, *, wait):
@@ -394,7 +395,7 @@ class StellantisOauth(StellantisBase):
         oauth_code_request = await self.make_http_request(code_url or OAUTH_CODE_URL, 'POST', None, None, {"url": self.get_oauth_url(), "email": email, "password": password}, None, 300)
         if "code" in oauth_code_request:
             self.logger_filter.add_custom_value(oauth_code_request["code"])
-        _LOGGER.debug("OAuth code response: %s", oauth_code_request)
+        _LOGGER.debug("OAuth code response received (code present: %s)", "code" in oauth_code_request)
         return oauth_code_request
 
     @log_call
@@ -408,7 +409,7 @@ class StellantisOauth(StellantisBase):
             self.logger_filter.add_custom_value(token_request["refresh_token"])
         if "id_token" in token_request:
             self.logger_filter.add_custom_value(token_request["id_token"])
-        _log_http_exchange(url, headers, token_request)
+        _LOGGER.debug("Access token response received")
         return token_request
 
     @log_call
@@ -421,7 +422,7 @@ class StellantisOauth(StellantisBase):
         for key in ("customer", "vehicle", "car_association_id"):
             if key in user_info:
                 self.logger_filter.add_custom_value(user_info[key])
-        _log_http_exchange(url, headers, user_request)
+        _LOGGER.debug("User info response received")
         # Always hand back a list so callers can safely index [0]; a non-list
         # body (error object, changed shape) becomes an empty list, which the
         # config flow reports as missing user info.
@@ -436,11 +437,11 @@ class StellantisOauth(StellantisBase):
                 finalyze = self.otp.activation_finalyze()
                 if finalyze != 0:
                     raise ConfigException(finalyze)
-        except ConfigException as e:
-            _LOGGER.error(str(e))
+        except ConfigException:
+            _LOGGER.error("OTP activation failed (configuration error)")
             raise
         except Exception as e:
-            _LOGGER.error(str(e))
+            _LOGGER.error("OTP activation failed (%s)", type(e).__name__)
             raise ConfigException(str(e)) from e
 
     @log_call
@@ -448,7 +449,7 @@ class StellantisOauth(StellantisBase):
         url = self.apply_query_params(GET_OTP_URL, CLIENT_ID_QUERY_PARAMS)
         headers = self.apply_dict_params(GET_OTP_HEADERS)
         sms_request = await self.make_http_request(url, 'POST', headers)
-        _log_http_exchange(url, headers, sms_request)
+        _LOGGER.debug("OTP SMS request completed")
         return sms_request
 
     @log_call
@@ -462,9 +463,9 @@ class StellantisOauth(StellantisBase):
                 self.logger_filter.add_custom_value(token_request["access_token"])
             if "refresh_token" in token_request:
                 self.logger_filter.add_custom_value(token_request["refresh_token"])
-            _log_http_exchange(url, headers, token_request)
+            _LOGGER.debug("MQTT access token response received")
         except ConfigException as e:
-            raise ConfigEntryAuthFailed(str(e)) from e
+            raise ConfigEntryAuthFailed(f"MQTT authentication failed ({type(e).__name__})") from e
         return token_request
 
     @log_call
@@ -481,7 +482,7 @@ class StellantisOauth(StellantisBase):
         # Check if OTP object is already loaded, if not load it
         if self.otp is None:
             if not os.path.isfile(otp_file_path):
-                _LOGGER.error("OTP file '%s' not found, please reauthenticate", otp_file_path)
+                _LOGGER.error("Error: OTP file not found, please reauthenticate")
                 raise ConfigEntryAuthFailed("OTP file not found, please reauthenticate")
             self.otp = await self._hass.async_add_executor_job(load_otp, otp_file_path)
         # Get the OTP code using OTP object. It seems there is a rate limit of 6 requests per 24h
@@ -557,7 +558,7 @@ class StellantisVehicles(StellantisOauth):
         self.update_stored_config("vehicles", new_vehicles)
         # Through save_config() so the log filter's snapshot drops the stale VINs.
         self.save_config({"vehicles": deepcopy(new_vehicles)})
-        _LOGGER.info("Removed stored config for vehicles no longer on the account: %s", ", ".join(stale))
+        _LOGGER.info("Removed stored config for %d vehicle(s) no longer on the account", len(stale))
         return stale
 
     def async_get_coordinator_by_vin(self, vin):
@@ -677,8 +678,8 @@ class StellantisVehicles(StellantisOauth):
             delay += random.uniform(0, delay * 0.1)
             next_run = get_datetime() + timedelta(seconds=delay)
             _LOGGER.warning(
-                "OAuth token refresh failed (attempt %s), next retry at %s: %s",
-                self._oauth_token_retry, next_run, err,
+                "OAuth token refresh failed (attempt %s), next retry at %s (%s)",
+                self._oauth_token_retry, next_run, type(err).__name__,
             )
         except RateLimitException:
             _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
@@ -687,7 +688,7 @@ class StellantisVehicles(StellantisOauth):
             # The refresh token was rejected by the server: start the reauth
             # flow now instead of waiting for a later poll to trip over it, and
             # keep the timer alive with a slow retry in case it was transient.
-            _LOGGER.error("OAuth refresh token rejected, starting the reauth flow: %s", err)
+            _LOGGER.error("OAuth refresh token rejected, starting the reauth flow (%s)", type(err).__name__)
             try:
                 if self._entry is not None:
                     self._entry.async_start_reauth(self._hass)
@@ -726,7 +727,7 @@ class StellantisVehicles(StellantisOauth):
         self.update_stored_config("oauth", new_config)
         if "id_token" in token_request:
             self.logger_filter.add_custom_value(token_request["id_token"])
-        _log_http_exchange(url, headers, token_request)
+        _LOGGER.debug("OAuth token refreshed")
 
     @log_call
     async def get_user_vehicles(self, force=False):
@@ -759,7 +760,7 @@ class StellantisVehicles(StellantisOauth):
                     else:
                         for value in account_ids:
                             self.logger_filter.add_custom_value(value)
-            _log_http_exchange(url, headers, vehicles_request)
+            _LOGGER.debug("Vehicle list response received")
             if "_embedded" in vehicles_request:
                 if "vehicles" in vehicles_request["_embedded"]:
                     for vehicle in vehicles_request["_embedded"]["vehicles"]:
@@ -777,9 +778,9 @@ class StellantisVehicles(StellantisOauth):
                             pictures = vehicle.get("pictures") or []
                             _LOGGER.warning(
                                 "Unable to download and save the vehicle picture for VIN %s from %s: %s",
-                                vehicle["vin"],
-                                pictures[0] if pictures else "<no picture URL>",
-                                e,
+                                sensitive_digest(vehicle["vin"]),
+                                url_without_query(pictures[0] if pictures else None),
+                                type(e).__name__,
                             )
                         self._vehicles.append(vehicle_data)
                 else:
@@ -798,7 +799,7 @@ class StellantisVehicles(StellantisOauth):
         url = self.apply_query_params(CAR_API_GET_VEHICLE_STATUS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
-        _log_http_exchange(url, headers, vehicle_status_request)
+        _LOGGER.debug("Vehicle status response received")
         return vehicle_status_request
 
     @log_call
@@ -810,7 +811,7 @@ class StellantisVehicles(StellantisOauth):
         if page_token is not None:
             url += "&pageToken=" + page_token
         vehicle_trips_request = await self.make_http_request(url, 'GET', headers)
-        _log_http_exchange(url, headers, vehicle_trips_request)
+        _LOGGER.debug("Vehicle trips response received")
         links = vehicle_trips_request.get("_links", {})
         last_href = links.get("last", {}).get("href")
         self_href = links.get("self", {}).get("href")
@@ -837,7 +838,7 @@ class StellantisVehicles(StellantisOauth):
         if page_token is not None:
             url += "&pageToken=" + str(page_token)
         vehicle_trips_request = await self.make_http_request(url, "GET", headers)
-        _log_http_exchange(url, headers, vehicle_trips_request)
+        _LOGGER.debug("Vehicle trips response received")
         return vehicle_trips_request
 
     @log_call
@@ -850,7 +851,7 @@ class StellantisVehicles(StellantisOauth):
         url = self.apply_query_params(maintenance_href, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
         vehicle_maintenance_request = await self.make_http_request(url, 'GET', headers)
-        _log_http_exchange(url, headers, vehicle_maintenance_request)
+        _LOGGER.debug("Vehicle maintenance response received")
         return vehicle_maintenance_request
 
     @log_call
@@ -874,8 +875,8 @@ class StellantisVehicles(StellantisOauth):
             delay += random.uniform(0, delay * 0.1)
             next_run = get_datetime() + timedelta(seconds=delay)
             _LOGGER.warning(
-                "MQTT token refresh failed (attempt %s), next retry at %s: %s",
-                self._mqtt_token_retry, next_run, err,
+                "MQTT token refresh failed (attempt %s), next retry at %s (%s)",
+                self._mqtt_token_retry, next_run, type(err).__name__,
             )
         except RateLimitException:
             self._mqtt_token_retry = 0
@@ -893,7 +894,7 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt_token_retry = 0
             self.disable_remote_commands()
             await self.hass_notify("reconfigure_otp")
-            _LOGGER.error("MQTT authentication failed, starting the reauth flow: %s", err)
+            _LOGGER.error("MQTT authentication failed, starting the reauth flow (%s)", type(err).__name__)
             try:
                 if self._entry is not None:
                     self._entry.async_start_reauth(self._hass)
@@ -931,7 +932,7 @@ class StellantisVehicles(StellantisOauth):
             # refresh_token if one is present before logging the exchange.
             if isinstance(token_request, dict) and token_request.get("refresh_token"):
                 self.logger_filter.add_custom_value(token_request["refresh_token"])
-            _log_http_exchange(url, headers, token_request)
+            _LOGGER.debug("MQTT token refresh response received")
             return None
         mqtt_config["access_token"] = token_request["access_token"]
         mqtt_config["expires_in"] = (get_datetime() + timedelta(seconds=int(token_request["expires_in"]))).isoformat()
@@ -942,7 +943,7 @@ class StellantisVehicles(StellantisOauth):
         # then log the raw response - see refresh_oauth_token_request().
         self.save_config({"mqtt": mqtt_config})
         self.update_stored_config("mqtt", mqtt_config)
-        _log_http_exchange(url, headers, token_request)
+        _LOGGER.debug("MQTT token refresh response received")
 
     @log_call
     async def connect_mqtt(self):
@@ -995,7 +996,7 @@ class StellantisVehicles(StellantisOauth):
                 )
                 self._mqtt.loop_start() # Under the hood, this will call loop_forever in a thread, which means that the thread will terminate if we call disconnect()
             except Exception as e:
-                _LOGGER.warning("Failed to connect to the MQTT broker: %s", e)
+                _LOGGER.warning("MQTT connect failed (%s)", type(e).__name__)
             return self._mqtt.is_connected()
 
     async def _disconnect_mqtt_locked(self) -> None:
@@ -1032,9 +1033,9 @@ class StellantisVehicles(StellantisOauth):
                 topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
             for topic in topics:
                 client.subscribe(topic, qos=MQTT_QOS)
-                _LOGGER.debug("Subscribed to MQTT topic %s", topic)
-        except Exception:
-            _LOGGER.exception("Error while subscribing to MQTT topics")
+                _LOGGER.debug("Subscribed to topic digest: %s", sensitive_digest(topic))
+        except Exception as e:
+            _LOGGER.warning("MQTT subscribe failed (%s)", type(e).__name__)
 
     @log_call
     def _on_mqtt_disconnect(self, client, userdata, result_code):
@@ -1061,13 +1062,18 @@ class StellantisVehicles(StellantisOauth):
                 self.do_async(self.reconnect_mqtt(), 300, wait=False)
             else:
                 _LOGGER.debug("MQTT subscription completed (QoS: %s)", granted_qos)
-        except Exception:
-            _LOGGER.exception("Error in MQTT subscribe callback")
+        except Exception as e:
+            _LOGGER.warning("MQTT subscribe error (%s)", type(e).__name__)
 
     @log_call
     def _on_mqtt_message(self, client, userdata, msg):
         try:
-            _LOGGER.debug("MQTT message on %s (qos %s): %s", msg.topic, msg.qos, msg.payload)
+            _LOGGER.debug(
+                "MQTT message received (topic digest: %s, qos: %s, payload bytes: %d)",
+                sensitive_digest(msg.topic),
+                msg.qos,
+                len(msg.payload),
+            )
             data = json.loads(msg.payload)
             if msg.topic.startswith(MQTT_RESP_TOPIC):
                 if "vin" in data:
@@ -1130,8 +1136,8 @@ class StellantisVehicles(StellantisOauth):
 #                 if programs:
 #                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
                 _LOGGER.debug("Update data from mqtt?!?")
-        except Exception:
-            _LOGGER.exception("Error while handling MQTT message")
+        except Exception as e:
+            _LOGGER.warning("MQTT message handling failed (%s)", type(e).__name__)
 
     @log_call
     async def send_mqtt_message(self, service, message, vehicle, force_token_refresh=False, action_id=None):
@@ -1159,7 +1165,11 @@ class StellantisVehicles(StellantisOauth):
                 "vin": vehicle["vin"],
                 "req_parameters": message
             })
-            _LOGGER.debug("Publishing MQTT message to %s: %s", topic, data)
+            _LOGGER.debug(
+                "Publishing MQTT message to topic digest %s (payload bytes: %d)",
+                sensitive_digest(topic),
+                len(data),
+            )
             message_info = self._mqtt.publish(topic, data, qos=MQTT_QOS, retain=False)
             if message_info.rc != mqtt.MQTT_ERR_SUCCESS:
                 _LOGGER.warning("Failed to send MQTT message: %s", mqtt.error_string(message_info.rc))
@@ -1174,18 +1184,18 @@ class StellantisVehicles(StellantisOauth):
         except CommunicationError:
             _LOGGER.warning("Could not send MQTT message for %s: MQTT client is not connected", service)
             raise
-        except Exception:
-            _LOGGER.exception("Unexpected error during MQTT message sending")
+        except Exception as e:
+            _LOGGER.error("Unexpected error during MQTT message sending (%s)", type(e).__name__)
             raise
 
     @log_call
     async def send_abrp_data(self, params):
         params["api_key"] = ABRP_API_KEY
-        _LOGGER.debug("ABRP request params: %s", params)
+        _LOGGER.debug("Sending ABRP data")
         try:
             abrp_request = await self.make_http_request(ABRP_URL, "POST", None, params)
-            _LOGGER.debug("ABRP response: %s", abrp_request)
             if "status" not in abrp_request or abrp_request["status"] != "ok":
-                _LOGGER.warning("Unexpected ABRP response: %s", abrp_request)
+                _LOGGER.debug("ABRP data upload response received")
+                _LOGGER.warning("ABRP data upload failed (status: %s)", abrp_request.get("status", "unknown"))
         except Exception as e:
-            _LOGGER.warning("Failed to send ABRP data: %s", e)
+            _LOGGER.warning("Failed to send ABRP data (%s)", type(e).__name__)

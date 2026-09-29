@@ -1,5 +1,6 @@
 import asyncio
 import json
+import hashlib
 import logging
 from collections import deque
 from datetime import UTC, datetime, timedelta
@@ -16,6 +17,18 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+def sensitive_digest(value) -> str:
+    """Return a short, non-reversible sha256 digest of a value for safe logging.
+
+    Raw secrets and personal data (tokens, headers, payloads, VINs, customer
+    ids, ...) must never be written to the log. When a value needs to be
+    correlated across log lines for debugging, log this truncated digest
+    instead of the value.
+    """
+    if value is None:
+        return "none"
+    return hashlib.sha256(str(value).encode("utf-8")).hexdigest()[:12]
 
 def get_datetime(date = None):
     if date is None:
@@ -56,7 +69,7 @@ def date_from_pt_string(pt_string, start_date=None):
         return start_date + timedelta(hours=time.hour, minutes=time.minute)
 
     except Exception as e:
-        _LOGGER.warning(str(e))
+        _LOGGER.warning("Failed to parse PT duration (%s)", type(e).__name__)
         return None
 
 def replace_string_placeholders(string, placeholders=None):

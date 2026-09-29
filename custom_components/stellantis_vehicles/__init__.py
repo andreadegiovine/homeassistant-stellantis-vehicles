@@ -13,6 +13,7 @@ from homeassistant.components.http import StaticPathConfig
 
 from .stellantis import StellantisVehicles
 from .config_flow import StellantisVehiclesConfigFlow
+from .utils import sensitive_digest
 
 from .const import (
     DOMAIN,
@@ -58,7 +59,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
         # leaving a loaded but empty entry behind a misleading "no vehicles" notice.
         await stellantis.async_shutdown()
         config.runtime_data = None
-        raise ConfigEntryNotReady(f"Could not fetch the vehicle list: {err}") from err
+        raise ConfigEntryNotReady(f"Could not fetch the vehicle list: {type(err).__name__}") from err
 
     if vehicles:
         stellantis.prune_stored_vehicle_configs({vehicle["vin"] for vehicle in vehicles})
@@ -142,7 +143,7 @@ async def async_remove_config_entry_device(
             vehicle["vin"] for vehicle in await stellantis.get_user_vehicles()
         }
     except Exception as err:  # noqa: BLE001 - never block manual cleanup on an API error
-        _LOGGER.warning("Could not verify account vehicles before device removal: %s", err)
+        _LOGGER.warning("Could not verify account vehicles before device removal (%s)", type(err).__name__)
         known_vins = set()
     return not any(
         identifier[0] == DOMAIN and identifier[1] in known_vins
@@ -185,7 +186,7 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
 
             # Remove OTP file if it exists
             if os.path.isfile(otp_file_path):
-                _LOGGER.debug("Deleting OTP file: %s", otp_file_path)
+                _LOGGER.debug("Deleting OTP file (path digest: %s)", sensitive_digest(otp_file_path))
                 os.remove(otp_file_path)
 
             # Remove storage folder if empty
@@ -195,7 +196,7 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
 
             # Remove Stellantis image folder of this entry
             if os.path.exists(entry_image_path) and os.path.isdir(entry_image_path):
-                _LOGGER.debug("Deleting Stellantis entry image folder: %s", entry_image_path)
+                _LOGGER.debug("Deleting Stellantis entry image folder (path digest: %s)", sensitive_digest(entry_image_path))
                 shutil.rmtree(entry_image_path)
 
             # Remove Stellantis image folder if empty
@@ -211,7 +212,7 @@ async def _migrate_to_1_2(hass: HomeAssistant, config: ConfigEntry) -> None:
     # update unique_id with customer_id - used to be data[FIELD_MOBILE_APP].lower()+str(self.data["access_token"][:5])
     new_unique_id = config.data.get("customer_id")
     if config.unique_id != new_unique_id:
-        _LOGGER.debug("Migrating unique_id from %s to %s", config.unique_id, new_unique_id)
+        _LOGGER.debug("Migrating unique_id (%s -> %s)", sensitive_digest(config.unique_id), sensitive_digest(new_unique_id))
         hass.config_entries.async_update_entry(config, unique_id=new_unique_id)
 
     # Migrate to new file structure - generate path to storage folder and move OTP file
@@ -229,7 +230,7 @@ async def _migrate_to_1_2(hass: HomeAssistant, config: ConfigEntry) -> None:
         if not os.path.isdir(new_storage_path):
             os.mkdir(new_storage_path)
         if not os.path.isfile(new_otp_file_path):
-            _LOGGER.debug("Migrating OTP file to new storage path from %s to %s", old_otp_file_path, new_otp_file_path)
+            _LOGGER.debug("Migrating OTP file to new storage path (new path digest: %s)", sensitive_digest(new_otp_file_path))
             os.rename(old_otp_file_path, new_otp_file_path)
         else:
             os.remove(old_otp_file_path)
@@ -366,7 +367,7 @@ async def _migrate_to_20260902(hass: HomeAssistant, config: ConfigEntry, target_
     new_unique_id = f"{str(data["customer_id"])}_{str(data["mobile_app"])}_{str(data["country_code"])}"
 
     if unique_id == new_unique_id:
-        _LOGGER.debug("unique_id already match new pattern %s = %s", unique_id, new_unique_id)
+        _LOGGER.debug("unique_id already match new pattern (%s = %s)", sensitive_digest(unique_id), sensitive_digest(new_unique_id))
         return
 
     if INTEGRATION_IS_BETA:

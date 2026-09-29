@@ -20,7 +20,7 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ( ConfigEntryAuthFailed, ServiceValidationError )
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, SENSITIVE_DATA_FILTER )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, SENSITIVE_DATA_FILTER, sensitive_digest )
 
 from .const import (
     DOMAIN,
@@ -73,7 +73,6 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     @log_call
     async def _async_update_data(self) -> dict[str, Any] | None:
         """ Update vehicle data from Stellantis. """
-        _LOGGER.debug("Coordinator config: %s", self._config)
         self._apply_refresh_interval_override()
 
         new_data = await self._fetch_new_data()
@@ -122,7 +121,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         except ConfigEntryAuthFailed:
             raise
         except Exception as err:
-            _LOGGER.debug("Error communicating with Stellantis API: %s", err)
+            _LOGGER.debug("Error communicating with Stellantis API (%s)", type(err).__name__)
             raise UpdateFailed(
                 "Error communicating with Stellantis API, enable debug logging for details"
             ) from err
@@ -184,10 +183,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         active = state == "Full"
         if active and not self._privacy_full_logged:
             self._privacy_full_logged = True
-            _LOGGER.info("Private mode is enabled on vehicle %s, Stellantis has paused live data updates", self._vehicle["vin"])
+            _LOGGER.info("Private mode is enabled, Stellantis has paused live data updates")
         elif not active and self._privacy_full_logged:
             self._privacy_full_logged = False
-            _LOGGER.info("Private mode is disabled on vehicle %s, live data updates resumed", self._vehicle["vin"])
+            _LOGGER.info("Private mode is disabled, live data updates resumed")
 
     async def _reconcile_vehicle(self):
         """ Re-fetch the account vehicle list to check whether this vehicle was unpaired.
@@ -199,14 +198,14 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         try:
             live = await self._stellantis.get_user_vehicles(force=True)
         except Exception as err:
-            _LOGGER.debug("Could not refresh the vehicle list for %s: %s", vin, err)
+            _LOGGER.debug("Could not refresh the vehicle list for %s (%s)", sensitive_digest(vin), type(err).__name__)
             return
         live_vins = {vehicle.get("vin") for vehicle in live}
         if not live_vins or vin in live_vins:
             # List unavailable or the vehicle is still there: keep polling.
             return
         self._vehicle_removed = True
-        _LOGGER.warning("Vehicle %s is no longer linked to this Stellantis account", vin)
+        _LOGGER.warning("Vehicle %s is no longer linked to this Stellantis account", sensitive_digest(vin))
         ir.async_create_issue(
             self._hass,
             DOMAIN,
@@ -222,7 +221,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if not self._vehicle_removed:
             return
         self._vehicle_removed = False
-        _LOGGER.info("Vehicle %s is reachable again", self._vehicle["vin"])
+        _LOGGER.info("Vehicle %s is reachable again", sensitive_digest(self._vehicle["vin"]))
         ir.async_delete_issue(self._hass, DOMAIN, f"vehicle_removed_{self._vehicle['vin']}")
 
     def get_translation(self, path, default = None):
@@ -319,10 +318,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 self._pending_action_id = action_id
                 self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
-            _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
+            _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s' (%s)", name, sensitive_digest(self._vehicle['vin']), type(e).__name__)
             self.config_entry.async_start_reauth(self.hass)
         except Exception as e:
-            _LOGGER.error("Failed to send command %s: %s", name, str(e))
+            _LOGGER.error("Failed to send command %s (%s)", name, type(e).__name__)
             raise
 
     @rate_limit(6, 1200) # 6 per 20 min
@@ -509,7 +508,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 if not self._last_trip or self._last_trip["id"] != trips["_embedded"]["trips"][-1]["id"]:
                     self._last_trip = trips["_embedded"]["trips"][-1]
         except Exception as e:
-            _LOGGER.warning("Failed to fetch last trip data: %s", e)
+            _LOGGER.warning("Failed to fetch last trip data (%s)", type(e).__name__)
 
 #     def parse_trips_page_data(self, data):
 #         result = []

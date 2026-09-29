@@ -73,7 +73,22 @@ for app in result:
                 "client_secret": parameters["cvsSecret"]
             }
         except Exception as e:
-            _LOGGER.error("ERROR: " + str(e))
+            _LOGGER.error("ERROR extracting parameters (%s)", type(e).__name__)
 _LOGGER.error("END")
 _LOGGER.error("-- UPDATE 'configs.json' CONTENT --")
-_LOGGER.error(json.dumps(result))
+# Never-class rule (security audit 2026-09-26): client_secret values are not
+# logged by default, even though they are vendor-APK-derived and already
+# versioned in configs.json. Set CONFIGS_UPDATER_SHOW_SECRETS=1 to print the
+# full payload when actually updating configs.json.
+import os as _os
+
+if _os.environ.get("CONFIGS_UPDATER_SHOW_SECRETS") == "1":
+    _LOGGER.error(json.dumps(result))
+else:
+    _masked = json.loads(json.dumps(result))
+    for _app in _masked.values():
+        for _cfg in _app.get("configs", {}).values():
+            if "client_secret" in _cfg:
+                _cfg["client_secret"] = "***"
+    _LOGGER.error(json.dumps(_masked))
+    _LOGGER.error("(client_secret masked; set CONFIGS_UPDATER_SHOW_SECRETS=1 for the full payload)")

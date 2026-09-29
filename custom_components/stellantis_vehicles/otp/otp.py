@@ -126,9 +126,9 @@ class Otp:
 
         R0 = self.challenge + ";" + iw + ";" + self.get_serial()
         R1 = self.challenge + ";" + iw + ";" + self.data.iwK1
-        # R2 ends with the raw PIN on the synchro action; keep it out of the log.
-        R2_log = R2.replace(self.codepin, "###") if self.action == "synchro" and self.codepin else R2
-        logger.debug("%s\n%s\n%s", R0, R1, R2_log)
+        # R0/R1/R2 contain provisioning key material, the serial and the PIN.
+        # Their raw values must never be logged; only the returned hashes leave here.
+        logger.debug("Computed R0/R1/R2 response values")
         return {"R0": hashlib.sha256(R0.encode("utf-8")).hexdigest(),
                 "R1": hashlib.sha256(R1.encode("utf-8")).hexdigest(),
                 "R2": hashlib.sha256(R2.encode("utf-8")).hexdigest()}
@@ -151,7 +151,7 @@ class Otp:
             mini = x * 128
             ciphertext = cipher.decrypt(enc_b[mini:maxi])
             dec_string += ciphertext.hex()
-        logger.debug(dec_string)
+        # dec_string is decrypted provisioning key material and must not be logged.
         return dec_string
 
     def request(self, param, setup=False):
@@ -174,7 +174,7 @@ class Otp:
                 return etree_to_dict(ElT.XML(raw_xml))["ActionSetup"]
             return etree_to_dict(ElT.XML(raw_xml))["ActionFinalize"]
         except KeyError as e:
-            logger.debug(raw_xml)
+            logger.debug("Unexpected OTP server response (length %d)", len(raw_xml))
             raise ValueError("Bad response from server") from e
 
     def activation_start(self):
@@ -212,7 +212,7 @@ class Otp:
         params.update(R)
         xml = self.request(params)
         if xml["err"] != "OK":
-            logger.error("Error during activation: %s", xml)
+            logger.error("Error during activation (err: %s)", xml.get("err"))
             return xml["err"]
         self.data.synchro(xml, self.generate_kma(self.codepin))
 
@@ -278,7 +278,7 @@ class Otp:
                         assert self.activation_finalyze() == Otp.OK
                     otp_code = self._get_otp_code()
                     assert otp_code is not None
-                    logger.debug("otp code: %s", otp_code)
+                    logger.debug("OTP code received")
         except AssertionError as e:
             raise ConfigException("Can't get otp code") from e
         return otp_code
