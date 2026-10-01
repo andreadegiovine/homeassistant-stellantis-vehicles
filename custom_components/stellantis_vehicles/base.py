@@ -252,12 +252,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     @property
     def features(self) -> dict[str, bool]:
-        """ Remote-service feature flags last reported by the vehicle (see FDS_FEATURE_CODES). """
+        """ Raw "fds" feature codes last reported by the vehicle over MQTT. """
         return self._features
-
-    def supports_feature(self, name:str) -> bool:
-        """ Whether the vehicle currently reports the named remote-service feature as enabled. """
-        return bool(self._features.get(name))
 
     @property
     def mqtt_state(self) -> dict[str, Any]:

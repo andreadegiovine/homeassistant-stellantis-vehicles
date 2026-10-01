@@ -49,23 +49,6 @@ MQTT_EVENT_TOPIC = "psa/RemoteServices/events/MPHRTServices/"
 MQTT_REQ_TOPIC = "psa/RemoteServices/from/cid/"
 MQTT_QOS = 0
 
-# Known "fds" feature codes reported by the vehicle in RemoteServices MQTT
-# events. Reverse-engineered and not officially documented by Stellantis, so
-# treat this as best-effort; unrecognized codes are kept as-is by callers.
-FDS_FEATURE_CODES = {
-    "NAE01": "battery_soc",             # Battery state of charge (EV/PHEV)
-    "NAO01": "vehicle_status",          # Overall status (odometer, range, ...)
-    "NAS01": "location_tracking",       # GPS position for vehicle locator
-    "NAW01": "diagnostics",             # Maintenance data, service intervals, faults
-    "NCG01": "charge_control",          # Start/stop charging, charge schedules
-    "NCU01": "preconditioning",         # Remote preconditioning (climate)
-    "NDR03": "remote_doors",            # Remote lock/unlock
-    "NEE02": "connectivity_profile",    # Telematics unit's mobile network profile
-    "NEF01": "trip_log",                # Trip history (consumption, duration, distance)
-    "NBM01": "telematics_unit",         # General telematics control unit (BTA/BBOX) enablement
-    "NAU01": "third_party_api_auth",    # Authorization flag for third-party API access
-}
-
 KWH_CORRECTION = 1.343
 MS_TO_KMH_CONVERSION = 3.6
 

@@ -1,8 +1,6 @@
 """Normalize Stellantis RemoteServices vehicle events received over MQTT."""
 from typing import Any
 
-from .const import FDS_FEATURE_CODES
-
 # parse_mqtt_event() keys that change on every event by design, not with the
 # vehicle state.
 _BOOKKEEPING_KEYS = {"timestamp", "event_counter", "event_reason_code", "signal_quality"}
@@ -31,15 +29,15 @@ def _parse_mqtt_timer(program:dict[str, Any] | None) -> dict[str, Any] | None:
 
 
 def _parse_mqtt_features(codes:list[str] | None) -> dict[str, bool]:
-    """Map raw "fds" feature codes to named capability flags.
+    """Turn the raw "fds" feature codes into flags keyed by the code itself.
 
     A code being present means the vehicle reports that capability as
-    enabled. Codes not found in FDS_FEATURE_CODES are kept under their raw
-    code so nothing is silently dropped while the mapping is filled in.
+    enabled. The codes are kept as-is: their meaning is not reliably known
+    yet, so no names are attached here.
     """
     if not codes:
         return {}
-    return {FDS_FEATURE_CODES.get(code, code): True for code in codes}
+    return {code: True for code in codes}
 
 
 def parse_mqtt_event(payload:dict[str, Any]) -> dict[str, Any]:
@@ -145,8 +143,7 @@ def parse_mqtt_event(payload:dict[str, Any]) -> dict[str, Any]:
             "applicable": payload.get("privacy_applicable"),
             "applicable_max": payload.get("privacy_applicable_max"),
         },
-        # Supported remote-service feature codes reported by the vehicle,
-        # mapped to named flags (see FDS_FEATURE_CODES).
+        # Supported remote-service feature codes reported by the vehicle.
         "features": _parse_mqtt_features(payload.get("fds")),
     }
 
