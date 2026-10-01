@@ -49,6 +49,55 @@ MQTT_EVENT_TOPIC = "psa/RemoteServices/events/MPHRTServices/"
 MQTT_REQ_TOPIC = "psa/RemoteServices/from/cid/"
 MQTT_QOS = 0
 
+# resp_data failure reasons per service and field, from the vendor app's
+# response enums; the first field present wins.
+MQTT_RESP_DATA_ERROR_CODES = {
+    "/Doors": {
+        "error": {
+            0: "warning_discarded_sev_not_stop",
+        },
+        "lock_resp_state": {
+            0: "doors_state_unlocked",
+            1: "doors_state_locked",
+            2: "doors_discarded_door_open",
+            3: "doors_request_refused",
+            4: "doors_unknown_reason",
+            5: "doors_cid_inside",
+        },
+    },
+    "/Horn": {
+        "error": {
+            0: "warning_discarded_sev_not_stop",
+            1: "warning_wait_before_resend",
+        },
+    },
+    "/Lights": {
+        "error": {
+            0: "warning_discarded_sev_not_stop",
+            2: "warning_wait_before_resend",
+        },
+    },
+    "/ThermalPrecond": {
+        "error": {
+            0: "precond_discarded_sev_not_stop",
+            1: "precond_discarded_already_ongoing",
+            2: "precond_discarded_communication_problem",
+            3: "precond_stop_discarded_sev_not_stop",
+            4: "precond_stop_discarded_not_ongoing",
+        },
+    },
+}
+
+# Shared by all /VehCharge* services; the app maps only 0-3.
+MQTT_CHARGING_RESP_DATA_ERROR_CODES = {
+    "error": {
+        0: "charging_discarded_standby",
+        1: "charging_discarded_already_ongoing",
+        2: "charging_discarded_communication_problem",
+        3: "charging_discarded_sev_not_stop",
+    },
+}
+
 KWH_CORRECTION = 1.343
 MS_TO_KMH_CONVERSION = 3.6
 
@@ -143,6 +192,10 @@ COMMAND_HISTORY_LIMIT = 50
 # message" handling in stellantis.py), so listing it here has no effect yet;
 # kept as a safeguard in case that changes.
 COMMAND_STATUS_STILL_IN_PROGRESS = ("900", "901", "903")
+
+# result_code values of a command that went through, so resp_data reports its
+# outcome rather than a failure reason.
+COMMAND_STATUS_SUCCESS = ("0", "1")
 
 # Seconds since a sent command was last updated before it is treated as
 # stale and no longer blocks further commands (see pending_action), even
