@@ -14,7 +14,6 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues",
   "requirements": [
-    "Pillow==12.*",
     "pycryptodome==3.*",
     "paho-mqtt>=1.3"
   ],
