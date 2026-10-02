@@ -148,14 +148,17 @@
           "rate_limit": "Limite atteinte nombre de commandes passées (6 par 20 minutes)",
           "not_compatible": "Non compatible",
           "failed": "Échouée",
-          "900": "Acceptée",
-          "901": "Réveil du véhicule",
           "903": "Transmise",
-          "0": "Terminée",
-          "300": "Délai d'attente dépassé",
-          "500": "Erreur",
+          "902": "Vérification de l'état",
+          "901": "Réveil du véhicule",
+          "900": "Acceptée",
+          "507": "Aucune couverture GPS",
+          "506": "Opérateur téléphonique non pris en charge",
           "502": "Dupliquée",
-          "422": "Confidentialité activée"
+          "500": "Erreur",
+          "422": "Confidentialité activée",
+          "300": "Délai d'attente dépassé",
+          "0": "Terminée"
         }
       },
       "fuel": {
