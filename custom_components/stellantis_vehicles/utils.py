@@ -59,6 +59,9 @@ def date_from_pt_string(pt_string, start_date=None):
         _LOGGER.warning(str(e))
         return None
 
+def vehicle_removed_issue_id(vin:str) -> str:
+    return f"vehicle_removed_{vin}"
+
 def replace_string_placeholders(string, placeholders=None):
     if placeholders is None:
         placeholders = {}

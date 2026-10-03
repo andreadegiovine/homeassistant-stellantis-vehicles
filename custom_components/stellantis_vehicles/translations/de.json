@@ -416,6 +416,12 @@
     "command_error_title": "Befehl",
     "command_error_message": "Der Befehl wurde nicht korrekt gesendet."
   },
+  "issues": {
+    "vehicle_removed": {
+      "title": "Das Fahrzeug {vin} wurde aus Ihrem Konto entfernt",
+      "description": "Home Assistant kann das Fahrzeug `{vin}` nicht mehr über die Stellantis-API erreichen, und es ist nicht mehr in Ihrem Stellantis-Konto aufgeführt. Das bedeutet in der Regel, dass das Fahrzeug verkauft oder getrennt wurde. Um dieses Problem zu beheben, muss das Fahrzeug aus der Integration entfernt werden.\n\n**Warnung:** Beim Entfernen des Fahrzeugs werden auch **alle zugehörigen Entitäten** und damit **alle Kurz- und Langzeitstatistiken** dieses Fahrzeugs (z. B. Energie, Kilometerstand und Batterieverlauf) dauerhaft gelöscht. Diese Daten lassen sich nicht wiederherstellen. Wenn Sie sie behalten möchten, exportieren oder sichern Sie sie, bevor Sie fortfahren.\n\nSo entfernen Sie das Fahrzeug:\n1. Öffnen Sie **Einstellungen > Geräte & Dienste > Stellantis Vehicles**.\n2. Öffnen Sie das Fahrzeugmenü (drei senkrechte Punkte ganz rechts in der Zeile des Fahrzeugs) und wählen Sie **Gerät löschen**.\n3. Starten Sie Home Assistant neu.\n\nDiese Warnung verschwindet, sobald das Fahrzeug entfernt wurde."
+    }
+  },
   "selector": {
     "reconfigure": {
       "options": {
