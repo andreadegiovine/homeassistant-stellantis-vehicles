@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from datetime import datetime, timedelta, UTC
@@ -20,10 +21,12 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ( ConfigEntryAuthFailed, ServiceValidationError )
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, vehicle_removed_issue_id, SENSITIVE_DATA_FILTER )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, parse_vehicle_rights, vehicle_removed_issue_id, SENSITIVE_DATA_FILTER )
+from .exceptions import CommunicationError, RateLimitException
 
 from .const import (
     DOMAIN,
+    SUPPORTED_FEATURES_RETRY_DELAYS,
     FIELD_MOBILE_APP,
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
@@ -69,6 +72,44 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         # is not polled again for the lifetime of this coordinator (issue #623:
         # some vehicles 404 on every request and flooded the logs).
         self._maintenance_unsupported = False
+        # Remote services the vehicle's subscription covers, keyed by "fds"
+        # code; None until async_lookup_supported_features has succeeded.
+        self._supported_features: dict[str, dict[str, Any]] | None = None
+
+    @property
+    def supported_features(self) -> dict[str, dict[str, Any]] | None:
+        """ Remote services the vehicle's subscription covers, keyed by "fds" code.
+
+        None means unknown (lookup pending or failed), {} means no services; a
+        caller gating on this must treat None as "allowed".
+        """
+        return self._supported_features
+
+    @log_call
+    async def async_lookup_supported_features(self) -> None:
+        """ Look up the remote services the vehicle's subscription covers.
+
+        Only shown in the diagnostics for now, nothing depends on it yet, so a
+        failure is logged and otherwise ignored. Communication errors are
+        retried with a growing delay; an auth failure is not, as it is not
+        raised inside setup or an update and so cannot start a reauth flow.
+        """
+        for delay in (*SUPPORTED_FEATURES_RETRY_DELAYS, None):
+            try:
+                response = await self._stellantis.get_vehicle_rights(self._vehicle)
+            except ConfigEntryAuthFailed as err:
+                _LOGGER.warning("Could not look up the vehicle's supported features: %s", err)
+                return
+            except (CommunicationError, RateLimitException) as err:
+                if delay is None:
+                    _LOGGER.warning("Could not look up the vehicle's supported features: %s", err)
+                    return
+                _LOGGER.debug("Supported features lookup failed, retrying in %s s: %s", delay, err)
+                await asyncio.sleep(delay)
+            else:
+                self._supported_features = parse_vehicle_rights(response)
+                _LOGGER.debug("Supported features: %s", self._supported_features)
+                return
 
     @log_call
     async def _async_update_data(self) -> dict[str, Any] | None:
