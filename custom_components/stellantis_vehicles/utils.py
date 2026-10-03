@@ -82,6 +82,28 @@ def replace_string_placeholders(string, placeholders=None):
         string = string.replace("{" + placeholder + "}", str(value))
     return string
 
+def parse_vehicle_rights(response:Any) -> dict[str, dict[str, Any]]:
+    """Flatten a vehicle rights response into {fds code: {"name", "mqtt_services"}}.
+
+    The services come grouped per telematics unit; a code listed under more
+    than one unit is kept once.
+    """
+    features:dict[str, dict[str, Any]] = {}
+    services_by_unit = response.get("services") if isinstance(response, dict) else None
+    if not isinstance(services_by_unit, dict):
+        return features
+    for services in services_by_unit.values():
+        for service in services or []:
+            if not isinstance(service, dict):
+                continue
+            code = service.get("code")
+            if code and code not in features:
+                features[code] = {
+                    "name": service.get("name"),
+                    "mqtt_services": service.get("mqtt_services") or [],
+                }
+    return features
+
 def sort_dict(items, ordered_keys=None):
     if ordered_keys is None or not isinstance(ordered_keys, list):
         return items

@@ -80,10 +80,12 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
         # platform or entity is set up yet, so Home Assistant retries the whole
         # entry cleanly. Entities are also created already holding the data from
         # the first poll, instead of briefly existing with an empty coordinator.
+        coordinators = []
         try:
             for index, vehicle in enumerate(vehicles):
                 coordinator = await stellantis.async_get_coordinator(vehicle)
                 await coordinator.async_config_entry_first_refresh()
+                coordinators.append(coordinator)
                 if index and len(vehicles) > 1:
                     # Spread the periodic polls of multiple vehicles across the
                     # interval instead of hitting the API for all of them at once.
@@ -98,6 +100,15 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
             await stellantis.async_shutdown()
             config.runtime_data = None
             raise
+
+        # Optional, so it runs in the background and only once every first
+        # refresh succeeded: a failed setup leaves no task behind.
+        for coordinator in coordinators:
+            config.async_create_background_task(
+                hass,
+                coordinator.async_lookup_supported_features(),
+                f"{DOMAIN} supported features lookup",
+            )
 
         await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
     else:

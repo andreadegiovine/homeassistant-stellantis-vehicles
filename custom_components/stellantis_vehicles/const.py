@@ -34,6 +34,9 @@ OAUTH_CODE_URL = "https://homeassistant-stellantis-vehicles-worker.onrender.com"
 
 API_BASE_URL = "https://api.groupe-psa.com"
 GET_USER_INFO_URL = API_BASE_URL + "/applications/cvs/v4/mauv/car-associations"
+# The remote services a vehicle's subscription covers, each with its "fds"
+# feature code and official name (what the vendor app's forFDS(vin) calls).
+GET_VEHICLE_RIGHTS_URL = API_BASE_URL + "/applications/cvs/v4/rights/vehicle/{#vin#}"
 GET_OTP_URL = API_BASE_URL + "/applications/cvs/v4/mobile/smsCode"
 GET_MQTT_TOKEN_URL = API_BASE_URL + "/connectedcar/v4/virtualkey/remoteaccess/token"
 CAR_API_BASE_URL = API_BASE_URL + "/connectedcar/v4/user"
@@ -174,6 +177,9 @@ PLATFORMS = [
 ]
 
 UPDATE_INTERVAL = 60 # seconds
+
+# Seconds to wait before each retry of the supported features lookup.
+SUPPORTED_FEATURES_RETRY_DELAYS = (30, 120, 600)
 
 # Consecutive empty vehicle-status responses before the account vehicle list is
 # re-fetched to check whether the vehicle was unpaired.

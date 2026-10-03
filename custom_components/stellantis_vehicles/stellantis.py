@@ -62,6 +62,7 @@ from .const import (
     MQTT_REQ_TOPIC,
     GET_USER_INFO_URL,
     CAR_API_GET_VEHICLE_TRIPS_URL,
+    GET_VEHICLE_RIGHTS_URL,
     MQTT_REFRESH_TOKEN_JSON_DATA,
     MQTT_REFRESH_TOKEN_TTL,
     COMMAND_STATUS_SUCCESS,
@@ -804,6 +805,16 @@ class StellantisVehicles(StellantisOauth):
         vehicle_status_request = await self.make_http_request(url, 'GET', headers)
         _log_http_exchange(url, headers, vehicle_status_request)
         return vehicle_status_request
+
+    @log_call
+    async def get_vehicle_rights(self, vehicle:dict[str, Any]) -> dict[str, Any]:
+        """ Remote services the vehicle's subscription covers, grouped per telematics unit. """
+        url = self.apply_query_params(GET_VEHICLE_RIGHTS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
+        # The vendor app sends this explicitly for this endpoint.
+        headers = {**self.apply_dict_params(CAR_API_HEADERS), "accept": "application/json"}
+        rights_request = await self.make_http_request(url, 'GET', headers)
+        _log_http_exchange(url, headers, rights_request)
+        return rights_request
 
     @log_call
     async def get_vehicle_last_trip(self, vehicle, page_token=None):
