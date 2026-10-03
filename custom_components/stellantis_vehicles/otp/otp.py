@@ -271,7 +271,11 @@ class Otp:
         try:
             if self.activation_start():
                 res = self.activation_finalyze()
-                if res != Otp.NOK:
+                # activation_finalyze() never actually returns Otp.NOK - on failure
+                # it returns the server's raw error string instead (see its "err"
+                # check above), so comparing against NOK let every failure through
+                # as if it had succeeded. Check for the two real success values.
+                if res in (Otp.OK, Otp.OTP_TWICE):
                     if res == Otp.OTP_TWICE:
                         self.mode = Otp.OTP_MODE
                         self.activation_start()
