@@ -148,14 +148,17 @@
           "rate_limit": "Limite raggiunto (6 ogni 20 minuti)",
           "not_compatible": "Non compatibile",
           "failed": "Fallito",
-          "900": "Accettato",
-          "901": "Risveglio del veicolo",
           "903": "Inoltrato",
-          "0": "Completato",
-          "300": "Timeout",
-          "500": "Errore",
+          "902": "Verifica dello stato",
+          "901": "Risveglio del veicolo",
+          "900": "Accettato",
+          "507": "Nessuna copertura GPS",
+          "506": "Operatore telefonico non supportato",
           "502": "Duplicato",
-          "422": "Privacy attiva"
+          "500": "Errore",
+          "422": "Privacy attiva",
+          "300": "Timeout",
+          "0": "Completato"
         }
       },
       "fuel": {

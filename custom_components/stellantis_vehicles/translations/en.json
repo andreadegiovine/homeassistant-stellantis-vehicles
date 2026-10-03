@@ -149,14 +149,17 @@
           "rate_limit": "Rate limit exceeded (6 per 20 minutes)",
           "not_compatible": "Not compatible",
           "failed": "Failed",
-          "900": "Accepted",
-          "901": "Wakeup Vehicle",
           "903": "Forwarded",
-          "0": "Complete",
-          "300": "Timeout",
-          "500": "Error",
+          "902": "Checking state",
+          "901": "Wakeup Vehicle",
+          "900": "Accepted",
+          "507": "No GPS coverage",
+          "506": "Unsupported telecom provider",
           "502": "Duplicate",
-          "422": "Privacy enabled"
+          "500": "Error",
+          "422": "Privacy enabled",
+          "300": "Timeout",
+          "0": "Complete"
         }
       },
       "fuel": {
