@@ -20,7 +20,8 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ( ConfigEntryAuthFailed, ServiceValidationError )
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, SENSITIVE_DATA_FILTER )
+from .mqtt_event import event_content
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, parse_timestamp, rate_limit, log_call, SENSITIVE_DATA_FILTER )
 
 from .const import (
     DOMAIN,
@@ -42,6 +43,17 @@ _LOGGER = logging.getLogger(__name__)
 # (issue #414, PR #593).
 _LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
+# Event fields overlaid onto the REST data, grouped by the REST section they
+# update. Freshness is tracked per group (see _track_mqtt_changes), so every
+# field _overlay_mqtt_state writes must be covered here.
+_MQTT_OVERLAY_GROUPS = {
+    "charging": lambda event: ((event.get("charging") or {}).get("hmi_state_code"), (event.get("charging") or {}).get("plugged")),
+    "doors": lambda event: (event.get("doors") or {}).get("locking_state_code"),
+    "preconditioning": lambda event: (event.get("preconditioning") or {}).get("status_code"),
+    "door_opening": lambda event: (event.get("doors") or {}).get("open"),
+}
+
+
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations, config_entry) -> None:
         super().__init__(hass, _LOGGER, config_entry=config_entry, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
@@ -52,6 +64,12 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._vehicle = vehicle
         self._stellantis = stellantis
         self._sensors = {}
+        self._features = {}
+        # Last accepted MQTT vehicle event (see apply_mqtt_event) and the
+        # ordering/freshness state that goes with it.
+        self._mqtt_state = {}
+        self._mqtt_last_key = None
+        self._mqtt_changed_at:dict[str, datetime | None] = {}
         self._commands_history = {}
         self._disabled_commands = []
         # action_id of the command currently blocking further remote
@@ -86,6 +104,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
         if self._is_stale(new_data):
             return self.data
+
+        if self._mqtt_state:
+            self._overlay_mqtt_state(new_data)
 
         await self.after_async_update_data(new_data)
         return new_data
@@ -151,20 +172,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         # Sustained outage: surface it so entities go unavailable.
         raise UpdateFailed("Empty vehicle status response")
 
-    def _is_stale(self, new_data: dict[str, Any]) -> bool:
+    def _is_stale(self, new_data:dict[str, Any]) -> bool:
         """ Whether new_data's updatedAt is not newer than the currently held data. """
         if "updatedAt" not in new_data or not self.data or "updatedAt" not in self.data:
             return False
-        try:
-            current_dt = datetime.fromisoformat(self.data["updatedAt"])
-            new_dt = datetime.fromisoformat(new_data["updatedAt"])
-        except (ValueError, TypeError):
+        current_dt = parse_timestamp(self.data["updatedAt"])
+        new_dt = parse_timestamp(new_data["updatedAt"])
+        if current_dt is None or new_dt is None:
             _LOGGER.debug("Invalid updatedAt values, proceeding with update without timestamp comparison")
             return False
-        if current_dt.tzinfo is None:
-            current_dt = current_dt.replace(tzinfo=UTC)
-        if new_dt.tzinfo is None:
-            new_dt = new_dt.replace(tzinfo=UTC)
         if new_dt <= current_dt:
             _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
             return True
@@ -233,6 +249,152 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def vehicle_type(self):
         """ Vehicle type. """
         return self._vehicle["type"]
+
+    @property
+    def features(self) -> dict[str, bool]:
+        """ Raw "fds" feature codes last reported by the vehicle over MQTT. """
+        return self._features
+
+    @property
+    def mqtt_state(self) -> dict[str, Any]:
+        """ Last accepted MQTT vehicle event (see parse_mqtt_event), or {} before the first one. """
+        return self._mqtt_state
+
+    @callback
+    def apply_mqtt_event(self, event:dict[str, Any]) -> None:
+        """ Apply a parsed MQTT vehicle event (see parse_mqtt_event).
+
+        Events for a given VIN are not guaranteed to arrive in order, so
+        older ones are discarded first. Only the fields in
+        _MQTT_OVERLAY_GROUPS reach the entities (see _overlay_mqtt_state);
+        battery level and range stay REST-only, as the MQTT values lag
+        behind REST and spike (checked against a month of both).
+        """
+        if not self._accept_mqtt_event_order(event):
+            return
+
+        if event.get("features"):
+            # Merged rather than replaced: a single event only carries the
+            # feature codes Stellantis chose to (re-)send, not the full set.
+            self._features.update(event["features"])
+
+        if event_content(event) == event_content(self._mqtt_state):
+            # Nothing actually changed (a duplicate) - don't wake entities for it.
+            return
+
+        self._track_mqtt_changes(event)
+        self._mqtt_state = event
+        if self.data:
+            data = deepcopy(self.data)
+            self._overlay_mqtt_state(data)
+            # Not async_set_updated_data(): that would reset the REST poll timer.
+            self.data = data
+        self.async_update_listeners()
+
+    def _accept_mqtt_event_order(self, event:dict[str, Any]) -> bool:
+        """ Reject an MQTT event older than the last one accepted for this vehicle.
+
+        Ordering key is (timestamp, event_counter). event_counter resets to 1
+        on a new session, but the newer timestamp already orders that
+        correctly. Don't special-case counter 1: it is always the
+        session-start snapshot (reason 0), which often arrives after the
+        session's next events while still holding the older state. A missing
+        or unparsable timestamp or a missing counter can't be placed in the
+        sequence, so the event is accepted rather than silently dropped.
+        """
+        timestamp = parse_timestamp(event.get("timestamp"))
+        counter = event.get("event_counter")
+        if timestamp is None or counter is None:
+            return True
+
+        key = (timestamp, counter)
+        if self._mqtt_last_key is not None and key < self._mqtt_last_key:
+            _LOGGER.debug(
+                "Discarding out-of-order MQTT event for %s (key %s < last accepted %s)",
+                self._vehicle["vin"], key, self._mqtt_last_key,
+            )
+            return False
+
+        self._mqtt_last_key = key
+        return True
+
+    def _track_mqtt_changes(self, event:dict[str, Any]) -> None:
+        """ Record, per overlay group, when its values last changed via MQTT.
+
+        Events repeat the last known values with a fresh timestamp (in real
+        captures soc_batt stayed at a stale 58 for hours while REST already
+        reported 53), so the event timestamp says nothing about how fresh a
+        value is; only a change seen via MQTT does. The first event after
+        startup has nothing to compare with, so its values are left to REST
+        (None) until they change.
+        """
+        event_dt = parse_timestamp(event.get("timestamp"))
+        for group, values in _MQTT_OVERLAY_GROUPS.items():
+            if not self._mqtt_state:
+                self._mqtt_changed_at[group] = None
+            elif values(event) != values(self._mqtt_state):
+                self._mqtt_changed_at[group] = event_dt
+
+    def _overlay_mqtt_state(self, data:dict[str, Any]) -> None:
+        """ Write the fields of the last accepted MQTT event into REST-shaped ``data``, in place.
+
+        Entities keep reading ``coordinator.data`` via their value_map, so the
+        event is translated into the REST vocabulary. Each group is only
+        overwritten if it last changed via MQTT after that section's REST
+        timestamp, so a later REST poll wins again. Fields without a
+        confirmed mapping are left to REST.
+        """
+        event = self._mqtt_state
+
+        electric = next((energy for energy in data.get("energies") or [] if energy.get("type") == "Electric"), None)
+        if electric is not None and self._mqtt_is_newer("charging", electric.get("createdAt") or data.get("updatedAt")):
+            event_charging = event.get("charging") or {}
+            charging = electric.setdefault("extension", {}).setdefault("electric", {}).setdefault("charging", {})
+            # hmi_state codes matched against REST status at the same
+            # timestamp; REST reports plugged-but-idle as Disconnected too.
+            # 2 and 4 (seen around charge start) are unmapped.
+            charging_status = {0: "Disconnected", 1: "InProgress", 3: "Stopped"}.get(event_charging.get("hmi_state_code"))
+            if charging_status:
+                charging["status"] = charging_status
+            if event_charging.get("plugged") is not None:
+                charging["plugged"] = event_charging["plugged"]
+
+        doors_state = data.get("doorsState")
+        if doors_state is not None and self._mqtt_is_newer("doors", doors_state.get("createdAt") or data.get("updatedAt")):
+            locking_code = (event.get("doors") or {}).get("locking_state_code")
+            locked_states = doors_state.get("lockedStates") or []
+            # Only touch lockedStates when the lock state actually differs, so
+            # finer REST values (e.g. SuperLocked) survive. 0 and 7 are
+            # transient mid-(un)lock steps and are ignored.
+            if locking_code == 1 and "Unlocked" in locked_states:
+                doors_state["lockedStates"] = ["Locked"]
+            elif locking_code == 3 and "Unlocked" not in locked_states:
+                doors_state["lockedStates"] = ["Unlocked"]
+
+        if doors_state is not None and self._mqtt_is_newer("door_opening", doors_state.get("createdAt") or data.get("updatedAt")):
+            door_open = (event.get("doors") or {}).get("open") or {}
+            names = {"Driver": "driver", "Passenger": "passenger", "RearLeft": "rear_left", "RearRight": "rear_right", "Trunk": "trunk"}
+            for opening in doors_state.get("opening") or []:
+                name = names.get(opening.get("identifier"))
+                if name in door_open:
+                    opening["state"] = "Open" if door_open[name] else "Closed"
+
+        # REST sends this section as "preconditioning", "preconditionning" or
+        # both, depending on the vehicle; keep every copy consistent.
+        for key in ("preconditioning", "preconditionning"):
+            air_conditioning = (data.get(key) or {}).get("airConditioning")
+            if air_conditioning is not None and self._mqtt_is_newer("preconditioning", air_conditioning.get("createdAt") or data.get("updatedAt")):
+                status = {0: "Disabled", 1: "Enabled", 2: "Finished"}.get((event.get("preconditioning") or {}).get("status_code"))
+                if status:
+                    air_conditioning["status"] = status
+
+    def _mqtt_is_newer(self, group:str, rest_timestamp:Any) -> bool:
+        """ Whether the group's last MQTT change is newer than the REST timestamp (a missing one counts as older). """
+        changed_at = self._mqtt_changed_at.get(group)
+        if changed_at is None:
+            return False
+        rest_dt = parse_timestamp(rest_timestamp)
+        return rest_dt is None or changed_at > rest_dt
 
     @property
     def command_history(self):

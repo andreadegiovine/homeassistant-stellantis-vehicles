@@ -13,6 +13,7 @@ from .const import (
     FIELD_ANONYMIZE_LOGS,
     FIELD_COUNTRY_CODE,
     FIELD_MOBILE_APP,
+    FIELD_MQTT_LIVE_UPDATES,
     FIELD_NOTIFICATIONS,
     FIELD_REMOTE_COMMANDS,
 )
@@ -89,6 +90,7 @@ async def async_get_config_entry_diagnostics(
             "country_code": stellantis.get_config(FIELD_COUNTRY_CODE),
             "remote_commands": stellantis.get_config(FIELD_REMOTE_COMMANDS),
             "anonymize_logs": stellantis.get_config(FIELD_ANONYMIZE_LOGS),
+            "mqtt_live_updates": stellantis.get_config(FIELD_MQTT_LIVE_UPDATES),
             "notifications": stellantis.get_config(FIELD_NOTIFICATIONS),
         },
         "oauth": {
@@ -178,5 +180,10 @@ def _coordinator_diagnostics(
         ),
         "raw_status": _scrub_substrings(
             async_redact_data(coordinator.data, TO_REDACT), secrets
+        ),
+        "mqtt_features": coordinator.features,
+        # Last accepted MQTT vehicle event, parsed (see parse_mqtt_event).
+        "mqtt_state": _scrub_substrings(
+            async_redact_data(coordinator.mqtt_state, TO_REDACT), secrets
         ),
     }

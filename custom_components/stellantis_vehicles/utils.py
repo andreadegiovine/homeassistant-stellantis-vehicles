@@ -27,6 +27,16 @@ def get_datetime(date = None):
 def datetime_from_isoformat(string):
     return get_datetime(datetime.fromisoformat(string))
 
+def parse_timestamp(value:Any) -> datetime | None:
+    """ Parse an API/MQTT ISO timestamp, assuming UTC if naive; None if missing or invalid. """
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
 def time_from_pt_string(pt_string):
     try:
         regex = 'PT'

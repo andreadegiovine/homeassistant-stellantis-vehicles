@@ -46,7 +46,8 @@
       "options": {
         "data": {
           "notifications": "Käytä pysyviä ilmoituksia",
-          "anonymize_logs": "Anonymisoi henkilökohtainen data lokitiedostoissa"
+          "anonymize_logs": "Anonymisoi henkilökohtainen data lokitiedostoissa",
+          "mqtt_live_updates": "Päivitä ajoneuvon tila reaaliajassa MQTT:n kautta"
         }
       },
       "reauth_confirm": {
