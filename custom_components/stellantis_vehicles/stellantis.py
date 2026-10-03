@@ -502,6 +502,7 @@ class StellantisVehicles(StellantisOauth):
         self._coordinator_dict = {}
         self._vehicles = []
         self._mqtt = None
+        self._mqtt_subscriptions:dict[int, str] = {}
         # paho still reports is_connected() while on_disconnect runs
         self._mqtt_connected = False
         self._mqtt_lock = asyncio.Lock()
@@ -1023,7 +1024,7 @@ class StellantisVehicles(StellantisOauth):
             coordinator.async_update_listeners()
 
     @log_call
-    def _on_mqtt_connect(self, client, userdata, flags, result_code):
+    def _on_mqtt_connect(self, client:mqtt.Client, userdata:Any, flags:Any, result_code:int) -> None:
         if result_code != 0:
             # paho also calls on_connect for a refused connection; stay
             # disconnected so commands aren't offered and nothing is subscribed.
@@ -1036,8 +1037,12 @@ class StellantisVehicles(StellantisOauth):
             topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
             for vehicle in self._vehicles:
                 topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
+            # paho's SUBACK callback only carries the mid, so remember which topic it belongs to.
+            self._mqtt_subscriptions.clear()
             for topic in topics:
-                client.subscribe(topic, qos=MQTT_QOS)
+                result, mid = client.subscribe(topic, qos=MQTT_QOS)
+                if result == mqtt.MQTT_ERR_SUCCESS:
+                    self._mqtt_subscriptions[mid] = topic
                 _LOGGER.debug("Subscribed to MQTT topic %s", topic)
         except Exception:
             _LOGGER.exception("Error while subscribing to MQTT topics")
@@ -1054,10 +1059,11 @@ class StellantisVehicles(StellantisOauth):
             self.do_async(self.scheduled_mqtt_token_refresh(force=True), wait=False)
 
     @log_call
-    def _on_mqtt_subscribe(self, client, userdata, mid, granted_qos):
+    def _on_mqtt_subscribe(self, client:mqtt.Client, userdata:Any, mid:int, granted_qos:Any) -> None:
+        topic = self._mqtt_subscriptions.pop(mid, None)
         try:
             if any(qos == 0x80 for qos in granted_qos):
-                _LOGGER.warning("Subscription failed, will try to reconnect MQTT in 300 seconds")
+                _LOGGER.warning("Subscription to %s failed, will try to reconnect MQTT in 300 seconds", topic)
                 # wait=False: this callback runs on the paho-mqtt network thread, so
                 # blocking it for 300s here would stall the loop (pings, reconnects,
                 # other callbacks). reconnect_mqtt(): the transport can still look
@@ -1066,7 +1072,7 @@ class StellantisVehicles(StellantisOauth):
                 # must not apply here.
                 self.do_async(self.reconnect_mqtt(), 300, wait=False)
             else:
-                _LOGGER.debug("MQTT subscription completed (QoS: %s)", granted_qos)
+                _LOGGER.debug("MQTT subscription to %s completed (QoS: %s)", topic, granted_qos)
         except Exception:
             _LOGGER.exception("Error in MQTT subscribe callback")
 
