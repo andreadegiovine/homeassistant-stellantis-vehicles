@@ -29,7 +29,7 @@ from homeassistant.util.ssl import client_context
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call )
+from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
 from .exceptions import ( CommunicationError, RateLimitException )
 
 from .const import (
@@ -64,6 +64,7 @@ from .const import (
     CAR_API_GET_VEHICLE_TRIPS_URL,
     MQTT_REFRESH_TOKEN_JSON_DATA,
     MQTT_REFRESH_TOKEN_TTL,
+    COMMAND_STATUS_SUCCESS,
     OTP_FILENAME,
     ABRP_URL,
     ABRP_API_KEY,
@@ -1071,7 +1072,7 @@ class StellantisVehicles(StellantisOauth):
             _LOGGER.exception("Error in MQTT subscribe callback")
 
     @log_call
-    def _on_mqtt_message(self, client, userdata, msg):
+    def _on_mqtt_message(self, client:mqtt.Client, userdata:Any, msg:mqtt.MQTTMessage) -> None:
         try:
             _LOGGER.debug("MQTT message on %s (qos %s): %s", msg.topic, msg.qos, msg.payload)
             data = json.loads(msg.payload)
@@ -1126,7 +1127,15 @@ class StellantisVehicles(StellantisOauth):
                         _LOGGER.debug("Skip vehicle as sleep mqtt message")
                         return
 
-                    self.do_async(coordinator.update_command_history(data["correlation_id"], result_code), wait=False)
+                    history_code = result_code
+                    resp_data = data.get("resp_data") or {}
+                    # As in the vendor app, only for failed commands: on success
+                    # /Doors' lock_resp_state is just the new door state.
+                    if resp_data and result_code not in COMMAND_STATUS_SUCCESS:
+                        pending_command = coordinator._commands_history.get(data["correlation_id"])
+                        service = pending_command.get("service") if pending_command else None
+                        history_code = resolve_mqtt_resp_data_error(service, resp_data, result_code)
+                    self.do_async(coordinator.update_command_history(data["correlation_id"], history_code), wait=False)
                 else:
                     _LOGGER.error("No result code")
 
