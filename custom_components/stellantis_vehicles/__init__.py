@@ -12,6 +12,7 @@ from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_
 from homeassistant.components.http import StaticPathConfig
 
 from .stellantis import StellantisVehicles
+from .utils import vehicle_removed_issue_id
 from .config_flow import StellantisVehiclesConfigFlow
 
 from .const import (
@@ -37,7 +38,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     add_extra_js_url(hass, url)
     return True
 
-async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
+async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
 
     stellantis = StellantisVehicles(hass)
     stellantis.save_config(config.data)
@@ -62,6 +63,8 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry):
 
     if vehicles:
         stellantis.prune_stored_vehicle_configs({vehicle["vin"] for vehicle in vehicles})
+        for vehicle in vehicles:
+            issue_registry.async_delete_issue(hass, DOMAIN, vehicle_removed_issue_id(vehicle["vin"]))
 
         # Build every coordinator and run its first refresh BEFORE forwarding the
         # platforms - the standard Home Assistant setup order. A failing first
@@ -120,6 +123,10 @@ async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     return unload_ok
 
 
+def _device_vins(device: dr.DeviceEntry) -> set[str]:
+    return {identifier[1] for identifier in device.identifiers if identifier[0] == DOMAIN}
+
+
 async def async_remove_config_entry_device(
     hass: HomeAssistant, config: ConfigEntry, device: dr.DeviceEntry
 ) -> bool:
@@ -130,32 +137,35 @@ async def async_remove_config_entry_device(
     unpaired. A device for a vehicle still returned by the account cannot be
     deleted - it would just be recreated on the next refresh.
     """
+    vins = _device_vins(device)
     # This callback can fire while the entry is not loaded (disabled, failed
     # setup, or already unloaded). Home Assistant deletes runtime_data after a
     # successful unload and never sets it before setup, so read it defensively:
     # a missing or None value means "not loaded", and there is nothing to block.
     stellantis = getattr(config, "runtime_data", None)
-    if stellantis is None:
-        return True
-    try:
-        known_vins = {
-            vehicle["vin"] for vehicle in await stellantis.get_user_vehicles()
-        }
-    except Exception as err:  # noqa: BLE001 - never block manual cleanup on an API error
-        _LOGGER.warning("Could not verify account vehicles before device removal: %s", err)
-        known_vins = set()
-    return not any(
-        identifier[0] == DOMAIN and identifier[1] in known_vins
-        for identifier in device.identifiers
-    )
+    if stellantis is not None:
+        try:
+            known_vins = {
+                vehicle["vin"] for vehicle in await stellantis.get_user_vehicles()
+            }
+        except Exception as err:  # noqa: BLE001 - never block manual cleanup on an API error
+            _LOGGER.warning("Could not verify account vehicles before device removal: %s", err)
+            known_vins = set()
+        if any(vin in known_vins for vin in vins):
+            return False
+    for vin in vins:
+        issue_registry.async_delete_issue(hass, DOMAIN, vehicle_removed_issue_id(vin))
+    return True
 
 
 async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
-    if not hass.config_entries.async_loaded_entries(DOMAIN):
+    # Persistent, so they would otherwise outlive the entry. The devices are
+    # still registered at this point.
+    for device in dr.async_entries_for_config_entry(dr.async_get(hass), config.entry_id):
+        for vin in _device_vins(device):
+            issue_registry.async_delete_issue(hass, DOMAIN, vehicle_removed_issue_id(vin))
 
-        # Remove stale repairs (if any) - just in case this integration will use
-        # the issue registry in the future
-        issue_registry.async_delete_issue(hass, DOMAIN, DOMAIN)
+    if not hass.config_entries.async_loaded_entries(DOMAIN):
 
         # Stop announcing the vehicle card to the frontend once no entry is
         # left to use it. The static path registered in async_setup cannot be

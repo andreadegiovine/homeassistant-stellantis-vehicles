@@ -20,7 +20,7 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ( ConfigEntryAuthFailed, ServiceValidationError )
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, SENSITIVE_DATA_FILTER )
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, vehicle_removed_issue_id, SENSITIVE_DATA_FILTER )
 
 from .const import (
     DOMAIN,
@@ -189,7 +189,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             self._privacy_full_logged = False
             _LOGGER.info("Private mode is disabled on vehicle %s, live data updates resumed", self._vehicle["vin"])
 
-    async def _reconcile_vehicle(self):
+    async def _reconcile_vehicle(self) -> None:
         """ Re-fetch the account vehicle list to check whether this vehicle was unpaired.
 
         Sets ``self._vehicle_removed`` and raises a repair issue only when the
@@ -210,20 +210,23 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         ir.async_create_issue(
             self._hass,
             DOMAIN,
-            f"vehicle_removed_{vin}",
+            vehicle_removed_issue_id(vin),
             is_fixable=False,
+            is_persistent=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="vehicle_removed",
             translation_placeholders={"vin": vin},
         )
 
-    def _clear_vehicle_removed(self):
-        """ Vehicle answered again: drop the repair issue and log the recovery once. """
-        if not self._vehicle_removed:
-            return
-        self._vehicle_removed = False
-        _LOGGER.info("Vehicle %s is reachable again", self._vehicle["vin"])
-        ir.async_delete_issue(self._hass, DOMAIN, f"vehicle_removed_{self._vehicle['vin']}")
+    def _clear_vehicle_removed(self) -> None:
+        """ Vehicle answered again: drop the repair issue and log the recovery once.
+
+        The issue is persistent, so it can outlive the in-memory flag across a reload or restart.
+        """
+        ir.async_delete_issue(self._hass, DOMAIN, vehicle_removed_issue_id(self._vehicle["vin"]))
+        if self._vehicle_removed:
+            self._vehicle_removed = False
+            _LOGGER.info("Vehicle %s is reachable again", self._vehicle["vin"])
 
     def get_translation(self, path, default = None):
         """ Get translation from path. """
