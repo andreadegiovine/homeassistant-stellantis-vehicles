@@ -301,8 +301,9 @@ class StellantisBase:
                         # before surfacing an error.
                         if not _retried and OAUTH_TOKEN_URL not in url:
                             _LOGGER.debug("401 received, refreshing the OAuth token and retrying once")
+                            rejected_token = (headers or {}).get("Authorization", "").removeprefix("Bearer ")
                             try:
-                                await self.refresh_oauth_token_request()
+                                await self.refresh_oauth_token_request(rejected_token)
                             except (CommunicationError, RateLimitException) as refresh_err:
                                 # ConfigEntryAuthFailed (dead refresh token) is left
                                 # to propagate so Home Assistant starts reauth.
@@ -530,6 +531,8 @@ class StellantisVehicles(StellantisOauth):
         # paho still reports is_connected() while on_disconnect runs
         self._mqtt_connected = False
         self._mqtt_lock = asyncio.Lock()
+        # Refresh token rejected with invalid_grant; queued callers fail fast.
+        self._oauth_rejected_refresh_token = None
 
         self._oauth_token_scheduled = None
         self._mqtt_token_scheduled = None
@@ -723,7 +726,7 @@ class StellantisVehicles(StellantisOauth):
             # reset_scheduled_oauth_token() already cleared the timer above and
             # it is only re-armed below: any exception escaping here would end
             # the refresh chain until a restart. Retries stay bounded by
-            # @rate_limit(6, 1800) on refresh_oauth_token_request.
+            # @rate_limit(6, 1800) on _refresh_oauth_token_request.
             _LOGGER.exception("Unexpected error during the OAuth token refresh, retrying in 5 minutes")
             next_run = get_datetime() + timedelta(minutes=5)
         if self._shutting_down:
@@ -734,20 +737,27 @@ class StellantisVehicles(StellantisOauth):
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
 
     @log_call
-    @rate_limit(6, 1800) # 6 per 30 min
-    async def refresh_oauth_token_request(self) -> None:
-        # Only one refresh at a time per account. If another refresh rotated
-        # the token while this call was waiting for the lock, the work is
-        # already done - sending the old refresh token now would only get
-        # invalid_grant.
-        token_before = (self.get_config("oauth") or {}).get("refresh_token")
+    async def refresh_oauth_token_request(self, stale_access_token: str | None = None) -> None:
+        """Refresh the OAuth tokens unless stale_access_token (default: the current one) was already replaced."""
+        stale_access_token = stale_access_token or (self.get_config("oauth") or {}).get("access_token")
         async with self._oauth_refresh_lock:
-            if (self.get_config("oauth") or {}).get("refresh_token") != token_before:
+            oauth = self.get_config("oauth") or {}
+            if oauth.get("access_token") != stale_access_token:
                 _LOGGER.debug("OAuth token already refreshed by a concurrent call, skipping")
                 return
-            await self._refresh_oauth_token_request_locked()
+            if self._shutting_down:
+                raise CommunicationError("Integration is unloading")
+            refresh_token = oauth.get("refresh_token")
+            if refresh_token == self._oauth_rejected_refresh_token:
+                raise ConfigEntryAuthFailed("Stellantis already rejected this refresh token (invalid_grant)")
+            try:
+                await self._refresh_oauth_token_request()
+            except ConfigEntryAuthFailed:
+                self._oauth_rejected_refresh_token = refresh_token
+                raise
 
-    async def _refresh_oauth_token_request_locked(self) -> None:
+    @rate_limit(6, 1800) # 6 per 30 min
+    async def _refresh_oauth_token_request(self) -> None:
         # save_config() below rotates this out of the masked set before it
         # appears in the exchange log's request URL - register it separately.
         self.logger_filter.add_custom_value((self.get_config("oauth") or {}).get("refresh_token"))
@@ -992,7 +1002,7 @@ class StellantisVehicles(StellantisOauth):
             mqtt_config["refresh_token"] = token_request["refresh_token"]
             mqtt_config["refresh_token_expires_at"] = (get_datetime() + timedelta(minutes=int(MQTT_REFRESH_TOKEN_TTL))).isoformat()
         # Persist first (save_config refreshes the log filter's masked values),
-        # then log the raw response - see refresh_oauth_token_request().
+        # then log the raw response - see _refresh_oauth_token_request().
         self.save_config({"mqtt": mqtt_config})
         self.update_stored_config("mqtt", mqtt_config)
         _log_http_exchange(url, headers, token_request)
