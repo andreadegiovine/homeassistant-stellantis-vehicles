@@ -1,12 +1,13 @@
 """OAuth token refresh serialization against a real Home Assistant instance."""
 import asyncio
+import json
 from datetime import timedelta
 
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.stellantis_vehicles.const import DOMAIN
+from custom_components.stellantis_vehicles.const import CAR_API_HEADERS, DOMAIN, OAUTH_TOKEN_URL
 from custom_components.stellantis_vehicles.stellantis import StellantisVehicles
 
 
@@ -64,12 +65,59 @@ async def test_scheduled_refresh_racing_401_retry_does_not_start_reauth(hass):
     assert not hass.config_entries.flow.async_progress_by_handler(DOMAIN)
 
 
-async def test_late_401_with_already_replaced_token_skips_refresh(hass):
+class _Resp:
+    def __init__(self, status, body):
+        self.status, self._body = status, body
+    async def text(self): return json.dumps(self._body)
+    async def json(self): return self._body
+    async def __aenter__(self): return self
+    async def __aexit__(self, *exc): return False
+
+
+class _StellantisSession:
+    """Fake aiohttp session behind the real make_http_request: the token
+    endpoint rotates single-use refresh tokens, the API accepts only the
+    latest access token and answers 401 otherwise."""
+    closed = False
+
+    def __init__(self, sv, server):
+        self.sv, self.server = sv, server
+        self.valid_access = "none-yet"  # a0 has already expired server-side
+        self.bearers = []
+
+    def request(self, method, url, headers=None, **kwargs):
+        if url.startswith(OAUTH_TOKEN_URL):
+            presented = self.sv.get_config("oauth")["refresh_token"]
+            self.server["sent"].append(presented)
+            if presented != self.server["valid"]:
+                return _Resp(400, {"error": "invalid_grant", "error_description": "grant is invalid"})
+            self.server["issued"] += 1
+            self.server["valid"] = f"r{self.server['issued']}"
+            self.valid_access = f"a{self.server['issued']}"
+            return _Resp(200, {"access_token": self.valid_access, "refresh_token": self.server["valid"], "expires_in": 3600})
+        self.bearers.append(headers["Authorization"])
+        if headers["Authorization"] == f"Bearer {self.valid_access}":
+            return _Resp(200, {"ok": True})
+        return _Resp(401, {})
+
+    async def close(self):
+        pass
+
+
+async def test_401_path_refreshes_once_and_skips_for_late_401(hass):
     sv, entry, server = _make(hass, dt_util.utcnow() + timedelta(hours=1))
-    await sv.refresh_oauth_token_request("a0")
-    # Another poll that was sent with a0 gets its 401 after the rotation.
-    await sv.refresh_oauth_token_request("a0")
+    del sv.make_http_request  # use the real HTTP layer and its 401 retry path
+    session = sv._session = _StellantisSession(sv, server)
+    # Headers built the way production builds them, while a0 is current.
+    stale_headers = StellantisVehicles.apply_dict_params(sv, CAR_API_HEADERS)
+
+    # a0 was rejected: refresh once, retry with a1.
+    assert await sv.make_http_request("https://api.example/v1", "GET", dict(stale_headers)) == {"ok": True}
+    # Another poll sent with a0 gets its 401 after the rotation: no second refresh.
+    assert await sv.make_http_request("https://api.example/v2", "GET", dict(stale_headers)) == {"ok": True}
+
     assert server["sent"] == ["r0"]
+    assert session.bearers == ["Bearer a0", "Bearer a1", "Bearer a0", "Bearer a1"]
     assert entry.data["oauth"]["access_token"] == "a1"
 
 
