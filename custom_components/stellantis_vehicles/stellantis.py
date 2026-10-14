@@ -57,6 +57,7 @@ from .const import (
     MQTT_PORT,
     MQTT_KEEP_ALIVE_S,
     MQTT_QOS,
+    MQTT_USERNAME,
     MQTT_RESP_TOPIC,
     MQTT_EVENT_TOPIC,
     MQTT_REQ_TOPIC,
@@ -962,6 +963,10 @@ class StellantisVehicles(StellantisOauth):
         self.save_config({"mqtt": mqtt_config})
         self.update_stored_config("mqtt", mqtt_config)
         _log_http_exchange(url, headers, token_request)
+        # paho sends the credentials it was given again on its own reconnects,
+        # so a client created with the previous token would keep using it.
+        if self._mqtt is not None:
+            self._mqtt.username_pw_set(MQTT_USERNAME, mqtt_config["access_token"])
 
     @log_call
     async def connect_mqtt(self):
@@ -973,7 +978,7 @@ class StellantisVehicles(StellantisOauth):
         """Force a full MQTT reconnect, even if the client currently looks connected."""
         return await self._connect_mqtt(force=True)
 
-    async def _connect_mqtt(self, force: bool):
+    async def _connect_mqtt(self, force:bool) -> bool:
         # Serialize against concurrent connect_mqtt()/reconnect_mqtt() calls
         # (e.g. several vehicle coordinators noticing a dropped connection at
         # once) and against async_shutdown(), so nobody operates on a client
@@ -1006,7 +1011,7 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.on_message = self._on_mqtt_message
             self._mqtt.on_subscribe = self._on_mqtt_subscribe
 
-            self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
+            self._mqtt.username_pw_set(MQTT_USERNAME, self.get_config("mqtt")["access_token"])
             try:
                 # paho's connect() does blocking DNS + TCP + TLS handshake, so run it in the executor to keep the event loop responsive.
                 await self._hass.async_add_executor_job(
