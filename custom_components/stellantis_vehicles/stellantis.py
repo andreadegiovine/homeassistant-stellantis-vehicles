@@ -169,7 +169,8 @@ class StellantisBase:
 
     def save_config(self, data:dict[str, Any]) -> None:
         for key in data:
-            self._config[key] = data[key]
+            # A copy: a value shared with entry.data that is changed in place is not seen by async_update_entry, which then does not save.
+            self._config[key] = deepcopy(data[key])
             if key == FIELD_MOBILE_APP and FIELD_COUNTRY_CODE in self._config:
                 self.set_mobile_app(data[key], self._config[FIELD_COUNTRY_CODE])
             elif key == FIELD_COUNTRY_CODE and FIELD_MOBILE_APP in self._config:
