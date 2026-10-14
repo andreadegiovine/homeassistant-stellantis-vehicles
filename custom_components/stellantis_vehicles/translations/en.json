@@ -12,13 +12,13 @@
         }
       },
       "oauth_mode": {
-        "description": "To authenticate your account, a remote service is used that does not store your credentials in any way, alternatively you can use the manual method",
+        "description": "Sign in using a login helper, or choose the manual method. The helper can run locally or be hosted externally; check the Login service URL on the next screen before entering credentials.",
         "data": {
           "oauth_manual_mode": "Use the manual method"
         }
       },
       "oauth_remote": {
-        "description": "This [remote service]({oauth_remote_link}) is used to simulate browser login on the official website. You can use the default hosted service or point to your own self-hosted deployment",
+        "description": "Your email and password are sent to the Login service URL below, whose browser signs in on the official Stellantis website. Use your local helper address to avoid the shared hosted service. No fallback to another helper is performed if this service fails.",
         "data": {
           "email": "Email",
           "password": "Password",
@@ -46,8 +46,10 @@
       "options": {
         "data": {
           "notifications": "Enable persistent notifications",
-          "anonymize_logs": "Anonymize personal data on logs"
-        }
+          "anonymize_logs": "Anonymize personal data on logs",
+          "oauth_code_url": "Login service URL"
+        },
+        "description": "The login service is used for future sign-ins. Save a local helper URL here before starting reauthentication to keep it across cancelled login attempts and Home Assistant restarts. Vehicle data and token renewal still require Stellantis services."
       },
       "reauth_confirm": {
         "description": "You need to re-authenticate to use this integration"
@@ -69,7 +71,8 @@
       "get_mqtt_access_token_nok_maxnbtools": "Limit of associated devices / SMS received, reset your Stellantis account and try again",
       "get_mqtt_access_token_nok_nok_blocked": "Limit of wrong PIN used, restart the configuration process",
       "get_mqtt_access_token_rate_limit": "Rate limit of mqtt access token request exceeded (6 per day)",
-      "not_loaded": "Integration is not loaded yet, wait for setup to finish and try again"
+      "not_loaded": "Integration is not loaded yet, wait for setup to finish and try again",
+      "invalid_login_service_url": "Enter a valid HTTP or HTTPS URL without embedded username, password or fragment."
     },
     "abort": {
       "already_configured": "Account is already configured",

@@ -12,16 +12,17 @@
         }
       },
       "oauth_mode": {
-        "description": "Um Ihr Konto zu authentifizieren, wird ein Remote-Dienst verwendet, der Ihre Zugangsdaten in keiner Weise speichert. Alternativ können Sie die manuelle Methode verwenden",
+        "description": "Melden Sie sich über einen Login-Helfer an oder wählen Sie die manuelle Methode. Der Helfer kann lokal oder extern betrieben werden. Prüfen Sie auf der nächsten Seite die Login-Dienstadresse, bevor Sie Zugangsdaten eingeben.",
         "data": {
           "oauth_manual_mode": "Die manuelle Methode verwenden"
         }
       },
       "oauth_remote": {
-        "description": "Dieser [Remote-Dienst]({oauth_remote_link}) wird verwendet, um die Browser-Anmeldung auf der offiziellen Website zu simulieren",
+        "description": "E-Mail und Passwort werden an die unten angegebene Login-Dienstadresse gesendet. Deren Browser meldet sich auf der offiziellen Stellantis-Website an. Mit der Adresse Ihres lokalen Helfers vermeiden Sie den öffentlichen Dienst. Bei einem Fehler wird nicht auf einen anderen Helfer ausgewichen.",
         "data": {
           "email": "E-Mail",
-          "password": "Passwort"
+          "password": "Passwort",
+          "oauth_code_url": "Login-Dienstadresse"
         }
       },
       "oauth_manual": {
@@ -45,8 +46,10 @@
       "options": {
         "data": {
           "notifications": "Persistente Benachrichtigungen aktivieren",
-          "anonymize_logs": "Persönliche Daten in Protokollen anonymisieren"
-        }
+          "anonymize_logs": "Persönliche Daten in Protokollen anonymisieren",
+          "oauth_code_url": "Login-Dienstadresse"
+        },
+        "description": "Der Login-Dienst wird für künftige Anmeldungen verwendet. Speichern Sie hier die lokale Helferadresse vor der Wiederanmeldung, damit sie auch nach abgebrochenen Anmeldungen und HA-Neustarts erhalten bleibt. Fahrzeugdaten und Token-Erneuerung benötigen weiterhin die Stellantis-Dienste."
       },
       "reauth_confirm": {
         "description": "Sie müssen sich erneut authentifizieren, um diese Integration zu verwenden"
@@ -67,7 +70,8 @@
       "get_mqtt_access_token_nok_access": "Ungültiger SMS-Code oder PIN-Code",
       "get_mqtt_access_token_nok_maxnbtools": "Begrenzung der verbundenen Geräte/empfangenen SMS, setzen Sie Ihr Stellantis-Konto zurück und versuchen Sie es erneut",
       "get_mqtt_access_token_nok_nok_blocked": "Grenze für falsche PIN-Eingaben erreicht, Konfigurationsvorgang neu starten",
-      "get_mqtt_access_token_rate_limit": "Ratenlimit für MQTT-Zugriffstoken-Anfragen überschritten (6 pro Tag)"
+      "get_mqtt_access_token_rate_limit": "Ratenlimit für MQTT-Zugriffstoken-Anfragen überschritten (6 pro Tag)",
+      "invalid_login_service_url": "Geben Sie eine gültige HTTP- oder HTTPS-Adresse ohne eingebetteten Benutzernamen, Passwort oder Fragment ein."
     },
     "abort": {
       "already_configured": "Der Account ist bereits konfiguriert",

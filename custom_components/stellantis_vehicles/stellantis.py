@@ -513,6 +513,7 @@ class StellantisVehicles(StellantisOauth):
         self._mqtt_token_scheduled = None
         self._mqtt_token_retry = 0
         self._oauth_token_retry = 0
+        self._oauth_auth_failed = False
 
     def set_entry(self, entry:ConfigEntry) -> None:
         self._entry = entry
@@ -657,23 +658,27 @@ class StellantisVehicles(StellantisOauth):
 
     async def scheduled_tokens_refresh(self):
         self.reset_scheduled_tokens()
-        await self.scheduled_oauth_token_refresh()
+        await self.scheduled_oauth_token_refresh(setup=True)
         await self.scheduled_mqtt_token_refresh()
 
     @log_call
-    async def scheduled_oauth_token_refresh(self, now:datetime | None = None) -> None:
+    async def scheduled_oauth_token_refresh(self, now:datetime | None = None, *, setup=False) -> None:
+        if self._shutting_down:
+            return
+        self.reset_scheduled_oauth_token()
         def get_next_run():
             expires_in = self.get_config("oauth")["expires_in"]
             return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
         try:
-            if self._oauth_token_scheduled is not None:
-                self.reset_scheduled_oauth_token()
-                await self.refresh_oauth_token_request()
-            elif get_datetime() > get_next_run():
+            if self._oauth_auth_failed:
+                raise ConfigEntryAuthFailed("OAuth credentials rejected; reauthentication required")
+            if get_datetime() >= get_next_run():
                 await self.refresh_oauth_token_request()
             self._oauth_token_retry = 0
             next_run = get_next_run()
         except CommunicationError as err:
+            if setup:
+                raise
             self._oauth_token_retry += 1
             idx = min(self._oauth_token_retry - 1, len(OAUTH_TOKEN_RETRY_BACKOFF) - 1)
             delay = OAUTH_TOKEN_RETRY_BACKOFF[idx]
@@ -684,20 +689,23 @@ class StellantisVehicles(StellantisOauth):
                 self._oauth_token_retry, next_run, err,
             )
         except RateLimitException:
-            _LOGGER.warning("Rate limit exceeded, retry after 30 mins or check logs and restart integration")
+            if setup:
+                raise
+            _LOGGER.warning("Rate limit exceeded, retry after 30 mins")
             next_run = get_datetime() + timedelta(minutes=30)
-        except ConfigEntryAuthFailed as err:
-            # The refresh token was rejected by the server: start the reauth
-            # flow now instead of waiting for a later poll to trip over it, and
-            # keep the timer alive with a slow retry in case it was transient.
-            _LOGGER.error("OAuth refresh token rejected, starting the reauth flow: %s", err)
-            try:
-                if self._entry is not None:
-                    self._entry.async_start_reauth(self._hass)
-            except Exception:
-                _LOGGER.exception("Could not start the reauth flow")
-            next_run = get_datetime() + timedelta(minutes=30)
+        except ConfigEntryAuthFailed:
+            # A rejected grant cannot be repaired by retrying the same token.
+            # During setup HA owns the failure state and starts reauth. For a
+            # background refresh, request reauth once and stop this timer.
+            self._oauth_auth_failed = True
+            if setup:
+                raise
+            if not self._shutting_down and self._entry is not None:
+                self._entry.async_start_reauth(self._hass)
+            return
         except Exception:
+            if setup:
+                raise
             # reset_scheduled_oauth_token() already cleared the timer above and
             # it is only re-armed below: any exception escaping here would end
             # the refresh chain until a restart. Retries stay bounded by
@@ -707,6 +715,8 @@ class StellantisVehicles(StellantisOauth):
         if self._shutting_down:
             # Unloaded while the refresh was in flight: don't re-arm the timer.
             return
+        # Short-lived tokens must not create a timer in the past.
+        next_run = max(next_run, get_datetime() + timedelta(seconds=30))
         _LOGGER.debug("Next oauth token refresh scheduled for %s", next_run)
         next_job = HassJob(self.scheduled_oauth_token_refresh, f"{DOMAIN} refresh oauth token: {next_run}", cancel_on_shutdown=True)
         self._oauth_token_scheduled = async_track_point_in_time(self._hass, next_job, next_run)
@@ -717,9 +727,22 @@ class StellantisVehicles(StellantisOauth):
         # save_config() below rotates this out of the masked set before it
         # appears in the exchange log's request URL - register it separately.
         self.logger_filter.add_custom_value((self.get_config("oauth") or {}).get("refresh_token"))
+        # Keep these checks next to the request: a queued refresh must observe
+        # shutdown or a credential rejection from the preceding refresh.
+        if self._shutting_down:
+            raise CommunicationError("Integration is shutting down")
+        if self._oauth_auth_failed:
+            raise ConfigEntryAuthFailed("OAuth credentials rejected; reauthentication required")
         url = self.apply_query_params(OAUTH_TOKEN_URL, OAUTH_REFRESH_TOKEN_QUERY_PARAMS)
         headers = self.apply_dict_params(OAUTH_TOKEN_HEADERS)
-        token_request = await self.make_http_request(url, 'POST', headers)
+        try:
+            token_request = await self.make_http_request(url, 'POST', headers)
+        except ConfigEntryAuthFailed:
+            self._oauth_auth_failed = True
+            self.reset_scheduled_oauth_token()
+            raise
+        if self._shutting_down:
+            return
         new_config = {
             "access_token": token_request["access_token"],
             "refresh_token": token_request["refresh_token"],

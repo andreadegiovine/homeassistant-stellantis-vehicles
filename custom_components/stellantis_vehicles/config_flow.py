@@ -1,9 +1,12 @@
 import logging
+from copy import deepcopy
 import voluptuous as vol
 from datetime import timedelta
 from uuid import uuid4
+from urllib.parse import urlsplit
 
 from homeassistant.config_entries import ( ConfigFlow, SOURCE_REAUTH, SOURCE_RECONFIGURE )
+from homeassistant.core import callback
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers import translation
 from homeassistant.const import (
@@ -59,6 +62,22 @@ def OAUTH_REMOTE_SCHEMA(default_oauth_code_url=None):
         vol.Optional(FIELD_OAUTH_CODE_URL, default=default_oauth_code_url or OAUTH_CODE_URL): str
     })
 
+def login_service_url(value):
+    """Validate an explicitly selected endpoint before sending credentials."""
+    if not isinstance(value, str):
+        raise ValueError("Invalid login service URL")
+    value = value.strip()
+    parts = urlsplit(value)
+    # Accessing .port also rejects malformed/non-numeric ports.
+    port = parts.port
+    if (parts.scheme not in ("http", "https") or not parts.hostname
+            or parts.username is not None or parts.password is not None
+            or parts.fragment or any(char.isspace() for char in value)
+            or (port is not None and port == 0)):
+        raise ValueError("Invalid login service URL")
+    return value
+
+
 def OTP_CONFIGURE_SCHEMA(default_remote_commands=False):
     return vol.Schema({
         vol.Required(FIELD_REMOTE_COMMANDS, default=default_remote_commands): bool
@@ -72,13 +91,15 @@ OTP_SCHEMA = vol.Schema({
 def OPTIONS_SCHEMA(reconfig=None):
     defaults = {
         FIELD_NOTIFICATIONS: True,
-        FIELD_ANONYMIZE_LOGS: True
+        FIELD_ANONYMIZE_LOGS: True,
+        FIELD_OAUTH_CODE_URL: OAUTH_CODE_URL
     }
     if reconfig:
         defaults.update(reconfig)
     return vol.Schema({
         vol.Required(FIELD_NOTIFICATIONS, default=defaults[FIELD_NOTIFICATIONS]): bool,
-        vol.Required(FIELD_ANONYMIZE_LOGS, default=defaults[FIELD_ANONYMIZE_LOGS]): bool
+        vol.Required(FIELD_ANONYMIZE_LOGS, default=defaults[FIELD_ANONYMIZE_LOGS]): bool,
+        vol.Optional(FIELD_OAUTH_CODE_URL, default=defaults[FIELD_OAUTH_CODE_URL]): str
     })
 
 RECONFIGURE_SCHEMA = vol.Schema({
@@ -96,6 +117,15 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         self.errors = {}
         self._translations = None
         self._enable_remote_commands = False
+
+
+    @callback
+    def async_remove(self):
+        """Release the flow-owned HTTP session on success or cancellation."""
+        super().async_remove()
+        client, self.stellantis = self.stellantis, None
+        if client is not None:
+            self.hass.async_create_task(client.close_session())
 
 
     async def init_translations(self):
@@ -137,6 +167,8 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="oauth_mode", data_schema=OAUTH_MODE_SCHEMA, errors=errors)
 
         await self.init_translations()
+        if self.stellantis is not None:
+            await self.stellantis.close_session()
         self.stellantis = StellantisOauth(self.hass)
         self.stellantis.set_mobile_app(self.data[FIELD_MOBILE_APP], self.data[FIELD_COUNTRY_CODE])
 
@@ -148,19 +180,27 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_oauth_remote(self, user_input=None):
         if user_input is None:
-            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA(self.data.get(FIELD_OAUTH_CODE_URL)), description_placeholders=TRANSLATION_PLACEHOLDERS)
+            errors, self.errors = self.errors, {}
+            return self.async_show_form(step_id="oauth_remote", data_schema=OAUTH_REMOTE_SCHEMA(self.data.get(FIELD_OAUTH_CODE_URL)), description_placeholders=TRANSLATION_PLACEHOLDERS, errors=errors)
 
         try:
-            code_request = await self.stellantis.get_oauth_code(user_input[CONF_EMAIL], user_input[CONF_PASSWORD], user_input.get(FIELD_OAUTH_CODE_URL, OAUTH_CODE_URL))
+            endpoint = login_service_url(user_input.get(
+                FIELD_OAUTH_CODE_URL, self.data.get(FIELD_OAUTH_CODE_URL, OAUTH_CODE_URL)))
+        except ValueError:
+            self.errors[FIELD_OAUTH_CODE_URL] = "invalid_login_service_url"
+            return await self.async_step_oauth_remote()
+
+        # Keep retries on the selected service. Never fail over with credentials
+        # to the public service when a self-hosted worker is unavailable.
+        self.data[FIELD_OAUTH_CODE_URL] = endpoint
+        try:
+            code_request = await self.stellantis.get_oauth_code(
+                user_input[CONF_EMAIL], user_input[CONF_PASSWORD], endpoint)
         except Exception as e:
             message = self.get_error_message("get_oauth_code", e)
-            if self.source == SOURCE_RECONFIGURE:
-                return self.async_abort(reason=message)
-            self.errors[FIELD_OAUTH_MANUAL_MODE] = message
-            await self.stellantis.hass_notify("get_oauth_code")
-            return await self.async_step_oauth_mode()
+            self.errors["base"] = message
+            return await self.async_step_oauth_remote()
 
-        self.data.update({FIELD_OAUTH_CODE_URL: user_input.get(FIELD_OAUTH_CODE_URL, OAUTH_CODE_URL)})
         self.stellantis.save_config({"oauth_code": code_request["code"]})
         return await self.async_step_get_access_token()
 
@@ -283,14 +323,24 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_options(self, user_input=None):
-        if user_input is None:
-            return self.async_show_form(step_id="options", data_schema=OPTIONS_SCHEMA(self.data))
+        errors = {}
+        if user_input is not None:
+            try:
+                endpoint = login_service_url(user_input.get(
+                    FIELD_OAUTH_CODE_URL, self.data.get(FIELD_OAUTH_CODE_URL, OAUTH_CODE_URL)))
+            except ValueError:
+                errors[FIELD_OAUTH_CODE_URL] = "invalid_login_service_url"
+            else:
+                self.data.update(user_input)
+                self.data[FIELD_OAUTH_CODE_URL] = endpoint
+                return await self.async_step_final()
 
-        self.data.update(user_input)
-        return await self.async_step_final()
+        return self.async_show_form(step_id="options", data_schema=OPTIONS_SCHEMA(self.data), errors=errors)
 
 
     async def async_step_final(self, user_input=None):
+        if self.stellantis is not None:
+            await self.stellantis.close_session()
         unique_id = f"{str(self.data["customer_id"])}_{str(self.data["mobile_app"])}_{str(self.data["country_code"])}"
 
         if self.source == SOURCE_REAUTH:
@@ -313,19 +363,15 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA)
 
         await self.init_translations()
-        # ConfigEntry.runtime_data is only a type annotation, not a real
-        # attribute with a default: HA deletes it on unload and never sets it
-        # before the first successful setup, so a plain `.runtime_data` here
-        # can raise AttributeError instead of just being None.
-        self.stellantis = getattr(self._get_reconfigure_entry(), "runtime_data", None)
-        if self.stellantis is None:
-            # Setup failed and is being retried (e.g. a Stellantis backend
-            # outage), so there is nothing to reconfigure yet.
-            return self.async_abort(reason=self.get_error_message("not_loaded"))
-        self.data = dict(self.stellantis._entry.data)
+        entry = self._get_reconfigure_entry()
+        # Configuration must also work while setup is failing. A flow owns its
+        # own client and never disables commands or mutates the running one
+        # before the user has successfully completed the flow.
+        self._copy_account_settings(entry.data)
+        self.stellantis = StellantisOauth(self.hass)
+        self.stellantis.save_config(deepcopy(dict(entry.data)))
 
         if user_input[FIELD_RECONFIGURE] == FIELD_REMOTE_COMMANDS:
-            self.stellantis.disable_remote_commands()
             return await self.async_step_otp()
         elif user_input[FIELD_RECONFIGURE] == "oauth":
             return await self.async_step_oauth_mode()
@@ -333,19 +379,21 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self.async_step_options()
 
 
+    def _copy_account_settings(self, entry_data):
+        # Do not carry a stale snapshot of OAuth/MQTT tokens or vehicle options
+        # into data_updates: the running entry may rotate/update them while a
+        # form is open. Only successful authentication adds replacement tokens.
+        keys = (
+            FIELD_MOBILE_APP, FIELD_COUNTRY_CODE, FIELD_OAUTH_CODE_URL,
+            FIELD_REMOTE_COMMANDS, FIELD_NOTIFICATIONS, FIELD_ANONYMIZE_LOGS,
+            "customer_id",
+        )
+        self.data = {key: deepcopy(entry_data[key]) for key in keys if key in entry_data}
+
+
     @log_call
     async def async_step_reauth(self, entry_data):
-        self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP], FIELD_COUNTRY_CODE: entry_data[FIELD_COUNTRY_CODE]})
-        if FIELD_OAUTH_CODE_URL in entry_data:
-            self.data.update({FIELD_OAUTH_CODE_URL: entry_data[FIELD_OAUTH_CODE_URL]})
-        # Carried over so a plain reauth (just refreshing the OAuth token) can't
-        # silently disable remote commands or replace the account's real
-        # customer_id with a freshly generated one - both get merged back onto
-        # the entry in async_step_final via data_updates.
-        if FIELD_REMOTE_COMMANDS in entry_data:
-            self.data.update({FIELD_REMOTE_COMMANDS: entry_data[FIELD_REMOTE_COMMANDS]})
-        if "customer_id" in entry_data:
-            self.data.update({"customer_id": entry_data["customer_id"]})
+        self._copy_account_settings(entry_data)
         return await self.async_step_reauth_confirm()
 
 

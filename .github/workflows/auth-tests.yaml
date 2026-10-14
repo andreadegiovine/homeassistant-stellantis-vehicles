@@ -1,0 +1,33 @@
+name: Authentication regression tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant: [standalone, with-pr-672]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Combine with the reviewed OAuth refresh lock
+        if: matrix.variant == 'with-pr-672'
+        env:
+          # Pin the compatibility target so a changed PR cannot silently pass.
+          REFRESH_LOCK_COMMIT: d444736389bc8985220abc2ba50c577f59f55c42
+        run: |
+          git fetch https://github.com/andreadegiovine/homeassistant-stellantis-vehicles.git "$REFRESH_LOCK_COMMIT"
+          git -c user.name='Compatibility test' -c user.email='compat@example.invalid' merge --no-commit --no-ff FETCH_HEAD
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: requirements-test.txt
+      - run: python -m pip install -r requirements-test.txt
+      - run: python -m pytest -q tests
+        env:
+          STELLANTIS_REQUIRE_REFRESH_LOCK: ${{ matrix.variant == 'with-pr-672' && '1' || '0' }}

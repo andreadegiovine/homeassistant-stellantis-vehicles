@@ -90,7 +90,8 @@ The service is provided by Render.com on a free tier, with performance limitatio
 If you'd rather not depend on the shared Render.com instance, you can self-host the
 [worker](https://github.com/andreadegiovine/homeassistant-stellantis-vehicles-worker-v2) and enter
 its URL in the "Login service URL" field of the config flow's remote-login step instead of the
-default one.
+default one. For persistent configuration, Supervisor-network addresses and troubleshooting,
+see [Using a local login helper](docs/local-login.md).
 
 ### Manual
 <details><summary><b>Using browser console</b></summary>

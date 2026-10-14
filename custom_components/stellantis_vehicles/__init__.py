@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import shutil
 import os
@@ -46,13 +47,12 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     stellantis = StellantisVehicles(hass)
     stellantis.save_config(config.data)
     stellantis.set_entry(config)
-    await stellantis.scheduled_tokens_refresh()
-
     config.runtime_data = stellantis
 
     try:
+        await stellantis.scheduled_tokens_refresh()
         vehicles = await stellantis.get_user_vehicles()
-    except ConfigEntryAuthFailed:
+    except (ConfigEntryAuthFailed, asyncio.CancelledError):
         # The token refresh above may have re-armed its timer; left running on
         # this orphaned instance it would keep retrying a dead refresh token and
         # restart reauth on the entry, even after a successful reauth.
@@ -90,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
                     # Spread the periodic polls of multiple vehicles across the
                     # interval instead of hitting the API for all of them at once.
                     coordinator.stagger_first_poll(index * UPDATE_INTERVAL / len(vehicles))
-        except Exception:
+        except (Exception, asyncio.CancelledError):
             # First refresh failed (ConfigEntryNotReady / ConfigEntryAuthFailed /
             # ...). Home Assistant does not call async_unload_entry when
             # async_setup_entry raises, so drop this attempt's state here: the
