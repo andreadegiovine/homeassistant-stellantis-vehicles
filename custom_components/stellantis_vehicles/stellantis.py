@@ -82,6 +82,18 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
 
+# Request body fields that are never logged, whatever the anonymize option:
+# the account credentials, and the OTP code (also sent as "password").
+_UNLOGGED_BODY_KEYS = ("email", "password")
+
+
+def _redact_body(body):
+    """Return a request body with its credential fields replaced by '###', for logging."""
+    if not isinstance(body, dict):
+        return body
+    return {key: "###" if key in _UNLOGGED_BODY_KEYS and value else value for key, value in body.items()}
+
+
 def _log_http_exchange(url, headers, response, **extra):
     """Debug-log an HTTP request and its decoded response as a single record."""
     if not _LOGGER.isEnabledFor(logging.DEBUG):
@@ -252,7 +264,7 @@ class StellantisBase:
 
                     _LOGGER.debug(
                         "HTTP %s %s failed with status %s | headers=%s params=%s json=%s data=%s | response=%s",
-                        method, url, resp.status, headers, params, json_data, data, result,
+                        method, url, resp.status, headers, params, _redact_body(json_data), _redact_body(data), result,
                     )
 
                     if str(resp.status) == "404" and str(result.get("code")) == "40400":
