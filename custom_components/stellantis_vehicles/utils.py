@@ -231,7 +231,7 @@ class SensitiveDataFilter(logging.Filter):
 
     MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token")
     CUSTOM_VALUES_LIMIT = 128
-    REDACT_KEYS = ("lastPosition", "coordinates", "latitude", "longitude", "tlm")
+    REDACT_KEYS = ("lastPosition", "coordinates", "latitude", "longitude", "tlm", "notification_url")
     _PAGE_TOKEN_RE = re.compile(r"(pageToken=)[^&\"'\s]+")
 
     def __init__(self) -> None:

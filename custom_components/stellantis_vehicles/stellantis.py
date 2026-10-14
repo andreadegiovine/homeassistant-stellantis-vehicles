@@ -419,15 +419,15 @@ class StellantisOauth(StellantisBase):
         headers = self.apply_dict_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
         user_request = await self.make_http_request(url, 'GET', headers)
-        user_info = user_request[0] if isinstance(user_request, list) and user_request else {}
-        for key in ("customer", "vehicle", "car_association_id"):
-            if key in user_info:
-                self.logger_filter.add_custom_value(user_info[key])
+        # A non-list body (error object, changed shape) becomes an empty list,
+        # which the config flow reports as missing user info.
+        associations = user_request if isinstance(user_request, list) else []
+        for association in associations:
+            for key in ("customer", "vehicle", "car_association_id"):
+                if key in association:
+                    self.logger_filter.add_custom_value(association[key])
         _log_http_exchange(url, headers, user_request)
-        # Always hand back a list so callers can safely index [0]; a non-list
-        # body (error object, changed shape) becomes an empty list, which the
-        # config flow reports as missing user info.
-        return user_request if isinstance(user_request, list) else []
+        return associations
 
     def new_otp(self, sms_code, pin_code):
         try:
@@ -491,6 +491,7 @@ class StellantisOauth(StellantisBase):
         if otp_code is None:
             _LOGGER.error("OTP code is empty, please reauthenticate")
             raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
+        self.logger_filter.add_custom_value(otp_code)
         # Save updated OTP object to file
         await self._hass.async_add_executor_job(save_otp, self.otp, otp_file_path)
         return otp_code
