@@ -45,7 +45,8 @@
       "options": {
         "data": {
           "notifications": "Permanente meldingen inschakelen",
-          "anonymize_logs": "Persoonsgegevens in logbestanden anonimiseren"
+          "anonymize_logs": "Persoonsgegevens in logbestanden anonimiseren",
+          "mqtt_live_updates": "Voertuigstatus live bijwerken via MQTT"
         }
       },
       "reauth_confirm": {
