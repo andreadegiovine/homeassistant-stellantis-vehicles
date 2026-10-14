@@ -431,6 +431,9 @@
   "exceptions": {
     "command_already_pending": {
       "message": "Impossibile inviare \"{name}\": \"{pending_name}\" è ancora in attesa di una risposta dal veicolo."
+    },
+    "command_not_sent": {
+      "message": "Impossibile inviare \"{name}\" al veicolo. Dettagli nel log."
     }
   },
   "common": {

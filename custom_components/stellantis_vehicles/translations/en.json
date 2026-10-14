@@ -432,6 +432,9 @@
   "exceptions": {
     "command_already_pending": {
       "message": "Cannot send \"{name}\": \"{pending_name}\" is still waiting for a response from the vehicle."
+    },
+    "command_not_sent": {
+      "message": "Cannot send \"{name}\" to the vehicle. See the log for details."
     }
   },
   "common": {

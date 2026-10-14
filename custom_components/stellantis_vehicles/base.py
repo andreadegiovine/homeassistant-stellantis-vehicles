@@ -18,7 +18,7 @@ from homeassistant.components.time import TimeEntity
 from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
-from homeassistant.exceptions import ( ConfigEntryAuthFailed, ServiceValidationError )
+from homeassistant.exceptions import ( ConfigEntryAuthFailed, HomeAssistantError, ServiceValidationError )
 from homeassistant.helpers import issue_registry as ir
 
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, parse_vehicle_rights, vehicle_removed_issue_id, SENSITIVE_DATA_FILTER )
@@ -352,22 +352,29 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             )
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
-            if action_id is not None:
-                # service/message are kept so a 400 "invalid token" response for
-                # this action_id can be retried with its own payload instead of
-                # whatever command was sent last account-wide (see _on_mqtt_message).
-                # sent_at is the fallback pending_action uses before any update
-                # has arrived yet (see pending_action).
-                self._commands_history.update({action_id: {"name": name, "updates": [], "service": service, "message": message, "retried": False, "sent_at": get_datetime()}})
-                self._prune_command_history()
-                self._pending_action_id = action_id
-                self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
             _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
             self.config_entry.async_start_reauth(self.hass)
+            action_id = None
         except Exception as e:
             _LOGGER.error("Failed to send command %s: %s", name, str(e))
             raise
+        if action_id is None:
+            _LOGGER.error("Failed to send command %s: it was not sent to the vehicle", name)
+            raise HomeAssistantError(
+                translation_domain = DOMAIN,
+                translation_key = "command_not_sent",
+                translation_placeholders = {"name": name}
+            )
+        # service/message are kept so a 400 "invalid token" response for
+        # this action_id can be retried with its own payload instead of
+        # whatever command was sent last account-wide (see _on_mqtt_message).
+        # sent_at is the fallback pending_action uses before any update
+        # has arrived yet (see pending_action).
+        self._commands_history.update({action_id: {"name": name, "updates": [], "service": service, "message": message, "retried": False, "sent_at": get_datetime()}})
+        self._prune_command_history()
+        self._pending_action_id = action_id
+        self.async_update_listeners()
 
     @rate_limit(6, 1200) # 6 per 20 min
     async def send_wakeup_command(self, button_name):
@@ -516,12 +523,23 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             return
         charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
         charge_limit = self._sensors.get("number_battery_charging_limit")
-        if not (charge_limit_on and charge_limit and "battery" in self._sensors):
+        battery = self._sensors.get("battery")
+        if not (charge_limit_on and charge_limit and battery is not None):
             return
-        if int(float(self._sensors.get("battery"))) < int(charge_limit):
+        if int(float(battery)) < int(charge_limit):
+            return
+        # The stop command carries the charging start time (hour/minute); until
+        # the vehicle reports one this is a normal state, not an error.
+        if self._sensors.get("time_battery_charging_start") is None:
+            _LOGGER.debug("Cannot auto-stop charging for vehicle %s yet: no charging start time known", self._vehicle["vin"])
             return
         button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_stop.name")
-        await self.send_charge_command(button_name, False, "delayed")
+        try:
+            await self.send_charge_command(button_name, False, "delayed")
+        except (HomeAssistantError, CommunicationError) as err:
+            # Raising here would fail the whole update and discard the fresh data.
+            _LOGGER.warning("Could not stop charging vehicle %s at the configured limit, retrying on the next update: %s", self._vehicle["vin"], err)
+            return
         self._manage_charge_limit_sent = True
 
     async def _sync_abrp_if_enabled(self, new_data: dict[str, Any]) -> None:
