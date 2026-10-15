@@ -64,6 +64,17 @@ def date_from_pt_string(pt_string, start_date=None):
 def vehicle_removed_issue_id(vin:str) -> str:
     return f"vehicle_removed_{vin}"
 
+def extract_oauth_code(value:str) -> str:
+    """Return only the authorization code.
+
+    Users paste the redirect URL, `code=...&scope=...` or `<code>&scope=...`;
+    a stray `scope` makes the token endpoint reject the request. The code is
+    returned as pasted (still percent-encoded), as it goes into a query string.
+    """
+    value = value.strip()
+    match = re.search(r"(?:^|[?&])code=([^&#\s]+)", value)
+    return match.group(1) if match else value.split("&", 1)[0]
+
 def resolve_mqtt_resp_data_error(service:str | None, resp_data:dict[str, Any], default:str) -> str:
     """ Failure reason from the resp_data of an MQTT command response, or default when it has none. """
     if not service:
