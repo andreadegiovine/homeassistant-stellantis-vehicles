@@ -407,7 +407,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
            "program3": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
            "program4": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0}
         }
-        air_conditioning = (self.data.get("preconditionning") or {}).get("airConditioning") or {}
+        air_conditioning = (self.data.get("preconditioning") or {}).get("airConditioning") or {}
         current_programs = air_conditioning.get("programs")
         if current_programs:
             for program in current_programs:
