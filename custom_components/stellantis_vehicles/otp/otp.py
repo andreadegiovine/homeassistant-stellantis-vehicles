@@ -13,12 +13,14 @@ from Crypto.Hash import SHA256
 
 from . import oaep
 from .load import IWData
+from ..utils import SENSITIVE_DATA_FILTER
 
 # pylint: disable=invalid-name
 CONFIG_NAME = "otp.bin"
 TIMEOUT_IN_S = 10
 
 logger = logging.getLogger(__name__)
+logger.addFilter(SENSITIVE_DATA_FILTER)
 
 
 def etree_to_dict(t):
@@ -126,9 +128,7 @@ class Otp:
 
         R0 = self.challenge + ";" + iw + ";" + self.get_serial()
         R1 = self.challenge + ";" + iw + ";" + self.data.iwK1
-        # R2 ends with the raw PIN on the synchro action; keep it out of the log.
-        R2_log = R2.replace(self.codepin, "###") if self.action == "synchro" and self.codepin else R2
-        logger.debug("%s\n%s\n%s", R0, R1, R2_log)
+        logger.debug("Computed challenge response for action %s", self.action)
         return {"R0": hashlib.sha256(R0.encode("utf-8")).hexdigest(),
                 "R1": hashlib.sha256(R1.encode("utf-8")).hexdigest(),
                 "R2": hashlib.sha256(R2.encode("utf-8")).hexdigest()}
@@ -151,7 +151,7 @@ class Otp:
             mini = x * 128
             ciphertext = cipher.decrypt(enc_b[mini:maxi])
             dec_string += ciphertext.hex()
-        logger.debug(dec_string)
+        logger.debug("Decrypted %d bytes", len(dec_string) // 2)
         return dec_string
 
     def request(self, param, setup=False):
@@ -174,7 +174,7 @@ class Otp:
                 return etree_to_dict(ElT.XML(raw_xml))["ActionSetup"]
             return etree_to_dict(ElT.XML(raw_xml))["ActionFinalize"]
         except KeyError as e:
-            logger.debug(raw_xml)
+            logger.debug("Unexpected response (%d chars)", len(raw_xml))
             raise ValueError("Bad response from server") from e
 
     def activation_start(self):
@@ -282,6 +282,7 @@ class Otp:
                         assert self.activation_finalyze() == Otp.OK
                     otp_code = self._get_otp_code()
                     assert otp_code is not None
+                    SENSITIVE_DATA_FILTER.add_custom_value(otp_code)
                     logger.debug("otp code: %s", otp_code)
         except AssertionError as e:
             raise ConfigException("Can't get otp code") from e
