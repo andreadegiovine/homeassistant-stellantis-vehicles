@@ -51,6 +51,7 @@ MQTT_RESP_TOPIC = "psa/RemoteServices/to/cid/"
 MQTT_EVENT_TOPIC = "psa/RemoteServices/events/MPHRTServices/"
 MQTT_REQ_TOPIC = "psa/RemoteServices/from/cid/"
 MQTT_QOS = 0
+MQTT_USERNAME = "IMA_OAUTH_ACCESS_TOKEN"
 
 # resp_data failure reasons per service and field, from the vendor app's
 # response enums; the first field present wins.
