@@ -690,6 +690,9 @@ class StellantisVehicles(StellantisOauth):
         def get_next_run():
             expires_in = self.get_config("oauth")["expires_in"]
             return datetime.fromisoformat(expires_in) - timedelta(minutes=5)
+        # The scheduled run is the slow retry for a rejected refresh token:
+        # let it reach the server again in case the rejection was transient.
+        self._oauth_rejected_refresh_token = None
         try:
             if self._oauth_token_scheduled is not None:
                 self.reset_scheduled_oauth_token()
@@ -748,7 +751,7 @@ class StellantisVehicles(StellantisOauth):
             if self._shutting_down:
                 raise CommunicationError("Integration is unloading")
             refresh_token = oauth.get("refresh_token")
-            if refresh_token == self._oauth_rejected_refresh_token:
+            if refresh_token is not None and refresh_token == self._oauth_rejected_refresh_token:
                 raise ConfigEntryAuthFailed("Stellantis already rejected this refresh token (invalid_grant)")
             try:
                 await self._refresh_oauth_token_request()
