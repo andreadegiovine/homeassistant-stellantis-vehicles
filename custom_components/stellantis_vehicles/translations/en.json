@@ -46,7 +46,8 @@
       "options": {
         "data": {
           "notifications": "Enable persistent notifications",
-          "anonymize_logs": "Anonymize personal data on logs"
+          "anonymize_logs": "Anonymize personal data on logs",
+          "mqtt_live_updates": "Update vehicle status live via MQTT"
         }
       },
       "reauth_confirm": {

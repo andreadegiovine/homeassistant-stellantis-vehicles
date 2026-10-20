@@ -31,6 +31,7 @@ from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
 from .exceptions import ( CommunicationError, RateLimitException )
+from .mqtt_event import parse_mqtt_event
 
 from .const import (
     DOMAIN,
@@ -38,6 +39,7 @@ from .const import (
     FIELD_COUNTRY_CODE,
     FIELD_REMOTE_COMMANDS,
     FIELD_NOTIFICATIONS,
+    FIELD_MQTT_LIVE_UPDATES,
     MOBILE_APPS,
     OAUTH_AUTHORIZE_URL,
     OAUTH_TOKEN_URL,
@@ -1047,8 +1049,11 @@ class StellantisVehicles(StellantisOauth):
         self._hass.loop.call_soon_threadsafe(self._update_all_listeners)
         try:
             topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
-            for vehicle in self._vehicles:
-                topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
+            # Vehicle events only feed the MQTT live updates, so without
+            # those the event topic isn't subscribed at all.
+            if self.get_config(FIELD_MQTT_LIVE_UPDATES) is not False:
+                for vehicle in self._vehicles:
+                    topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
             # paho's SUBACK callback only carries the mid, so remember which topic it belongs to.
             self._mqtt_subscriptions.clear()
             for topic in topics:
@@ -1157,11 +1162,16 @@ class StellantisVehicles(StellantisOauth):
                     _LOGGER.error("No result code")
 
             elif msg.topic.startswith(MQTT_EVENT_TOPIC):
-#                 charge_info = data["charging_state"]
-#                 programs = data["precond_state"].get("programs", None)
-#                 if programs:
-#                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
-                _LOGGER.debug("Update data from mqtt?!?")
+                event = parse_mqtt_event(data)
+                _LOGGER.debug("Parsed vehicle event: %s", event)
+                coordinator = self.async_get_coordinator_by_vin(event.get("vin"))
+                if coordinator:
+                    # Runs on the paho thread: hand the event to the event loop
+                    # without blocking; the loop logs any error it raises.
+                    if not self._shutting_down:
+                        self._hass.loop.call_soon_threadsafe(coordinator.apply_mqtt_event, event)
+                else:
+                    _LOGGER.debug("No coordinator found for vehicle event (vin %s)", event.get("vin"))
         except Exception:
             _LOGGER.exception("Error while handling MQTT message")
 

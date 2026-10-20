@@ -163,6 +163,7 @@ FIELD_SMS_CODE = "sms_code"
 FIELD_PIN_CODE = "pin_code"
 FIELD_NOTIFICATIONS = "notifications"
 FIELD_ANONYMIZE_LOGS = "anonymize_logs"
+FIELD_MQTT_LIVE_UPDATES = "mqtt_live_updates"
 FIELD_RECONFIGURE = "reconfigure"
 
 PLATFORMS = [
