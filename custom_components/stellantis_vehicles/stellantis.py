@@ -144,6 +144,11 @@ class StellantisBase:
         self._session = None
         self.otp = None
         self._shutting_down = False
+        # Serialises OAuth refreshes of this account: the scheduled refresh and
+        # the refresh-on-401 in make_http_request could run at the same time
+        # with the same refresh token; Stellantis rotates it on use, so the
+        # second one got invalid_grant and started a needless reauth.
+        self._oauth_refresh_lock = asyncio.Lock()
         self._pending_tasks: set[asyncio.Task] = set()
 
         # Shared instance, already attached to the module loggers at import time.
@@ -717,6 +722,18 @@ class StellantisVehicles(StellantisOauth):
     @log_call
     @rate_limit(6, 1800) # 6 per 30 min
     async def refresh_oauth_token_request(self) -> None:
+        # Only one refresh at a time per account. If another refresh rotated
+        # the token while this call was waiting for the lock, the work is
+        # already done - sending the old refresh token now would only get
+        # invalid_grant.
+        token_before = (self.get_config("oauth") or {}).get("refresh_token")
+        async with self._oauth_refresh_lock:
+            if (self.get_config("oauth") or {}).get("refresh_token") != token_before:
+                _LOGGER.debug("OAuth token already refreshed by a concurrent call, skipping")
+                return
+            await self._refresh_oauth_token_request_locked()
+
+    async def _refresh_oauth_token_request_locked(self) -> None:
         # save_config() below rotates this out of the masked set before it
         # appears in the exchange log's request URL - register it separately.
         self.logger_filter.add_custom_value((self.get_config("oauth") or {}).get("refresh_token"))
