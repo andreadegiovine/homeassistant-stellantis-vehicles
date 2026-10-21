@@ -31,6 +31,7 @@ from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
 from .exceptions import ( CommunicationError, RateLimitException )
+from .mqtt_event import parse_mqtt_event
 
 from .const import (
     DOMAIN,
@@ -38,6 +39,7 @@ from .const import (
     FIELD_COUNTRY_CODE,
     FIELD_REMOTE_COMMANDS,
     FIELD_NOTIFICATIONS,
+    FIELD_MQTT_LIVE_UPDATES,
     MOBILE_APPS,
     OAUTH_AUTHORIZE_URL,
     OAUTH_TOKEN_URL,
@@ -57,6 +59,7 @@ from .const import (
     MQTT_PORT,
     MQTT_KEEP_ALIVE_S,
     MQTT_QOS,
+    MQTT_USERNAME,
     MQTT_RESP_TOPIC,
     MQTT_EVENT_TOPIC,
     MQTT_REQ_TOPIC,
@@ -80,6 +83,18 @@ _LOGGER = logging.getLogger(__name__)
 # attempt, every reload), and nothing ever removed the old one, so filters
 # stacked on this logger (issue #414, PR #593).
 _LOGGER.addFilter(SENSITIVE_DATA_FILTER)
+
+
+# Request body fields that are never logged, whatever the anonymize option:
+# the account credentials, and the OTP code (also sent as "password").
+_UNLOGGED_BODY_KEYS = ("email", "password")
+
+
+def _redact_body(body):
+    """Return a request body with its credential fields replaced by '###', for logging."""
+    if not isinstance(body, dict):
+        return body
+    return {key: "###" if key in _UNLOGGED_BODY_KEYS and value else value for key, value in body.items()}
 
 
 def _log_http_exchange(url, headers, response, **extra):
@@ -141,6 +156,11 @@ class StellantisBase:
         self._session = None
         self.otp = None
         self._shutting_down = False
+        # Serialises OAuth refreshes of this account: the scheduled refresh and
+        # the refresh-on-401 in make_http_request could run at the same time
+        # with the same refresh token; Stellantis rotates it on use, so the
+        # second one got invalid_grant and started a needless reauth.
+        self._oauth_refresh_lock = asyncio.Lock()
         self._pending_tasks: set[asyncio.Task] = set()
 
         # Shared instance, already attached to the module loggers at import time.
@@ -169,7 +189,8 @@ class StellantisBase:
 
     def save_config(self, data:dict[str, Any]) -> None:
         for key in data:
-            self._config[key] = data[key]
+            # A copy: a value shared with entry.data that is changed in place is not seen by async_update_entry, which then does not save.
+            self._config[key] = deepcopy(data[key])
             if key == FIELD_MOBILE_APP and FIELD_COUNTRY_CODE in self._config:
                 self.set_mobile_app(data[key], self._config[FIELD_COUNTRY_CODE])
             elif key == FIELD_COUNTRY_CODE and FIELD_MOBILE_APP in self._config:
@@ -252,7 +273,7 @@ class StellantisBase:
 
                     _LOGGER.debug(
                         "HTTP %s %s failed with status %s | headers=%s params=%s json=%s data=%s | response=%s",
-                        method, url, resp.status, headers, params, json_data, data, result,
+                        method, url, resp.status, headers, params, _redact_body(json_data), _redact_body(data), result,
                     )
 
                     if str(resp.status) == "404" and str(result.get("code")) == "40400":
@@ -419,15 +440,15 @@ class StellantisOauth(StellantisBase):
         headers = self.apply_dict_params(GET_OTP_HEADERS)
         headers["x-transaction-id"] = "1234"
         user_request = await self.make_http_request(url, 'GET', headers)
-        user_info = user_request[0] if isinstance(user_request, list) and user_request else {}
-        for key in ("customer", "vehicle", "car_association_id"):
-            if key in user_info:
-                self.logger_filter.add_custom_value(user_info[key])
+        # A non-list body (error object, changed shape) becomes an empty list,
+        # which the config flow reports as missing user info.
+        associations = user_request if isinstance(user_request, list) else []
+        for association in associations:
+            for key in ("customer", "vehicle", "car_association_id"):
+                if key in association:
+                    self.logger_filter.add_custom_value(association[key])
         _log_http_exchange(url, headers, user_request)
-        # Always hand back a list so callers can safely index [0]; a non-list
-        # body (error object, changed shape) becomes an empty list, which the
-        # config flow reports as missing user info.
-        return user_request if isinstance(user_request, list) else []
+        return associations
 
     def new_otp(self, sms_code, pin_code):
         try:
@@ -491,6 +512,7 @@ class StellantisOauth(StellantisBase):
         if otp_code is None:
             _LOGGER.error("OTP code is empty, please reauthenticate")
             raise ConfigEntryAuthFailed("OTP code is empty, please reauthenticate")
+        self.logger_filter.add_custom_value(otp_code)
         # Save updated OTP object to file
         await self._hass.async_add_executor_job(save_otp, self.otp, otp_file_path)
         return otp_code
@@ -714,6 +736,18 @@ class StellantisVehicles(StellantisOauth):
     @log_call
     @rate_limit(6, 1800) # 6 per 30 min
     async def refresh_oauth_token_request(self) -> None:
+        # Only one refresh at a time per account. If another refresh rotated
+        # the token while this call was waiting for the lock, the work is
+        # already done - sending the old refresh token now would only get
+        # invalid_grant.
+        token_before = (self.get_config("oauth") or {}).get("refresh_token")
+        async with self._oauth_refresh_lock:
+            if (self.get_config("oauth") or {}).get("refresh_token") != token_before:
+                _LOGGER.debug("OAuth token already refreshed by a concurrent call, skipping")
+                return
+            await self._refresh_oauth_token_request_locked()
+
+    async def _refresh_oauth_token_request_locked(self) -> None:
         # save_config() below rotates this out of the masked set before it
         # appears in the exchange log's request URL - register it separately.
         self.logger_filter.add_custom_value((self.get_config("oauth") or {}).get("refresh_token"))
@@ -962,6 +996,10 @@ class StellantisVehicles(StellantisOauth):
         self.save_config({"mqtt": mqtt_config})
         self.update_stored_config("mqtt", mqtt_config)
         _log_http_exchange(url, headers, token_request)
+        # paho sends the credentials it was given again on its own reconnects,
+        # so a client created with the previous token would keep using it.
+        if self._mqtt is not None:
+            self._mqtt.username_pw_set(MQTT_USERNAME, mqtt_config["access_token"])
 
     @log_call
     async def connect_mqtt(self):
@@ -973,7 +1011,7 @@ class StellantisVehicles(StellantisOauth):
         """Force a full MQTT reconnect, even if the client currently looks connected."""
         return await self._connect_mqtt(force=True)
 
-    async def _connect_mqtt(self, force: bool):
+    async def _connect_mqtt(self, force:bool) -> bool:
         # Serialize against concurrent connect_mqtt()/reconnect_mqtt() calls
         # (e.g. several vehicle coordinators noticing a dropped connection at
         # once) and against async_shutdown(), so nobody operates on a client
@@ -1006,7 +1044,7 @@ class StellantisVehicles(StellantisOauth):
             self._mqtt.on_message = self._on_mqtt_message
             self._mqtt.on_subscribe = self._on_mqtt_subscribe
 
-            self._mqtt.username_pw_set("IMA_OAUTH_ACCESS_TOKEN", self.get_config("mqtt")["access_token"])
+            self._mqtt.username_pw_set(MQTT_USERNAME, self.get_config("mqtt")["access_token"])
             try:
                 # paho's connect() does blocking DNS + TCP + TLS handshake, so run it in the executor to keep the event loop responsive.
                 await self._hass.async_add_executor_job(
@@ -1047,8 +1085,11 @@ class StellantisVehicles(StellantisOauth):
         self._hass.loop.call_soon_threadsafe(self._update_all_listeners)
         try:
             topics = [MQTT_RESP_TOPIC + self.get_config("customer_id") + "/#"]
-            for vehicle in self._vehicles:
-                topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
+            # Vehicle events only feed the MQTT live updates, so without
+            # those the event topic isn't subscribed at all.
+            if self.get_config(FIELD_MQTT_LIVE_UPDATES) is not False:
+                for vehicle in self._vehicles:
+                    topics.append(MQTT_EVENT_TOPIC + vehicle["vin"])
             # paho's SUBACK callback only carries the mid, so remember which topic it belongs to.
             self._mqtt_subscriptions.clear()
             for topic in topics:
@@ -1157,11 +1198,16 @@ class StellantisVehicles(StellantisOauth):
                     _LOGGER.error("No result code")
 
             elif msg.topic.startswith(MQTT_EVENT_TOPIC):
-#                 charge_info = data["charging_state"]
-#                 programs = data["precond_state"].get("programs", None)
-#                 if programs:
-#                     self.precond_programs[data["vin"]] = data["precond_state"]["programs"]
-                _LOGGER.debug("Update data from mqtt?!?")
+                event = parse_mqtt_event(data)
+                _LOGGER.debug("Parsed vehicle event: %s", event)
+                coordinator = self.async_get_coordinator_by_vin(event.get("vin"))
+                if coordinator:
+                    # Runs on the paho thread: hand the event to the event loop
+                    # without blocking; the loop logs any error it raises.
+                    if not self._shutting_down:
+                        self._hass.loop.call_soon_threadsafe(coordinator.apply_mqtt_event, event)
+                else:
+                    _LOGGER.debug("No coordinator found for vehicle event (vin %s)", event.get("vin"))
         except Exception:
             _LOGGER.exception("Error while handling MQTT message")
 

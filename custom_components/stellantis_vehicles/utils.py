@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from time import monotonic, process_time
 from functools import wraps
 import re
+import weakref
 from typing import Any, Dict
 
 from homeassistant.util import dt
@@ -28,6 +29,16 @@ def get_datetime(date = None):
 
 def datetime_from_isoformat(string):
     return get_datetime(datetime.fromisoformat(string))
+
+def parse_timestamp(value:Any) -> datetime | None:
+    """ Parse an API/MQTT ISO timestamp, assuming UTC if naive; None if missing or invalid. """
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 def time_from_pt_string(pt_string):
     try:
@@ -63,6 +74,17 @@ def date_from_pt_string(pt_string, start_date=None):
 
 def vehicle_removed_issue_id(vin:str) -> str:
     return f"vehicle_removed_{vin}"
+
+def extract_oauth_code(value:str) -> str:
+    """Return only the authorization code.
+
+    Users paste the redirect URL, `code=...&scope=...` or `<code>&scope=...`;
+    a stray `scope` makes the token endpoint reject the request. The code is
+    returned as pasted (still percent-encoded), as it goes into a query string.
+    """
+    value = value.strip()
+    match = re.search(r"(?:^|[?&])code=([^&#\s]+)", value)
+    return match.group(1) if match else value.split("&", 1)[0]
 
 def resolve_mqtt_resp_data_error(service:str | None, resp_data:dict[str, Any], default:str) -> str:
     """ Failure reason from the resp_data of an MQTT command response, or default when it has none. """
@@ -161,18 +183,29 @@ def log_call(func):
 
 
 def rate_limit(limit: int, every: int):
-    """Reject calls once `limit` of them have run within the last `every` seconds.
+    """Reject calls once `limit` of them have been attempted within the last
+    `every` seconds, counted per owner (the bound instance in args[0]).
 
-    Timestamps of the recent successful calls are kept in a deque and pruned on
-    each call once they fall outside the window. No background tasks are
-    involved, so there is nothing to cancel on unload.
+    Each owner has its own window: one StellantisVehicles per config entry,
+    one coordinator per vehicle. A single shared window let one account
+    exhaust the budget of the others. Attempts are counted, failures
+    included - that is what bounds retries while the API keeps failing.
+    No background tasks are involved, so there is nothing to cancel on unload.
     """
     def limit_decorator(func):
-        # Monotonic timestamps of the last (up to `limit`) successful calls.
-        calls: deque[float] = deque()
+        # Weak keys: a reloaded entry gets a fresh window and nothing leaks.
+        windows: "weakref.WeakKeyDictionary[Any, deque[float]]" = weakref.WeakKeyDictionary()
+        fallback: dict[int, deque[float]] = {}
+
+        def _window(owner) -> deque[float]:
+            try:
+                return windows.setdefault(owner, deque())
+            except TypeError:
+                return fallback.setdefault(id(owner), deque())
 
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
+            calls = _window(args[0] if args else None)
             now = monotonic()
             while calls and now - calls[0] >= every:
                 calls.popleft()
@@ -231,7 +264,7 @@ class SensitiveDataFilter(logging.Filter):
 
     MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token")
     CUSTOM_VALUES_LIMIT = 128
-    REDACT_KEYS = ("lastPosition", "coordinates", "latitude", "longitude", "tlm")
+    REDACT_KEYS = ("lastPosition", "coordinates", "latitude", "longitude", "tlm", "notification_url")
     _PAGE_TOKEN_RE = re.compile(r"(pageToken=)[^&\"'\s]+")
 
     def __init__(self) -> None:

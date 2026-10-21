@@ -46,7 +46,8 @@
       "options": {
         "data": {
           "notifications": "Omogoči trajna obvestila",
-          "anonymize_logs": "Anonimiziraj osebne podatke v dnevnikih"
+          "anonymize_logs": "Anonimiziraj osebne podatke v dnevnikih",
+          "mqtt_live_updates": "Posodabljaj stanje vozila v živo prek MQTT"
         }
       },
       "reauth_confirm": {

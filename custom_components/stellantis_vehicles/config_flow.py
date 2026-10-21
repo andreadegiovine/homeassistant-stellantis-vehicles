@@ -11,7 +11,7 @@ from homeassistant.const import (
     CONF_EMAIL
 )
 
-from .utils import get_datetime, log_call
+from .utils import extract_oauth_code, get_datetime, log_call
 from .stellantis import StellantisOauth
 from .const import (
     DOMAIN,
@@ -27,6 +27,7 @@ from .const import (
     FIELD_PIN_CODE,
     FIELD_NOTIFICATIONS,
     FIELD_ANONYMIZE_LOGS,
+    FIELD_MQTT_LIVE_UPDATES,
     FIELD_RECONFIGURE,
     MQTT_REFRESH_TOKEN_TTL,
     OAUTH_CODE_URL,
@@ -72,14 +73,20 @@ OTP_SCHEMA = vol.Schema({
 def OPTIONS_SCHEMA(reconfig=None):
     defaults = {
         FIELD_NOTIFICATIONS: True,
-        FIELD_ANONYMIZE_LOGS: True
+        FIELD_ANONYMIZE_LOGS: True,
+        FIELD_MQTT_LIVE_UPDATES: True
     }
     if reconfig:
         defaults.update(reconfig)
-    return vol.Schema({
+    schema = {
         vol.Required(FIELD_NOTIFICATIONS, default=defaults[FIELD_NOTIFICATIONS]): bool,
         vol.Required(FIELD_ANONYMIZE_LOGS, default=defaults[FIELD_ANONYMIZE_LOGS]): bool
-    })
+    }
+    # MQTT events only arrive with remote commands; entries without the key
+    # have them enabled (see StellantisVehicles.remote_commands).
+    if defaults.get(FIELD_REMOTE_COMMANDS) is not False:
+        schema[vol.Required(FIELD_MQTT_LIVE_UPDATES, default=defaults[FIELD_MQTT_LIVE_UPDATES])] = bool
+    return vol.Schema(schema)
 
 RECONFIGURE_SCHEMA = vol.Schema({
     vol.Required(FIELD_RECONFIGURE): selector({ "select": { "options": ['options', 'oauth', FIELD_REMOTE_COMMANDS], "translation_key": FIELD_RECONFIGURE } })
@@ -174,7 +181,7 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             oauth_devtools = f"\n\n>***://oauth2redirect...?code=`{oauth_label}`&scope=openid..."
             return self.async_show_form(step_id="oauth_manual", data_schema=OAUTH_MANUAL_SCHEMA, description_placeholders={"oauth_link": oauth_link, "oauth_label": oauth_label, "oauth_devtools": oauth_devtools}, errors=errors)
 
-        self.stellantis.save_config({"oauth_code": user_input[FIELD_OAUTH_CODE]})
+        self.stellantis.save_config({"oauth_code": extract_oauth_code(user_input[FIELD_OAUTH_CODE])})
         return await self.async_step_get_access_token()
 
 
@@ -346,6 +353,11 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             self.data.update({FIELD_REMOTE_COMMANDS: entry_data[FIELD_REMOTE_COMMANDS]})
         if "customer_id" in entry_data:
             self.data.update({"customer_id": entry_data["customer_id"]})
+        # Reauth also passes through the options form, which would otherwise
+        # show (and on submit save) the defaults instead of the current choices.
+        for key in (FIELD_NOTIFICATIONS, FIELD_ANONYMIZE_LOGS, FIELD_MQTT_LIVE_UPDATES):
+            if key in entry_data:
+                self.data[key] = entry_data[key]
         return await self.async_step_reauth_confirm()
 
 
