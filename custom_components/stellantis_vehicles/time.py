@@ -1,4 +1,5 @@
 import logging
+from datetime import time
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.time import TimeEntityDescription
@@ -45,11 +46,11 @@ class StellantisBatteryChargingStart(StellantisBaseTime):
     def available(self):
         return self.available_command
 
-    async def async_set_value(self, value):
+    async def async_set_value(self, value:time) -> None:
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = value
         await self._coordinator.send_charge_command(self.name, True)
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
     def coordinator_update(self):
         if self.value_was_updated():
