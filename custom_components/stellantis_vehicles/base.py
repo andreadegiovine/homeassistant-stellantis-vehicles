@@ -1196,13 +1196,13 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
             return self._coordinator._sensors.get(self._sensor_key)
         return self._default_value
 
-    async def async_set_native_value(self, value: float):
+    async def async_set_native_value(self, value:float) -> None:
         """ Set native value. """
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = float(value)
         vin = self._coordinator._vehicle['vin']
         self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, float(value))
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
 
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
@@ -1222,21 +1222,21 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
             return self._coordinator._sensors.get(self._sensor_key)
         return False
 
-    async def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs:Any) -> None:
         """ Turn on. """
         self._attr_is_on = True
         self._coordinator._sensors[self._sensor_key] = True
         vin = self._coordinator._vehicle['vin']
         self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, True)
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs:Any) -> None:
         """ Turn off. """
         self._attr_is_on = False
         self._coordinator._sensors[self._sensor_key] = False
         vin = self._coordinator._vehicle['vin']
         self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, False)
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
 
 class StellantisBaseText(StellantisRestoreEntity, TextEntity):
@@ -1256,13 +1256,13 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
             return self._coordinator._sensors.get(self._sensor_key)
         return ""
 
-    async def async_set_value(self, value: str):
+    async def async_set_value(self, value:str) -> None:
         """ Set value. """
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = str(value)
         vin = self._coordinator._vehicle['vin']
         self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, str(value))
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
 
 class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):
