@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from datetime import datetime, timedelta, UTC
@@ -17,19 +18,24 @@ from homeassistant.components.time import TimeEntity
 from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, STATE_OFF)
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ( ConfigEntryAuthFailed, HomeAssistantError, ServiceValidationError )
 from homeassistant.helpers import issue_registry as ir
 
-from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, rate_limit, log_call, SENSITIVE_DATA_FILTER )
+from .mqtt_event import event_content
+from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, parse_timestamp, rate_limit, log_call, parse_vehicle_rights, vehicle_removed_issue_id, SENSITIVE_DATA_FILTER )
+from .exceptions import CommunicationError, RateLimitException
 
 from .const import (
     DOMAIN,
+    SUPPORTED_FEATURES_RETRY_DELAYS,
     FIELD_MOBILE_APP,
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
     UPDATE_INTERVAL,
     EMPTY_STATUS_LIMIT,
     COMMAND_HISTORY_LIMIT,
+    COMMAND_STATUS_STILL_IN_PROGRESS,
+    PENDING_ACTION_TIMEOUT,
     KWH_CORRECTION
 )
 
@@ -39,6 +45,17 @@ _LOGGER = logging.getLogger(__name__)
 # nothing ever removed the old one, so filters stacked on this logger
 # (issue #414, PR #593).
 _LOGGER.addFilter(SENSITIVE_DATA_FILTER)
+
+# Event fields overlaid onto the REST data, grouped by the REST section they
+# update. Freshness is tracked per group (see _track_mqtt_changes), so every
+# field _overlay_mqtt_state writes must be covered here.
+_MQTT_OVERLAY_GROUPS = {
+    "charging": lambda event: ((event.get("charging") or {}).get("hmi_state_code"), (event.get("charging") or {}).get("plugged")),
+    "doors": lambda event: (event.get("doors") or {}).get("locking_state_code"),
+    "preconditioning": lambda event: (event.get("preconditioning") or {}).get("status_code"),
+    "door_opening": lambda event: (event.get("doors") or {}).get("open"),
+}
+
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations, config_entry) -> None:
@@ -50,8 +67,17 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._vehicle = vehicle
         self._stellantis = stellantis
         self._sensors = {}
+        # Last accepted MQTT vehicle event (see apply_mqtt_event) and the
+        # ordering/freshness state that goes with it.
+        self._mqtt_state = {}
+        self._mqtt_last_key = None
+        self._mqtt_changed_at:dict[str, datetime | None] = {}
         self._commands_history = {}
         self._disabled_commands = []
+        # action_id of the command currently blocking further remote
+        # commands, or None while none is blocking. Set as soon as that
+        # command is sent and cleared once it reaches a final status.
+        self._pending_action_id: str | None = None
         self._last_trip = None
 #        self._total_trip = None
         self._manage_charge_limit_sent = False
@@ -63,6 +89,44 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         # is not polled again for the lifetime of this coordinator (issue #623:
         # some vehicles 404 on every request and flooded the logs).
         self._maintenance_unsupported = False
+        # Remote services the vehicle's subscription covers, keyed by "fds"
+        # code; None until async_lookup_supported_features has succeeded.
+        self._supported_features: dict[str, dict[str, Any]] | None = None
+
+    @property
+    def supported_features(self) -> dict[str, dict[str, Any]] | None:
+        """ Remote services the vehicle's subscription covers, keyed by "fds" code.
+
+        None means unknown (lookup pending or failed), {} means no services; a
+        caller gating on this must treat None as "allowed".
+        """
+        return self._supported_features
+
+    @log_call
+    async def async_lookup_supported_features(self) -> None:
+        """ Look up the remote services the vehicle's subscription covers.
+
+        Only shown in the diagnostics for now, nothing depends on it yet, so a
+        failure is logged and otherwise ignored. Communication errors are
+        retried with a growing delay; an auth failure is not, as it is not
+        raised inside setup or an update and so cannot start a reauth flow.
+        """
+        for delay in (*SUPPORTED_FEATURES_RETRY_DELAYS, None):
+            try:
+                response = await self._stellantis.get_vehicle_rights(self._vehicle)
+            except ConfigEntryAuthFailed as err:
+                _LOGGER.warning("Could not look up the vehicle's supported features: %s", err)
+                return
+            except (CommunicationError, RateLimitException) as err:
+                if delay is None:
+                    _LOGGER.warning("Could not look up the vehicle's supported features: %s", err)
+                    return
+                _LOGGER.debug("Supported features lookup failed, retrying in %s s: %s", delay, err)
+                await asyncio.sleep(delay)
+            else:
+                self._supported_features = parse_vehicle_rights(response)
+                _LOGGER.debug("Supported features: %s", self._supported_features)
+                return
 
     @log_call
     async def _async_update_data(self) -> dict[str, Any] | None:
@@ -80,6 +144,9 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
         if self._is_stale(new_data):
             return self.data
+
+        if self._mqtt_state:
+            self._overlay_mqtt_state(new_data)
 
         await self.after_async_update_data(new_data)
         return new_data
@@ -145,20 +212,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         # Sustained outage: surface it so entities go unavailable.
         raise UpdateFailed("Empty vehicle status response")
 
-    def _is_stale(self, new_data: dict[str, Any]) -> bool:
+    def _is_stale(self, new_data:dict[str, Any]) -> bool:
         """ Whether new_data's updatedAt is not newer than the currently held data. """
         if "updatedAt" not in new_data or not self.data or "updatedAt" not in self.data:
             return False
-        try:
-            current_dt = datetime.fromisoformat(self.data["updatedAt"])
-            new_dt = datetime.fromisoformat(new_data["updatedAt"])
-        except (ValueError, TypeError):
+        current_dt = parse_timestamp(self.data["updatedAt"])
+        new_dt = parse_timestamp(new_data["updatedAt"])
+        if current_dt is None or new_dt is None:
             _LOGGER.debug("Invalid updatedAt values, proceeding with update without timestamp comparison")
             return False
-        if current_dt.tzinfo is None:
-            current_dt = current_dt.replace(tzinfo=UTC)
-        if new_dt.tzinfo is None:
-            new_dt = new_dt.replace(tzinfo=UTC)
         if new_dt <= current_dt:
             _LOGGER.debug("API did not return updated vehicle data, skipping sensor update")
             return True
@@ -183,7 +245,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             self._privacy_full_logged = False
             _LOGGER.info("Private mode is disabled on vehicle %s, live data updates resumed", self._vehicle["vin"])
 
-    async def _reconcile_vehicle(self):
+    async def _reconcile_vehicle(self) -> None:
         """ Re-fetch the account vehicle list to check whether this vehicle was unpaired.
 
         Sets ``self._vehicle_removed`` and raises a repair issue only when the
@@ -204,20 +266,23 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         ir.async_create_issue(
             self._hass,
             DOMAIN,
-            f"vehicle_removed_{vin}",
+            vehicle_removed_issue_id(vin),
             is_fixable=False,
+            is_persistent=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="vehicle_removed",
             translation_placeholders={"vin": vin},
         )
 
-    def _clear_vehicle_removed(self):
-        """ Vehicle answered again: drop the repair issue and log the recovery once. """
-        if not self._vehicle_removed:
-            return
-        self._vehicle_removed = False
-        _LOGGER.info("Vehicle %s is reachable again", self._vehicle["vin"])
-        ir.async_delete_issue(self._hass, DOMAIN, f"vehicle_removed_{self._vehicle['vin']}")
+    def _clear_vehicle_removed(self) -> None:
+        """ Vehicle answered again: drop the repair issue and log the recovery once.
+
+        The issue is persistent, so it can outlive the in-memory flag across a reload or restart.
+        """
+        ir.async_delete_issue(self._hass, DOMAIN, vehicle_removed_issue_id(self._vehicle["vin"]))
+        if self._vehicle_removed:
+            self._vehicle_removed = False
+            _LOGGER.info("Vehicle %s is reachable again", self._vehicle["vin"])
 
     def get_translation(self, path, default = None):
         """ Get translation from path. """
@@ -227,6 +292,142 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
     def vehicle_type(self):
         """ Vehicle type. """
         return self._vehicle["type"]
+
+    @property
+    def mqtt_state(self) -> dict[str, Any]:
+        """ Last accepted MQTT vehicle event (see parse_mqtt_event), or {} before the first one. """
+        return self._mqtt_state
+
+    @callback
+    def apply_mqtt_event(self, event:dict[str, Any]) -> None:
+        """ Apply a parsed MQTT vehicle event (see parse_mqtt_event).
+
+        Events for a given VIN are not guaranteed to arrive in order, so
+        older ones are discarded first. Only the fields in
+        _MQTT_OVERLAY_GROUPS reach the entities (see _overlay_mqtt_state);
+        battery level and range stay REST-only, as the MQTT values lag
+        behind REST and spike (checked against a month of both).
+        """
+        if not self._accept_mqtt_event_order(event):
+            return
+
+        if event_content(event) == event_content(self._mqtt_state):
+            # Nothing actually changed (a duplicate) - don't wake entities for it.
+            return
+
+        self._track_mqtt_changes(event)
+        self._mqtt_state = event
+        if self.data:
+            data = deepcopy(self.data)
+            self._overlay_mqtt_state(data)
+            # Not async_set_updated_data(): that would reset the REST poll timer.
+            self.data = data
+        self.async_update_listeners()
+
+    def _accept_mqtt_event_order(self, event:dict[str, Any]) -> bool:
+        """ Reject an MQTT event older than the last one accepted for this vehicle.
+
+        Ordering key is (timestamp, event_counter). event_counter resets to 1
+        on a new session, but the newer timestamp already orders that
+        correctly. Don't special-case counter 1: it is always the
+        session-start snapshot (reason 0), which often arrives after the
+        session's next events while still holding the older state. A missing
+        or unparsable timestamp or a missing counter can't be placed in the
+        sequence, so the event is accepted rather than silently dropped.
+        """
+        timestamp = parse_timestamp(event.get("timestamp"))
+        counter = event.get("event_counter")
+        if timestamp is None or counter is None:
+            return True
+
+        key = (timestamp, counter)
+        if self._mqtt_last_key is not None and key < self._mqtt_last_key:
+            _LOGGER.debug(
+                "Discarding out-of-order MQTT event for %s (key %s < last accepted %s)",
+                self._vehicle["vin"], key, self._mqtt_last_key,
+            )
+            return False
+
+        self._mqtt_last_key = key
+        return True
+
+    def _track_mqtt_changes(self, event:dict[str, Any]) -> None:
+        """ Record, per overlay group, when its values last changed via MQTT.
+
+        Events repeat the last known values with a fresh timestamp (in real
+        captures soc_batt stayed at a stale 58 for hours while REST already
+        reported 53), so the event timestamp says nothing about how fresh a
+        value is; only a change seen via MQTT does. The first event after
+        startup has nothing to compare with, so its values are left to REST
+        (None) until they change.
+        """
+        event_dt = parse_timestamp(event.get("timestamp"))
+        for group, values in _MQTT_OVERLAY_GROUPS.items():
+            if not self._mqtt_state:
+                self._mqtt_changed_at[group] = None
+            elif values(event) != values(self._mqtt_state):
+                self._mqtt_changed_at[group] = event_dt
+
+    def _overlay_mqtt_state(self, data:dict[str, Any]) -> None:
+        """ Write the fields of the last accepted MQTT event into REST-shaped ``data``, in place.
+
+        Entities keep reading ``coordinator.data`` via their value_map, so the
+        event is translated into the REST vocabulary. Each group is only
+        overwritten if it last changed via MQTT after that section's REST
+        timestamp, so a later REST poll wins again. Fields without a
+        confirmed mapping are left to REST.
+        """
+        event = self._mqtt_state
+
+        electric = next((energy for energy in data.get("energies") or [] if energy.get("type") == "Electric"), None)
+        if electric is not None and self._mqtt_is_newer("charging", electric.get("createdAt") or data.get("updatedAt")):
+            event_charging = event.get("charging") or {}
+            charging = electric.setdefault("extension", {}).setdefault("electric", {}).setdefault("charging", {})
+            # hmi_state codes matched against REST status at the same
+            # timestamp; REST reports plugged-but-idle as Disconnected too.
+            # 2 and 4 (seen around charge start) are unmapped.
+            charging_status = {0: "Disconnected", 1: "InProgress", 3: "Stopped"}.get(event_charging.get("hmi_state_code"))
+            if charging_status:
+                charging["status"] = charging_status
+            if event_charging.get("plugged") is not None:
+                charging["plugged"] = event_charging["plugged"]
+
+        doors_state = data.get("doorsState")
+        if doors_state is not None and self._mqtt_is_newer("doors", doors_state.get("createdAt") or data.get("updatedAt")):
+            locking_code = (event.get("doors") or {}).get("locking_state_code")
+            locked_states = doors_state.get("lockedStates") or []
+            # Only touch lockedStates when the lock state actually differs, so
+            # finer REST values (e.g. SuperLocked) survive. 0 and 7 are
+            # transient mid-(un)lock steps and are ignored.
+            if locking_code == 1 and "Unlocked" in locked_states:
+                doors_state["lockedStates"] = ["Locked"]
+            elif locking_code == 3 and "Unlocked" not in locked_states:
+                doors_state["lockedStates"] = ["Unlocked"]
+
+        if doors_state is not None and self._mqtt_is_newer("door_opening", doors_state.get("createdAt") or data.get("updatedAt")):
+            door_open = (event.get("doors") or {}).get("open") or {}
+            names = {"Driver": "driver", "Passenger": "passenger", "RearLeft": "rear_left", "RearRight": "rear_right", "Trunk": "trunk"}
+            for opening in doors_state.get("opening") or []:
+                name = names.get(opening.get("identifier"))
+                if name in door_open:
+                    opening["state"] = "Open" if door_open[name] else "Closed"
+
+        # REST sends this section as "preconditioning", "preconditionning" or
+        # both, depending on the vehicle; keep every copy consistent.
+        for key in ("preconditioning", "preconditionning"):
+            air_conditioning = (data.get(key) or {}).get("airConditioning")
+            if air_conditioning is not None and self._mqtt_is_newer("preconditioning", air_conditioning.get("createdAt") or data.get("updatedAt")):
+                status = {0: "Disabled", 1: "Enabled", 2: "Finished"}.get((event.get("preconditioning") or {}).get("status_code"))
+                if status:
+                    air_conditioning["status"] = status
+
+    def _mqtt_is_newer(self, group:str, rest_timestamp:Any) -> bool:
+        """ Whether the group's last MQTT change is newer than the REST timestamp (a missing one counts as older). """
+        changed_at = self._mqtt_changed_at.get(group)
+        if changed_at is None:
+            return False
+        rest_dt = parse_timestamp(rest_timestamp)
+        return rest_dt is None or changed_at > rest_dt
 
     @property
     def command_history(self):
@@ -249,12 +450,15 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         }
 
     @property
-    def pending_action(self):
+    def pending_action(self) -> bool:
         """ Pending action. """
-        if not self._commands_history:
+        if self._pending_action_id is None:
             return False
-        last_action_id = list(self._commands_history.keys())[-1]
-        return not self._commands_history[last_action_id]["updates"]
+        pending_command = self._commands_history.get(self._pending_action_id)
+        if not pending_command:
+            return False
+        last_activity_at = pending_command["updates"][-1]["date"] if pending_command["updates"] else pending_command["sent_at"]
+        return (get_datetime() - last_activity_at).total_seconds() < PENDING_ACTION_TIMEOUT
 
     def _prune_command_history(self):
         """ Drop the oldest command-history entries beyond COMMAND_HISTORY_LIMIT.
@@ -268,7 +472,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             oldest_id = next(iter(self._commands_history))
             del self._commands_history[oldest_id]
 
-    async def update_command_history(self, action_id, update = None):
+    async def update_command_history(self, action_id: str, update: str | None = None) -> None:
         """ Update command history. """
         if action_id not in self._commands_history:
             return
@@ -278,6 +482,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
                 disabled_name = self._commands_history[action_id]["name"]
                 if disabled_name not in self._disabled_commands:
                     self._disabled_commands.append(disabled_name)
+            if update not in COMMAND_STATUS_STILL_IN_PROGRESS and self._pending_action_id == action_id:
+                self._pending_action_id = None
         self.async_update_listeners()
 
     def update_command_history_rate_limit(self, name):
@@ -286,20 +492,40 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._prune_command_history()
         self.async_update_listeners()
 
-    async def send_command(self, name, service, message):
+    async def send_command(self, name: str, service: str, message: dict[str, Any]) -> None:
         """ Send a command to the vehicle. """
+        if self.pending_action:
+            pending_name = self._commands_history[self._pending_action_id]["name"]
+            raise ServiceValidationError(
+                translation_domain = DOMAIN,
+                translation_key = "command_already_pending",
+                translation_placeholders = {"name": name, "pending_name": pending_name}
+            )
         try:
             action_id = await self._stellantis.send_mqtt_message(service, message, self._vehicle)
-            if action_id is not None:
-                self._commands_history.update({action_id: {"name": name, "updates": []}})
-                self._prune_command_history()
-                self.async_update_listeners()
         except ConfigEntryAuthFailed as e:
             _LOGGER.warning("Authentication failed while sending command '%s' to vehicle '%s': %s", name, self._vehicle['vin'], str(e))
             self.config_entry.async_start_reauth(self.hass)
+            action_id = None
         except Exception as e:
             _LOGGER.error("Failed to send command %s: %s", name, str(e))
             raise
+        if action_id is None:
+            _LOGGER.error("Failed to send command %s: it was not sent to the vehicle", name)
+            raise HomeAssistantError(
+                translation_domain = DOMAIN,
+                translation_key = "command_not_sent",
+                translation_placeholders = {"name": name}
+            )
+        # service/message are kept so a 400 "invalid token" response for
+        # this action_id can be retried with its own payload instead of
+        # whatever command was sent last account-wide (see _on_mqtt_message).
+        # sent_at is the fallback pending_action uses before any update
+        # has arrived yet (see pending_action).
+        self._commands_history.update({action_id: {"name": name, "updates": [], "service": service, "message": message, "retried": False, "sent_at": get_datetime()}})
+        self._prune_command_history()
+        self._pending_action_id = action_id
+        self.async_update_listeners()
 
     @rate_limit(6, 1200) # 6 per 20 min
     async def send_wakeup_command(self, button_name):
@@ -339,7 +565,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
            "program3": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0},
            "program4": {"day": [0, 0, 0, 0, 0, 0, 0], "hour": 34, "minute": 7, "on": 0}
         }
-        air_conditioning = (self.data.get("preconditionning") or {}).get("airConditioning") or {}
+        air_conditioning = (self.data.get("preconditioning") or {}).get("airConditioning") or {}
         current_programs = air_conditioning.get("programs")
         if current_programs:
             for program in current_programs:
@@ -448,12 +674,23 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             return
         charge_limit_on = self._sensors.get("switch_battery_charging_limit", False)
         charge_limit = self._sensors.get("number_battery_charging_limit")
-        if not (charge_limit_on and charge_limit and "battery" in self._sensors):
+        battery = self._sensors.get("battery")
+        if not (charge_limit_on and charge_limit and battery is not None):
             return
-        if int(float(self._sensors.get("battery"))) < int(charge_limit):
+        if int(float(battery)) < int(charge_limit):
+            return
+        # The stop command carries the charging start time (hour/minute); until
+        # the vehicle reports one this is a normal state, not an error.
+        if self._sensors.get("time_battery_charging_start") is None:
+            _LOGGER.debug("Cannot auto-stop charging for vehicle %s yet: no charging start time known", self._vehicle["vin"])
             return
         button_name = self.get_translation("component.stellantis_vehicles.entity.button.charge_stop.name")
-        await self.send_charge_command(button_name, False, "delayed")
+        try:
+            await self.send_charge_command(button_name, False, "delayed")
+        except (HomeAssistantError, CommunicationError) as err:
+            # Raising here would fail the whole update and discard the fresh data.
+            _LOGGER.warning("Could not stop charging vehicle %s at the configured limit, retrying on the next update: %s", self._vehicle["vin"], err)
+            return
         self._manage_charge_limit_sent = True
 
     async def _sync_abrp_if_enabled(self, new_data: dict[str, Any]) -> None:
@@ -693,9 +930,9 @@ class StellantisBaseEntity(CoordinatorEntity):
     @property
     def available_command(self):
         """ Base availability property for mqtt commands. """
-        mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected()
+        mqtt_is_connected = self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected() and self._stellantis._mqtt_connected
         command_is_enabled = self.name not in self._coordinator._disabled_commands
-        return mqtt_is_connected and command_is_enabled and not self._coordinator.pending_action
+        return mqtt_is_connected and command_is_enabled
 
     @callback
     def _handle_coordinator_update(self):
@@ -959,13 +1196,13 @@ class StellantisBaseNumber(StellantisRestoreEntity, NumberEntity):
             return self._coordinator._sensors.get(self._sensor_key)
         return self._default_value
 
-    async def async_set_native_value(self, value: float):
+    async def async_set_native_value(self, value:float) -> None:
         """ Set native value. """
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = float(value)
         vin = self._coordinator._vehicle['vin']
         self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, float(value))
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
 
 class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
@@ -985,21 +1222,21 @@ class StellantisBaseSwitch(StellantisRestoreEntity, SwitchEntity):
             return self._coordinator._sensors.get(self._sensor_key)
         return False
 
-    async def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs:Any) -> None:
         """ Turn on. """
         self._attr_is_on = True
         self._coordinator._sensors[self._sensor_key] = True
         vin = self._coordinator._vehicle['vin']
         self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, True)
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs:Any) -> None:
         """ Turn off. """
         self._attr_is_on = False
         self._coordinator._sensors[self._sensor_key] = False
         vin = self._coordinator._vehicle['vin']
         self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, False)
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
 
 class StellantisBaseText(StellantisRestoreEntity, TextEntity):
@@ -1019,13 +1256,13 @@ class StellantisBaseText(StellantisRestoreEntity, TextEntity):
             return self._coordinator._sensors.get(self._sensor_key)
         return ""
 
-    async def async_set_value(self, value: str):
+    async def async_set_value(self, value:str) -> None:
         """ Set value. """
         self._attr_native_value = value
         self._coordinator._sensors[self._sensor_key] = str(value)
         vin = self._coordinator._vehicle['vin']
         self._stellantis.update_vehicle_stored_config(vin, self._sensor_key, str(value))
-        await self._coordinator.async_refresh()
+        await self._coordinator.async_request_refresh()
 
 
 class StellantisBaseTime(StellantisRestoreEntity, TimeEntity):

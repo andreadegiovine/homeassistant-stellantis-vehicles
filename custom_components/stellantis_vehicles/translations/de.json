@@ -45,7 +45,8 @@
       "options": {
         "data": {
           "notifications": "Persistente Benachrichtigungen aktivieren",
-          "anonymize_logs": "Persönliche Daten in Protokollen anonymisieren"
+          "anonymize_logs": "Persönliche Daten in Protokollen anonymisieren",
+          "mqtt_live_updates": "Fahrzeugstatus live per MQTT aktualisieren"
         }
       },
       "reauth_confirm": {
@@ -144,17 +145,37 @@
       "command_status": {
         "name": "Befehlsstatus",
         "state": {
-          "0": "Abgeschlossen",
           "not_compatible": "Nicht kompatibel",
           "failed": "Fehlgeschlagen",
+          "doors_state_unlocked": "Alle Türen entriegelt",
+          "doors_state_locked": "Alle Türen verriegelt",
+          "doors_discarded_door_open": "Verworfen - Tür offen",
+          "doors_request_refused": "Abgelehnt - Tür offen oder Schlüssel im Fahrzeug",
+          "doors_unknown_reason": "Abgelehnt - unbekannter Grund",
+          "doors_cid_inside": "Abgelehnt - Schlüssel im Fahrzeug",
+          "warning_discarded_sev_not_stop": "Verworfen - Motor läuft",
+          "warning_wait_before_resend": "Bereits ausgeführt - kurz warten",
+          "precond_discarded_sev_not_stop": "Verworfen - Motor läuft",
+          "precond_discarded_already_ongoing": "Verworfen - läuft bereits",
+          "precond_discarded_communication_problem": "Verworfen - Kommunikationsproblem",
+          "precond_stop_discarded_sev_not_stop": "Stop verworfen - Motor läuft",
+          "precond_stop_discarded_not_ongoing": "Stop verworfen - läuft nicht",
+          "charging_discarded_standby": "Verworfen - Ladesystem im Standby",
+          "charging_discarded_already_ongoing": "Verworfen - lädt bereits",
+          "charging_discarded_communication_problem": "Verworfen - Kommunikationsproblem mit Ladesystem",
+          "charging_discarded_sev_not_stop": "Verworfen - Motor läuft",
           "rate_limit": "Ratenlimit überschritten (6 pro 20 Minuten)",
-          "300": "Zeitüberschreitung",
-          "422": "Alarmanlage aktiviert",
-          "500": "Fehler",
-          "502": "Doppelt",
-          "900": "Akzeptiert",
+          "903": "Weitergeleitet",
+          "902": "Status wird geprüft",
           "901": "Fahrzeug aufwecken",
-          "903": "Weitergeleitet"
+          "900": "Akzeptiert",
+          "507": "Kein GPS-Empfang",
+          "506": "Mobilfunkanbieter nicht unterstützt",
+          "502": "Doppelt",
+          "500": "Fehler",
+          "422": "Privacy aktiviert",
+          "300": "Zeitüberschreitung",
+          "0": "Abgeschlossen"
         }
       },
       "fuel": {
@@ -310,6 +331,9 @@
       "remote_commands": {
         "name": "Fahrzeug aus der Entfernung bedienen"
       },
+      "command_pending": {
+        "name": "Befehl ausstehend"
+      },
       "daylight": {
         "name": "Tagesfahrlicht"
       }
@@ -395,6 +419,14 @@
       }
     }
   },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "\"{name}\" kann nicht gesendet werden: \"{pending_name}\" wartet noch auf eine Antwort vom Fahrzeug."
+    },
+    "command_not_sent": {
+      "message": "\"{name}\" kann nicht an das Fahrzeug gesendet werden. Details stehen im Log."
+    }
+  },
   "common": {
     "access_token_error_title": "Zugriffstoken-Fehler",
     "access_token_error_message": "Lesen Sie die offizielle Dokumentation im [OAuth2 Code]({oauth_token_doc_link}) Abschnitt",
@@ -404,6 +436,12 @@
     "no_vehicles_found_message": "Für dieses Konto wurden keine Fahrzeuge gefunden",
     "command_error_title": "Befehl",
     "command_error_message": "Der Befehl wurde nicht korrekt gesendet."
+  },
+  "issues": {
+    "vehicle_removed": {
+      "title": "Das Fahrzeug {vin} wurde aus Ihrem Konto entfernt",
+      "description": "Home Assistant kann das Fahrzeug `{vin}` nicht mehr über die Stellantis-API erreichen, und es ist nicht mehr in Ihrem Stellantis-Konto aufgeführt. Das bedeutet in der Regel, dass das Fahrzeug verkauft oder getrennt wurde. Um dieses Problem zu beheben, muss das Fahrzeug aus der Integration entfernt werden.\n\n**Warnung:** Beim Entfernen des Fahrzeugs werden auch **alle zugehörigen Entitäten** und damit **alle Kurz- und Langzeitstatistiken** dieses Fahrzeugs (z. B. Energie, Kilometerstand und Batterieverlauf) dauerhaft gelöscht. Diese Daten lassen sich nicht wiederherstellen. Wenn Sie sie behalten möchten, exportieren oder sichern Sie sie, bevor Sie fortfahren.\n\nSo entfernen Sie das Fahrzeug:\n1. Öffnen Sie **Einstellungen > Geräte & Dienste > Stellantis Vehicles**.\n2. Öffnen Sie das Fahrzeugmenü (drei senkrechte Punkte ganz rechts in der Zeile des Fahrzeugs) und wählen Sie **Gerät löschen**.\n3. Starten Sie Home Assistant neu.\n\nDiese Warnung verschwindet, sobald das Fahrzeug entfernt wurde."
+    }
   },
   "selector": {
     "reconfigure": {

@@ -34,6 +34,9 @@ OAUTH_CODE_URL = "https://homeassistant-stellantis-vehicles-worker.onrender.com"
 
 API_BASE_URL = "https://api.groupe-psa.com"
 GET_USER_INFO_URL = API_BASE_URL + "/applications/cvs/v4/mauv/car-associations"
+# The remote services a vehicle's subscription covers, each with its "fds"
+# feature code and official name (what the vendor app's forFDS(vin) calls).
+GET_VEHICLE_RIGHTS_URL = API_BASE_URL + "/applications/cvs/v4/rights/vehicle/{#vin#}"
 GET_OTP_URL = API_BASE_URL + "/applications/cvs/v4/mobile/smsCode"
 GET_MQTT_TOKEN_URL = API_BASE_URL + "/connectedcar/v4/virtualkey/remoteaccess/token"
 CAR_API_BASE_URL = API_BASE_URL + "/connectedcar/v4/user"
@@ -48,6 +51,56 @@ MQTT_RESP_TOPIC = "psa/RemoteServices/to/cid/"
 MQTT_EVENT_TOPIC = "psa/RemoteServices/events/MPHRTServices/"
 MQTT_REQ_TOPIC = "psa/RemoteServices/from/cid/"
 MQTT_QOS = 0
+MQTT_USERNAME = "IMA_OAUTH_ACCESS_TOKEN"
+
+# resp_data failure reasons per service and field, from the vendor app's
+# response enums; the first field present wins.
+MQTT_RESP_DATA_ERROR_CODES = {
+    "/Doors": {
+        "error": {
+            0: "warning_discarded_sev_not_stop",
+        },
+        "lock_resp_state": {
+            0: "doors_state_unlocked",
+            1: "doors_state_locked",
+            2: "doors_discarded_door_open",
+            3: "doors_request_refused",
+            4: "doors_unknown_reason",
+            5: "doors_cid_inside",
+        },
+    },
+    "/Horn": {
+        "error": {
+            0: "warning_discarded_sev_not_stop",
+            1: "warning_wait_before_resend",
+        },
+    },
+    "/Lights": {
+        "error": {
+            0: "warning_discarded_sev_not_stop",
+            2: "warning_wait_before_resend",
+        },
+    },
+    "/ThermalPrecond": {
+        "error": {
+            0: "precond_discarded_sev_not_stop",
+            1: "precond_discarded_already_ongoing",
+            2: "precond_discarded_communication_problem",
+            3: "precond_stop_discarded_sev_not_stop",
+            4: "precond_stop_discarded_not_ongoing",
+        },
+    },
+}
+
+# Shared by all /VehCharge* services; the app maps only 0-3.
+MQTT_CHARGING_RESP_DATA_ERROR_CODES = {
+    "error": {
+        0: "charging_discarded_standby",
+        1: "charging_discarded_already_ongoing",
+        2: "charging_discarded_communication_problem",
+        3: "charging_discarded_sev_not_stop",
+    },
+}
 
 KWH_CORRECTION = 1.343
 MS_TO_KMH_CONVERSION = 3.6
@@ -111,6 +164,7 @@ FIELD_SMS_CODE = "sms_code"
 FIELD_PIN_CODE = "pin_code"
 FIELD_NOTIFICATIONS = "notifications"
 FIELD_ANONYMIZE_LOGS = "anonymize_logs"
+FIELD_MQTT_LIVE_UPDATES = "mqtt_live_updates"
 FIELD_RECONFIGURE = "reconfigure"
 
 PLATFORMS = [
@@ -126,6 +180,9 @@ PLATFORMS = [
 
 UPDATE_INTERVAL = 60 # seconds
 
+# Seconds to wait before each retry of the supported features lookup.
+SUPPORTED_FEATURES_RETRY_DELAYS = (30, 120, 600)
+
 # Consecutive empty vehicle-status responses before the account vehicle list is
 # re-fetched to check whether the vehicle was unpaired.
 EMPTY_STATUS_LIMIT = 3
@@ -134,6 +191,25 @@ EMPTY_STATUS_LIMIT = 3
 # cap, every sent command would stay in memory (and be re-sorted on every
 # coordinator update) for as long as the coordinator lives.
 COMMAND_HISTORY_LIMIT = 50
+
+# process_code values that report a step of a command's lifecycle without
+# resolving it ("accepted", "vehicle asleep", "forwarded to vehicle"): a
+# command sent to the vehicle keeps blocking further remote commands (see
+# pending_action) through these. "901" is currently filtered out before it
+# ever reaches the command history (see the "Skip vehicle as sleep mqtt
+# message" handling in stellantis.py), so listing it here has no effect yet;
+# kept as a safeguard in case that changes.
+COMMAND_STATUS_STILL_IN_PROGRESS = ("900", "901", "903")
+
+# result_code values of a command that went through, so resp_data reports its
+# outcome rather than a failure reason.
+COMMAND_STATUS_SUCCESS = ("0", "1")
+
+# Seconds since a sent command was last updated before it is treated as
+# stale and no longer blocks further commands (see pending_action), even
+# though no final status ever arrived for it (e.g. the MQTT connection
+# dropped before the vehicle's actual response could arrive).
+PENDING_ACTION_TIMEOUT = 60
 
 # Backoff schedule (seconds) for the MQTT token refresh after a transient
 # Stellantis backend failure. Capped at the last step so a prolonged outage is

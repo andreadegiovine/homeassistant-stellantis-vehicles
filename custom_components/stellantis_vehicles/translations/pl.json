@@ -16,7 +16,65 @@
           "sms_code": "Kod SMS od Stellantis",
           "pin_code": "Kod Pin z aplikacji mobilnej"
         }
+      },
+      "get_access_token": {
+        "data": {
+          "remote_commands": "Skonfiguruj zdalne polecenia (wymagane E-remote lub Connect Plus)"
+        },
+        "description": "**Uwierzytelnianie zakończone.**\nAby korzystać ze zdalnych poleceń, zaznacz poniższą opcję i wykonaj krok z kodem OTP"
+      },
+      "oauth_manual": {
+        "data": {
+          "oauth_code": "Kod OAuth"
+        },
+        "description": "Wykonaj poniższe kroki w **przeglądarce na komputerze**:\n\n1. przejdź do strony logowania {oauth_link};\n2. otwórz **Narzędzia deweloperskie** przeglądarki (F12) i przejdź do zakładki **Network**;\n3. zaloguj się na swoje konto i kliknij ostatni przycisk potwierdzenia;\n4. w zakładce **Network** znajdź powyższe żądanie i skopiuj **{oauth_label}**;{oauth_devtools}"
+      },
+      "oauth_mode": {
+        "data": {
+          "oauth_manual_mode": "Użyj metody ręcznej"
+        },
+        "description": "Aby uwierzytelnić konto, używana jest zdalna usługa, która w żaden sposób nie przechowuje danych logowania. Alternatywnie możesz użyć metody ręcznej"
+      },
+      "oauth_remote": {
+        "data": {
+          "email": "Adres e-mail",
+          "oauth_code_url": "Adres URL usługi logowania",
+          "password": "Hasło"
+        },
+        "description": "Ta [zdalna usługa]({oauth_remote_link}) służy do symulowania logowania w przeglądarce na oficjalnej stronie internetowej. Możesz użyć domyślnej usługi hostowanej lub wskazać własne wdrożenie hostowane lokalnie"
+      },
+      "options": {
+        "data": {
+          "anonymize_logs": "Anonimizuj dane osobowe w logach",
+          "notifications": "Włącz trwałe powiadomienia"
+        }
+      },
+      "reauth_confirm": {
+        "description": "Aby korzystać z tej integracji, musisz ponownie się uwierzytelnić"
+      },
+      "reconfigure": {
+        "data": {
+          "reconfigure": "Skonfiguruj ponownie"
+        }
       }
+    },
+    "abort": {
+      "already_configured": "Konto jest już skonfigurowane",
+      "reauth_successful": "Ponowne uwierzytelnienie zakończone powodzeniem",
+      "reconfigure_successful": "Konfiguracja zakończona powodzeniem"
+    },
+    "error": {
+      "get_access_token": "Błąd podczas pobierania tokenu dostępu",
+      "get_mqtt_access_token": "Błąd podczas pobierania tokenu dostępu MQTT",
+      "get_mqtt_access_token_nok_access": "Nieprawidłowy kod SMS lub kod PIN",
+      "get_mqtt_access_token_nok_maxnbtools": "Osiągnięto limit powiązanych urządzeń / otrzymanych wiadomości SMS. Zresetuj swoje konto Stellantis i spróbuj ponownie",
+      "get_mqtt_access_token_nok_nok_blocked": "Przekroczono limit nieprawidłowo użytych kodów PIN. Uruchom ponownie proces konfiguracji",
+      "get_mqtt_access_token_rate_limit": "Przekroczono limit żądań tokenu dostępu MQTT (6 dziennie)",
+      "get_oauth_code": "Błąd podczas pobierania kodu OAuth",
+      "get_otp_sms": "Błąd podczas pobierania kodu OTP SMS",
+      "get_user_info": "Błąd podczas pobierania informacji o użytkowniku",
+      "missing_user_info": "Brak informacji o użytkowniku",
+      "not_loaded": "Integracja nie została jeszcze załadowana. Poczekaj na zakończenie konfiguracji i spróbuj ponownie"
     }
   },
   "entity": {
@@ -37,7 +95,12 @@
         "name": "Temperatura"
       },
       "mileage": {
-        "name": "Przebieg"
+        "name": "Przebieg",
+        "state_attributes": {
+          "last_updated": {
+            "name": "Ostatnia aktualizacja"
+          }
+        }
       },
       "speed": {
         "name": "Prędkość"
@@ -80,7 +143,11 @@
           "903": "Przekazano",
           "0": "Zakończono",
           "300": "Przekroczono limit czasu",
-          "500": "Błąd"
+          "500": "Błąd",
+          "422": "Tryb prywatności włączony",
+          "502": "Duplikat",
+          "failed": "Niepowodzenie",
+          "rate_limit": "Przekroczono limit (6 w ciągu 20 minut)"
         }
       },
       "fuel": {
@@ -132,6 +199,71 @@
             "name": "Średni zużycie paliwa"
           }
         }
+      },
+      "battery_health_capacity": {
+        "name": "SOH baterii – pojemność"
+      },
+      "battery_health_resistance": {
+        "name": "SOH baterii – rezystancja"
+      },
+      "days_before_maintenance": {
+        "name": "Liczba dni do przeglądu"
+      },
+      "driving_behavior": {
+        "name": "Styl jazdy"
+      },
+      "last_charge": {
+        "name": "Ostatnie ładowanie",
+        "state_attributes": {
+          "avg_power": {
+            "name": "Średnia moc"
+          },
+          "duration": {
+            "name": "Czas trwania"
+          },
+          "final_autonomy": {
+            "name": "Końcowy zasięg"
+          },
+          "final_energy": {
+            "name": "Końcowa energia"
+          },
+          "final_percentage": {
+            "name": "Końcowy poziom naładowania"
+          },
+          "final_time": {
+            "name": "Czas zakończenia"
+          },
+          "in_progress": {
+            "name": "W trakcie",
+            "state": {
+              "true": "Tak"
+            }
+          },
+          "initial_autonomy": {
+            "name": "Początkowy zasięg"
+          },
+          "initial_energy": {
+            "name": "Początkowa energia"
+          },
+          "initial_percentage": {
+            "name": "Początkowy poziom naładowania"
+          },
+          "mileage": {
+            "name": "Przebieg"
+          },
+          "recharged_autonomy": {
+            "name": "Zwiększenie zasięgu"
+          },
+          "recharged_energy": {
+            "name": "Dostarczona energia"
+          },
+          "recharged_percent": {
+            "name": "Zwiększenie poziomu naładowania"
+          }
+        }
+      },
+      "mileage_before_maintenance": {
+        "name": "Przebieg do przeglądu"
       }
     },
     "binary_sensor": {
@@ -158,6 +290,39 @@
       },
       "remote_commands": {
         "name": "Zdalne zarządzanie"
+      },
+      "alarm": {
+        "name": "Alarm"
+      },
+      "battery_charging_limit": {
+        "name": "Limit ładowania baterii 80%"
+      },
+      "belt_driver": {
+        "name": "Pas bezpieczeństwa kierowcy"
+      },
+      "belt_passenger": {
+        "name": "Pas bezpieczeństwa pasażera"
+      },
+      "command_pending": {
+        "name": "Oczekiwanie na polecenie"
+      },
+      "daylight": {
+        "name": "Światło dzienne"
+      },
+      "door_driver": {
+        "name": "Drzwi kierowcy"
+      },
+      "door_passenger": {
+        "name": "Drzwi pasażera"
+      },
+      "door_rear_left": {
+        "name": "Lewe tylne drzwi"
+      },
+      "door_rear_right": {
+        "name": "Prawe tylne drzwi"
+      },
+      "door_trunk": {
+        "name": "Bagażnik"
       }
     },
     "button": {
@@ -187,11 +352,34 @@
       },
       "lights": {
         "name": "Światła"
+      },
+      "charge_limit_off": {
+        "name": "Wyłącz limit ładowania 80%"
+      },
+      "charge_limit_on": {
+        "name": "Włącz limit ładowania 80%"
       }
     },
     "device_tracker": {
       "vehicle": {
-        "name": "Pojazd"
+        "name": "Pojazd",
+        "state_attributes": {
+          "altitude": {
+            "name": "Wysokość"
+          },
+          "entity_picture": {
+            "name": "Obraz pojazdu"
+          },
+          "fix_status": {
+            "name": "Status ustalenia pozycji"
+          },
+          "position_updated_at": {
+            "name": "Ostatnia aktualizacja pozycji"
+          },
+          "signal_quality": {
+            "name": "Jakość sygnału"
+          }
+        }
       }
     },
     "time": {
@@ -203,13 +391,58 @@
       "battery_charging_limit": {
         "name": "Limit ładowania baterii"
       },
-    "refresh_interval": {
+      "refresh_interval": {
         "name": "Czestotliwość odświeżania"
       }
     },
     "switch": {
       "battery_charging_limit": {
         "name": "Limit ładowania baterii"
+      },
+      "abrp_sync": {
+        "name": "Synchronizacja z ABRP"
+      },
+      "battery_values_correction": {
+        "name": "Korekta wartości baterii"
+      }
+    },
+    "text": {
+      "abrp_token": {
+        "name": "Token ABRP"
+      }
+    }
+  },
+  "common": {
+    "access_token_error_message": "Sprawdź oficjalną dokumentację w sekcji [OAuth2 Code]({oauth_token_doc_link})",
+    "access_token_error_title": "Błąd tokenu dostępu",
+    "command_error_message": "Polecenie nie zostało prawidłowo wysłane",
+    "command_error_title": "Polecenie",
+    "get_oauth_code_message": "Nie udało się pobrać kodu OAuth dla tego konta. Sprawdź adres e-mail i hasło lub spróbuj ponownie później, jeśli zdalna usługa logowania jest niedostępna",
+    "get_oauth_code_title": "Błąd kodu OAuth",
+    "no_vehicles_found_message": "Brak podłączonych pojazdów dostępnych na tym koncie",
+    "no_vehicles_found_title": "Niedostępne",
+    "otp_error_message": "Sprawdź oficjalną dokumentację w sekcji [OTP error - NOK:MAXNBTOOLS]({otp_nokmaxnbtools_doc_link})",
+    "otp_error_title": "Błąd OTP",
+    "reconfigure_otp_message": "Uwierzytelnianie zdalnych poleceń nie powiodło się, dlatego zostały one wyłączone. Skonfiguruj integrację ponownie, aby je włączyć",
+    "reconfigure_otp_title": "Zdalne polecenia wyłączone"
+  },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "Nie można wysłać „{name}”: „{pending_name}” nadal oczekuje na odpowiedź pojazdu."
+    }
+  },
+  "issues": {
+    "vehicle_removed": {
+      "description": "Home Assistant nie może już uzyskać dostępu do pojazdu `{vin}` za pośrednictwem API Stellantis, a pojazd nie jest już widoczny na Twoim koncie Stellantis. Zwykle oznacza to, że pojazd został sprzedany lub odłączony od konta. Aby rozwiązać ten problem, należy usunąć pojazd z integracji.\n\n**Ostrzeżenie:** Usunięcie pojazdu spowoduje również trwałe usunięcie **wszystkich jego encji**, a wraz z nimi **wszystkich krótko- i długoterminowych statystyk** zebranych dla tego pojazdu (np. historii energii, przebiegu i baterii). Tych danych nie można odzyskać. Jeśli chcesz je zachować, przed usunięciem wyeksportuj je lub wykonaj ich kopię zapasową.\n\nAby usunąć pojazd:\n1. Otwórz **Ustawienia > Urządzenia i usługi > Stellantis Vehicles**.\n2. Otwórz menu pojazdu (trzy pionowe kropki po prawej stronie wiersza pojazdu) i wybierz **Usuń urządzenie**.\n3. Uruchom ponownie Home Assistant.\n\nTo ostrzeżenie zniknie po usunięciu pojazdu.",
+      "title": "Pojazd {vin} został usunięty z Twojego konta"
+    }
+  },
+  "selector": {
+    "reconfigure": {
+      "options": {
+        "oauth": "Ponownie uwierzytelnij swoje konto",
+        "options": "Preferencje globalne",
+        "remote_commands": "Skonfiguruj zdalne polecenia (wymagane E-remote lub Connect Plus)"
       }
     }
   }

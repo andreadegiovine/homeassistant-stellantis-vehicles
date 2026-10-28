@@ -46,7 +46,8 @@
       "options": {
         "data": {
           "notifications": "Attiva le notifiche persistenti",
-          "anonymize_logs": "Nascondi i dati personali sui log"
+          "anonymize_logs": "Nascondi i dati personali sui log",
+          "mqtt_live_updates": "Aggiorna lo stato del veicolo in tempo reale tramite MQTT"
         }
       },
       "reauth_confirm": {
@@ -148,14 +149,34 @@
           "rate_limit": "Limite raggiunto (6 ogni 20 minuti)",
           "not_compatible": "Non compatibile",
           "failed": "Fallito",
-          "900": "Accettato",
-          "901": "Risveglio del veicolo",
+          "doors_state_unlocked": "Tutte le portiere sbloccate",
+          "doors_state_locked": "Tutte le portiere bloccate",
+          "doors_discarded_door_open": "Annullato - una portiera è aperta",
+          "doors_request_refused": "Rifiutato - portiera aperta o chiave all'interno",
+          "doors_unknown_reason": "Rifiutato - motivo sconosciuto",
+          "doors_cid_inside": "Rifiutato - chiave all'interno del veicolo",
+          "warning_discarded_sev_not_stop": "Annullato - motore in funzione",
+          "warning_wait_before_resend": "Già eseguito - attendere prima di rinviare",
+          "precond_discarded_sev_not_stop": "Annullato - motore in funzione",
+          "precond_discarded_already_ongoing": "Annullato - già in corso",
+          "precond_discarded_communication_problem": "Annullato - problema di comunicazione",
+          "precond_stop_discarded_sev_not_stop": "Stop annullato - motore in funzione",
+          "precond_stop_discarded_not_ongoing": "Stop annullato - non in corso",
+          "charging_discarded_standby": "Annullato - sistema di ricarica in standby",
+          "charging_discarded_already_ongoing": "Annullato - ricarica già in corso",
+          "charging_discarded_communication_problem": "Annullato - problema di comunicazione con il sistema di ricarica",
+          "charging_discarded_sev_not_stop": "Annullato - motore in funzione",
           "903": "Inoltrato",
-          "0": "Completato",
-          "300": "Timeout",
-          "500": "Errore",
+          "902": "Verifica dello stato",
+          "901": "Risveglio del veicolo",
+          "900": "Accettato",
+          "507": "Nessuna copertura GPS",
+          "506": "Operatore telefonico non supportato",
           "502": "Duplicato",
-          "422": "Privacy attiva"
+          "500": "Errore",
+          "422": "Privacy attiva",
+          "300": "Timeout",
+          "0": "Completato"
         }
       },
       "fuel": {
@@ -314,6 +335,9 @@
       "remote_commands": {
         "name": "Comandi remoti"
       },
+      "command_pending": {
+        "name": "Comando in sospeso"
+      },
       "daylight": {
         "name": "Luce del giorno"
       }
@@ -403,6 +427,14 @@
       "battery_charging_start": {
         "name": "Inizio ricarica batteria"
       }
+    }
+  },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "Impossibile inviare \"{name}\": \"{pending_name}\" è ancora in attesa di una risposta dal veicolo."
+    },
+    "command_not_sent": {
+      "message": "Impossibile inviare \"{name}\" al veicolo. Dettagli nel log."
     }
   },
   "common": {
