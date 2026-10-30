@@ -318,9 +318,9 @@ Kristian
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Fritz  
+Carl-Magnus Johansson  
 Harald  
-Someone  
-RapH  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
