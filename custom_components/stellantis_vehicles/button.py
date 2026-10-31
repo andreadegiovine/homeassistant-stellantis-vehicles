@@ -161,10 +161,6 @@ class StellantisPreconditioningButton(StellantisBaseActionButton):
         if self._coordinator.vehicle_type not in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
 
-        # REST reports e.g. ["SuperLocked", "RearDoorsLocked"] after locking with the key fob or the app, so check for "Unlocked" like the doors binary sensor does.
-        doors = self._coordinator._sensors.get("doors")
-        doors_locked = doors is None or "Unlocked" not in doors
-
         min_charge = 20
         # Waiting the min value from https://github.com/andreadegiovine/homeassistant-stellantis-vehicles/issues/226
         # min_charge = 50
@@ -173,7 +169,7 @@ class StellantisPreconditioningButton(StellantisBaseActionButton):
         check_battery_level = self._coordinator._sensors.get("battery") and int(float(self._coordinator._sensors.get("battery"))) >= min_charge
         check_battery_charging = self._coordinator._sensors.get("battery_charging") == "InProgress"
 
-        return bool(super().available and doors_locked and (check_battery_level or check_battery_charging))
+        return bool(super().available and (check_battery_level or check_battery_charging))
 
     async def async_press(self):
         await self._coordinator.send_preconditioning_command(self.name, self._action)
