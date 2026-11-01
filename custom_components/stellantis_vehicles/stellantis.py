@@ -9,7 +9,7 @@ import paho.mqtt.client as mqtt
 import json
 from uuid import uuid4
 import asyncio
-from datetime import ( datetime, timedelta )
+from datetime import ( datetime, timedelta, UTC )
 import socket
 import random
 from typing import Any
@@ -1239,7 +1239,9 @@ class StellantisVehicles(StellantisOauth):
 
             customer_id = self.get_config("customer_id")
             topic = MQTT_REQ_TOPIC + customer_id + service
-            date = get_datetime()
+            # req_date carries a "Z" suffix, so it must be UTC: local time
+            # here sent every command 1-2 hours in the future.
+            date = datetime.now(UTC)
             if action_id is None:
                 action_id = str(uuid4()).replace("-", "") + date.strftime("%Y%m%d%H%M%S%f")[:-3]
             data = json.dumps({
