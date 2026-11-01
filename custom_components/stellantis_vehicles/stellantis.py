@@ -1195,8 +1195,10 @@ class StellantisVehicles(StellantisOauth):
                         _LOGGER.debug("Fetching updates after result code %s", result_code)
                         self.do_async(coordinator.async_refresh(), 10, wait=False)
                     if result_code == "901":
-                        _LOGGER.debug("Skip vehicle as sleep mqtt message")
-                        return
+                        # Recorded like the other in-progress steps, so the
+                        # command keeps blocking further ones while the
+                        # vehicle is being woken up (see pending_action).
+                        _LOGGER.debug("Vehicle is asleep, waiting for it to wake up")
 
                     history_code = result_code
                     resp_data = data.get("resp_data") or {}
