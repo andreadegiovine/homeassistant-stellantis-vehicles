@@ -8,6 +8,7 @@ from copy import deepcopy
 import paho.mqtt.client as mqtt
 import json
 from uuid import uuid4
+from urllib.parse import quote
 import asyncio
 from datetime import ( datetime, timedelta, UTC )
 import socket
@@ -29,7 +30,7 @@ from homeassistant.util.ssl import client_context
 
 from .base import StellantisVehicleCoordinator
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
+from .utils import ( format_utc_z, get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
 from .exceptions import ( CommunicationError, RateLimitException )
 from .mqtt_event import parse_mqtt_event
 
@@ -868,7 +869,7 @@ class StellantisVehicles(StellantisOauth):
     async def get_vehicle_last_trip(self, vehicle, page_token=None):
         url = self.apply_query_params(CAR_API_GET_VEHICLE_TRIPS_URL, CLIENT_ID_QUERY_PARAMS, vehicle)
         headers = self.apply_dict_params(CAR_API_HEADERS)
-        limit_date = (get_datetime() - timedelta(days=1)).isoformat(timespec="seconds")
+        limit_date = format_utc_z(get_datetime() - timedelta(days=1))
         url += "&timestamps=" + limit_date + "/" + "&distance=0.1-" #+ "&pageSize=60"
         if page_token is not None:
             url += "&pageToken=" + page_token
@@ -895,8 +896,8 @@ class StellantisVehicles(StellantisOauth):
         url += "&distance=0.1-"
         if since is not None:
             if isinstance(since, datetime):
-                since = since.isoformat(timespec="seconds")
-            url += "&timestamps=" + str(since) + "/"
+                since = format_utc_z(since)
+            url += "&timestamps=" + quote(str(since), safe=":/") + "/"
         if page_token is not None:
             url += "&pageToken=" + str(page_token)
         vehicle_trips_request = await self.make_http_request(url, "GET", headers)
@@ -1195,8 +1196,10 @@ class StellantisVehicles(StellantisOauth):
                         _LOGGER.debug("Fetching updates after result code %s", result_code)
                         self.do_async(coordinator.async_refresh(), 10, wait=False)
                     if result_code == "901":
-                        _LOGGER.debug("Skip vehicle as sleep mqtt message")
-                        return
+                        # Recorded like the other in-progress steps, so the
+                        # command keeps blocking further ones while the
+                        # vehicle is being woken up (see pending_action).
+                        _LOGGER.debug("Vehicle is asleep, waiting for it to wake up")
 
                     history_code = result_code
                     resp_data = data.get("resp_data") or {}
