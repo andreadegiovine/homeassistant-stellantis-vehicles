@@ -73,7 +73,8 @@
     "abort": {
       "already_configured": "Der Account ist bereits konfiguriert",
       "reauth_successful": "Die erneute Authentifizierung war erfolgreich",
-      "reconfigure_successful": "Die Konfiguration war erfolgreich"
+      "reconfigure_successful": "Die Konfiguration war erfolgreich",
+      "invalid_discovery_info": "Ein gefundener Anmeldedienst hat weder gültigen Host noch Port gemeldet."
     }
   },
   "entity": {
