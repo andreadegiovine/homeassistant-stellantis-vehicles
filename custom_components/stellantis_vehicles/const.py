@@ -195,10 +195,7 @@ COMMAND_HISTORY_LIMIT = 50
 # process_code values that report a step of a command's lifecycle without
 # resolving it ("accepted", "vehicle asleep", "forwarded to vehicle"): a
 # command sent to the vehicle keeps blocking further remote commands (see
-# pending_action) through these. "901" is currently filtered out before it
-# ever reaches the command history (see the "Skip vehicle as sleep mqtt
-# message" handling in stellantis.py), so listing it here has no effect yet;
-# kept as a safeguard in case that changes.
+# pending_action) through these.
 COMMAND_STATUS_STILL_IN_PROGRESS = ("900", "901", "903")
 
 # result_code values of a command that went through, so resp_data reports its
@@ -208,8 +205,12 @@ COMMAND_STATUS_SUCCESS = ("0", "1")
 # Seconds since a sent command was last updated before it is treated as
 # stale and no longer blocks further commands (see pending_action), even
 # though no final status ever arrived for it (e.g. the MQTT connection
-# dropped before the vehicle's actual response could arrive).
-PENDING_ACTION_TIMEOUT = 60
+# dropped before the vehicle's actual response could arrive). Stellantis sends
+# its final answer up to about 2 minutes after the last in-progress step
+# (e.g. 901 at +1s, then 300 "request time out" at +2min07s), so a shorter
+# timeout let a new command go out while the vehicle was still handling the
+# previous one.
+PENDING_ACTION_TIMEOUT = 180
 
 # Backoff schedule (seconds) for the MQTT token refresh after a transient
 # Stellantis backend failure. Capped at the last step so a prolonged outage is
