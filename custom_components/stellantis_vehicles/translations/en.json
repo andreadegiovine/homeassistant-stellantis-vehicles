@@ -75,7 +75,8 @@
     "abort": {
       "already_configured": "Account is already configured",
       "reauth_successful": "Re-authentication was successful",
-      "reconfigure_successful": "Configuration was successful"
+      "reconfigure_successful": "Configuration was successful",
+      "invalid_discovery_info": "A discovered login service did not announce a valid host and port."
     }
   },
   "entity": {

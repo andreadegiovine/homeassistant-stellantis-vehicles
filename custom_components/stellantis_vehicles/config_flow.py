@@ -13,6 +13,7 @@ from homeassistant.const import (
 
 from .utils import extract_oauth_code, get_datetime, log_call
 from .stellantis import StellantisOauth
+from .discovery import login_service_url
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
@@ -120,6 +121,21 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             result = result + ": " + str(message)
         return result
 
+
+    async def async_step_hassio(self, discovery_info):
+        """Handle discovery by a local login-service add-on.
+
+        The add-on announces ``{"host": ..., "port": ...}`` (see discovery.py);
+        the resulting URL is carried in the config so the remote login form is
+        pre-filled and the user never has to type it.
+        """
+        url = login_service_url(getattr(discovery_info, "config", None))
+        if not url:
+            return self.async_abort(reason="invalid_discovery_info")
+        await self._async_handle_discovery_without_unique_id()
+        self.data.update({FIELD_OAUTH_CODE_URL: url})
+        _LOGGER.info("Discovered local login service: %s", url)
+        return await self.async_step_user()
 
     async def async_step_user(self, user_input=None):
         if user_input is None:
