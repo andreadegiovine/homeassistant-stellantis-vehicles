@@ -27,6 +27,14 @@ def get_datetime(date = None):
         date = date.astimezone(UTC)
     return date.astimezone(dt.get_default_time_zone())
 
+def format_utc_z(date:datetime) -> str:
+    """ Format a datetime as UTC "YYYY-MM-DDTHH:MM:SSZ".
+
+    Used for dates sent in URLs: an isoformat() offset such as "+01:00" is
+    sent unencoded and its "+" is decoded as a space by the server.
+    """
+    return date.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
 def datetime_from_isoformat(string):
     return get_datetime(datetime.fromisoformat(string))
 
