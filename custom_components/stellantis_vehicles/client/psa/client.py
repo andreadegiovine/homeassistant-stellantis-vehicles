@@ -1,9 +1,7 @@
 import logging
 import aiohttp
 import base64
-from PIL import Image, ImageOps
 import os
-from io import BytesIO
 from copy import deepcopy
 import paho.mqtt.client as mqtt
 import json
@@ -15,12 +13,8 @@ import random
 from typing import Any
 
 from homeassistant.core import ( HomeAssistant, HassJob)
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers import translation
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.components import persistent_notification
 from homeassistant.helpers.event import async_track_point_in_time
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util.ssl import client_context
 # If the Stellantis MQTT broker ever presents a certificate that fails
 # validation, import client_context_no_verify here as well and use it in
@@ -29,8 +23,9 @@ from homeassistant.util.ssl import client_context
 
 from .coordinator import PsaVehicleCoordinator
 from ...interfaces import VehiclesClient
+from ...client_base import BaseVehiclesClient
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from ...utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
+from ...utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, log_call, resolve_mqtt_resp_data_error )
 from ...exceptions import ( CommunicationError, RateLimitException )
 from .mqtt_event import parse_mqtt_event
 
@@ -38,13 +33,10 @@ from ...const import (
     DOMAIN,
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
-    FIELD_REMOTE_COMMANDS,
-    FIELD_NOTIFICATIONS,
     FIELD_MQTT_LIVE_UPDATES,
     COMMAND_STATUS_SUCCESS,
     ABRP_URL,
-    ABRP_API_KEY,
-    TRANSLATION_PLACEHOLDERS
+    ABRP_API_KEY
 )
 
 from .const import (
@@ -153,32 +145,15 @@ class MqttClientMod(mqtt.Client):
                     raise
 
 
-class StellantisBase:
+class StellantisBase(BaseVehiclesClient):
     def __init__(self, hass: HomeAssistant) -> None:
-        self._hass = hass
-        self._config = {}
-        self._session = None
+        super().__init__(hass)
         self.otp = None
-        self._shutting_down = False
         # Serialises OAuth refreshes of this account: the scheduled refresh and
         # the refresh-on-401 in make_http_request could run at the same time
         # with the same refresh token; Stellantis rotates it on use, so the
         # second one got invalid_grant and started a needless reauth.
         self._oauth_refresh_lock = asyncio.Lock()
-        self._pending_tasks: set[asyncio.Task] = set()
-
-        # Shared instance, already attached to the module loggers at import time.
-        self.logger_filter = SENSITIVE_DATA_FILTER
-
-    def start_session(self):
-        if not self._session:
-            self._session = aiohttp.ClientSession()
-
-    async def close_session(self):
-        if not self._session or self._session.closed:
-            return
-        await self._session.close()
-        self._session = None
 
     def set_mobile_app(self, mobile_app, country_code):
         if mobile_app in MOBILE_APPS:
@@ -191,36 +166,11 @@ class StellantisBase:
                 "culture": country_code.lower()
             })
 
-    def save_config(self, data:dict[str, Any]) -> None:
-        for key in data:
-            # A copy: a value shared with entry.data that is changed in place is not seen by async_update_entry, which then does not save.
-            self._config[key] = deepcopy(data[key])
-            if key == FIELD_MOBILE_APP and FIELD_COUNTRY_CODE in self._config:
-                self.set_mobile_app(data[key], self._config[FIELD_COUNTRY_CODE])
-            elif key == FIELD_COUNTRY_CODE and FIELD_MOBILE_APP in self._config:
-                self.set_mobile_app(self._config[FIELD_MOBILE_APP], data[key])
-        # save_config() is the single choke point through which oauth / mqtt
-        # token rotations and per-vehicle settings reach self._config. Refresh
-        # the log filter's snapshot for this entry here, so it always masks the
-        # current tokens - the token-refresh code no longer has to register each
-        # rotated value by hand, which used to grow the filter without bound
-        # (issue #414). No-op until set_entry() has run (config-flow phase).
-        entry = getattr(self, "_entry", None)
-        if entry is not None:
-            self.logger_filter.set_entry_values(entry.entry_id, self._config)
-
-    def get_config(self, key):
-        if key in self._config:
-            return self._config[key]
-        return None
-
-    @property
-    def remote_commands(self):
-        return self.get_config(FIELD_REMOTE_COMMANDS) in [None, True]
-
-    def disable_remote_commands(self):
-        self.save_config({FIELD_REMOTE_COMMANDS: False})
-        self.update_stored_config(FIELD_REMOTE_COMMANDS, False)
+    def _on_config_key_saved(self, key:str, value:Any) -> None:
+        if key == FIELD_MOBILE_APP and FIELD_COUNTRY_CODE in self._config:
+            self.set_mobile_app(value, self._config[FIELD_COUNTRY_CODE])
+        elif key == FIELD_COUNTRY_CODE and FIELD_MOBILE_APP in self._config:
+            self.set_mobile_app(self._config[FIELD_MOBILE_APP], value)
 
     def replace_placeholders(self, string, vehicle=None):
         if vehicle is None:
@@ -343,74 +293,6 @@ class StellantisBase:
             _LOGGER.exception("Unexpected error during request to %s", url)
             raise
 
-    def do_async(self, async_func, delay=0, *, wait):
-        """Schedule a coroutine on self._hass.loop from any thread.
-
-        wait=True blocks for the result and is only safe from a thread
-        other than the one running self._hass.loop (e.g. paho-mqtt's
-        network thread) - called from that thread itself, this raises
-        instead of deadlocking Home Assistant. wait=False just schedules
-        the coroutine and returns None.
-        """
-        if self._shutting_down:
-            # The config entry is being unloaded - drop the coroutine instead of
-            # scheduling work that would resurrect the MQTT client or hit an
-            # already closed aiohttp session.
-            async_func.close()
-            return None
-
-        if wait:
-            try:
-                running_loop = asyncio.get_running_loop()
-            except RuntimeError:
-                running_loop = None
-            if running_loop is self._hass.loop:
-                async_func.close()
-                raise RuntimeError(
-                    "do_async(wait=True) called from the Home Assistant event loop thread - this would deadlock"
-                )
-
-        async def delayed_execution():
-            task = asyncio.current_task()
-            self._pending_tasks.add(task)
-            try:
-                if delay > 0:
-                    await asyncio.sleep(delay)
-                if self._shutting_down:
-                    async_func.close()
-                    return None
-                return await async_func
-            except asyncio.CancelledError:
-                async_func.close()
-                raise
-            finally:
-                self._pending_tasks.discard(task)
-
-        future = asyncio.run_coroutine_threadsafe(delayed_execution(), self._hass.loop)
-        return future.result() if wait else None
-
-    async def hass_notify(self, translation_key):
-        """Create a persistent notification."""
-        if hasattr(self, '_entry') and not self.get_stored_config(FIELD_NOTIFICATIONS):
-            return
-
-        translations = await translation.async_get_translations(self._hass, self._hass.config.language, "common", {DOMAIN})
-        notification_title = "Stellantis Vehicles"
-        if translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None):
-            notification_title = notification_title + " - " + str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_title", None))
-        notification_message = str(translations.get(f"component.stellantis_vehicles.common.{translation_key}_message", None))
-
-        notification_title = replace_string_placeholders(notification_title, TRANSLATION_PLACEHOLDERS)
-        notification_message = replace_string_placeholders(notification_message, TRANSLATION_PLACEHOLDERS)
-
-        persistent_notification.async_create(
-            self._hass,
-            notification_message,
-            title=notification_title,
-            notification_id=str(uuid4())
-        )
-
-
 class StellantisOauth(StellantisBase):
     def get_oauth_url(self):
         return self.apply_query_params(OAUTH_AUTHORIZE_URL, OAUTH_AUTHORIZE_QUERY_PARAMS)
@@ -524,12 +406,11 @@ class StellantisOauth(StellantisBase):
 
 
 class StellantisVehicles(StellantisOauth, VehiclesClient):
+    coordinator_class = PsaVehicleCoordinator
+
     def __init__(self, hass: HomeAssistant) -> None:
         super().__init__(hass)
 
-        self._entry = None
-        self._coordinator_dict = {}
-        self._vehicles = []
         self._mqtt = None
         self._mqtt_subscriptions:dict[int, str] = {}
         # paho still reports is_connected() while on_disconnect runs
@@ -543,100 +424,11 @@ class StellantisVehicles(StellantisOauth, VehiclesClient):
         self._mqtt_token_retry = 0
         self._oauth_token_retry = 0
 
-    def set_entry(self, entry:ConfigEntry) -> None:
-        self._entry = entry
-        self.logger_filter.set_entry_values(entry.entry_id, self._config)
-
-    def update_stored_config(self, config, value):
-        data = self._entry.data
-        new_data = {}
-        for key in data:
-            new_data[key] = deepcopy(data[key])
-        if config not in new_data:
-            new_data[config] = None
-        new_data[config] = value
-        self._hass.config_entries.async_update_entry(self._entry, data=new_data)
-
-    def get_stored_config(self, config):
-        if config in self._entry.data:
-            return self._entry.data[config]
-        return None
-
-    def get_vehicles_stored_config(self):
-        """Return the per-vehicle stored config sub-node, keyed by VIN."""
-        return self.get_stored_config("vehicles") or {}
-
-    def update_vehicle_stored_config(self, vin, key, value):
-        vehicles = deepcopy(self.get_vehicles_stored_config())
-        vehicles.setdefault(vin, {})[key] = value
-        self.update_stored_config("vehicles", vehicles)
-        # Through save_config() so the log filter's snapshot picks up the VIN.
-        self.save_config({"vehicles": deepcopy(vehicles)})
-
-    def get_vehicle_stored_config(self, vin, key):
-        vehicle = self.get_vehicles_stored_config().get(vin)
-        if vehicle and key in vehicle:
-            return vehicle[key]
-        return None
-
-    def prune_stored_vehicle_configs(self, live_vins):
-        """Drop per-vehicle stored config for vehicles no longer on the account."""
-        vehicles = self.get_vehicles_stored_config()
-        stale = [vin for vin in vehicles if vin not in live_vins]
-        if not stale:
-            return []
-        new_vehicles = {vin: deepcopy(value) for vin, value in vehicles.items() if vin not in stale}
-        self.update_stored_config("vehicles", new_vehicles)
-        # Through save_config() so the log filter's snapshot drops the stale VINs.
-        self.save_config({"vehicles": deepcopy(new_vehicles)})
-        _LOGGER.info("Removed stored config for vehicles no longer on the account: %s", ", ".join(stale))
-        return stale
-
-    def async_get_coordinator_by_vin(self, vin):
-        if vin in self._coordinator_dict:
-            return self._coordinator_dict[vin]
-        return None
-
     def async_get_coordinator_by_action_id(self, action_id):
         for vin in self._coordinator_dict:
             if action_id in self._coordinator_dict[vin]._commands_history:
                 return self._coordinator_dict[vin]
         return None
-
-    async def async_get_coordinator(self, vehicle):
-        vin = vehicle["vin"]
-        if vin in self._coordinator_dict:
-            return self._coordinator_dict[vin]
-        translations = await translation.async_get_translations(self._hass, self._hass.config.language, "entity", {DOMAIN})
-        coordinator = PsaVehicleCoordinator(self._hass, self._config, vehicle, self, translations, config_entry=self._entry)
-        self._coordinator_dict[vin] = coordinator
-        return coordinator
-
-    async def resize_and_save_picture(self, url, vin):
-        public_path = self._hass.config.path("www")
-        customer_id = self.get_config("customer_id")
-        if not os.path.isdir(public_path):
-            _LOGGER.warning("Folder \"www\" not found in configuration folder")
-            return url
-        entry_path = f"{public_path}/{DOMAIN}/{customer_id}"
-        if not os.path.isdir(entry_path):
-            os.makedirs(entry_path, exist_ok=True)
-        image_path = f"{entry_path}/{vin}.png"
-        image_url = image_path.replace(public_path, "/local")
-        if os.path.isfile(image_path):
-            return image_url
-        session = async_get_clientsession(self._hass)
-        async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-            resp.raise_for_status()
-            image_data = await resp.read()
-
-        def _resize_and_save() -> None:
-            with Image.open(BytesIO(image_data)) as im:
-                im = ImageOps.pad(im, (400, 400))
-                im.save(image_path)
-
-        await self._hass.async_add_executor_job(_resize_and_save)
-        return image_url
 
     def reset_scheduled_tokens(self):
         self.reset_scheduled_oauth_token()
@@ -688,10 +480,6 @@ class StellantisVehicles(StellantisOauth, VehiclesClient):
     def commands_available(self) -> bool:
         """ Whether the MQTT channel remote commands go through is connected. """
         return bool(self._mqtt and self._mqtt.is_connected() and self._mqtt_connected)
-
-    @property
-    def coordinators(self) -> list[PsaVehicleCoordinator]:
-        return list(self._coordinator_dict.values())
 
     def diagnostics(self) -> dict[str, Any]:
         oauth_config = self.get_config("oauth") or {}
