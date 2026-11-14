@@ -10,6 +10,7 @@ The protocol was documented by the MIT-licensed kerniger/leapmotor-ha project
 (Copyright (c) 2026 kerniger).
 """
 import asyncio
+import io
 import json
 import logging
 import os
@@ -17,6 +18,7 @@ import random
 import ssl
 import tempfile
 import time
+import zipfile
 from collections.abc import Callable
 from typing import Any
 from urllib.parse import quote
@@ -24,6 +26,7 @@ from urllib.parse import quote
 import aiohttp
 
 from ...exceptions import CommunicationError
+from ...utils import SENSITIVE_DATA_FILTER
 from . import crypto
 
 from .const import (
@@ -36,6 +39,9 @@ from .const import (
     PIN_VERIFY_URL,
     REMOTE_CONTROL_URL,
     REMOTE_CONTROL_RESULT_URL,
+    PICTURE_KEY_URL,
+    PICTURE_PACKAGE_URL,
+    PICTURE_PACKAGE_FILE,
     APP_VERSION,
     APP_SOURCE,
     APP_CHANNEL,
@@ -51,6 +57,7 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
 REQUEST_TIMEOUT = 60
 
@@ -102,6 +109,22 @@ def build_client_context(cert_pem: bytes, key_pem: bytes) -> ssl.SSLContext:
         except (ssl.SSLError, OSError, ValueError) as err:
             raise LeapmotorCertificateError(f"Unusable client certificate: {err}") from err
     return context
+
+
+def extract_picture(package: bytes) -> bytes | None:
+    """The vehicle image inside a picture package, or None if it holds none. Blocking."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(package)) as archive:
+            names = archive.namelist()
+            if PICTURE_PACKAGE_FILE not in names:
+                # Another app layout: take the largest image there is.
+                images = [info for info in archive.infolist() if info.filename.lower().endswith(".png")]
+                if not images:
+                    return None
+                return archive.read(max(images, key=lambda info: info.file_size))
+            return archive.read(PICTURE_PACKAGE_FILE)
+    except (zipfile.BadZipFile, KeyError, OSError):
+        return None
 
 
 def _form(params: dict[str, str]) -> str:
@@ -161,17 +184,19 @@ class LeapmotorApi:
         headers.update({"Content-Type": "application/x-www-form-urlencoded", "userId": self.user_id, "token": self._token})
         return headers
 
-    async def _post(self, label: str, path: str, headers: dict[str, str], body: str, context: ssl.SSLContext) -> dict[str, Any]:
+    async def _post_raw(self, label: str, path: str, headers: dict[str, str], body: str, context: ssl.SSLContext) -> tuple[int, bytes]:
         try:
             async with self._get_session().post(API_BASE_URL + path, headers=headers, data=body, ssl=context, timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)) as response:
-                http_status = response.status
-                text = await response.text()
+                return response.status, await response.read()
         except asyncio.TimeoutError as err:
             raise LeapmotorApiError(f"Leapmotor {label} timed out") from err
         except aiohttp.ClientError as err:
             raise LeapmotorApiError(f"Leapmotor {label} failed: {err}") from err
+
+    async def _post(self, label: str, path: str, headers: dict[str, str], body: str, context: ssl.SSLContext) -> dict[str, Any]:
+        http_status, content = await self._post_raw(label, path, headers, body, context)
         try:
-            result = json.loads(text)
+            result = json.loads(content.decode("utf-8", errors="replace"))
         except ValueError:
             result = None
         if not isinstance(result, dict):
@@ -298,6 +323,23 @@ class LeapmotorApi:
                 shared = {}
             data = shared.get("data") or data
         return data
+
+    async def picture(self, vin: str) -> bytes | None:
+        """The image of the vehicle as the app shows it (PNG), or None if the cloud has none."""
+        # The request carries the device id of the session: log in before building it.
+        await self.ensure_login()
+        result = await self._session_request("vehicle picture", PICTURE_KEY_URL, {"deviceID": self._device_id, "vin": vin})
+        key = (result.get("data") or {}).get("key")
+        if not key:
+            return None
+        # The package is a binary download: no JSON envelope to read an error from.
+        headers = self._signed_headers({"key": str(key)})
+        headers.pop("X-P12_ENC_ALG", None)
+        http_status, package = await self._post_raw("vehicle picture package", PICTURE_PACKAGE_URL, headers, _form({"key": str(key)}), self._account_context)
+        self.last_results["vehicle picture package"] = {"http_status": http_status, "code": None, "message": f"{len(package)} bytes", "at": time.time()}
+        if http_status != 200:
+            raise LeapmotorApiError(f"Leapmotor vehicle picture package failed: HTTP {http_status}", http_status=http_status)
+        return await asyncio.get_running_loop().run_in_executor(None, extract_picture, package)
 
     # -- remote commands ---------------------------------------------------
 

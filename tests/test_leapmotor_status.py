@@ -59,5 +59,11 @@ def test_named_fields_of_older_models():
     assert data["updatedAt"] == "2026-11-14T10:00:00+00:00"
 
 
+def test_available_energy_is_the_battery_residual():
+    status = {**STATUS, "dumpEnergy": 31250}
+    assert normalize_status(status)["energies"][0]["extension"]["electric"]["battery"] == {"load": {"residual": 31250}}
+    assert "battery" not in normalize_status(STATUS)["energies"][0]["extension"]["electric"]
+
+
 def test_status_without_signals_is_no_data():
     assert normalize_status({}) == {}

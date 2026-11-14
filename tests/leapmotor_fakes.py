@@ -3,7 +3,9 @@ import base64
 import datetime
 import hashlib
 import hmac
+import io
 import json
+import zipfile
 from urllib.parse import parse_qsl
 
 from cryptography import x509
@@ -51,12 +53,25 @@ def _token(serial: int) -> str:
     return f"header.{payload}.{'s' * 64}"
 
 
+def make_picture_package() -> bytes:
+    from PIL import Image
+    image = io.BytesIO()
+    Image.new("RGBA", (40, 20), (200, 0, 0, 255)).save(image, "PNG")
+    package = io.BytesIO()
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("android/xxhdpi/carpic_for_tripsum.png", image.getvalue())
+        archive.writestr("android/xxhdpi/other.png", b"x")
+    return package.getvalue()
+
+
 class _Response:
     def __init__(self, status, body):
         self.status, self._body = status, body
 
-    async def text(self):
-        return json.dumps(self._body) if isinstance(self._body, dict) else self._body
+    async def read(self):
+        if isinstance(self._body, bytes):
+            return self._body
+        return (json.dumps(self._body) if isinstance(self._body, dict) else self._body).encode()
 
     async def __aenter__(self):
         return self
@@ -84,6 +99,7 @@ class FakeCloud:
         self.result_after = 2    # polls before a remote command reports done
         self._polls = 0
         self.closed = False
+        self.has_picture = True
 
     async def close(self):
         self.closed = True
@@ -141,6 +157,12 @@ class FakeCloud:
             if self.shared_only_with_car_id and "carId" not in params:
                 return self._ok({})
             return self._ok(self.status)
+        if endpoint == "/vehicle/v1/carpicture/key":
+            assert params == {"deviceID": SESSION_DEVICE_ID, "vin": VIN}
+            return self._ok({"key": "pic-key"} if self.has_picture else {})
+        if endpoint == "/vehicle/v1/carpicture/package":
+            assert params == {"key": "pic-key"} and "X-P12_ENC_ALG" not in headers
+            return 200, make_picture_package()
         if endpoint == "/vehicle/v1/cert/sync":
             return self._ok()
         if endpoint == "/vehicle/v1/operPwd/verify":

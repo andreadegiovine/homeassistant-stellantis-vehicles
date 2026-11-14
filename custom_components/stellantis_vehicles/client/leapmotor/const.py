@@ -17,6 +17,10 @@ CERT_SYNC_URL = API_PREFIX + "/vehicle/v1/cert/sync"
 PIN_VERIFY_URL = API_PREFIX + "/vehicle/v1/operPwd/verify"
 REMOTE_CONTROL_URL = API_PREFIX + "/vehicle/v1/app/remote/ctl"
 REMOTE_CONTROL_RESULT_URL = API_PREFIX + "/vehicle/v1/app/remote/ctl/result/query"
+PICTURE_KEY_URL = API_PREFIX + "/vehicle/v1/carpicture/key"
+PICTURE_PACKAGE_URL = API_PREFIX + "/vehicle/v1/carpicture/package"
+# Image of the vehicle inside the picture package (a zip of app resources).
+PICTURE_PACKAGE_FILE = "android/xxhdpi/carpic_for_tripsum.png"
 
 # Values the official app sends with every request; they are part of the
 # request signature.
@@ -59,6 +63,9 @@ COMMAND_CLIMATE_OFF = ("170", '{"operate":"off"}')
 # The T03 only switches the climate off with the full payload.
 COMMAND_CLIMATE_OFF_T03 = ("170", '{"circle":"out","mode":"wind","operate":"off","position":"all","temperature":"26","windlevel":"3","wshld":"0"}')
 
+# Shortest distance (km) recorded as a trip, as for the PSA trips.
+TRIP_MIN_DISTANCE = 0.1
+
 # Models that answer on another model's status endpoint.
 STATUS_PATH_ALIASES = {"b05": "c10", "b10": "c10", "b11": "c10"}
 STATUS_PATH_DEFAULT = "c10"
@@ -66,7 +73,7 @@ STATUS_PATH_DEFAULT = "c10"
 # Entities of the shared platforms this client can serve, by platform. What is
 # missing here has no (verified) Leapmotor equivalent yet.
 SUPPORTED_ENTITIES = {
-    "sensor": {"vehicle", "temperature", "mileage", "speed", "autonomy", "battery", "battery_charging_type", "battery_charging_end", "fuel", "fuel_autonomy", "type", "command_status", "last_charge"},
+    "sensor": {"vehicle", "temperature", "mileage", "speed", "autonomy", "battery", "battery_charging_type", "battery_charging_end", "battery_residual", "last_trip", "fuel", "fuel_autonomy", "type", "command_status", "last_charge"},
     "binary_sensor": {"moving", "doors", "door_trunk", "door_driver", "door_passenger", "door_rear_left", "door_rear_right", "battery_plugged", "battery_charging", "engine", "preconditioning", "remote_commands", "command_pending"},
     "button": {"doors_lock", "doors_unlock", "horn", "preconditioning_start", "preconditioning_stop"},
     "number": {"refresh_interval"},
