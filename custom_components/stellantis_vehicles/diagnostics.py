@@ -15,7 +15,7 @@ from .const import (
     FIELD_MOBILE_APP,
     FIELD_MQTT_LIVE_UPDATES,
     FIELD_NOTIFICATIONS,
-    FIELD_REMOTE_COMMANDS,
+    FIELD_REMOTE_COMMANDS
 )
 
 # Keys whose value is a secret or personal data. async_redact_data walks nested

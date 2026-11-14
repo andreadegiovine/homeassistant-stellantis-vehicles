@@ -12,7 +12,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
-from .stellantis import StellantisVehicles
+from .client.registry import create_client
 from .utils import vehicle_removed_issue_id
 from .config_flow import StellantisVehiclesConfigFlow
 
@@ -21,9 +21,12 @@ from .const import (
     INTEGRATION_VERSION,
     INTEGRATION_IS_BETA,
     PLATFORMS,
-    OTP_FILENAME,
     FIELD_NOTIFICATIONS,
     UPDATE_INTERVAL
+)
+
+from .client.psa.const import (
+    OTP_FILENAME
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,10 +46,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
 
-    stellantis = StellantisVehicles(hass)
+    stellantis = create_client(hass, config.data)
     stellantis.save_config(config.data)
     stellantis.set_entry(config)
-    await stellantis.scheduled_tokens_refresh()
+    await stellantis.async_start()
 
     config.runtime_data = stellantis
 

@@ -12,11 +12,10 @@ from homeassistant.const import (
 )
 
 from .utils import extract_oauth_code, get_datetime, log_call
-from .stellantis import StellantisOauth
+from .client.psa.client import StellantisOauth
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
-    MOBILE_APPS,
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
     FIELD_OAUTH_MANUAL_MODE,
@@ -29,9 +28,13 @@ from .const import (
     FIELD_ANONYMIZE_LOGS,
     FIELD_MQTT_LIVE_UPDATES,
     FIELD_RECONFIGURE,
-    MQTT_REFRESH_TOKEN_TTL,
-    OAUTH_CODE_URL,
     TRANSLATION_PLACEHOLDERS
+)
+
+from .client.psa.const import (
+    MOBILE_APPS,
+    MQTT_REFRESH_TOKEN_TTL,
+    OAUTH_CODE_URL
 )
 
 _LOGGER = logging.getLogger(__name__)

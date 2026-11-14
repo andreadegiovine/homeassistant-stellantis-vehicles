@@ -27,19 +27,27 @@ from homeassistant.util.ssl import client_context
 # connect_mqtt() (see the commented line there).
 # from homeassistant.util.ssl import client_context, client_context_no_verify
 
-from .base import StellantisVehicleCoordinator
+from ...base import StellantisVehicleCoordinator
+from ...interfaces import VehiclesClient
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
-from .utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
-from .exceptions import ( CommunicationError, RateLimitException )
+from ...utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
+from ...exceptions import ( CommunicationError, RateLimitException )
 from .mqtt_event import parse_mqtt_event
 
-from .const import (
+from ...const import (
     DOMAIN,
     FIELD_MOBILE_APP,
     FIELD_COUNTRY_CODE,
     FIELD_REMOTE_COMMANDS,
     FIELD_NOTIFICATIONS,
     FIELD_MQTT_LIVE_UPDATES,
+    COMMAND_STATUS_SUCCESS,
+    ABRP_URL,
+    ABRP_API_KEY,
+    TRANSLATION_PLACEHOLDERS
+)
+
+from .const import (
     MOBILE_APPS,
     OAUTH_AUTHORIZE_URL,
     OAUTH_TOKEN_URL,
@@ -68,11 +76,7 @@ from .const import (
     GET_VEHICLE_RIGHTS_URL,
     MQTT_REFRESH_TOKEN_JSON_DATA,
     MQTT_REFRESH_TOKEN_TTL,
-    COMMAND_STATUS_SUCCESS,
     OTP_FILENAME,
-    ABRP_URL,
-    ABRP_API_KEY,
-    TRANSLATION_PLACEHOLDERS,
     MQTT_TOKEN_RETRY_BACKOFF,
     OAUTH_TOKEN_RETRY_BACKOFF
 )
@@ -519,7 +523,7 @@ class StellantisOauth(StellantisBase):
         return otp_code
 
 
-class StellantisVehicles(StellantisOauth):
+class StellantisVehicles(StellantisOauth, VehiclesClient):
     def __init__(self, hass: HomeAssistant) -> None:
         super().__init__(hass)
 
@@ -679,6 +683,9 @@ class StellantisVehicles(StellantisOauth):
         # pattern shrinks back. No-op if set_entry() never ran.
         if self._entry is not None:
             self.logger_filter.remove_entry_values(self._entry.entry_id)
+
+    async def async_start(self) -> None:
+        await self.scheduled_tokens_refresh()
 
     async def scheduled_tokens_refresh(self):
         self.reset_scheduled_tokens()

@@ -7,8 +7,15 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.stellantis_vehicles.const import CAR_API_HEADERS, DOMAIN, OAUTH_TOKEN_URL
-from custom_components.stellantis_vehicles.stellantis import StellantisVehicles
+from custom_components.stellantis_vehicles.const import (
+    DOMAIN
+)
+
+from custom_components.stellantis_vehicles.client.psa.const import (
+    CAR_API_HEADERS,
+    OAUTH_TOKEN_URL
+)
+from custom_components.stellantis_vehicles.client.psa.client import StellantisVehicles
 
 
 def _make(hass, expires_in):

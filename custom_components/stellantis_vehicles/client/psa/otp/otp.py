@@ -13,7 +13,7 @@ from Crypto.Hash import SHA256
 
 from . import oaep
 from .load import IWData
-from ..utils import SENSITIVE_DATA_FILTER
+from ....utils import SENSITIVE_DATA_FILTER
 
 # pylint: disable=invalid-name
 CONFIG_NAME = "otp.bin"

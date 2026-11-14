@@ -21,7 +21,7 @@ from homeassistant.const import ( STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_ON, ST
 from homeassistant.exceptions import ( ConfigEntryAuthFailed, HomeAssistantError, ServiceValidationError )
 from homeassistant.helpers import issue_registry as ir
 
-from .mqtt_event import event_content
+from .client.psa.mqtt_event import event_content
 from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, time_from_string, parse_timestamp, rate_limit, log_call, parse_vehicle_rights, vehicle_removed_issue_id, SENSITIVE_DATA_FILTER )
 from .exceptions import CommunicationError, RateLimitException
 

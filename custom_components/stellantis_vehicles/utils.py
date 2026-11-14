@@ -13,7 +13,10 @@ from homeassistant.util import dt
 
 from .exceptions import RateLimitException
 from .const import (
-    FIELD_ANONYMIZE_LOGS,
+    FIELD_ANONYMIZE_LOGS
+)
+
+from .client.psa.const import (
     MQTT_RESP_DATA_ERROR_CODES,
     MQTT_CHARGING_RESP_DATA_ERROR_CODES
 )
