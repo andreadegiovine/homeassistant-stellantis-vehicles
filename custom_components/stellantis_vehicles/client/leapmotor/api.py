@@ -42,6 +42,8 @@ from .const import (
     PICTURE_KEY_URL,
     PICTURE_PACKAGE_URL,
     PICTURE_PACKAGE_FILE,
+    CHARGING_PLAN_URL,
+    COMMAND_CHARGING_PLAN_ID,
     APP_VERSION,
     APP_SOURCE,
     APP_CHANNEL,
@@ -202,7 +204,8 @@ class LeapmotorApi:
         if not isinstance(result, dict):
             self.last_results[label] = {"http_status": http_status, "code": None, "message": "not JSON", "at": time.time()}
             raise LeapmotorApiError(f"Leapmotor {label} returned an unexpected response (HTTP {http_status})", http_status=http_status)
-        code, message = result.get("code"), result.get("message")
+        # A few endpoints name the result code "result".
+        code, message = result.get("code", result.get("result")), result.get("message")
         self.last_results[label] = {"http_status": http_status, "code": code, "message": message, "at": time.time()}
         _LOGGER.debug("Leapmotor %s: HTTP %s code=%s message=%s", label, http_status, code, message)
         if http_status != 200 or code != 0:
@@ -340,6 +343,17 @@ class LeapmotorApi:
         if http_status != 200:
             raise LeapmotorApiError(f"Leapmotor vehicle picture package failed: HTTP {http_status}", http_status=http_status)
         return await asyncio.get_running_loop().run_in_executor(None, extract_picture, package)
+
+    async def charging_plan(self, vin: str) -> dict[str, Any]:
+        """The charging plan (limit and schedule) as stored by the cloud; {} if there is none."""
+        result = await self._session_request("charging plan", CHARGING_PLAN_URL, {"vin": vin, "cmdId": COMMAND_CHARGING_PLAN_ID})
+        plan = result.get("data")
+        if isinstance(plan, str):
+            try:
+                plan = json.loads(plan)
+            except ValueError:
+                plan = None
+        return plan if isinstance(plan, dict) else {}
 
     # -- remote commands ---------------------------------------------------
 

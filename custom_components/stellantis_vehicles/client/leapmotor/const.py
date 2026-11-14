@@ -60,6 +60,13 @@ COMMAND_UNLOCK = ("110", '{"value":"unlock"}')
 COMMAND_FIND_CAR = ("120", '{"value":"true"}')
 COMMAND_CLIMATE_ON = ("170", '{"circle":"out","mode":"nohotcold","operate":"manual","position":"all","temperature":"24","windlevel":"4","wshld":"1"}')
 COMMAND_CLIMATE_OFF = ("170", '{"operate":"off"}')
+COMMAND_BATTERY_PREHEATING_ON = ("160", '{"value":"ptcon"}')
+COMMAND_BATTERY_PREHEATING_OFF = ("160", '{"value":"ptcoff"}')
+# The charging plan (limit and schedule) is written as a whole.
+COMMAND_CHARGING_PLAN_ID = "190"
+CHARGING_PLAN_URL = API_PREFIX + "/vehicle/v1/app/remote/ctl/getAppointment"
+# Models whose charge limit cannot be written this way (it has no effect).
+CHARGING_PLAN_READ_ONLY_MODELS = ("T03",)
 # The T03 only switches the climate off with the full payload.
 COMMAND_CLIMATE_OFF_T03 = ("170", '{"circle":"out","mode":"wind","operate":"off","position":"all","temperature":"26","windlevel":"3","wshld":"0"}')
 
@@ -76,8 +83,8 @@ SUPPORTED_ENTITIES = {
     "sensor": {"vehicle", "temperature", "mileage", "speed", "autonomy", "battery", "battery_charging_type", "battery_charging_end", "battery_residual", "last_trip", "fuel", "fuel_autonomy", "type", "command_status", "last_charge"},
     "binary_sensor": {"moving", "doors", "door_trunk", "door_driver", "door_passenger", "door_rear_left", "door_rear_right", "battery_plugged", "battery_charging", "engine", "preconditioning", "remote_commands", "command_pending"},
     "button": {"doors_lock", "doors_unlock", "horn", "preconditioning_start", "preconditioning_stop"},
-    "number": {"refresh_interval"},
-    "switch": {"abrp_sync"},
+    "number": {"refresh_interval", "battery_charging_limit"},
+    "switch": {"abrp_sync", "battery_preheating"},
     "text": {"abrp_token"},
     "time": set(),
     "device_tracker": {"vehicle"},

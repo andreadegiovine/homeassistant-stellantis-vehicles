@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -132,6 +133,79 @@ async def test_lock_button_sends_the_command_and_records_its_result(hass, cloud)
     await hass.async_block_till_done(wait_background_tasks=True)
     assert not coordinator.pending_action
     assert list(coordinator.command_history.values())[0].endswith("Complete")
+
+
+PLAN = {"isEnable": 0, "percent": 90, "circulation": 0, "cycles": "1,2,3,4,5,6,7", "endTime": "07:00", "recharge": 0, "beginTime": "22:00"}
+
+
+async def _set_limit(hass, value):
+    number = er.async_get(hass).async_get_entity_id("number", DOMAIN, f"{VIN}_battery_charging_limit")
+    await hass.services.async_call("number", "set_value", {"entity_id": number, "value": value}, blocking=True)
+    return number
+
+
+async def test_charge_limit_is_read_from_the_vehicle_and_written_with_its_plan(hass, cloud):
+    cloud.status = {**STATUS, "config": {"3": PLAN}}
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert float(_state(hass, "number", "battery_charging_limit").state) == 90
+    assert _state(hass, "number", "battery_charging_limit").attributes["max"] == 100
+
+    number = await _set_limit(hass, 80)
+    command = next(params for endpoint, params in cloud.calls if endpoint == "/vehicle/v1/app/remote/ctl")
+    assert command["cmdId"] == "190"
+    # Only the limit changes; the schedule is written back as it was.
+    assert command["cmdContent"] == '{"chargeEnable":0,"chargesoc":80,"circulation":0,"cycles":"1,2,3,4,5,6,7","endtime":"07:00","recharge":0,"starttime":"22:00"}'
+    assert "/vehicle/v1/app/remote/ctl/getAppointment" not in cloud.endpoints()
+    # Shown at once, until the vehicle reports it itself.
+    assert float(hass.states.get(number).state) == 80
+    # The vehicle has not sent a newer status yet: the sent value stays.
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert float(hass.states.get(number).state) == 80
+    # Then the vehicle reports its own value again.
+    cloud.status = {**STATUS, "config": {"3": {**PLAN, "percent": 75}}, "signal": {**STATUS["signal"], "sts": STATUS["signal"]["sts"] + 60000}}
+    await entry.runtime_data.coordinators[0].async_refresh()
+    await hass.async_block_till_done()
+    assert float(hass.states.get(number).state) == 75
+
+
+async def test_charge_limit_takes_the_rest_of_the_plan_from_the_cloud_when_the_status_lacks_it(hass, cloud):
+    cloud.status = {**STATUS, "chargesocSetting": 70}
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert float(_state(hass, "number", "battery_charging_limit").state) == 70
+
+    await _set_limit(hass, 85)
+    command = next(params for endpoint, params in cloud.calls if endpoint == "/vehicle/v1/app/remote/ctl")
+    assert command["cmdContent"] == '{"chargeEnable":1,"chargesoc":85,"circulation":1,"cycles":"1,2,3","endtime":"06:00","recharge":0,"starttime":"23:00"}'
+
+
+async def test_charge_limit_is_not_written_without_a_complete_plan(hass, cloud):
+    cloud.stored_plan = None
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    with pytest.raises(ServiceValidationError):
+        await _set_limit(hass, 85)
+    assert "/vehicle/v1/app/remote/ctl" not in cloud.endpoints()
+
+
+async def test_battery_preheating_switch(hass, cloud):
+    cloud.status = {**STATUS, "signal": {**STATUS["signal"], "1186": 0}}
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    switch = er.async_get(hass).async_get_entity_id("switch", DOMAIN, f"{VIN}_battery_preheating")
+    assert hass.states.get(switch).state == "off"
+
+    cloud.status = {**STATUS, "signal": {**STATUS["signal"], "1186": 4, "sts": STATUS["signal"]["sts"] + 60000}}
+    await hass.services.async_call("switch", "turn_on", {"entity_id": switch}, blocking=True)
+    command = next(params for endpoint, params in cloud.calls if endpoint == "/vehicle/v1/app/remote/ctl")
+    assert (command["cmdId"], command["cmdContent"]) == ("160", '{"value":"ptcon"}')
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert hass.states.get(switch).state == "on"
 
 
 async def test_without_pin_the_vehicle_is_read_only(hass, cloud):

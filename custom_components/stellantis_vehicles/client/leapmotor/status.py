@@ -163,6 +163,26 @@ def _charging_section(signals: dict[str, Any]) -> dict[str, Any]:
     return section
 
 
+def charging_plan(plan: Any) -> dict[str, Any]:
+    """A charging plan with one set of names: the status and the plan endpoint differ."""
+    if not isinstance(plan, dict):
+        return {}
+    return {
+        "isEnable": plan.get("isEnable", plan.get("chargeEnable")),
+        "percent": plan.get("percent", plan.get("chargesoc")),
+        "circulation": plan.get("circulation"),
+        "cycles": plan.get("cycles"),
+        "endTime": plan.get("endTime", plan.get("endtime")),
+        "recharge": plan.get("recharge"),
+        "beginTime": plan.get("beginTime", plan.get("starttime")),
+    }
+
+
+def charging_plan_is_complete(plan: dict[str, Any]) -> bool:
+    """Whether a plan holds all it takes to write it back unchanged."""
+    return bool(_int(plan.get("isEnable")) in (0, 1) and plan.get("beginTime") and plan.get("endTime") and plan.get("cycles") and _int(plan.get("percent")) is not None)
+
+
 def _position(signals: dict[str, Any], created_at: str | None) -> dict[str, Any] | None:
     # 2/3 keep the hemisphere sign, the other variants are absolute values.
     longitude = next((_float(signals.get(key)) for key in ("2", "3724", "2191") if _float(signals.get(key)) is not None), None)
@@ -239,6 +259,18 @@ def normalize_status(status: dict[str, Any]) -> dict[str, Any]:
     climate = _is_on(signals.get("1938"))
     if climate is not None:
         result["preconditioning"] = {"airConditioning": {"status": "Enabled" if climate else "Disabled", "createdAt": created_at}}
+
+    # Leapmotor-only sections, read by the Leapmotor coordinator and entities.
+    plan = charging_plan((status.get("config") or {}).get("3"))
+    if plan.get("percent") is None and status.get("chargesocSetting") is not None:
+        plan = {**charging_plan({}), "percent": status["chargesocSetting"]}
+    if _int(plan.get("percent")) is not None:
+        result["chargingPlan"] = plan
+
+    heating = _int(signals.get("1186"))
+    if heating is not None:
+        # 4 is the battery being heated.
+        result["batteryPreheating"] = {"status": "Enabled" if heating == 4 else "Disabled", "createdAt": created_at}
 
     position = _position(signals, created_at)
     if position:

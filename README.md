@@ -119,7 +119,7 @@ Leapmotor vehicles (international cloud: T03, B05, B10, C10, ...) are set up by 
 - **App certificate**: the Leapmotor login requires the TLS certificate of the official app. It is not shipped with this integration: it is downloaded once during setup and stored in `.storage/stellantis_vehicles/leapmotor/` (`app_cert.pem`, `app_key.pem`). Files already there are used as they are.
 - **Updates**: the Leapmotor cloud is polled, there is no live channel.
 
-Available: vehicle picture, battery, battery energy, range, mileage, speed, outside temperature, charging state, last charge, last trip, doors, lock state, position, lock / unlock, find my car (horn button), air conditioning start / stop, ABRP.
+Available: vehicle picture, battery, battery energy, range, mileage, speed, outside temperature, charging state, last charge, last trip, doors, lock state, position, lock / unlock, find my car (horn button), air conditioning start / stop, battery preheating, charge limit (the limit held by the vehicle, not on T03), ABRP.
 
 Leapmotor has no trips service: the last trip is built by the integration from the vehicle status, so it is as precise as the refresh interval and only covers trips made while Home Assistant is running.
 

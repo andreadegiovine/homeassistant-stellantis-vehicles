@@ -100,6 +100,7 @@ class FakeCloud:
         self._polls = 0
         self.closed = False
         self.has_picture = True
+        self.stored_plan = {"chargeEnable": 1, "chargesoc": 80, "circulation": 1, "cycles": "1,2,3", "endtime": "06:00", "recharge": 0, "starttime": "23:00"}
 
     async def close(self):
         self.closed = True
@@ -163,6 +164,10 @@ class FakeCloud:
         if endpoint == "/vehicle/v1/carpicture/package":
             assert params == {"key": "pic-key"} and "X-P12_ENC_ALG" not in headers
             return 200, make_picture_package()
+        if endpoint == "/vehicle/v1/app/remote/ctl/getAppointment":
+            assert params == {"vin": VIN, "cmdId": "190"}
+            # This endpoint names its result code "result" and returns the plan as a JSON string.
+            return 200, {"result": 0, "message": "ok", "data": json.dumps(self.stored_plan) if self.stored_plan else None}
         if endpoint == "/vehicle/v1/cert/sync":
             return self._ok()
         if endpoint == "/vehicle/v1/operPwd/verify":

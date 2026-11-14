@@ -427,6 +427,9 @@
       },
       "battery_values_correction": {
         "name": "Correzione valori batteria"
+      },
+      "battery_preheating": {
+        "name": "Preriscaldamento batteria"
       }
     },
     "text": {
@@ -449,6 +452,9 @@
     },
     "command_refused": {
       "message": "Il veicolo non ha accettato il comando: {reason}"
+    },
+    "charging_plan_incomplete": {
+      "message": "Il veicolo non ha comunicato l'intero piano di ricarica, quindi il limite non può essere modificato in sicurezza. Impostalo una volta dall'app Leapmotor e riprova."
     }
   },
   "common": {

@@ -31,6 +31,12 @@ ABRP_API_KEY = "1e28ad14-df16-49f0-97da-364c9154b44a"
 FIELD_CLIENT = "client"
 CLIENT_PSA = "psa"
 
+# Entities only some clients can serve: created for the vehicles whose
+# coordinator declares them (see supports()), never by default.
+CLIENT_SPECIFIC_ENTITIES = {
+    "switch": {"battery_preheating"}
+}
+
 FIELD_MOBILE_APP = "mobile_app"
 FIELD_COUNTRY_CODE = "country_code"
 FIELD_OAUTH_MANUAL_MODE = "oauth_manual_mode"

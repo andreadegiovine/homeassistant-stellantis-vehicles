@@ -24,6 +24,7 @@ from .utils import ( time_from_pt_string, get_datetime, date_from_pt_string, tim
 
 from .const import (
     DOMAIN,
+    CLIENT_SPECIFIC_ENTITIES,
     FIELD_MOBILE_APP,
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
@@ -85,7 +86,21 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
 
     def supports(self, platform: str, key: str) -> bool:
         """ Whether the client can serve the entity ``key`` of a platform. """
-        return True
+        return key not in CLIENT_SPECIFIC_ENTITIES.get(platform, ())
+
+    # Whether the vehicle holds its own charge limit. If not, the limit is
+    # enforced by this integration, which stops the charge at the value of
+    # the charge limit number.
+    has_vehicle_charge_limit = False
+
+    @property
+    def vehicle_charge_limit(self) -> int | None:
+        """ Charge limit (%) held by the vehicle (see has_vehicle_charge_limit), None if unknown. """
+        return None
+
+    async def send_charge_limit_value_command(self, name: str, value: int) -> None:
+        """ Set the charge limit held by the vehicle (see vehicle_charge_limit). """
+        raise NotImplementedError
 
     @log_call
     async def _async_update_data(self) -> dict[str, Any] | None:
