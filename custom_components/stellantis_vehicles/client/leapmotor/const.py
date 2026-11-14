@@ -65,6 +65,8 @@ COMMAND_BATTERY_PREHEATING_OFF = ("160", '{"value":"ptcoff"}')
 # The charging plan (limit and schedule) is written as a whole.
 COMMAND_CHARGING_PLAN_ID = "190"
 CHARGING_PLAN_URL = API_PREFIX + "/vehicle/v1/app/remote/ctl/getAppointment"
+# Seconds a charging plan change is shown before the vehicle has reported it.
+PLAN_CONFIRMATION_TIMEOUT = 300
 # Models whose charge limit cannot be written this way (it has no effect).
 CHARGING_PLAN_READ_ONLY_MODELS = ("T03",)
 # The T03 only switches the climate off with the full payload.
@@ -84,8 +86,8 @@ SUPPORTED_ENTITIES = {
     "binary_sensor": {"moving", "doors", "door_trunk", "door_driver", "door_passenger", "door_rear_left", "door_rear_right", "battery_plugged", "battery_charging", "engine", "preconditioning", "remote_commands", "command_pending"},
     "button": {"doors_lock", "doors_unlock", "horn", "preconditioning_start", "preconditioning_stop"},
     "number": {"refresh_interval", "battery_charging_limit"},
-    "switch": {"abrp_sync", "battery_preheating"},
+    "switch": {"abrp_sync", "battery_preheating", "battery_charging_schedule"},
     "text": {"abrp_token"},
-    "time": set(),
+    "time": {"battery_charging_start"},
     "device_tracker": {"vehicle"},
 }

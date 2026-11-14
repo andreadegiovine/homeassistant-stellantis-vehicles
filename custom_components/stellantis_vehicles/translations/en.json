@@ -431,6 +431,9 @@
       },
       "battery_preheating": {
         "name": "Battery preheating"
+      },
+      "battery_charging_schedule": {
+        "name": "Scheduled charging"
       }
     },
     "text": {

@@ -68,7 +68,7 @@ async def test_entry_sets_up_with_the_shared_entities(hass, cloud):
 
     # What Leapmotor has no equivalent for is not created at all.
     for platform, key in (("sensor", "oil_temperature"), ("sensor", "days_before_maintenance"), ("button", "wakeup"), ("button", "lights"),
-                          ("button", "charge_start"), ("time", "battery_charging_start"), ("switch", "battery_values_correction")):
+                          ("button", "charge_start"), ("switch", "battery_charging_limit"), ("switch", "battery_values_correction")):
         assert _state(hass, platform, key) is None, key
     assert _state(hass, "button", "doors_lock") is not None
 
@@ -163,11 +163,55 @@ async def test_charge_limit_is_read_from_the_vehicle_and_written_with_its_plan(h
     # The vehicle has not sent a newer status yet: the sent value stays.
     await hass.async_block_till_done(wait_background_tasks=True)
     assert float(hass.states.get(number).state) == 80
-    # Then the vehicle reports its own value again.
-    cloud.status = {**STATUS, "config": {"3": {**PLAN, "percent": 75}}, "signal": {**STATUS["signal"], "sts": STATUS["signal"]["sts"] + 60000}}
-    await entry.runtime_data.coordinators[0].async_refresh()
+    coordinator = entry.runtime_data.coordinators[0]
+    # It stays through a newer status that still carries the old plan...
+    cloud.status = {**STATUS, "config": {"3": PLAN}, "signal": {**STATUS["signal"], "sts": STATUS["signal"]["sts"] + 60000}}
+    await coordinator.async_refresh()
+    assert float(hass.states.get(number).state) == 80
+    # ...until the vehicle reports the change, and then follows the vehicle.
+    for minutes, percent in ((2, 80), (3, 75)):
+        cloud.status = {**STATUS, "config": {"3": {**PLAN, "percent": percent}}, "signal": {**STATUS["signal"], "sts": STATUS["signal"]["sts"] + minutes * 60000}}
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+        assert float(hass.states.get(number).state) == percent
+
+
+async def test_charge_limit_goes_back_when_the_vehicle_does_not_apply_it(hass, cloud):
+    cloud.status = {**STATUS, "config": {"3": PLAN}}
+    cloud.result_after = 1000
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert float(hass.states.get(number).state) == 75
+    number = await _set_limit(hass, 60)
+    assert float(hass.states.get(number).state) == 60
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert float(hass.states.get(number).state) == 90
+
+
+async def test_scheduled_charging_start_time_and_switch(hass, cloud):
+    cloud.status = {**STATUS, "config": {"3": PLAN}}
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    start = registry.async_get_entity_id("time", DOMAIN, f"{VIN}_battery_charging_start")
+    schedule = registry.async_get_entity_id("switch", DOMAIN, f"{VIN}_battery_charging_schedule")
+    assert hass.states.get(start).state == "22:00:00"
+    assert hass.states.get(schedule).state == "off"
+
+    # Choosing a start time also turns the schedule on.
+    await hass.services.async_call("time", "set_value", {"entity_id": start, "time": "01:30:00"}, blocking=True)
+    commands = [params["cmdContent"] for endpoint, params in cloud.calls if endpoint == "/vehicle/v1/app/remote/ctl"]
+    assert commands == ['{"chargeEnable":1,"chargesoc":90,"circulation":0,"cycles":"1,2,3,4,5,6,7","endtime":"07:00","recharge":0,"starttime":"01:30"}']
+    assert hass.states.get(start).state == "01:30:00"
+    assert hass.states.get(schedule).state == "on"
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+    await hass.services.async_call("switch", "turn_off", {"entity_id": schedule}, blocking=True)
+    commands = [params["cmdContent"] for endpoint, params in cloud.calls if endpoint == "/vehicle/v1/app/remote/ctl"]
+    assert commands[-1] == '{"chargeEnable":0,"chargesoc":90,"circulation":0,"cycles":"1,2,3,4,5,6,7","endtime":"07:00","recharge":0,"starttime":"01:30"}'
+    assert hass.states.get(schedule).state == "off"
+    assert hass.states.get(start).state == "01:30:00"
 
 
 async def test_charge_limit_takes_the_rest_of_the_plan_from_the_cloud_when_the_status_lacks_it(hass, cloud):

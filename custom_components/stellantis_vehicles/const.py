@@ -34,7 +34,7 @@ CLIENT_PSA = "psa"
 # Entities only some clients can serve: created for the vehicles whose
 # coordinator declares them (see supports()), never by default.
 CLIENT_SPECIFIC_ENTITIES = {
-    "switch": {"battery_preheating"}
+    "switch": {"battery_preheating", "battery_charging_schedule"}
 }
 
 FIELD_MOBILE_APP = "mobile_app"

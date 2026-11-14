@@ -183,6 +183,31 @@ def charging_plan_is_complete(plan: dict[str, Any]) -> bool:
     return bool(_int(plan.get("isEnable")) in (0, 1) and plan.get("beginTime") and plan.get("endTime") and plan.get("cycles") and _int(plan.get("percent")) is not None)
 
 
+def _plan_start(plan: dict[str, Any]) -> str | None:
+    """Start time of a plan ("22:00", "22:00:00") as the duration the shared time entity parses."""
+    try:
+        hours, minutes = (int(part) for part in str(plan.get("beginTime")).split(":")[:2])
+    except (TypeError, ValueError):
+        return None
+    if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+        return None
+    return f"PT{hours}H{minutes}M"
+
+
+def apply_charging_plan(data: dict[str, Any], plan: dict[str, Any]) -> None:
+    """Write a charging plan into a normalized status, in place."""
+    data["chargingPlan"] = plan
+    electric = next((energy for energy in data.get("energies") or [] if energy.get("type") == "Electric"), None)
+    if electric is None:
+        return
+    charging = electric.setdefault("extension", {}).setdefault("electric", {}).setdefault("charging", {})
+    start = _plan_start(plan)
+    if start:
+        charging["nextDelayedTime"] = start
+    else:
+        charging.pop("nextDelayedTime", None)
+
+
 def _position(signals: dict[str, Any], created_at: str | None) -> dict[str, Any] | None:
     # 2/3 keep the hemisphere sign, the other variants are absolute values.
     longitude = next((_float(signals.get(key)) for key in ("2", "3724", "2191") if _float(signals.get(key)) is not None), None)
@@ -265,7 +290,7 @@ def normalize_status(status: dict[str, Any]) -> dict[str, Any]:
     if plan.get("percent") is None and status.get("chargesocSetting") is not None:
         plan = {**charging_plan({}), "percent": status["chargesocSetting"]}
     if _int(plan.get("percent")) is not None:
-        result["chargingPlan"] = plan
+        apply_charging_plan(result, plan)
 
     heating = _int(signals.get("1186"))
     if heating is not None:

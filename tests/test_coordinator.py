@@ -37,6 +37,7 @@ async def test_entities_of_other_clients_are_not_created_for_psa(hass):
     coordinator, _ = _make(hass, {})
     assert coordinator.supports("switch", "abrp_sync")
     assert not coordinator.supports("switch", "battery_preheating")
+    assert not coordinator.supports("switch", "battery_charging_schedule")
     assert not coordinator.has_vehicle_charge_limit
 
 

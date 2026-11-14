@@ -430,6 +430,9 @@
       },
       "battery_preheating": {
         "name": "Preriscaldamento batteria"
+      },
+      "battery_charging_schedule": {
+        "name": "Ricarica programmata"
       }
     },
     "text": {

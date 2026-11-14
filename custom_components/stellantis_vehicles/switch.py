@@ -62,6 +62,15 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
         if stellantis.remote_commands and coordinator.supports("switch", "battery_preheating"):
             entities.extend([StellantisBatteryPreheatingSwitch(coordinator, description)])
 
+        description = SwitchEntityDescription(
+            name = "battery_charging_schedule",
+            key = "battery_charging_schedule",
+            translation_key = "battery_charging_schedule",
+            icon = "mdi:battery-clock"
+        )
+        if stellantis.remote_commands and coordinator.supports("switch", "battery_charging_schedule"):
+            entities.extend([StellantisChargingScheduleSwitch(coordinator, description)])
+
     async_add_entities([entity for entity in entities if entity._coordinator.supports("switch", entity._key)])
 
 
@@ -93,6 +102,27 @@ class StellantisBatteryPreheatingSwitch(StellantisBaseEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs) -> None:
         await self._coordinator.send_battery_preheating_command(self.name, False)
+
+    def coordinator_update(self):
+        return True
+
+
+class StellantisChargingScheduleSwitch(StellantisBaseEntity, SwitchEntity):
+    """ Scheduled charging held by the vehicle: charge from the start time instead of at once. """
+
+    @property
+    def available(self):
+        return self.available_command
+
+    @property
+    def is_on(self):
+        return self._coordinator.charging_schedule_enabled
+
+    async def async_turn_on(self, **kwargs) -> None:
+        await self._coordinator.send_charging_schedule_command(self.name, True)
+
+    async def async_turn_off(self, **kwargs) -> None:
+        await self._coordinator.send_charging_schedule_command(self.name, False)
 
     def coordinator_update(self):
         return True
