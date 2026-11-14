@@ -315,20 +315,22 @@ def save_otp(obj, filename="otp.bin"):
         pickle.dump(obj, output)
 
 
+# Package this module lived in before the PSA client moved to client/psa.
+# OTP files saved back then name their classes by that path.
+_LEGACY_PACKAGE = "custom_components.stellantis_vehicles.otp"
+
+
 class RenameUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
-        renamed_module = "psa_car_controller.psa." + module.lower()
-        return super().find_class(renamed_module, name)
+        if module == _LEGACY_PACKAGE or module.startswith(_LEGACY_PACKAGE + "."):
+            module = __package__ + module[len(_LEGACY_PACKAGE):]
+        return super().find_class(module, name)
 
 
 def load_otp(filename=CONFIG_NAME):
     try:
         with open(filename, 'rb') as input_file:
-            try:
-                return pickle.load(input_file)
-            except ModuleNotFoundError as ex:
-                logger.debug(ex, exc_info=True)
-                return RenameUnpickler(input_file).load()
+            return RenameUnpickler(input_file).load()
     except FileNotFoundError:
         logger.debug("", exc_info=True)
     return None
