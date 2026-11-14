@@ -42,6 +42,24 @@ class VehiclesClient(ABC):
     def remote_commands(self) -> bool:
         """Whether remote commands are enabled for this entry."""
 
+    @property
+    @abstractmethod
+    def commands_available(self) -> bool:
+        """Whether a remote command can be sent right now."""
+
+    @property
+    @abstractmethod
+    def coordinators(self) -> list:
+        """The vehicle coordinators created so far."""
+
+    @abstractmethod
+    def diagnostics(self) -> dict[str, Any]:
+        """Client-specific, secret-free sections of the diagnostics download."""
+
+    @abstractmethod
+    async def send_abrp_data(self, params: dict[str, Any]) -> None:
+        """Push telemetry to A Better Routeplanner."""
+
     @abstractmethod
     async def get_user_vehicles(self, force: bool = False) -> list[dict[str, Any]]:
         """Return the vehicles of the account, each with at least a ``vin``."""

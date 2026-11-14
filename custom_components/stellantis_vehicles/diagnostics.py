@@ -72,9 +72,6 @@ async def async_get_config_entry_diagnostics(
             },
         }
 
-    oauth_config = stellantis.get_config("oauth") or {}
-    mqtt_config = stellantis.get_config("mqtt") or {}
-
     return {
         "entry": {
             "state": entry.state.value,
@@ -93,23 +90,10 @@ async def async_get_config_entry_diagnostics(
             "mqtt_live_updates": stellantis.get_config(FIELD_MQTT_LIVE_UPDATES),
             "notifications": stellantis.get_config(FIELD_NOTIFICATIONS),
         },
-        "oauth": {
-            # "expires_in" holds the ISO timestamp of the expiry moment.
-            "token_expires_at": oauth_config.get("expires_in"),
-            "refresh_scheduled": stellantis._oauth_token_scheduled is not None,  # noqa: SLF001
-        },
-        "mqtt": {
-            "enabled": stellantis.remote_commands,
-            "connected": bool(
-                stellantis._mqtt is not None and stellantis._mqtt.is_connected()  # noqa: SLF001
-            ),
-            "token_expires_at": mqtt_config.get("expires_in"),
-            "refresh_token_expires_at": mqtt_config.get("refresh_token_expires_at"),
-            "refresh_scheduled": stellantis._mqtt_token_scheduled is not None,  # noqa: SLF001
-        },
+        **stellantis.diagnostics(),
         "vehicles": [
             _coordinator_diagnostics(coordinator)
-            for coordinator in stellantis._coordinator_dict.values()  # noqa: SLF001
+            for coordinator in stellantis.coordinators
         ],
     }
 
@@ -181,11 +165,10 @@ def _coordinator_diagnostics(
         "raw_status": _scrub_substrings(
             async_redact_data(coordinator.data, TO_REDACT), secrets
         ),
-        # Keyed by "fds" code; holds only service names and MQTT service
-        # groups, nothing that needs redacting.
+        # Holds only service names and service groups, nothing that needs redacting.
         "supported_features": coordinator.supported_features,
-        # Last accepted MQTT vehicle event, parsed (see parse_mqtt_event).
-        "mqtt_state": _scrub_substrings(
-            async_redact_data(coordinator.mqtt_state, TO_REDACT), secrets
+        # Client-specific state (PSA: the last accepted MQTT vehicle event).
+        **_scrub_substrings(
+            async_redact_data(coordinator.diagnostics(), TO_REDACT), secrets
         ),
     }

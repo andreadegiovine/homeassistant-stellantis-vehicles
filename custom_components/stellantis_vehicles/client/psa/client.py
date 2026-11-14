@@ -27,7 +27,7 @@ from homeassistant.util.ssl import client_context
 # connect_mqtt() (see the commented line there).
 # from homeassistant.util.ssl import client_context, client_context_no_verify
 
-from ...base import StellantisVehicleCoordinator
+from .coordinator import PsaVehicleCoordinator
 from ...interfaces import VehiclesClient
 from .otp.otp import Otp, save_otp, load_otp, ConfigException
 from ...utils import ( get_datetime, rate_limit, SENSITIVE_DATA_FILTER, replace_string_placeholders, log_call, resolve_mqtt_resp_data_error )
@@ -608,7 +608,7 @@ class StellantisVehicles(StellantisOauth, VehiclesClient):
         if vin in self._coordinator_dict:
             return self._coordinator_dict[vin]
         translations = await translation.async_get_translations(self._hass, self._hass.config.language, "entity", {DOMAIN})
-        coordinator = StellantisVehicleCoordinator(self._hass, self._config, vehicle, self, translations, config_entry=self._entry)
+        coordinator = PsaVehicleCoordinator(self._hass, self._config, vehicle, self, translations, config_entry=self._entry)
         self._coordinator_dict[vin] = coordinator
         return coordinator
 
@@ -683,6 +683,33 @@ class StellantisVehicles(StellantisOauth, VehiclesClient):
         # pattern shrinks back. No-op if set_entry() never ran.
         if self._entry is not None:
             self.logger_filter.remove_entry_values(self._entry.entry_id)
+
+    @property
+    def commands_available(self) -> bool:
+        """ Whether the MQTT channel remote commands go through is connected. """
+        return bool(self._mqtt and self._mqtt.is_connected() and self._mqtt_connected)
+
+    @property
+    def coordinators(self) -> list[PsaVehicleCoordinator]:
+        return list(self._coordinator_dict.values())
+
+    def diagnostics(self) -> dict[str, Any]:
+        oauth_config = self.get_config("oauth") or {}
+        mqtt_config = self.get_config("mqtt") or {}
+        return {
+            "oauth": {
+                # "expires_in" holds the ISO timestamp of the expiry moment.
+                "token_expires_at": oauth_config.get("expires_in"),
+                "refresh_scheduled": self._oauth_token_scheduled is not None,
+            },
+            "mqtt": {
+                "enabled": self.remote_commands,
+                "connected": bool(self._mqtt is not None and self._mqtt.is_connected()),
+                "token_expires_at": mqtt_config.get("expires_in"),
+                "refresh_token_expires_at": mqtt_config.get("refresh_token_expires_at"),
+                "refresh_scheduled": self._mqtt_token_scheduled is not None,
+            },
+        }
 
     async def async_start(self) -> None:
         await self.scheduled_tokens_refresh()

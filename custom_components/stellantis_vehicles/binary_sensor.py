@@ -65,8 +65,8 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 class StellantisRemoteCommandsBinarySensor(StellantisBaseEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
-        """ MQTT connection state, same check as available_command. """
-        return bool(self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected() and self._stellantis._mqtt_connected)
+        """ Remote commands channel state, same check as available_command. """
+        return bool(self._stellantis and self._stellantis.commands_available)
 
     def coordinator_update(self) -> None:
         pass
