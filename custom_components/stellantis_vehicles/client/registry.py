@@ -4,9 +4,12 @@ from homeassistant.core import HomeAssistant
 from ..const import FIELD_CLIENT, CLIENT_PSA
 from ..interfaces import VehiclesClient
 from .psa.client import StellantisVehicles
+from .leapmotor.client import LeapmotorVehicles
+from .leapmotor.const import CLIENT_LEAPMOTOR
 
 CLIENTS: dict[str, type[VehiclesClient]] = {
     CLIENT_PSA: StellantisVehicles,
+    CLIENT_LEAPMOTOR: LeapmotorVehicles,
 }
 
 

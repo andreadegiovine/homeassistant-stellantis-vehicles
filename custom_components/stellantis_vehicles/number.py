@@ -55,7 +55,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
         )
         entities.extend([StellantisBaseNumber(coordinator, description, UPDATE_INTERVAL)])
 
-    async_add_entities(entities)
+    async_add_entities([entity for entity in entities if entity._coordinator.supports("number", entity._key)])
 
 
 class StellantisChargingLimitNumber(StellantisBaseNumber):

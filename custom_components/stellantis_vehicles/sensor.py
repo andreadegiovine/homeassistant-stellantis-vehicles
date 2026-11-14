@@ -101,7 +101,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 
 #         await coordinator.async_request_refresh()
 
-    async_add_entities(entities)
+    async_add_entities([entity for entity in entities if entity._coordinator.supports("sensor", entity._key)])
 
 
 class StellantisTypeSensor(StellantisRestoreSensor):

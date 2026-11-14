@@ -13,6 +13,8 @@ from homeassistant.const import (
 
 from .utils import extract_oauth_code, get_datetime, log_call
 from .client.psa.client import StellantisOauth
+from .client.leapmotor.client import LeapmotorVehicles
+from .client.leapmotor.api import LeapmotorAuthError, LeapmotorCertificateError
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
@@ -28,7 +30,14 @@ from .const import (
     FIELD_ANONYMIZE_LOGS,
     FIELD_MQTT_LIVE_UPDATES,
     FIELD_RECONFIGURE,
+    FIELD_CLIENT,
     TRANSLATION_PLACEHOLDERS
+)
+
+from .client.leapmotor.const import (
+    CLIENT_LEAPMOTOR,
+    MOBILE_APP as LEAPMOTOR_MOBILE_APP,
+    FIELD_DEVICE_ID
 )
 
 from .client.psa.const import (
@@ -40,7 +49,7 @@ from .client.psa.const import (
 _LOGGER = logging.getLogger(__name__)
 
 MOBILE_APP_SCHEMA = vol.Schema({
-    vol.Required(FIELD_MOBILE_APP): selector({ "select": { "options": list(MOBILE_APPS), "mode": "dropdown", "translation_key": FIELD_MOBILE_APP } })
+    vol.Required(FIELD_MOBILE_APP): selector({ "select": { "options": list(MOBILE_APPS) + [LEAPMOTOR_MOBILE_APP], "mode": "dropdown", "translation_key": FIELD_MOBILE_APP } })
 })
 
 def COUNTRY_SCHEMA(mobile_app):
@@ -68,6 +77,14 @@ def OTP_CONFIGURE_SCHEMA(default_remote_commands=False):
         vol.Required(FIELD_REMOTE_COMMANDS, default=default_remote_commands): bool
     })
 
+def LEAPMOTOR_SCHEMA(default_email=None):
+    return vol.Schema({
+        vol.Required(CONF_EMAIL, default=default_email) if default_email else vol.Required(CONF_EMAIL): str,
+        vol.Required(CONF_PASSWORD): str,
+        # Without the vehicle PIN the vehicle is read-only.
+        vol.Optional(FIELD_PIN_CODE): str
+    })
+
 OTP_SCHEMA = vol.Schema({
     vol.Required(FIELD_SMS_CODE): str,
     vol.Required(FIELD_PIN_CODE): str
@@ -86,8 +103,9 @@ def OPTIONS_SCHEMA(reconfig=None):
         vol.Required(FIELD_ANONYMIZE_LOGS, default=defaults[FIELD_ANONYMIZE_LOGS]): bool
     }
     # MQTT events only arrive with remote commands; entries without the key
-    # have them enabled (see StellantisVehicles.remote_commands).
-    if defaults.get(FIELD_REMOTE_COMMANDS) is not False:
+    # have them enabled (see StellantisVehicles.remote_commands). Leapmotor
+    # has no live channel at all.
+    if defaults.get(FIELD_REMOTE_COMMANDS) is not False and defaults.get(FIELD_CLIENT) != CLIENT_LEAPMOTOR:
         schema[vol.Required(FIELD_MQTT_LIVE_UPDATES, default=defaults[FIELD_MQTT_LIVE_UPDATES])] = bool
     return vol.Schema(schema)
 
@@ -129,7 +147,51 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=MOBILE_APP_SCHEMA)
 
         self.data.update(user_input)
+        if user_input[FIELD_MOBILE_APP] == LEAPMOTOR_MOBILE_APP:
+            return await self.async_step_leapmotor()
         return await self.async_step_country()
+
+
+    async def async_step_leapmotor(self, user_input=None):
+        """ Leapmotor account: credentials and, for remote commands, the vehicle PIN. """
+        if user_input is None:
+            return self.async_show_form(step_id="leapmotor", data_schema=LEAPMOTOR_SCHEMA(self.data.get(CONF_EMAIL)))
+
+        pin_code = (user_input.get(FIELD_PIN_CODE) or "").strip()
+        account = {
+            FIELD_CLIENT: CLIENT_LEAPMOTOR,
+            FIELD_MOBILE_APP: LEAPMOTOR_MOBILE_APP,
+            FIELD_COUNTRY_CODE: "",
+            CONF_EMAIL: user_input[CONF_EMAIL].strip(),
+            CONF_PASSWORD: user_input[CONF_PASSWORD],
+            FIELD_PIN_CODE: pin_code,
+            FIELD_REMOTE_COMMANDS: bool(pin_code),
+            # The session is bound to a device id: keep the same one for good.
+            FIELD_DEVICE_ID: self.data.get(FIELD_DEVICE_ID) or uuid4().hex
+        }
+        # The login needs the mobile app certificate: the client downloads it
+        # into the Home Assistant storage folder the first time.
+        leapmotor = LeapmotorVehicles(self.hass)
+        leapmotor.save_config(account)
+        error = None
+        try:
+            user_id = await leapmotor.async_login()
+        except LeapmotorAuthError:
+            error = "leapmotor_login"
+        except LeapmotorCertificateError as e:
+            _LOGGER.error("Leapmotor app certificate error: %s", e)
+            error = "leapmotor_certificate"
+        except Exception as e:
+            _LOGGER.error("Leapmotor login error: %s", e)
+            error = "leapmotor_connection"
+        finally:
+            await leapmotor.close_session()
+        if error:
+            return self.async_show_form(step_id="leapmotor", data_schema=LEAPMOTOR_SCHEMA(account[CONF_EMAIL]), errors={"base": error})
+
+        self.data.update(account)
+        self.data.update({"customer_id": f"LM-{user_id}"})
+        return await self.async_step_options()
 
 
     async def async_step_country(self, user_input=None):
@@ -319,6 +381,11 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
     async def async_step_reconfigure(self, user_input=None):
+        if self._get_reconfigure_entry().data.get(FIELD_CLIENT) == CLIENT_LEAPMOTOR:
+            # One form covers it all: credentials, vehicle PIN, then the options.
+            self.data = dict(self._get_reconfigure_entry().data)
+            return await self.async_step_leapmotor()
+
         if user_input is None:
             return self.async_show_form(step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA)
 
@@ -345,6 +412,10 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @log_call
     async def async_step_reauth(self, entry_data):
+        if entry_data.get(FIELD_CLIENT) == CLIENT_LEAPMOTOR:
+            self.data = dict(entry_data)
+            return await self.async_step_leapmotor()
+
         self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP], FIELD_COUNTRY_CODE: entry_data[FIELD_COUNTRY_CODE]})
         if FIELD_OAUTH_CODE_URL in entry_data:
             self.data.update({FIELD_OAUTH_CODE_URL: entry_data[FIELD_OAUTH_CODE_URL]})

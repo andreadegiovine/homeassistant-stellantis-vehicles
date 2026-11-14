@@ -57,6 +57,14 @@
         "data": {
           "reconfigure": "Riconfigura"
         }
+      },
+      "leapmotor": {
+        "description": "Usa un **secondo account Leapmotor** con il veicolo condiviso (tutti i permessi, durata permanente): Leapmotor consente una sola sessione per account, quindi usare qui l'account dell'app ufficiale disconnette l'app.\n\nIl PIN del veicolo serve solo per i comandi remoti; lascialo vuoto per un veicolo in sola lettura.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "pin_code": "PIN del veicolo (opzionale)"
+        }
       }
     },
     "error": {
@@ -69,7 +77,10 @@
       "get_mqtt_access_token_nok_access": "Codice SMS o codice pin errato",
       "get_mqtt_access_token_nok_maxnbtools": "Limite di associazioni / SMS ricevuti, ripristina il tuo account Stellantis e riprova",
       "get_mqtt_access_token_nok_nok_blocked": "Limite di pin errati, inizia nuovamente la configurazione",
-      "get_mqtt_access_token_rate_limit": "Limite di di richieste access token mqtt raggiunto (6 al giorno)"
+      "get_mqtt_access_token_rate_limit": "Limite di di richieste access token mqtt raggiunto (6 al giorno)",
+      "leapmotor_login": "Leapmotor ha rifiutato email o password",
+      "leapmotor_certificate": "Impossibile scaricare il certificato dell'app Leapmotor, o certificato non valido: vedi il log",
+      "leapmotor_connection": "Impossibile raggiungere il cloud Leapmotor: vedi il log"
     },
     "abort": {
       "already_configured": "Account già configurato",
@@ -435,6 +446,9 @@
     },
     "command_not_sent": {
       "message": "Impossibile inviare \"{name}\" al veicolo. Dettagli nel log."
+    },
+    "command_refused": {
+      "message": "Il veicolo non ha accettato il comando: {reason}"
     }
   },
   "common": {

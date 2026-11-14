@@ -53,7 +53,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             )
             entities.extend([StellantisBaseSwitch(coordinator, description)])
 
-    async_add_entities(entities)
+    async_add_entities([entity for entity in entities if entity._coordinator.supports("switch", entity._key)])
 
 
 class StellantisBatteryChargingLimitSwitch(StellantisBaseSwitch):

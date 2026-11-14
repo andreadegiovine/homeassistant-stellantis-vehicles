@@ -83,6 +83,10 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         """ Client-specific runtime state for the diagnostics download. """
         return {}
 
+    def supports(self, platform: str, key: str) -> bool:
+        """ Whether the client can serve the entity ``key`` of a platform. """
+        return True
+
     @log_call
     async def _async_update_data(self) -> dict[str, Any] | None:
         """ Update vehicle data from the cloud client. """

@@ -265,7 +265,7 @@ class SensitiveDataFilter(logging.Filter):
       registering every token value seen.
     """
 
-    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token")
+    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token", "password", "pin_code", "email")
     CUSTOM_VALUES_LIMIT = 128
     REDACT_KEYS = ("lastPosition", "coordinates", "latitude", "longitude", "tlm", "notification_url")
     _PAGE_TOKEN_RE = re.compile(r"(pageToken=)[^&\"'\s]+")

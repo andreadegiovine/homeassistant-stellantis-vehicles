@@ -59,7 +59,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             )
             entities.extend([StellantisCommandPendingBinarySensor(coordinator, description)])
 
-    async_add_entities(entities)
+    async_add_entities([entity for entity in entities if entity._coordinator.supports("binary_sensor", entity._key)])
 
 
 class StellantisRemoteCommandsBinarySensor(StellantisBaseEntity, BinarySensorEntity):
