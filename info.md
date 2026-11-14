@@ -111,6 +111,16 @@ Thanks to [@benbox69](https://github.com/benbox69) for creating this awesome ext
 
 </details>
 
+## Leapmotor (beta)
+Leapmotor vehicles (international cloud: T03, B05, B10, C10, ...) are set up by choosing **Leapmotor** as vehicle mobile app.
+
+- **Use a second Leapmotor account**: Leapmotor allows one session per account, so using here the account of the official app logs the app out. Create a second account and, from the official app, share the vehicle with it with all permissions and no expiry.
+- **Vehicle PIN**: only needed for remote commands; without it the vehicle is read-only.
+- **App certificate**: the Leapmotor login requires the TLS certificate of the official app. It is not shipped with this integration: it is downloaded once during setup and stored in `.storage/stellantis_vehicles/leapmotor/` (`app_cert.pem`, `app_key.pem`). Files already there are used as they are.
+- **Updates**: the Leapmotor cloud is polled, there is no live channel.
+
+Available: battery, range, mileage, speed, outside temperature, charging state, doors, lock state, position, lock / unlock, find my car (horn button), air conditioning start / stop, ABRP.
+
 ## Commands
 To use remote commands, the "E-remote" or "Connect Plus" service must be activated and configured in the vehicle.
 
@@ -318,9 +328,9 @@ Kristian
 <sub>*and other heroes*</sub>
 
 **⭐ 1 BEERS**  
+Harald  
 Someone  
 Fritz  
-Carl-Magnus Johansson  
 <sub>*and other heroes*</sub>
 
 ### Want to join the Club?
