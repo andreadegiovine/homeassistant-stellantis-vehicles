@@ -119,9 +119,17 @@ Leapmotor vehicles (international cloud: T03, B05, B10, C10, ...) are set up by 
 - **App certificate**: the Leapmotor login requires the TLS certificate of the official app. It is not shipped with this integration: it is downloaded once during setup and stored in `.storage/stellantis_vehicles/leapmotor/` (`app_cert.pem`, `app_key.pem`). Files already there are used as they are.
 - **Updates**: the Leapmotor cloud is polled, there is no live channel.
 
-Available: vehicle picture, battery, battery energy, range, mileage, speed, outside temperature, charging state, last charge, last trip, doors, lock state, position, lock / unlock, find my car (horn button), air conditioning start / stop, battery preheating, charge limit (the limit held by the vehicle, not on T03), ABRP.
+Available: vehicle picture, battery, battery energy, range, mileage, speed, outside temperature, charging state, last charge, last trip, doors, lock state, position, ABRP.
 
-Leapmotor has no trips service: the last trip is built by the integration from the vehicle status, so it is as precise as the refresh interval and only covers trips made while Home Assistant is running.
+Remote commands (vehicle PIN required): lock / unlock, find my car (horn button), air conditioning start / stop, battery preheating, charge limit, scheduled charging (start time and on / off).
+
+- **Charge limit**: the slider sets the limit held by the vehicle (up to 100%), not the one managed by the integration as for the other brands.
+- **Scheduled charging**: the start time sets the start of the vehicle charging plan and turns the schedule on; the "Scheduled charging" switch turns it on / off. Charge limit and scheduled charging are not available on T03.
+- **Last trip**: Leapmotor has no trips service, so the last trip is built by the integration from the vehicle status: it is as precise as the refresh interval and only covers trips made while Home Assistant is running.
+
+The vehicle card works with Leapmotor vehicles too and shows the charge limit and the charging start time of the vehicle.
+
+Credits: the Leapmotor cloud protocol follows the work of [kerniger/leapmotor-ha](https://github.com/kerniger/leapmotor-ha) (MIT) and [markoceri/leapmotor-api](https://github.com/markoceri/leapmotor-api); the app certificate is downloaded from [markoceri/leapmotor-certs](https://github.com/markoceri/leapmotor-certs).
 
 ## Commands
 To use remote commands, the "E-remote" or "Connect Plus" service must be activated and configured in the vehicle.
@@ -291,6 +299,7 @@ Thanks to all users who contribute to this integration by updating translations 
 - [@MoellerDi](https://github.com/MoellerDi) for the great work and big support;
 - [@benbox69](https://github.com/benbox69) for the python oauth2 helper tool;
 - [@khenderick](https://github.com/khenderick) for the great work and big support;
+- [@kerniger](https://github.com/kerniger) and [@markoceri](https://github.com/markoceri) for the Leapmotor cloud protocol and app certificate;
 
 Thanks to everyone for the issues, especially to:
 - [@chmtc94](https://github.com/chmtc94);
