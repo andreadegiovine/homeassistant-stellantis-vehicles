@@ -135,6 +135,14 @@ class LeapmotorVehicles(BaseVehiclesClient, VehiclesClient):
                     raise
                 except Exception as err:
                     _LOGGER.debug("Could not read the status of a vehicle to tell its engine type: %s", err)
+                try:
+                    picture = await self.resize_and_save_picture(None, vehicle["vin"], lambda vin=vehicle["vin"]: self._call("picture", vin))
+                    if picture:
+                        vehicle["picture"] = picture
+                except ConfigEntryAuthFailed:
+                    raise
+                except Exception as err:
+                    _LOGGER.warning("Unable to download and save the vehicle picture: %s", err)
                 vehicles.append(vehicle)
             ids = {value for vehicle in vehicles for value in (vehicle["vin"], vehicle["vehicle_id"]) if value}
             if self._entry is not None:

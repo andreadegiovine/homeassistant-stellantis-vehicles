@@ -158,7 +158,13 @@ class BaseVehiclesClient:
         self._coordinator_dict[vin] = coordinator
         return coordinator
 
-    async def resize_and_save_picture(self, url, vin):
+    async def resize_and_save_picture(self, url, vin, load=None):
+        """ Save the vehicle picture under www once and return its local URL.
+
+        ``load`` is an async function returning the image bytes, for a picture
+        that is not served at a plain URL; it is only called if no picture is
+        saved yet.
+        """
         public_path = self._hass.config.path("www")
         customer_id = self.get_config("customer_id")
         if not os.path.isdir(public_path):
@@ -171,10 +177,15 @@ class BaseVehiclesClient:
         image_url = image_path.replace(public_path, "/local")
         if os.path.isfile(image_path):
             return image_url
-        session = async_get_clientsession(self._hass)
-        async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-            resp.raise_for_status()
-            image_data = await resp.read()
+        if load is not None:
+            image_data = await load()
+            if not image_data:
+                return url
+        else:
+            session = async_get_clientsession(self._hass)
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                resp.raise_for_status()
+                image_data = await resp.read()
 
         def _resize_and_save() -> None:
             with Image.open(BytesIO(image_data)) as im:

@@ -67,6 +67,14 @@ async def test_login_then_vehicles_and_status():
     assert cloud.contexts[0] is not cloud.contexts[1] and cloud.contexts[1] is cloud.contexts[2]
 
 
+async def test_vehicle_picture_is_taken_out_of_the_app_package():
+    cloud = FakeCloud()
+    picture = await _api(cloud).picture(VIN)
+    assert picture.startswith(b"\x89PNG")
+    cloud.has_picture = False
+    assert await _api(cloud).picture(VIN) is None
+
+
 async def test_wrong_credentials_raise_an_auth_error():
     with pytest.raises(LeapmotorAuthError):
         await _api(FakeCloud(), password="wrong").vehicles()

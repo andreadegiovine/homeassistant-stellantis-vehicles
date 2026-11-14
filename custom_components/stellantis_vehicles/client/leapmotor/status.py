@@ -213,6 +213,10 @@ def normalize_status(status: dict[str, Any]) -> dict[str, Any]:
         "createdAt": created_at,
         "extension": {"electric": {"charging": _charging_section(signals)}},
     }
+    # Energy left in the battery, in Wh like the PSA API reports it.
+    available_energy = _float(status.get("dumpEnergy"))
+    if available_energy is not None and available_energy > 0:
+        electric["extension"]["electric"]["battery"] = {"load": {"residual": available_energy}}
     result["energies"] = [electric]
     result["energy"] = [{"type": "Electric", "updatedAt": created_at}]
     if has_fuel(status):

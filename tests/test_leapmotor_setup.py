@@ -9,7 +9,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.stellantis_vehicles.const import DOMAIN, INTEGRATION_VERSION
 from custom_components.stellantis_vehicles.client.leapmotor.client import LeapmotorVehicles
 
-from .leapmotor_fakes import FakeCloud, PIN, VIN, make_certificate
+from .leapmotor_fakes import FakeCloud, PIN, STATUS, VIN, make_certificate
 
 APP_CERT = make_certificate()[:2]
 
@@ -66,13 +66,57 @@ async def test_entry_sets_up_with_the_shared_entities(hass, cloud):
     assert (tracker.attributes["latitude"], tracker.attributes["longitude"]) == (45.46, 9.19)
 
     # What Leapmotor has no equivalent for is not created at all.
-    for platform, key in (("sensor", "oil_temperature"), ("sensor", "last_trip"), ("button", "wakeup"), ("button", "lights"),
+    for platform, key in (("sensor", "oil_temperature"), ("sensor", "days_before_maintenance"), ("button", "wakeup"), ("button", "lights"),
                           ("button", "charge_start"), ("time", "battery_charging_start"), ("switch", "battery_values_correction")):
         assert _state(hass, platform, key) is None, key
     assert _state(hass, "button", "doors_lock") is not None
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert cloud.closed
+
+
+async def test_vehicle_picture_is_saved_once_and_shown_by_the_tracker(hass, cloud, tmp_path):
+    hass.config.config_dir = str(tmp_path)
+    (tmp_path / "www").mkdir()
+    entry = _entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    picture = tmp_path / "www" / DOMAIN / "LM-424242" / f"{VIN}.png"
+    assert picture.is_file()
+    assert _state(hass, "device_tracker", "vehicle").attributes["entity_picture"] == f"/local/{DOMAIN}/LM-424242/{VIN}.png"
+
+    # A saved picture is not downloaded again.
+    await entry.runtime_data.get_user_vehicles(force=True)
+    assert cloud.endpoints().count("/vehicle/v1/carpicture/key") == 1
+
+
+async def test_last_trip_is_built_from_the_statuses(hass, cloud):
+    entry = _entry(hass)
+    cloud.status = {**STATUS, "dumpEnergy": 30000}
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = entry.runtime_data.coordinators[0]
+
+    def status(minutes, **signals):
+        return {"outdoorTemp": 11, "dumpEnergy": signals.pop("energy"), "signal": {**STATUS["signal"], "1149": 0, "sts": STATUS["signal"]["sts"] + minutes * 60000, **signals}}
+
+    for cloud.status in (
+        status(1, energy=30000, **{"1258": 1, "1010": 3, "1319": 0}),
+        status(2, energy=29000, **{"1258": 1, "1010": 3, "1319": 72, "1318": 12346}),
+        status(11, energy=27000, **{"1258": 0, "1010": 0, "1319": 0, "1318": 12357}),
+    ):
+        await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    trip = _state(hass, "sensor", "last_trip")
+    assert float(trip.state) == 12
+    assert trip.attributes["duration"] == "00:10:00"
+    assert trip.attributes["start_mileage"] == "12345.0 km"
+    assert trip.attributes["avg_speed"] == "72.0 km/h"
+    assert trip.attributes["max_speed"] == "72.0 km/h"
+    assert trip.attributes["electric_consumption"] == "3.0 kWh"
+    assert trip.attributes["electric_avg_consumption"] == "25.0 kWh/100km"
+    assert float(_state(hass, "sensor", "battery_residual").state) == 27
 
 
 async def test_lock_button_sends_the_command_and_records_its_result(hass, cloud):
