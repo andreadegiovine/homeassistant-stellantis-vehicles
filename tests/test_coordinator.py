@@ -33,6 +33,13 @@ async def test_update_merges_maintenance_and_stops_polling_it_when_empty(hass):
     assert client.get_vehicle_maintenance.await_count == 2
 
 
+async def test_entities_of_other_clients_are_not_created_for_psa(hass):
+    coordinator, _ = _make(hass, {})
+    assert coordinator.supports("switch", "abrp_sync")
+    assert not coordinator.supports("switch", "battery_preheating")
+    assert not coordinator.has_vehicle_charge_limit
+
+
 async def test_mqtt_lock_change_overlays_rest_data(hass):
     status = {"updatedAt": "2026-11-14T10:00:00Z", "doorsState": {"lockedStates": ["Unlocked"], "createdAt": "2026-11-14T10:00:00Z"}}
     coordinator, _ = _make(hass, status)

@@ -125,6 +125,10 @@ class LeapmotorVehicles(BaseVehiclesClient, VehiclesClient):
                     "car_type": str(item.get("carType") or ""),
                     "shared": bool(item.get("shared")),
                     "brand": MOBILE_APP,
+                    # What the account may do with the vehicle (a shared one
+                    # only gets what the owner granted), for the diagnostics.
+                    "rights": item.get("rightList"),
+                    "abilities": item.get("abilities"),
                     "type": VEHICLE_TYPE_ELECTRIC,
                 }
                 # A range extender only shows in the status: it reports fuel.
@@ -163,6 +167,9 @@ class LeapmotorVehicles(BaseVehiclesClient, VehiclesClient):
     async def send_remote_command(self, vehicle: dict[str, Any], command_id: str, command_content: str) -> dict[str, Any]:
         """ Send a remote command; returns what wait_remote_command needs to follow it. """
         return await self._call("remote_control", vehicle["vin"], command_id, command_content, str(self._secrets.get(FIELD_PIN_CODE)))
+
+    async def get_charging_plan(self, vehicle: dict[str, Any]) -> dict[str, Any]:
+        return await self._call("charging_plan", vehicle["vin"])
 
     async def wait_remote_command(self, control: dict[str, Any]) -> bool:
         return await self._call("wait_remote_control", control)

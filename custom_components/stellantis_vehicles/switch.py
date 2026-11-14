@@ -1,10 +1,10 @@
 import logging
 
 from homeassistant.core import HomeAssistant
-from homeassistant.components.switch import SwitchEntityDescription
+from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.const import EntityCategory
 
-from .base import StellantisBaseSwitch
+from .base import StellantisBaseEntity, StellantisBaseSwitch
 
 from .const import (
     VEHICLE_TYPE_ELECTRIC,
@@ -53,6 +53,15 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             )
             entities.extend([StellantisBaseSwitch(coordinator, description)])
 
+        description = SwitchEntityDescription(
+            name = "battery_preheating",
+            key = "battery_preheating",
+            translation_key = "battery_preheating",
+            icon = "mdi:heat-wave"
+        )
+        if stellantis.remote_commands and coordinator.supports("switch", "battery_preheating"):
+            entities.extend([StellantisBatteryPreheatingSwitch(coordinator, description)])
+
     async_add_entities([entity for entity in entities if entity._coordinator.supports("switch", entity._key)])
 
 
@@ -66,3 +75,24 @@ class StellantisAbrpSyncSwitch(StellantisBaseSwitch):
     @property
     def available(self):
         return super().available and self._coordinator._sensors.get("text_abrp_token") and len(self._coordinator._sensors.get("text_abrp_token")) == 36
+
+class StellantisBatteryPreheatingSwitch(StellantisBaseEntity, SwitchEntity):
+    """ Battery preheating: a remote command, its state comes from the vehicle. """
+
+    @property
+    def available(self):
+        return self.available_command
+
+    @property
+    def is_on(self):
+        status = (self._coordinator.data or {}).get("batteryPreheating", {}).get("status")
+        return None if status is None else status == "Enabled"
+
+    async def async_turn_on(self, **kwargs) -> None:
+        await self._coordinator.send_battery_preheating_command(self.name, True)
+
+    async def async_turn_off(self, **kwargs) -> None:
+        await self._coordinator.send_battery_preheating_command(self.name, False)
+
+    def coordinator_update(self):
+        return True

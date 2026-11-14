@@ -59,6 +59,32 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
 
 
 class StellantisChargingLimitNumber(StellantisBaseNumber):
+    """ Charge limit: enforced by the integration, or held by the vehicle where it has its own. """
+
+    @property
+    def _held_by_vehicle(self):
+        return self._coordinator.has_vehicle_charge_limit
+
     @property
     def available(self):
+        if self._held_by_vehicle:
+            return super().available and self.available_command
         return super().available and self._coordinator._sensors.get("battery_charging_limit", None) != "Partial"
+
+    @property
+    def native_max_value(self):
+        # A limit held by the vehicle can also be "charge to full".
+        return 100 if self._held_by_vehicle else super().native_max_value
+
+    @property
+    def native_value(self):
+        if self._held_by_vehicle:
+            return self._coordinator.vehicle_charge_limit
+        return super().native_value
+
+    async def async_set_native_value(self, value:float) -> None:
+        if self._held_by_vehicle:
+            await self._coordinator.send_charge_limit_value_command(self.name, int(value))
+            self.async_write_ha_state()
+            return
+        await super().async_set_native_value(value)

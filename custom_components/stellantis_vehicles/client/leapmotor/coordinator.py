@@ -1,16 +1,23 @@
 """Vehicle coordinator of the Leapmotor client: remote commands over the cloud API."""
+import json
 import logging
 from typing import Any
 
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from ...base import StellantisVehicleCoordinator
 from ...const import DOMAIN
 from ...exceptions import CommunicationError
 from ...utils import SENSITIVE_DATA_FILTER, get_datetime, parse_timestamp
 
+from .status import charging_plan, charging_plan_is_complete
+
 from .const import (
     SUPPORTED_ENTITIES,
+    COMMAND_BATTERY_PREHEATING_ON,
+    COMMAND_BATTERY_PREHEATING_OFF,
+    COMMAND_CHARGING_PLAN_ID,
+    CHARGING_PLAN_READ_ONLY_MODELS,
     TRIP_MIN_DISTANCE,
     COMMAND_LOCK,
     COMMAND_UNLOCK,
@@ -29,9 +36,60 @@ class LeapmotorVehicleCoordinator(StellantisVehicleCoordinator):
         super().__init__(*args, **kwargs)
         # Trip in progress: where and when it started, top speed so far.
         self._trip: dict[str, Any] | None = None
+        # Charge limit just sent, shown until the vehicle confirms or refuses it.
+        self._charge_limit_sent: int | None = None
+
+    @property
+    def _car_type(self) -> str:
+        return str(self._vehicle.get("car_type") or "").upper()
 
     def supports(self, platform: str, key: str) -> bool:
+        if key == "battery_charging_limit" and self._car_type in CHARGING_PLAN_READ_ONLY_MODELS:
+            return False
         return key in SUPPORTED_ENTITIES.get(platform, ())
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {
+            "car_type": self._vehicle.get("car_type"),
+            "shared": self._vehicle.get("shared"),
+            "rights": self._vehicle.get("rights"),
+            "abilities": self._vehicle.get("abilities"),
+        }
+
+    has_vehicle_charge_limit = True
+
+    @property
+    def vehicle_charge_limit(self) -> int | None:
+        if self._charge_limit_sent is not None:
+            return self._charge_limit_sent
+        try:
+            return int(float(((self.data or {}).get("chargingPlan") or {}).get("percent")))
+        except (TypeError, ValueError):
+            return None
+
+    async def send_charge_limit_value_command(self, name: str, value: int) -> None:
+        """ Write the charging plan back with the new limit, everything else unchanged. """
+        plan = (self.data or {}).get("chargingPlan") or {}
+        if not charging_plan_is_complete(plan):
+            # The status does not always carry the whole plan.
+            stored = charging_plan(await self._stellantis.get_charging_plan(self._vehicle))
+            plan = {key: plan.get(key) if plan.get(key) not in (None, "") else stored.get(key) for key in stored}
+        if not charging_plan_is_complete(plan):
+            raise ServiceValidationError(translation_domain = DOMAIN, translation_key = "charging_plan_incomplete")
+        content = json.dumps({
+            "chargeEnable": 1 if int(float(plan["isEnable"])) else 0,
+            "chargesoc": int(value),
+            "circulation": int(float(plan.get("circulation") or 0)),
+            "cycles": str(plan["cycles"]),
+            "endtime": str(plan["endTime"]),
+            "recharge": int(float(plan.get("recharge") or 0)),
+            "starttime": str(plan["beginTime"]),
+        }, separators=(",", ":"))
+        await self.send_command(name, COMMAND_CHARGING_PLAN_ID, content)
+        self._charge_limit_sent = int(value)
+
+    async def send_battery_preheating_command(self, name: str, enable: bool) -> None:
+        await self.send_command(name, *(COMMAND_BATTERY_PREHEATING_ON if enable else COMMAND_BATTERY_PREHEATING_OFF))
 
     async def after_async_update_data(self, new_data: dict[str, Any]) -> None:
         self._track_trip(new_data)
@@ -104,6 +162,14 @@ class LeapmotorVehicleCoordinator(StellantisVehicleCoordinator):
         await self.update_command_history(action_id, update)
         if update == "0":
             await self.async_request_refresh()
+        if update != "0":
+            # Not applied: back to what the vehicle reports.
+            self._charge_limit_sent = None
+            self.async_update_listeners()
+
+    def _prepare_new_data(self, new_data: dict[str, Any]) -> None:
+        # A newer status tells the charge limit itself again.
+        self._charge_limit_sent = None
 
     async def send_doors_command(self, button_name, action):
         await self.send_command(button_name, *(COMMAND_LOCK if action == "lock" else COMMAND_UNLOCK))
