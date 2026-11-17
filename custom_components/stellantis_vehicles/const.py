@@ -19,6 +19,9 @@ with open(os.path.dirname(os.path.abspath(__file__)) + "/manifest.json", "r") as
     if patch < 10:
         patch = f"0{patch}"
     INTEGRATION_VERSION = int(f"{versions[0]}{minor}{patch}")
+    # The full version, betas included: the card URL changes with every
+    # release, so browsers do not keep running the card of a previous one.
+    CARD_URL = f"/stellantis_vehicles/{manifest['version']}/stellantis-vehicle-card.js"
 
 KWH_CORRECTION = 1.343
 MS_TO_KMH_CONVERSION = 3.6

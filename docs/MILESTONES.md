@@ -43,12 +43,21 @@ Branch di lavoro: `develop`.
 - Editor: i selettori delle entità offrono solo quelle del veicolo scelto e vengono ricostruiti quando si cambia veicolo.
 - Il componente dell'orario viene caricato dalla card (prima restava vuoto se la dashboard non aveva altre righe orario).
 
-## 6. Verifiche
+## 6. Documentazione
+- `README.md`: menu, tabella marchi (Details, Brand, Credits) e solo le sezioni comuni (Installation, Screenshot, Vehicle Card, Card, Global preferences, ABRP, Contributors & Translations, Support the project). `info.md` è una copia del README (la crea anche il workflow `update_readme`).
+- `docs/PSA.md`: requisiti, funzioni, OAuth2, comandi, sensori batteria ed errori PSA.
+- `docs/LEAPMOTOR.md`: requisiti, funzioni, configurazione (secondo account, PIN, certificato), comandi, limiti ed errori Leapmotor.
+- `images/Leapmotor.png`: logo segnaposto (scritta su sfondo nero), da sostituire con il logo ufficiale.
+- La sezione "## Support the project" deve restare l'ultima del README: il workflow `update_readme` riscrive tutto ciò che la segue.
+
+## 7. Verifiche
 - Test (`pytest`): crittografia, API contro un cloud finto che verifica ogni firma (`tests/leapmotor_fakes.py`), normalizzazione dello stato, setup completo di una entry in Home Assistant, config flow, coordinator PSA, file OTP.
-- Istanza Home Assistant reale con cloud finto e due veicoli: config flow, entità, card (slider, orario, comandi) ed editor verificati nel browser.
+- Istanza Home Assistant reale con cloud finto e due veicoli: config flow, entità, card (slider, orario, comandi) ed editor verificati nel browser, sia su HA 2026.2 sia su HA 2026.11.1.
+- L'URL della card ora contiene la versione completa (beta incluse): prima restava uguale tra le beta e il browser poteva continuare a usare la card vecchia.
 - Sull'auto reale (diagnostica del 14/11/2026): login, lista veicoli, stato, sincronizzazione certificato, verifica PIN, comando "trova auto" e refresh del token funzionano.
 
-## 7. Da fare / da verificare sull'auto reale
+## 8. Da fare / da verificare sull'auto reale
+- Slider del limite e orario di ricarica segnalati come assenti nella card: su un'installazione pulita compaiono; da verificare con il modello dell'auto (su T03 non vengono creati) e dopo l'aggiornamento della card (cache del browser).
 - Blocca/sblocca porte non sembra funzionare: serve lo "Stato comando" dopo la pressione e la diagnostica (permessi dell'account condiviso).
 - Mai provati sull'auto: immagine veicolo, limite di ricarica, orario/switch ricarica programmata, preriscaldamento batteria, energia batteria (`dumpEnergy`), ultimo tragitto.
 - Intervallo ammesso dal limite di ricarica nell'app (oggi minimo 15%).
