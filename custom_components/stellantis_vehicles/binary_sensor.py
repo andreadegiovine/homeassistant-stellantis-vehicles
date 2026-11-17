@@ -59,14 +59,14 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             )
             entities.extend([StellantisCommandPendingBinarySensor(coordinator, description)])
 
-    async_add_entities(entities)
+    async_add_entities([entity for entity in entities if entity._coordinator.supports("binary_sensor", entity._key)])
 
 
 class StellantisRemoteCommandsBinarySensor(StellantisBaseEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
-        """ MQTT connection state, same check as available_command. """
-        return bool(self._stellantis and self._stellantis._mqtt and self._stellantis._mqtt.is_connected() and self._stellantis._mqtt_connected)
+        """ Remote commands channel state, same check as available_command. """
+        return bool(self._stellantis and self._stellantis.commands_available)
 
     def coordinator_update(self) -> None:
         pass

@@ -26,13 +26,13 @@
         }
       },
       "oauth_manual": {
-        "description": "Sledite tem korakom v **namiznem brskalniku**:\\n\\n1. pojdite na prijavno stran {oauth_link};\\n2. odprite **DevTools** (F12) in pojdite na zavihek **Network**;\\n3. prijavite se v svoj račun in kliknite zadnji potrditveni gumb;\\n4. v zavihku **Network** poiščite zgornjo zahtevo in kopirajte **{oauth_label}**;{oauth_devtools}",
+        "description": "Sledite tem korakom v **namiznem brskalniku**:\n\n1. pojdite na prijavno stran {oauth_link};\n2. odprite **DevTools** (F12) in pojdite na zavihek **Network**;\n3. prijavite se v svoj račun in kliknite zadnji potrditveni gumb;\n4. v zavihku **Network** poiščite zgornjo zahtevo in kopirajte **{oauth_label}**;{oauth_devtools}",
         "data": {
           "oauth_code": "OAuth koda"
         }
       },
       "get_access_token": {
-        "description": "**Preverjanje pristnosti uspešno zaključeno**.\\nZa uporabo oddaljenih ukazov označite spodnjo možnost in zaključite OTP korak",
+        "description": "**Preverjanje pristnosti uspešno zaključeno**.\nZa uporabo oddaljenih ukazov označite spodnjo možnost in zaključite OTP korak",
         "data": {
           "remote_commands": "Nastavi oddaljene ukaze (zahteva E-remote ali Connect Plus)"
         }
@@ -69,7 +69,8 @@
       "get_mqtt_access_token_nok_access": "Neveljavna SMS koda ali PIN koda",
       "get_mqtt_access_token_nok_maxnbtools": "Preseženo število povezanih naprav / prejetih SMS-ov, ponastavite Stellantis račun in poskusite znova",
       "get_mqtt_access_token_nok_nok_blocked": "Preveč napačnih PIN-ov, ponovno zaženite postopek konfiguracije",
-      "get_mqtt_access_token_rate_limit": "Presežena omejitev zahtev za MQTT žeton (6 na dan)"
+      "get_mqtt_access_token_rate_limit": "Presežena omejitev zahtev za MQTT žeton (6 na dan)",
+      "not_loaded": "Integracija še ni naložena, počakajte, da se namestitev zaključi, in poskusite znova"
     },
     "abort": {
       "already_configured": "Račun je že konfiguriran",
@@ -117,9 +118,6 @@
       "battery": {
         "name": "Baterija"
       },
-      "battery_soh": {
-        "name": "Zdravje baterije (SOH)"
-      },
       "battery_health_resistance": {
         "name": "Zdravje baterije (notranja upornost)"
       },
@@ -159,7 +157,27 @@
           "300": "Časovna prekoračitev",
           "500": "Napaka",
           "502": "Podvojeno",
-          "422": "Zasebnost omogočena"
+          "422": "Zasebnost omogočena",
+          "doors_state_unlocked": "Vsa vrata odklenjena",
+          "doors_state_locked": "Vsa vrata zaklenjena",
+          "doors_discarded_door_open": "Zavrnjeno - vrata so odprta",
+          "doors_request_refused": "Zavrnjeno - vrata odprta ali ključ v vozilu",
+          "doors_unknown_reason": "Zavrnjeno - neznan razlog",
+          "doors_cid_inside": "Zavrnjeno - ključ v vozilu",
+          "warning_discarded_sev_not_stop": "Zavrnjeno - motor deluje",
+          "warning_wait_before_resend": "Že izvedeno - počakajte pred ponovnim pošiljanjem",
+          "precond_discarded_sev_not_stop": "Zavrnjeno - motor deluje",
+          "precond_discarded_already_ongoing": "Zavrnjeno - že deluje",
+          "precond_discarded_communication_problem": "Zavrnjeno - težava pri komunikaciji",
+          "precond_stop_discarded_sev_not_stop": "Ustavitev zavrnjena - motor deluje",
+          "precond_stop_discarded_not_ongoing": "Ustavitev zavrnjena - ne deluje",
+          "charging_discarded_standby": "Zavrnjeno - polnilni sistem v pripravljenosti",
+          "charging_discarded_already_ongoing": "Zavrnjeno - že se polni",
+          "charging_discarded_communication_problem": "Zavrnjeno - težava s komunikacijo polnilnega sistema",
+          "charging_discarded_sev_not_stop": "Zavrnjeno - motor deluje",
+          "902": "Preverjanje stanja",
+          "507": "Ni GPS pokritosti",
+          "506": "Nepodprt telekomunikacijski ponudnik"
         }
       },
       "fuel": {
@@ -284,6 +302,7 @@
       "alarm": { "name": "Alarm" },
       "privacy": { "name": "Zasebnost" },
       "remote_commands": { "name": "Oddaljeni ukazi" },
+      "command_pending": { "name": "Ukaz v čakanju" },
       "daylight": { "name": "Dnevna svetloba" }
     },
     "button": {
@@ -351,6 +370,14 @@
       }
     }
   },
+  "exceptions": {
+    "command_already_pending": {
+      "message": "Ukaza \"{name}\" ni mogoče poslati: \"{pending_name}\" še čaka na odgovor vozila."
+    },
+    "command_not_sent": {
+      "message": "Ukaza \"{name}\" ni mogoče poslati vozilu. Podrobnosti so v dnevniku."
+    }
+  },
   "common": {
     "access_token_error_title": "Napaka dostopnega žetona",
     "access_token_error_message": "Preverite uradno dokumentacijo v razdelku [OAuth2 koda]({oauth_token_doc_link})",
@@ -359,12 +386,16 @@
     "no_vehicles_found_title": "Ni na voljo",
     "no_vehicles_found_message": "Na tem računu ni povezanih vozil",
     "command_error_title": "Ukaz",
-    "command_error_message": "Ukaz ni bil pravilno poslan"
+    "command_error_message": "Ukaz ni bil pravilno poslan",
+    "get_oauth_code_title": "Napaka OAuth kode",
+    "get_oauth_code_message": "Za ta račun ni bilo mogoče pridobiti OAuth kode. Preverite e-pošto in geslo ali poskusite znova pozneje, če oddaljena storitev za prijavo ni na voljo",
+    "reconfigure_otp_title": "Oddaljeni ukazi onemogočeni",
+    "reconfigure_otp_message": "Preverjanje pristnosti za oddaljene ukaze ni uspelo, zato so bili onemogočeni. Ponovno konfigurirajte integracijo, da jih znova omogočite"
   },
   "issues": {
     "vehicle_removed": {
       "title": "Vozilo {vin} je bilo odstranjeno z vašega računa",
-      "description": "Home Assistant prek Stellantis API-ja ne more več dostopati do vozila `{vin}` in to vozilo ni več navedeno na vašem Stellantis računu. To običajno pomeni, da je bilo vozilo prodano ali preklicano iz povezave. Če želite odpraviti to težavo, morate vozilo odstraniti iz integracije.\\n\\n**Opozorilo:** Odstranitev vozila bo trajno izbrisala tudi **vse njegove entitete** in z njimi **vso kratkoročno ter dolgoročno statistiko**, zbrano za to vozilo (npr. zgodovino energije, kilometrine in baterije). Teh podatkov ni mogoče obnoviti. Če jih želite obdržati, jih pred nadaljevanjem izvozite ali ustvarite varnostno kopijo.\\n\\nZa odstranitev vozila:\\n1. Odprite **Nastavitve > Naprave in storitve > Stellantis Vehicles**.\\n2. Odprite meni vozila (tri navpične pike na krajnem desnem robu vrstice vozila) in izberite **Izbriši napravo**.\\n3. Ponovno zaženite Home Assistant.\\n\\nTo opozorilo bo izginilo, ko bo vozilo odstranjeno."
+      "description": "Home Assistant prek Stellantis API-ja ne more več dostopati do vozila `{vin}` in to vozilo ni več navedeno na vašem Stellantis računu. To običajno pomeni, da je bilo vozilo prodano ali preklicano iz povezave. Če želite odpraviti to težavo, morate vozilo odstraniti iz integracije.\n\n**Opozorilo:** Odstranitev vozila bo trajno izbrisala tudi **vse njegove entitete** in z njimi **vso kratkoročno ter dolgoročno statistiko**, zbrano za to vozilo (npr. zgodovino energije, kilometrine in baterije). Teh podatkov ni mogoče obnoviti. Če jih želite obdržati, jih pred nadaljevanjem izvozite ali ustvarite varnostno kopijo.\n\nZa odstranitev vozila:\n1. Odprite **Nastavitve > Naprave in storitve > Stellantis Vehicles**.\n2. Odprite meni vozila (tri navpične pike na krajnem desnem robu vrstice vozila) in izberite **Izbriši napravo**.\n3. Ponovno zaženite Home Assistant.\n\nTo opozorilo bo izginilo, ko bo vozilo odstranjeno."
     }
   },
   "selector": {

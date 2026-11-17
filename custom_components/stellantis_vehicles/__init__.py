@@ -3,7 +3,7 @@ import shutil
 import os
 
 from homeassistant.core import Event, HomeAssistant
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, SOURCE_IGNORE
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import issue_registry, device_registry as dr
@@ -12,18 +12,22 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
-from .stellantis import StellantisVehicles
+from .client.registry import create_client
 from .utils import vehicle_removed_issue_id
 from .config_flow import StellantisVehiclesConfigFlow
 
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
+    CARD_URL,
     INTEGRATION_IS_BETA,
     PLATFORMS,
-    OTP_FILENAME,
     FIELD_NOTIFICATIONS,
     UPDATE_INTERVAL
+)
+
+from .client.psa.const import (
+    OTP_FILENAME
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,18 +39,17 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Registered here (once per HA process, regardless of how many entries or
     # reloads follow) rather than in async_setup_entry - avoids re-registering
     # the static path / JS module on every entry setup or entry reload.
-    url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
     file_path = os.path.join(os.path.dirname(__file__), "frontend", "stellantis-vehicle-card.js")
-    await hass.http.async_register_static_paths([StaticPathConfig(url, str(file_path), False)])
-    add_extra_js_url(hass, url)
+    await hass.http.async_register_static_paths([StaticPathConfig(CARD_URL, str(file_path), False)])
+    add_extra_js_url(hass, CARD_URL)
     return True
 
 async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
 
-    stellantis = StellantisVehicles(hass)
+    stellantis = create_client(hass, config.data)
     stellantis.save_config(config.data)
     stellantis.set_entry(config)
-    await stellantis.scheduled_tokens_refresh()
+    await stellantis.async_start()
 
     config.runtime_data = stellantis
 
@@ -178,61 +181,81 @@ async def async_remove_config_entry_device(
 
 
 async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
-    # Persistent, so they would otherwise outlive the entry. The devices are
-    # still registered at this point.
+    # The devices are still registered at this point.
+    vins: set[str] = set()
     for device in dr.async_entries_for_config_entry(dr.async_get(hass), config.entry_id):
-        for vin in _device_vins(device):
-            issue_registry.async_delete_issue(hass, DOMAIN, vehicle_removed_issue_id(vin))
+        vins |= _device_vins(device)
 
-    if not hass.config_entries.async_loaded_entries(DOMAIN):
+    # Persistent, so they would otherwise outlive the entry.
+    for vin in vins:
+        issue_registry.async_delete_issue(hass, DOMAIN, vehicle_removed_issue_id(vin))
+
+    other_entries = [
+        entry for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.entry_id != config.entry_id
+    ]
+    # Not loaded is not unused: an entry in setup retry, waiting for reauth or
+    # disabled still holds a configuration, so only ignored ones don't count.
+    if not any(entry.source != SOURCE_IGNORE for entry in other_entries):
 
         # Stop announcing the vehicle card to the frontend once no entry is
         # left to use it. The static path registered in async_setup cannot be
         # deregistered (no public API for it, and it is harmless dead weight
         # until the next restart), but removing the module URL stops the
         # frontend from loading it.
-        url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
-        remove_extra_js_url(hass, url)
+        remove_extra_js_url(hass, CARD_URL)
 
-        # Remove any remaining disabled or ignored entries
-        for _entry in hass.config_entries.async_entries(DOMAIN):
-            hass.async_create_task(hass.config_entries.async_remove(_entry.entry_id))
+    # Each resource is removed by its own key: the pictures are one file per
+    # vehicle (VIN), the OTP file and the image folder are keyed by customer_id,
+    # not by unique_id (which also carries mobile_app/country_code). Entries of
+    # the same account share the latter, and the OTP file cannot be recreated
+    # without a new SMS code, so those stay while another entry uses them.
+    customer_id = config.data.get("customer_id")
+    if not customer_id:
+        return
+    account_shared = any(entry.data.get("customer_id") == customer_id for entry in other_entries)
 
-        # Generate path to storage folder and OTP file. Both files are keyed by
-        # customer_id, not by unique_id (which also carries mobile_app/country_code).
-        hass_config_path = hass.config.path()
-        storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
-        customer_id = config.data.get("customer_id")
-        otp_file_path = os.path.join(storage_path, OTP_FILENAME)
-        otp_file_path = otp_file_path.replace("{#customer_id#}", customer_id)
-        entry_image_path = os.path.join(hass_config_path, "www", DOMAIN, customer_id)
-        image_path = os.path.join(hass_config_path, "www", DOMAIN)
+    hass_config_path = hass.config.path()
+    storage_path = os.path.join(hass_config_path, ".storage", DOMAIN)
+    otp_file_path = os.path.join(storage_path, OTP_FILENAME)
+    otp_file_path = otp_file_path.replace("{#customer_id#}", customer_id)
+    entry_image_path = os.path.join(hass_config_path, "www", DOMAIN, customer_id)
+    image_path = os.path.join(hass_config_path, "www", DOMAIN)
 
-        def cleanup_files():
-            # Run the blocking filesystem work on an executor thread so it never
-            # stalls the event loop - matches the async_migrate_entry steps.
+    def cleanup_files():
+        # Run the blocking filesystem work on an executor thread so it never
+        # stalls the event loop - matches the async_migrate_entry steps.
 
+        if not account_shared:
             # Remove OTP file if it exists
             if os.path.isfile(otp_file_path):
                 _LOGGER.debug("Deleting OTP file: %s", otp_file_path)
                 os.remove(otp_file_path)
 
             # Remove storage folder if empty
-            if os.path.exists(storage_path) and os.path.isdir(storage_path) and not os.listdir(storage_path):
+            if os.path.isdir(storage_path) and not os.listdir(storage_path):
                 _LOGGER.debug("Deleting empty Stellantis storage folder: %s", storage_path)
                 shutil.rmtree(storage_path)
 
-            # Remove Stellantis image folder of this entry
-            if os.path.exists(entry_image_path) and os.path.isdir(entry_image_path):
-                _LOGGER.debug("Deleting Stellantis entry image folder: %s", entry_image_path)
-                shutil.rmtree(entry_image_path)
+        # Remove the pictures of this entry's vehicles
+        for vin in vins:
+            picture_path = os.path.join(entry_image_path, f"{vin}.png")
+            if os.path.isfile(picture_path):
+                _LOGGER.debug("Deleting Stellantis vehicle picture: %s", picture_path)
+                os.remove(picture_path)
 
-            # Remove Stellantis image folder if empty
-            if os.path.exists(image_path) and os.path.isdir(image_path) and not os.listdir(image_path):
-                _LOGGER.debug("Deleting Stellantis image folder: %s", image_path)
-                shutil.rmtree(image_path)
+        # Remove the image folder of the account, with the pictures of vehicles
+        # that left it earlier, or just the empty folder if the account is shared
+        if os.path.isdir(entry_image_path) and (not account_shared or not os.listdir(entry_image_path)):
+            _LOGGER.debug("Deleting Stellantis entry image folder: %s", entry_image_path)
+            shutil.rmtree(entry_image_path)
 
-        await hass.async_add_executor_job(cleanup_files)
+        # Remove Stellantis image folder if empty
+        if os.path.isdir(image_path) and not os.listdir(image_path):
+            _LOGGER.debug("Deleting Stellantis image folder: %s", image_path)
+            shutil.rmtree(image_path)
+
+    await hass.async_add_executor_job(cleanup_files)
 
 
 async def _migrate_to_1_2(hass: HomeAssistant, config: ConfigEntry) -> None:

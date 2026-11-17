@@ -13,7 +13,10 @@ from homeassistant.util import dt
 
 from .exceptions import RateLimitException
 from .const import (
-    FIELD_ANONYMIZE_LOGS,
+    FIELD_ANONYMIZE_LOGS
+)
+
+from .client.psa.const import (
     MQTT_RESP_DATA_ERROR_CODES,
     MQTT_CHARGING_RESP_DATA_ERROR_CODES
 )
@@ -262,7 +265,7 @@ class SensitiveDataFilter(logging.Filter):
       registering every token value seen.
     """
 
-    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token")
+    MASKED_ENTRY_KEYS = ("access_token", "refresh_token", "oauth_code", "customer_id", "text_abrp_token", "password", "pin_code", "email")
     CUSTOM_VALUES_LIMIT = 128
     REDACT_KEYS = ("lastPosition", "coordinates", "latitude", "longitude", "tlm", "notification_url")
     _PAGE_TOKEN_RE = re.compile(r"(pageToken=)[^&\"'\s]+")
