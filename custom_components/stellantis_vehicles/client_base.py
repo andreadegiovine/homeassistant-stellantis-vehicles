@@ -14,9 +14,10 @@ from PIL import Image, ImageOps
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import translation
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.event import async_call_later
 
 from .base import StellantisVehicleCoordinator
 from .utils import SENSITIVE_DATA_FILTER, replace_string_placeholders
@@ -255,11 +256,27 @@ class BaseVehiclesClient:
         notification_title = replace_string_placeholders(notification_title, TRANSLATION_PLACEHOLDERS)
         notification_message = replace_string_placeholders(notification_message, TRANSLATION_PLACEHOLDERS)
 
+        # command_error: one notification that replaces the previous one and is removed
+        # an hour after the latest error. Otherwise every failed command added a new
+        # notification with a random ID that never expired.
+        if translation_key == "command_error":
+            notification_id = "stellantis_vehicles_command_error"
+            if getattr(self, "_command_error_cancel", None):
+                self._command_error_cancel()
+
+            @callback
+            def _dismiss_command_error(_now):
+                persistent_notification.async_dismiss(self._hass, notification_id)
+
+            self._command_error_cancel = async_call_later(self._hass, 3600, _dismiss_command_error)
+        else:
+            notification_id = str(uuid4())
+
         persistent_notification.async_create(
             self._hass,
             notification_message,
             title=notification_title,
-            notification_id=str(uuid4())
+            notification_id=notification_id
         )
 
     async def send_abrp_data(self, params:dict[str, Any]) -> None:
