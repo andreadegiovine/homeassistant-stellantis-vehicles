@@ -2,7 +2,6 @@ import Crypto
 from Crypto import Random
 from Crypto.Cipher.PKCS1_OAEP import PKCS1OAEP_Cipher
 from Crypto.Util.number import ceil_div, bytes_to_long, long_to_bytes
-from Crypto.Util.py3compat import bord
 from Crypto.Util.strxor import strxor
 
 
@@ -61,12 +60,12 @@ class MyOAEP(PKCS1OAEP_Cipher):
         # Step 3g
         one_pos = db[h_len:].find(b'\x01')
         l_hash1 = db[:h_len]
-        invalid = bord(y) | int(one_pos < 0)
+        invalid = y | int(one_pos < 0)
         hash_compare = strxor(l_hash1, l_hash)
         for x in hash_compare:
-            invalid |= bord(x)
+            invalid |= x
         for x in db[h_len:one_pos]:
-            invalid |= bord(x)
+            invalid |= x
         if invalid != 0:
             raise ValueError("Incorrect decryption.")
         # Step 4

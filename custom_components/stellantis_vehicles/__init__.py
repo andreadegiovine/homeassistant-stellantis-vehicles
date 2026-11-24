@@ -12,18 +12,22 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 
-from .stellantis import StellantisVehicles
+from .client.registry import create_client
 from .utils import vehicle_removed_issue_id
 from .config_flow import StellantisVehiclesConfigFlow
 
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
+    CARD_URL,
     INTEGRATION_IS_BETA,
     PLATFORMS,
-    OTP_FILENAME,
     FIELD_NOTIFICATIONS,
     UPDATE_INTERVAL
+)
+
+from .client.psa.const import (
+    OTP_FILENAME
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,18 +39,17 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Registered here (once per HA process, regardless of how many entries or
     # reloads follow) rather than in async_setup_entry - avoids re-registering
     # the static path / JS module on every entry setup or entry reload.
-    url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
     file_path = os.path.join(os.path.dirname(__file__), "frontend", "stellantis-vehicle-card.js")
-    await hass.http.async_register_static_paths([StaticPathConfig(url, str(file_path), False)])
-    add_extra_js_url(hass, url)
+    await hass.http.async_register_static_paths([StaticPathConfig(CARD_URL, str(file_path), False)])
+    add_extra_js_url(hass, CARD_URL)
     return True
 
 async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
 
-    stellantis = StellantisVehicles(hass)
+    stellantis = create_client(hass, config.data)
     stellantis.save_config(config.data)
     stellantis.set_entry(config)
-    await stellantis.scheduled_tokens_refresh()
+    await stellantis.async_start()
 
     config.runtime_data = stellantis
 
@@ -200,8 +203,7 @@ async def async_remove_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
         # deregistered (no public API for it, and it is harmless dead weight
         # until the next restart), but removing the module URL stops the
         # frontend from loading it.
-        url = f"/stellantis_vehicles/{INTEGRATION_VERSION}/stellantis-vehicle-card.js"
-        remove_extra_js_url(hass, url)
+        remove_extra_js_url(hass, CARD_URL)
 
     # Each resource is removed by its own key: the pictures are one file per
     # vehicle (VIN), the OTP file and the image folder are keyed by customer_id,

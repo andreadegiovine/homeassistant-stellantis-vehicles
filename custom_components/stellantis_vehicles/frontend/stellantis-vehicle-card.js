@@ -192,6 +192,13 @@ class StellantisVehicleCard extends LitElement {
         if (!this._helpers) {
             getHassHelpers().then((helpers) => {
                 this._helpers = helpers;
+                if (!customElements.get("ha-time-input")) {
+                    // The frontend only loads the time input with the rows that
+                    // use it: without this the charging start time stays empty
+                    // on a dashboard that has no such row.
+                    helpers.createRowElement({ type: "time-entity", entity: "time.stellantis_vehicles" });
+                    customElements.whenDefined("ha-time-input").then(() => this.requestUpdate());
+                }
                 this.requestUpdate();
             });
         }
@@ -630,6 +637,10 @@ class StellantisVehicleCardEditor extends LitElement {
                     }
                 }
             ];
+            // The configuration can arrive before hass does.
+            if (this._config) {
+                this._updateEditForm();
+            }
         }
     }
 
@@ -648,27 +659,28 @@ class StellantisVehicleCardEditor extends LitElement {
     }
 
     _updateEditForm(){
+        if (!this._hass || !this._schema) {
+            return;
+        }
         const device_tracker_id = this._config.entity;
-        if (device_tracker_id) {
-            if (!this._entities || device_tracker_id !== this._device_tracker_id) {
-                const device_tracker = this._hass.entities ? this._hass.entities[device_tracker_id] : null;
-                if (!device_tracker) return;
-                const device_id = device_tracker.device_id;
-                this._entities = Object.values(this._hass.entities)
-                    .filter(e => e.device_id === device_id)
-                    .reduce((acc, e) => {
-                        acc.push(e.entity_id);
-                        return acc;
-                    }, []);
-            }
-        } else {
-            this._entities = [];
+        const device_tracker = device_tracker_id && this._hass.entities ? this._hass.entities[device_tracker_id] : null;
+        if (!device_tracker) {
+            this._device_tracker_id = null;
+            this._entities = null;
             this._loaded_selectors = [];
+        } else if (device_tracker_id !== this._device_tracker_id) {
+            // Another vehicle: the selectors are rebuilt to offer its entities only.
+            this._device_tracker_id = device_tracker_id;
+            this._entities = Object.values(this._hass.entities)
+                .filter(e => e.device_id === device_tracker.device_id)
+                .map(e => e.entity_id);
+            this._loaded_selectors = [];
+            this._schema = [this._schema[0]];
         }
 
-        if (!this._config.entity) {
+        if (!this._entities) {
             this._schema = [this._schema[0]];
-        } else if (this._entities) {
+        } else {
             this._addExpandableSchema(SELECTOR_KEY_HEADER, [
                 this._getGridSchema([
                     this._getSwitchSchema(SELECTOR_KEY_HEADER),
@@ -762,11 +774,10 @@ class StellantisVehicleCardEditor extends LitElement {
     _getSelectorSchema(selector_name, selector_domain = ["sensor", "binary_sensor"]){
         return {
             name: selector_name,
-            include_entities: this._entities,
             selector: {
                 entity: {
-                    domain: selector_domain,
-                    integration: "stellantis_vehicles",
+                    // Only the entities of the chosen vehicle.
+                    include_entities: this._entities.filter(entity_id => selector_domain.includes(entity_id.split(".")[0])),
                     multiple: true,
                     reorder: true
                 }

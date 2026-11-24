@@ -5,7 +5,7 @@ import logging
 import pytest
 
 from custom_components.stellantis_vehicles.exceptions import CommunicationError
-from custom_components.stellantis_vehicles.stellantis import StellantisOauth
+from custom_components.stellantis_vehicles.client.psa.client import StellantisOauth
 from custom_components.stellantis_vehicles.utils import SENSITIVE_DATA_FILTER
 
 EMAIL = "jane.doe@example.com"
