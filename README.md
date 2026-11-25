@@ -15,6 +15,7 @@
 |----------------------------------|-------|---------|
 | [Details](./docs/PSA.md)         | <img src="./images/MyPeugeot.png" alt="Peugeot" width="50"> <img src="./images/MyCitroen.png" alt="Citroën" width="50"> <img src="./images/MyDS.png" alt="DS" width="50"> <img src="./images/MyOpel.png" alt="Opel" width="50"> <img src="./images/MyVauxhall.png" alt="Vauxhall" width="50"> | Inspired by [PSA Car Controller](https://github.com/flobz/psa_car_controller) (OTP step its a fork). Thanks to [Florian BEZANNIER](https://github.com/flobz) for his great work |
 | [Details](./docs/LEAPMOTOR.md)   | <img src="./images/Leapmotor.png" alt="Leapmotor" width="50"> | Cloud protocol from [kerniger/leapmotor-ha](https://github.com/kerniger/leapmotor-ha) (MIT) and [markoceri/leapmotor-api](https://github.com/markoceri/leapmotor-api), app certificate from [markoceri/leapmotor-certs](https://github.com/markoceri/leapmotor-certs). Thanks to [@kerniger](https://github.com/kerniger) and [@markoceri](https://github.com/markoceri) for their great work |
+| [Details](./docs/UCONNECT.md)    | <img src="./images/Fiat.png" alt="Fiat" width="50"> <img src="./images/Jeep.png" alt="Jeep" width="50"> <img src="./images/AlfaRomeo.png" alt="Alfa Romeo" width="50"> <img src="./images/Maserati.png" alt="Maserati" width="50"> <img src="./images/Chrysler.png" alt="Chrysler" width="50"> <img src="./images/Dodge.png" alt="Dodge" width="50"> <img src="./images/Ram.png" alt="Ram" width="50"> | Cloud served by [py-uconnect](https://github.com/hass-uconnect/py-uconnect) (Apache-2.0), the library of [hass-uconnect](https://github.com/hass-uconnect/hass-uconnect). Thanks to [@blind-oracle](https://github.com/blind-oracle) and the hass-uconnect contributors for their great work |
 
 ## Installation
 <details><summary><b>Using HACS</b></summary>
@@ -111,6 +112,7 @@ Thanks to all users who contribute to this integration by updating translations 
 - [@benbox69](https://github.com/benbox69) for the python oauth2 helper tool;
 - [@khenderick](https://github.com/khenderick) for the great work and big support;
 - [@kerniger](https://github.com/kerniger) and [@markoceri](https://github.com/markoceri) for the Leapmotor cloud protocol and app certificate;
+- [@blind-oracle](https://github.com/blind-oracle) and the hass-uconnect contributors for the py-uconnect library;
 
 Thanks to everyone for the issues, especially to:
 - [@chmtc94](https://github.com/chmtc94);

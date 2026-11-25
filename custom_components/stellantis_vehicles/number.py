@@ -9,8 +9,7 @@ from .base import StellantisBaseNumber
 
 from .const import (
     VEHICLE_TYPE_ELECTRIC,
-    VEHICLE_TYPE_HYBRID,
-    UPDATE_INTERVAL
+    VEHICLE_TYPE_HYBRID
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,7 +52,7 @@ async def async_setup_entry(hass:HomeAssistant, entry, async_add_entities) -> No
             mode = NumberMode.BOX,
             entity_category = EntityCategory.CONFIG
         )
-        entities.extend([StellantisBaseNumber(coordinator, description, UPDATE_INTERVAL)])
+        entities.extend([StellantisBaseNumber(coordinator, description, coordinator.default_update_interval)])
 
     async_add_entities([entity for entity in entities if entity._coordinator.supports("number", entity._key)])
 

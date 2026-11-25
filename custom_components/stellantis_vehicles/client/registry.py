@@ -6,10 +6,13 @@ from ..interfaces import VehiclesClient
 from .psa.client import StellantisVehicles
 from .leapmotor.client import LeapmotorVehicles
 from .leapmotor.const import CLIENT_LEAPMOTOR
+from .uconnect.client import UconnectVehicles
+from .uconnect.const import CLIENT_UCONNECT
 
 CLIENTS: dict[str, type[VehiclesClient]] = {
     CLIENT_PSA: StellantisVehicles,
     CLIENT_LEAPMOTOR: LeapmotorVehicles,
+    CLIENT_UCONNECT: UconnectVehicles,
 }
 
 

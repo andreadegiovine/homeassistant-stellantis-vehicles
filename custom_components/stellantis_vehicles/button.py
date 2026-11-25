@@ -143,6 +143,9 @@ class StellantisLightsButton(StellantisBaseButton):
 class StellantisChargingStartStopButton(StellantisBaseActionButton):
     @property
     def available(self):
+        client_rule = self._coordinator.command_available(self._key)
+        if client_rule is not None:
+            return super().available and client_rule
         if self._coordinator._sensors.get("battery_charging") == "InProgress" and self._key == "charge_start":
             return False
         if self._coordinator._sensors.get("battery_charging") in ["Finished", "Stopped"] and self._key == "charge_stop":
@@ -158,6 +161,9 @@ class StellantisChargingStartStopButton(StellantisBaseActionButton):
 class StellantisPreconditioningButton(StellantisBaseActionButton):
     @property
     def available(self) -> bool:
+        client_rule = self._coordinator.command_available(self._key)
+        if client_rule is not None:
+            return bool(super().available and client_rule)
         if self._coordinator.vehicle_type not in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             return False
 

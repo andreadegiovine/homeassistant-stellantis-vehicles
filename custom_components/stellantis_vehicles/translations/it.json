@@ -65,6 +65,15 @@
           "password": "Password",
           "pin_code": "PIN del veicolo (opzionale)"
         }
+      },
+      "uconnect": {
+        "description": "Scegli il marchio e la regione dell'app ufficiale a cui appartiene l'account (Fiat, Jeep, Alfa Romeo, ...). I veicoli Abarth e Lancia usano l'app Fiat.\n\nIl PIN del veicolo serve solo per i comandi remoti; lascialo vuoto per un veicolo in sola lettura.",
+        "data": {
+          "uconnect_brand": "Marchio e regione",
+          "email": "Email",
+          "password": "Password",
+          "pin_code": "PIN del veicolo (opzionale)"
+        }
       }
     },
     "error": {
@@ -80,7 +89,9 @@
       "get_mqtt_access_token_rate_limit": "Limite di di richieste access token mqtt raggiunto (6 al giorno)",
       "leapmotor_login": "Leapmotor ha rifiutato email o password",
       "leapmotor_certificate": "Impossibile scaricare il certificato dell'app Leapmotor, o certificato non valido: vedi il log",
-      "leapmotor_connection": "Impossibile raggiungere il cloud Leapmotor: vedi il log"
+      "leapmotor_connection": "Impossibile raggiungere il cloud Leapmotor: vedi il log",
+      "uconnect_login": "Uconnect ha rifiutato email o password: verificale, insieme a marchio e regione",
+      "uconnect_connection": "Impossibile raggiungere il cloud Uconnect: vedi il log"
     },
     "abort": {
       "already_configured": "Account già configurato",
@@ -482,6 +493,30 @@
         "oauth": "Autentica nuovamente il tuo account",
         "remote_commands": "Configura comandi remoti (richiede E-remote o Connect Plus)",
         "options": "Opzioni globali"
+      }
+    },
+    "uconnect_brand": {
+      "options": {
+        "alfa_romeo_asia": "Alfa Romeo - Asia",
+        "alfa_romeo_eu": "Alfa Romeo - Europa",
+        "alfa_romeo_us_canada": "Alfa Romeo - Stati Uniti e Canada",
+        "chrysler_canada": "Chrysler - Canada",
+        "chrysler_us": "Chrysler - Stati Uniti",
+        "dodge_us": "Dodge - Stati Uniti",
+        "fiat_asia": "Fiat - Asia",
+        "fiat_canada": "Fiat - Canada",
+        "fiat_eu": "Fiat - Europa",
+        "fiat_latam": "Fiat - America Latina",
+        "fiat_us": "Fiat - Stati Uniti",
+        "jeep_asia": "Jeep - Asia",
+        "jeep_eu": "Jeep - Europa",
+        "jeep_latam": "Jeep - America Latina",
+        "jeep_us": "Jeep - Stati Uniti",
+        "maserati_asia": "Maserati - Asia",
+        "maserati_eu": "Maserati - Europa",
+        "maserati_us_canada": "Maserati - Stati Uniti e Canada",
+        "ram_latam": "Ram - America Latina",
+        "ram_us": "Ram - Stati Uniti"
       }
     }
   }

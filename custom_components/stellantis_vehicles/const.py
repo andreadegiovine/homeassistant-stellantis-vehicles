@@ -66,6 +66,9 @@ PLATFORMS = [
 
 UPDATE_INTERVAL = 60 # seconds
 
+# Shortest distance (km) recorded as a trip built from the statuses.
+TRIP_MIN_DISTANCE = 0.1
+
 # Seconds to wait before each retry of the supported features lookup.
 SUPPORTED_FEATURES_RETRY_DELAYS = (30, 120, 600)
 

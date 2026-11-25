@@ -1,4 +1,4 @@
-import asyncio
+import inspect
 import json
 import logging
 from collections import deque
@@ -151,7 +151,7 @@ def log_call(func):
     logger = logging.getLogger(func.__module__)
     name = func.__name__
 
-    if asyncio.iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             logger.debug("---------- START %s", name)
