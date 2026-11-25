@@ -29,6 +29,7 @@ from .const import (
     VEHICLE_TYPE_ELECTRIC,
     VEHICLE_TYPE_HYBRID,
     UPDATE_INTERVAL,
+    TRIP_MIN_DISTANCE,
     EMPTY_STATUS_LIMIT,
     COMMAND_HISTORY_LIMIT,
     COMMAND_STATUS_STILL_IN_PROGRESS,
@@ -44,8 +45,15 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addFilter(SENSITIVE_DATA_FILTER)
 
 class StellantisVehicleCoordinator(DataUpdateCoordinator):
+    # Seconds between two polls of the vehicle, unless the user sets another
+    # refresh interval.
+    default_update_interval = UPDATE_INTERVAL
+    # Whether the last trip is built from the statuses (see _track_trip),
+    # for clients whose cloud has no trips service.
+    builds_trips = False
+
     def __init__(self, hass:HomeAssistant, config, vehicle, stellantis, translations, config_entry) -> None:
-        super().__init__(hass, _LOGGER, config_entry=config_entry, name = DOMAIN, update_interval=timedelta(seconds=UPDATE_INTERVAL))
+        super().__init__(hass, _LOGGER, config_entry=config_entry, name = DOMAIN, update_interval=timedelta(seconds=self.default_update_interval))
 
         self._hass = hass
         self._translations = translations
@@ -55,6 +63,8 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._sensors = {}
         self._commands_history = {}
         self._disabled_commands = []
+        # Trip in progress (see _track_trip): where and when it started, top speed so far.
+        self._trip: dict[str, Any] | None = None
         # action_id of the command currently blocking further remote
         # commands, or None while none is blocking. Set as soon as that
         # command is sent and cleared once it reaches a final status.
@@ -131,7 +141,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
             # normal cadence (a number_refresh_interval override, if any, is
             # re-applied just below).
             self._phase_offset = 0
-            self.update_interval = timedelta(seconds=UPDATE_INTERVAL)
+            self.update_interval = timedelta(seconds=self.default_update_interval)
 
         refresh_interval = self._sensors.get("number_refresh_interval")
         if refresh_interval and refresh_interval > 0 and refresh_interval != self.update_interval.total_seconds():
@@ -208,7 +218,7 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         if offset_seconds <= 0:
             return
         self._phase_offset = offset_seconds
-        self.update_interval = timedelta(seconds=UPDATE_INTERVAL + offset_seconds)
+        self.update_interval = timedelta(seconds=self.default_update_interval + offset_seconds)
 
     async def _reconcile_vehicle(self) -> None:
         """ Re-fetch the account vehicle list to check whether this vehicle was unpaired.
@@ -355,6 +365,17 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         self._prune_command_history()
         self._pending_action_id = action_id
         self.async_update_listeners()
+        # Followed only now that the command is in the history its outcome is recorded in.
+        waiter = self._command_result_waiter(action_id)
+        if waiter is not None:
+            self.config_entry.async_create_background_task(self.hass, self._follow_remote_command(action_id, waiter), f"{DOMAIN} remote command result")
+
+    def _command_result_waiter(self, action_id: str):
+        """ Awaitable telling whether the vehicle carried a sent command out, for clients that poll for it; None otherwise. """
+        return None
+
+    def _command_not_applied(self, action_id: str) -> None:
+        """ Hook: the vehicle did not carry a sent command out (or did not confirm it in time). """
 
     async def send_abrp_data(self, new_data: dict[str, Any]) -> None:
         """ Send vehicle data to ABRP. """
@@ -416,8 +437,73 @@ class StellantisVehicleCoordinator(DataUpdateCoordinator):
         whole update cycle returns. ``self._sensors``, kept up to date
         independently by the entities, is read the normal way via ``self``.
         """
+        if self.builds_trips:
+            self._track_trip(new_data)
         if self.vehicle_type in [VEHICLE_TYPE_ELECTRIC, VEHICLE_TYPE_HYBRID]:
             await self._sync_abrp_if_enabled(new_data)
+
+    def command_available(self, key: str) -> bool | None:
+        """ Whether the command entity ``key`` can be used now; None leaves it to the entity's own rules. """
+        return None
+
+    async def _follow_remote_command(self, action_id: str, wait) -> bool:
+        """ Record in the command history whether the vehicle carried a sent command out.
+
+        ``wait`` is awaited for the outcome: True done, False not confirmed in
+        time. A status refresh follows a command carried out. Returns whether it was.
+        """
+        try:
+            update = "0" if await wait else "300"
+        except Exception as err:
+            _LOGGER.warning("Could not read the result of a remote command for vehicle %s: %s", self._vehicle["vin"], err)
+            update = "failed"
+        await self.update_command_history(action_id, update)
+        if update == "0":
+            await self.async_request_refresh()
+        else:
+            self._command_not_applied(action_id)
+        return update == "0"
+
+    def _track_trip(self, data: dict[str, Any]) -> None:
+        """ Build the last trip from the statuses, for clients without a trips service.
+
+        A trip runs from the first status showing the vehicle ready or moving
+        to the first one showing it stopped; it is as precise as the polling,
+        and one in progress is lost if Home Assistant restarts.
+        """
+        kinetic = data.get("kinetic") or {}
+        driving = bool(kinetic.get("moving")) or (data.get("ignition") or {}).get("type") == "StartUp"
+        mileage = (data.get("odometer") or {}).get("mileage")
+        electric = next((energy for energy in data.get("energies") or [] if energy.get("type") == "Electric"), {})
+        residual = (((electric.get("extension") or {}).get("electric") or {}).get("battery") or {}).get("load", {}).get("residual")
+        moment = parse_timestamp(data.get("updatedAt")) or get_datetime()
+
+        if driving and self._trip is None:
+            if mileage is not None:
+                self._trip = {"start": moment, "mileage": mileage, "residual": residual, "max_speed": 0.0}
+        if self._trip is None:
+            return
+        self._trip["max_speed"] = max(self._trip["max_speed"], kinetic.get("speed") or 0.0)
+        if driving:
+            return
+
+        trip, self._trip = self._trip, None
+        duration = (moment - trip["start"]).total_seconds()
+        if mileage is None or mileage - trip["mileage"] < TRIP_MIN_DISTANCE or duration <= 0:
+            return
+        distance = round(mileage - trip["mileage"], 1)
+        last_trip = {
+            "id": trip["start"].isoformat(),
+            "distance": distance,
+            "duration": duration,
+            "startMileage": trip["mileage"],
+            # Average in m/s and top speed in km/h, as the PSA trips report them.
+            "kinetic": {"avgSpeed": distance * 1000 / duration, "maxSpeed": trip["max_speed"]},
+        }
+        if trip["residual"] is not None and residual is not None and trip["residual"] > residual:
+            consumption = trip["residual"] - residual
+            last_trip["energyConsumptions"] = [{"type": "Electric", "consumption": consumption, "avgConsumption": consumption / distance * 100}]
+        self._last_trip = last_trip
 
     async def _sync_abrp_if_enabled(self, new_data: dict[str, Any]) -> None:
         """ Push the current status to ABRP if sync is enabled with a valid token. """

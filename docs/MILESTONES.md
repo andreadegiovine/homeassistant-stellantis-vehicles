@@ -1,6 +1,6 @@
-# Milestones – integrazione Leapmotor
+# Milestones – integrazione Leapmotor e Uconnect
 
-Riepilogo del lavoro fatto per aggiungere Leapmotor all'integrazione, per poter riprendere in un secondo momento.
+Riepilogo del lavoro fatto per aggiungere Leapmotor e Uconnect (gruppo ex FCA) all'integrazione, per poter riprendere in un secondo momento.
 Branch di lavoro: `develop`.
 
 ## 1. Analisi iniziale
@@ -43,20 +43,39 @@ Branch di lavoro: `develop`.
 - Editor: i selettori delle entità offrono solo quelle del veicolo scelto e vengono ricostruiti quando si cambia veicolo.
 - Il componente dell'orario viene caricato dalla card (prima restava vuoto se la dashboard non aveva altre righe orario).
 
-## 6. Documentazione
+## 6. Client Uconnect (`client/uconnect/`)
+- Gruppo ex FCA: Fiat (anche Abarth e Lancia), Jeep, Alfa Romeo, Maserati, Chrysler, Dodge, Ram; tutte le regioni della libreria (Europa, USA, Canada, Asia, America Latina): 20 combinazioni marchio/regione.
+- Usa la libreria [py-uconnect](https://github.com/hass-uconnect/py-uconnect) 1.0.3 (Apache-2.0, asincrona, solo `aiohttp`) come requisito del manifest; nessun certificato né OAuth: email, password, marchio/regione, PIN facoltativo.
+- `status.py` traduce `py_uconnect.Vehicle` nella struttura PSA (miglia convertite in km); `coordinator.py` crea solo i comandi supportati dal veicolo (`supported_commands`); `client.py` fa un solo refresh dell'account per tutti i veicoli (cache 30 s) e usa la sessione HTTP di Home Assistant.
+- Polling ogni 5 minuti (come hass-uconnect); comandi: porte, clacson+luci, luci, clima (precondizionamento o HVAC), wakeup = deep refresh (max 6 ogni 20 min), avvio ricarica. Esito dei comandi letto dalla libreria (`wait_for_operation`).
+- PIN errato: rifiuta solo il comando, non avvia la riautenticazione. Password errata: riautenticazione.
+- Non ancora supportati: limite e programmi di ricarica (la libreria non legge il valore attuale), tragitti del cloud (si usa il tragitto costruito dagli stati).
+- Nessun tester: tutto verificato solo con una libreria simulata.
+
+## 7. Codice condiviso (rivisto con Uconnect)
+- Il coordinator base ora ha: intervallo di polling per client (`default_update_interval`), ultimo tragitto costruito dagli stati per i client senza servizio tragitti (`builds_trips`, prima solo Leapmotor), disponibilità dei pulsanti decisa dal client (`command_available`), attesa dell'esito dei comandi (`_command_result_waiter`, `_command_not_applied`).
+- Corretto: l'esito di un comando poteva arrivare prima che il comando fosse nella cronologia e andare perso (anche Leapmotor).
+- Corretto: `asyncio.iscoroutinefunction` (deprecato in Python 3.14) sostituito con `inspect.iscoroutinefunction`.
+
+## 8. Documentazione
 - `README.md`: menu, tabella marchi (Details, Brand, Credits) e solo le sezioni comuni (Installation, Screenshot, Vehicle Card, Card, Global preferences, ABRP, Contributors & Translations, Support the project). `info.md` è una copia del README (la crea anche il workflow `update_readme`).
 - `docs/PSA.md`: requisiti, funzioni, OAuth2, comandi, sensori batteria ed errori PSA.
+- `docs/UCONNECT.md`: requisiti, funzioni, marchi e regioni, comandi, limiti ed errori Uconnect.
 - `docs/LEAPMOTOR.md`: requisiti, funzioni, configurazione (secondo account, PIN, certificato), comandi, limiti ed errori Leapmotor.
-- `images/Leapmotor.png`: logo segnaposto (scritta su sfondo nero), da sostituire con il logo ufficiale.
+- `images/Leapmotor.png`, `Fiat.png`, `Jeep.png`, `AlfaRomeo.png`, `Maserati.png`, `Chrysler.png`, `Dodge.png`, `Ram.png`: loghi segnaposto (scritta su sfondo nero), da sostituire con il logo ufficiale.
 - La sezione "## Support the project" deve restare l'ultima del README: il workflow `update_readme` riscrive tutto ciò che la segue.
 
-## 7. Verifiche
+## 9. Verifiche
+- Regressione PSA: le entità create da una entry PSA (58) confrontate con il codice di prima della sessione (commit `436cd15`), identiche; fissato in `tests/test_psa_setup.py`.
+- Config flow di tutti i client (nuova entry, errori, account duplicato, riautenticazione, riconfigurazione): `tests/test_config_flow.py`.
+- Test eseguiti anche con Python 3.14 e Home Assistant 2026.10.4 (il plugin di test non supporta ancora la 2026.11).
 - Test (`pytest`): crittografia, API contro un cloud finto che verifica ogni firma (`tests/leapmotor_fakes.py`), normalizzazione dello stato, setup completo di una entry in Home Assistant, config flow, coordinator PSA, file OTP.
 - Istanza Home Assistant reale con cloud finto e due veicoli: config flow, entità, card (slider, orario, comandi) ed editor verificati nel browser, sia su HA 2026.2 sia su HA 2026.11.1.
 - L'URL della card ora contiene la versione completa (beta incluse): prima restava uguale tra le beta e il browser poteva continuare a usare la card vecchia.
 - Sull'auto reale (diagnostica del 14/11/2026): login, lista veicoli, stato, sincronizzazione certificato, verifica PIN, comando "trova auto" e refresh del token funzionano.
 
-## 8. Da fare / da verificare sull'auto reale
+## 10. Da fare / da verificare sull'auto reale
+- Uconnect: tutto da provare su auto vere (nessun tester); in particolare quali modelli recenti su piattaforma PSA usano il cloud Uconnect.
 - Slider del limite e orario di ricarica segnalati come assenti nella card: su un'installazione pulita compaiono; da verificare con il modello dell'auto (su T03 non vengono creati) e dopo l'aggiornamento della card (cache del browser).
 - Blocca/sblocca porte non sembra funzionare: serve lo "Stato comando" dopo la pressione e la diagnostica (permessi dell'account condiviso).
 - Mai provati sull'auto: immagine veicolo, limite di ricarica, orario/switch ricarica programmata, preriscaldamento batteria, energia batteria (`dumpEnergy`), ultimo tragitto.
@@ -65,5 +84,6 @@ Branch di lavoro: `develop`.
 - Possibili aggiunte: finestrini, bagagliaio, pressione gomme, avvio/arresto ricarica.
 
 ## Fonti
+- Uconnect: [py-uconnect](https://github.com/hass-uconnect/py-uconnect), [hass-uconnect](https://github.com/hass-uconnect/hass-uconnect) (Apache-2.0).
 - Protocollo: [kerniger/leapmotor-ha](https://github.com/kerniger/leapmotor-ha) (MIT), [markoceri/leapmotor-api](https://github.com/markoceri/leapmotor-api).
 - Certificato dell'app: [markoceri/leapmotor-certs](https://github.com/markoceri/leapmotor-certs).

@@ -72,9 +72,6 @@ CHARGING_PLAN_READ_ONLY_MODELS = ("T03",)
 # The T03 only switches the climate off with the full payload.
 COMMAND_CLIMATE_OFF_T03 = ("170", '{"circle":"out","mode":"wind","operate":"off","position":"all","temperature":"26","windlevel":"3","wshld":"0"}')
 
-# Shortest distance (km) recorded as a trip, as for the PSA trips.
-TRIP_MIN_DISTANCE = 0.1
-
 # Models that answer on another model's status endpoint.
 STATUS_PATH_ALIASES = {"b05": "c10", "b10": "c10", "b11": "c10"}
 STATUS_PATH_DEFAULT = "c10"

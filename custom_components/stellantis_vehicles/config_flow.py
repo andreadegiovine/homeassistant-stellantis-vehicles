@@ -6,6 +6,7 @@ from uuid import uuid4
 from homeassistant.config_entries import ( ConfigFlow, SOURCE_REAUTH, SOURCE_RECONFIGURE )
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers import translation
+from py_uconnect import BRANDS as UCONNECT_BRANDS, AuthenticationError as UconnectAuthError
 from homeassistant.const import (
     CONF_PASSWORD,
     CONF_EMAIL
@@ -15,6 +16,7 @@ from .utils import extract_oauth_code, get_datetime, log_call
 from .client.psa.client import StellantisOauth
 from .client.leapmotor.client import LeapmotorVehicles
 from .client.leapmotor.api import LeapmotorAuthError, LeapmotorCertificateError
+from .client.uconnect.client import UconnectVehicles
 from .const import (
     DOMAIN,
     INTEGRATION_VERSION,
@@ -34,6 +36,12 @@ from .const import (
     TRANSLATION_PLACEHOLDERS
 )
 
+from .client.uconnect.const import (
+    CLIENT_UCONNECT,
+    MOBILE_APP as UCONNECT_MOBILE_APP,
+    FIELD_BRAND as FIELD_UCONNECT_BRAND
+)
+
 from .client.leapmotor.const import (
     CLIENT_LEAPMOTOR,
     MOBILE_APP as LEAPMOTOR_MOBILE_APP,
@@ -49,7 +57,7 @@ from .client.psa.const import (
 _LOGGER = logging.getLogger(__name__)
 
 MOBILE_APP_SCHEMA = vol.Schema({
-    vol.Required(FIELD_MOBILE_APP): selector({ "select": { "options": list(MOBILE_APPS) + [LEAPMOTOR_MOBILE_APP], "mode": "dropdown", "translation_key": FIELD_MOBILE_APP } })
+    vol.Required(FIELD_MOBILE_APP): selector({ "select": { "options": list(MOBILE_APPS) + [LEAPMOTOR_MOBILE_APP, UCONNECT_MOBILE_APP], "mode": "dropdown", "translation_key": FIELD_MOBILE_APP } })
 })
 
 def COUNTRY_SCHEMA(mobile_app):
@@ -75,6 +83,19 @@ def OAUTH_REMOTE_SCHEMA(default_oauth_code_url=None):
 def OTP_CONFIGURE_SCHEMA(default_remote_commands=False):
     return vol.Schema({
         vol.Required(FIELD_REMOTE_COMMANDS, default=default_remote_commands): bool
+    })
+
+def UCONNECT_SCHEMA(defaults=None):
+    defaults = defaults or {}
+    def required(key):
+        return vol.Required(key, default=defaults[key]) if defaults.get(key) else vol.Required(key)
+    return vol.Schema({
+        # Brand and region of the official app the account belongs to.
+        required(FIELD_UCONNECT_BRAND): selector({ "select": { "options": sorted(brand.lower() for brand in UCONNECT_BRANDS), "mode": "dropdown", "translation_key": FIELD_UCONNECT_BRAND } }),
+        required(CONF_EMAIL): str,
+        vol.Required(CONF_PASSWORD): str,
+        # Without the vehicle PIN the vehicle is read-only.
+        vol.Optional(FIELD_PIN_CODE): str
     })
 
 def LEAPMOTOR_SCHEMA(default_email=None):
@@ -105,7 +126,7 @@ def OPTIONS_SCHEMA(reconfig=None):
     # MQTT events only arrive with remote commands; entries without the key
     # have them enabled (see StellantisVehicles.remote_commands). Leapmotor
     # has no live channel at all.
-    if defaults.get(FIELD_REMOTE_COMMANDS) is not False and defaults.get(FIELD_CLIENT) != CLIENT_LEAPMOTOR:
+    if defaults.get(FIELD_REMOTE_COMMANDS) is not False and defaults.get(FIELD_CLIENT) not in (CLIENT_LEAPMOTOR, CLIENT_UCONNECT):
         schema[vol.Required(FIELD_MQTT_LIVE_UPDATES, default=defaults[FIELD_MQTT_LIVE_UPDATES])] = bool
     return vol.Schema(schema)
 
@@ -149,7 +170,44 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         self.data.update(user_input)
         if user_input[FIELD_MOBILE_APP] == LEAPMOTOR_MOBILE_APP:
             return await self.async_step_leapmotor()
+        if user_input[FIELD_MOBILE_APP] == UCONNECT_MOBILE_APP:
+            return await self.async_step_uconnect()
         return await self.async_step_country()
+
+
+    async def async_step_uconnect(self, user_input=None):
+        """ Uconnect account (Fiat, Jeep, Alfa Romeo, ...): brand and region, credentials and, for remote commands, the vehicle PIN. """
+        if user_input is None:
+            return self.async_show_form(step_id="uconnect", data_schema=UCONNECT_SCHEMA(self.data))
+
+        pin_code = (user_input.get(FIELD_PIN_CODE) or "").strip()
+        account = {
+            FIELD_CLIENT: CLIENT_UCONNECT,
+            FIELD_MOBILE_APP: UCONNECT_MOBILE_APP,
+            FIELD_COUNTRY_CODE: "",
+            FIELD_UCONNECT_BRAND: user_input[FIELD_UCONNECT_BRAND],
+            CONF_EMAIL: user_input[CONF_EMAIL].strip(),
+            CONF_PASSWORD: user_input[CONF_PASSWORD],
+            FIELD_PIN_CODE: pin_code,
+            FIELD_REMOTE_COMMANDS: bool(pin_code)
+        }
+        uconnect = UconnectVehicles(self.hass)
+        uconnect.save_config(account)
+        error = None
+        try:
+            user_id = await uconnect.async_login()
+        except UconnectAuthError as e:
+            _LOGGER.debug("Uconnect login refused: %s", e)
+            error = "uconnect_login"
+        except Exception as e:
+            _LOGGER.error("Uconnect login error: %s", e)
+            error = "uconnect_connection"
+        if error:
+            return self.async_show_form(step_id="uconnect", data_schema=UCONNECT_SCHEMA(account), errors={"base": error})
+
+        self.data.update(account)
+        self.data.update({"customer_id": f"UC-{user_id}"})
+        return await self.async_step_options()
 
 
     async def async_step_leapmotor(self, user_input=None):
@@ -385,6 +443,9 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
             # One form covers it all: credentials, vehicle PIN, then the options.
             self.data = dict(self._get_reconfigure_entry().data)
             return await self.async_step_leapmotor()
+        if self._get_reconfigure_entry().data.get(FIELD_CLIENT) == CLIENT_UCONNECT:
+            self.data = dict(self._get_reconfigure_entry().data)
+            return await self.async_step_uconnect()
 
         if user_input is None:
             return self.async_show_form(step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA)
@@ -415,6 +476,9 @@ class StellantisVehiclesConfigFlow(ConfigFlow, domain=DOMAIN):
         if entry_data.get(FIELD_CLIENT) == CLIENT_LEAPMOTOR:
             self.data = dict(entry_data)
             return await self.async_step_leapmotor()
+        if entry_data.get(FIELD_CLIENT) == CLIENT_UCONNECT:
+            self.data = dict(entry_data)
+            return await self.async_step_uconnect()
 
         self.data.update({FIELD_MOBILE_APP: entry_data[FIELD_MOBILE_APP], FIELD_COUNTRY_CODE: entry_data[FIELD_COUNTRY_CODE]})
         if FIELD_OAUTH_CODE_URL in entry_data:

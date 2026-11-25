@@ -22,8 +22,7 @@ from .const import (
     CARD_URL,
     INTEGRATION_IS_BETA,
     PLATFORMS,
-    FIELD_NOTIFICATIONS,
-    UPDATE_INTERVAL
+    FIELD_NOTIFICATIONS
 )
 
 from .client.psa.const import (
@@ -92,7 +91,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
                 if index and len(vehicles) > 1:
                     # Spread the periodic polls of multiple vehicles across the
                     # interval instead of hitting the API for all of them at once.
-                    coordinator.stagger_first_poll(index * UPDATE_INTERVAL / len(vehicles))
+                    coordinator.stagger_first_poll(index * coordinator.default_update_interval / len(vehicles))
         except Exception:
             # First refresh failed (ConfigEntryNotReady / ConfigEntryAuthFailed /
             # ...). Home Assistant does not call async_unload_entry when
