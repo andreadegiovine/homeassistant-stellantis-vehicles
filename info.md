@@ -140,9 +140,9 @@ SA Energy
 Al  
 
 **⭐ 3 BEERS**  
+Liam  
 A John W Mace  
 Someone  
-Adam Szczerba  
 <sub>*and other heroes*</sub>
 
 **⭐ 2 BEERS**  
